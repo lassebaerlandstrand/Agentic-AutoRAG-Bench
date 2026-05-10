@@ -115,6 +115,14 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
 
     For a method with K seeds × N questions, treats all K*N scores as the
     sample. Reports mean = average across seeds and questions, CI via bootstrap.
+
+    Caveat: pooled bootstrap treats per-question rows as i.i.d., which
+    slightly underestimates variance when K>1 seeds share the same RAG
+    pipeline (within-seed correlation). A cluster bootstrap over seed-means
+    would be tighter; we pool because for K=3 seeds the cluster bootstrap is
+    very high-variance. Cross-method comparisons should use a paired test
+    (paired bootstrap of per-question differences) rather than reading
+    overlapping CIs as "no significant difference".
     """
     by_method: dict[str, list[MethodResult]] = {}
     for r in results:
@@ -220,7 +228,7 @@ def write_trajectory_figure(results: list[MethodResult], out_path: Path) -> None
         ax.fill_between(x, mean - std, mean + std, alpha=0.2)
 
     ax.set_xlabel("Trial number")
-    ax.set_ylabel("Best-so-far MCQ score")
+    ax.set_ylabel("Best-so-far exam score")
     ax.set_title("Optimization trajectory (mean ± std across seeds)")
     ax.legend()
     ax.grid(alpha=0.3)

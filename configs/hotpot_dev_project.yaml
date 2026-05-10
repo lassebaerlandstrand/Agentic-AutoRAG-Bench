@@ -10,9 +10,9 @@
 
 meta:
   project_name: "hotpot-dev"
-  corpus_path: "./benchmark_data/hotpot_val_50/corpus"
+  corpus_path: "./benchmark_data/hotpot_val_30_seed7/corpus"
   corpus_description: |
-    Tiny dev-mode HotpotQA corpus (50 questions, ~500 Wikipedia paragraphs).
+    Tiny dev-mode HotpotQA corpus (30 questions, ~300 Wikipedia paragraphs).
     Used only to verify the bench plumbing — not for paper results.
   output_dir: "./results_dev/.shared_cache"
   max_trials: 3
