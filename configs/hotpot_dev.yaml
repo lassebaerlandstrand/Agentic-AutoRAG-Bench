@@ -14,7 +14,9 @@ methods:
   - random
   - bayesian
   - agentic
-  # autorag_mcq / autorag_ragas need .autorag-venv set up — separate task.
+  - autorag_mcq  # requires .autorag-venv with AutoRAG[gpu]; set AUTORAG_PYTHON
+  # autorag_ragas: needs RAGAS bootstrap which calls OpenAI directly (not
+  # Azure-friendly without code changes); deferred for dev.
 
 seeds: [1]
 
