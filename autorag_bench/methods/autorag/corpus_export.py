@@ -2,16 +2,23 @@
 
 AutoRAG expects three columns: ``doc_id``, ``contents``, ``metadata``. We
 treat one file in the corpus directory as one AutoRAG document. The
-``metadata`` column is a dict; ``last_modified_datetime`` is required by
-AutoRAG's chunker.
+``metadata`` column is a dict and ``last_modified_datetime`` must be a
+``datetime.datetime`` instance — AutoRAG's chunker reads it as such, not as
+an ISO string. We use a single fixed timestamp so the parquet is
+byte-deterministic across runs (same corpus_hash → same outputs).
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+
+# Stable timestamp so re-running corpus export against the same corpus
+# directory produces an identical parquet file (no spurious cache misses
+# downstream). The actual value is irrelevant for HotpotQA's static corpus.
+_FIXED_TIMESTAMP = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
 def export_corpus_to_parquet(corpus_dir: Path, out_path: Path) -> int:
@@ -29,7 +36,7 @@ def export_corpus_to_parquet(corpus_dir: Path, out_path: Path) -> int:
             {
                 "doc_id": path.stem,
                 "contents": path.read_text(encoding="utf-8"),
-                "metadata": {"last_modified_datetime": datetime.now().isoformat()},
+                "metadata": {"last_modified_datetime": _FIXED_TIMESTAMP},
             }
         )
     if not rows:
