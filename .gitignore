@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+.autorag-venv/
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Run artefacts (caches; final committed paper results live elsewhere)
+results/**/.cache/
+results/**/lightrag/
+results/**/run.log
+results/**/optuna.db
+results/**/optuna_sampler.pkl
+
+# AutoRAG project_dir caches (subprocess outputs are big; we keep
+# extracted_sample.yaml + translation_notes.json only)
+results/**/autorag_project/data/
+results/**/autorag_project/0/
+results/**/autorag_project/resources/
+
+# Benchmark data is regeneratable via `agentic-autorag benchmark-prepare`
+benchmark_data/
+
+# Editor state
+*.swp
+
+# Environment
+.env

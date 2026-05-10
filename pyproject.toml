@@ -1,0 +1,57 @@
+[project]
+name = "agentic-autorag-bench"
+version = "0.1.0"
+description = "Benchmark suite comparing Agentic AutoRAG against Random / Bayesian / Marker-Inc AutoRAG on public RAG benchmarks"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Lasse Bærland Strand" },
+]
+dependencies = [
+    "agentic-autorag",
+    "optuna>=3.6,<5.0",
+    "pyarrow>=15",
+    "pandas>=2",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "typer>=0.9",
+    "numpy",
+]
+
+[project.scripts]
+autorag-bench = "autorag_bench.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.9",
+    "matplotlib>=3.10",
+]
+
+[tool.uv.sources]
+agentic-autorag = { path = "../Agentic-AutoRAG", editable = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests that need real LLM calls or heavy compute. Skipped by default, run with --run-slow.",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "SIM"]
+extend-ignore = ["D102", "D103"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["autorag_bench"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["autorag_bench"]
