@@ -119,12 +119,15 @@ class TestGenerateAutoragConfig:
             "BAAI/bge-m3": "embed_1",
         }
 
-    def test_huggingface_embedding_models_use_explicit_huggingface_block(self) -> None:
+    def test_huggingface_embedding_models_use_list_of_dict_form(self) -> None:
+        """AutoRAG's vectordb expects embedding_model as a list-of-one-dict for HF models."""
         config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
         for entry in config["vectordb"]:
-            assert entry["embedding_model"] == "huggingface"
-            assert "embedding_model_kwargs" in entry
-            assert entry["embedding_model_kwargs"]["model_name"] in {
+            em = entry["embedding_model"]
+            assert isinstance(em, list) and len(em) == 1
+            spec = em[0]
+            assert spec["type"] == "huggingface"
+            assert spec["model_name"] in {
                 "sentence-transformers/all-MiniLM-L6-v2",
                 "BAAI/bge-m3",
             }

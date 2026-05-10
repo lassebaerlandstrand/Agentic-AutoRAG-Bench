@@ -52,11 +52,12 @@ def _scalar_or_first(value: object) -> object:
 
 
 def _vectordb_to_embedding(extracted: dict) -> dict[str, str | None]:
-    """Reverse-map: vectordb name → its embedding model spec (HF model_name).
+    """Reverse-map: vectordb name → its embedding model id.
 
-    Returns the model_name for ``huggingface``-backed vectordbs, or the
-    embedding_model registry key (e.g. "openai") otherwise. None if the
-    vectordb name isn't found.
+    AutoRAG v0.3 accepts ``embedding_model`` as either a string registry
+    key, or a list of one dict: ``[{type: huggingface, model_name: ...}]``.
+    We unwrap both shapes to a single model id. Returns None if the entry
+    can't be resolved.
     """
     out: dict[str, str | None] = {}
     for entry in extracted.get("vectordb", []) or []:
@@ -64,11 +65,13 @@ def _vectordb_to_embedding(extracted: dict) -> dict[str, str | None]:
         if not name:
             continue
         em = entry.get("embedding_model")
-        if em == "huggingface":
-            kwargs = entry.get("embedding_model_kwargs") or {}
-            out[name] = kwargs.get("model_name")
-        else:
+        if isinstance(em, list) and em:
+            spec = em[0] if isinstance(em[0], dict) else {}
+            out[name] = spec.get("model_name") or spec.get("type")
+        elif isinstance(em, str):
             out[name] = em
+        else:
+            out[name] = None
     return out
 
 

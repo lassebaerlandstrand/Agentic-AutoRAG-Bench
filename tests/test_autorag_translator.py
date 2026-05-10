@@ -49,8 +49,7 @@ def test_translates_v03_semantic_retrieval_with_vectordb_reference(tmp_path) -> 
             {
                 "name": "embed_1",
                 "db_type": "chroma",
-                "embedding_model": "huggingface",
-                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+                "embedding_model": [{"type": "huggingface", "model_name": "BAAI/bge-m3"}],
             },
         ],
         "node_lines": [
@@ -97,8 +96,7 @@ def test_translates_v03_hybrid_retrieval_inverts_weight(tmp_path) -> None:
         "vectordb": [
             {
                 "name": "embed_0",
-                "embedding_model": "huggingface",
-                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+                "embedding_model": [{"type": "huggingface", "model_name": "BAAI/bge-m3"}],
             },
         ],
         "node_lines": [
@@ -124,8 +122,7 @@ def test_translates_v03_reranker_with_explicit_model(tmp_path) -> None:
         "vectordb": [
             {
                 "name": "embed_1",
-                "embedding_model": "huggingface",
-                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+                "embedding_model": [{"type": "huggingface", "model_name": "BAAI/bge-m3"}],
             },
         ],
         "node_lines": [
@@ -174,8 +171,7 @@ def test_clamps_reranker_top_n_to_top_k(tmp_path) -> None:
         "vectordb": [
             {
                 "name": "embed_1",
-                "embedding_model": "huggingface",
-                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+                "embedding_model": [{"type": "huggingface", "model_name": "BAAI/bge-m3"}],
             },
         ],
         "node_lines": [

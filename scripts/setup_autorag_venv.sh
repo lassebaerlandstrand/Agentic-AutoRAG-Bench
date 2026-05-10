@@ -32,15 +32,20 @@ echo "installing AutoRAG"
 "$VENV_PIP" install --quiet "AutoRAG>=0.3,<0.4"
 
 echo "verifying autorag CLI"
-if ! "$VENV_PYTHON" -m autorag --help >/dev/null 2>&1; then
-    echo "ERROR: 'autorag --help' failed inside $VENV_DIR" >&2
+# AutoRAG installs an entry-point ``autorag`` script next to python — ``python
+# -m autorag`` doesn't work because the package has no __main__.
+if ! "$VENV_DIR/bin/autorag" --help >/dev/null 2>&1; then
+    echo "ERROR: '$VENV_DIR/bin/autorag --help' failed" >&2
     echo "Try a different base Python: PYTHON_BIN=python3.11 bash scripts/setup_autorag_venv.sh" >&2
     exit 1
 fi
 
 ABS_PYTHON="$(cd "$(dirname "$VENV_PYTHON")/.." && pwd)/bin/python"
 echo
-echo "AutoRAG installed successfully."
+echo "AutoRAG installed successfully (API-only mode)."
+echo "If you also need local HuggingFace embedders / rerankers, run:"
+echo "  $VENV_DIR/bin/pip install 'AutoRAG[gpu]'"
+echo
 echo "Add this to your shell environment before running bench tasks:"
 echo
 echo "  export AUTORAG_PYTHON=\"$ABS_PYTHON\""
