@@ -36,6 +36,7 @@ def test_bootstrap_ci_constant_values_have_zero_width() -> None:
 
 
 def _write_method_dir(root, method: str, seed: int | None, em_scores: list[float], judge_scores: list[bool]) -> None:
+    """Mirror BenchmarkResult: per-question rows carry ``judge: int | None``."""
     seed_dir = (root / method) / (f"seed_{seed}" if seed is not None else "default")
     seed_dir.mkdir(parents=True, exist_ok=True)
     (seed_dir / "benchmark_results.json").write_text(
@@ -47,7 +48,7 @@ def _write_method_dir(root, method: str, seed: int | None, em_scores: list[float
                 "llm_judge_accuracy": float(np.mean([1.0 if v else 0.0 for v in judge_scores])),
                 "mrr": 0.5,
                 "per_question": [
-                    {"em": em, "f1": em, "llm_judge_correct": jg}
+                    {"em": em, "f1": em, "judge": 1 if jg else 0}
                     for em, jg in zip(em_scores, judge_scores, strict=True)
                 ],
             }
@@ -71,6 +72,31 @@ def _write_method_dir(root, method: str, seed: int | None, em_scores: list[float
             for i, em in enumerate(em_scores)
         )
     )
+
+
+def test_per_question_judge_falls_back_to_em_when_judge_none(tmp_path) -> None:
+    """When ``judge`` is None, accuracy = EM>0.5 (framework only runs judge on EM=0)."""
+    seed_dir = (tmp_path / "agentic") / "seed_1"
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    (seed_dir / "benchmark_results.json").write_text(
+        json.dumps(
+            {
+                "n_total": 4,
+                "em": 0.5,
+                "f1": 0.5,
+                "mrr": 0.5,
+                "per_question": [
+                    {"em": 1.0, "f1": 1.0, "judge": None},  # EM=1 → correct
+                    {"em": 0.0, "f1": 0.0, "judge": 1},     # EM=0, judge YES → correct
+                    {"em": 0.0, "f1": 0.0, "judge": 0},     # EM=0, judge NO → wrong
+                    {"em": 0.0, "f1": 0.0, "judge": None},  # EM=0, no judge run → wrong
+                ],
+            }
+        )
+    )
+    results = load_results(tmp_path)
+    judge = results[0].per_question_judge
+    assert list(judge) == [1.0, 1.0, 0.0, 0.0]
 
 
 def test_load_results_round_trip(tmp_path) -> None:

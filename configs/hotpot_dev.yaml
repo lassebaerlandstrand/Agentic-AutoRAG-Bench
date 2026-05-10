@@ -1,0 +1,35 @@
+# Dev-mode matrix config — tiny end-to-end run for verification.
+#
+# Goals:
+#   - Run every sequential method to completion in minutes, not hours.
+#   - Touch every code path (random sampling, optuna sampling, agentic
+#     orchestrator) without paying a real research-scale bill.
+#
+# What this is NOT:
+#   - A paper-table generator. Use configs/hotpot_paper.yaml for that.
+
+project_config: ./hotpot_dev_project.yaml
+
+methods:
+  - random
+  - bayesian
+  - agentic
+  # autorag_mcq / autorag_ragas need .autorag-venv set up — separate task.
+
+seeds: [1]
+
+budget:
+  max_trials: 3
+
+hotpot:
+  split: validation
+  sample_size: 50
+  prep_seed: 42
+  output_dir: ./benchmark_data/hotpot_val_50
+
+hold_out:
+  limit: 10
+  judge_model: azure/gpt-4o-mini
+  concurrency: 5
+
+output_root: ./results_dev

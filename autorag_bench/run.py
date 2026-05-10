@@ -18,6 +18,7 @@ from pathlib import Path
 import yaml
 
 from agentic_autorag.config.models import TrialConfig
+from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
 
 from autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
@@ -51,6 +52,17 @@ class BenchConfig:
 
     @classmethod
     def load(cls, config_path: str | Path) -> BenchConfig:
+        """Load and resolve paths.
+
+        Path conventions:
+        - ``project_config`` is a sibling-yaml reference, so it resolves
+          relative to *this* config's directory.
+        - ``hotpot.output_dir`` and ``output_root`` resolve relative to the
+          *current working directory*, matching the framework's convention
+          for ``meta.corpus_path`` in the project YAML. Mixing the two would
+          cause the bench to prepare data at one path and the framework to
+          look for it at another.
+        """
         config_path = Path(config_path).resolve()
         raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
         project_path = (config_path.parent / raw["project_config"]).resolve()
@@ -65,11 +77,11 @@ class BenchConfig:
             hotpot_split=raw["hotpot"]["split"],
             hotpot_sample_size=raw["hotpot"].get("sample_size"),
             hotpot_prep_seed=int(raw["hotpot"].get("prep_seed", 42)),
-            hotpot_output_dir=(config_path.parent / raw["hotpot"]["output_dir"]).resolve(),
+            hotpot_output_dir=Path(raw["hotpot"]["output_dir"]).resolve(),
             hold_out_limit=raw["hold_out"].get("limit"),
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
-            output_root=(config_path.parent / raw["output_root"]).resolve(),
+            output_root=Path(raw["output_root"]).resolve(),
         )
 
 
@@ -124,6 +136,11 @@ def _build_optimizer(
 
 
 async def run_matrix(config_path: str | Path) -> None:
+    # litellm.drop_params=True so provider-specific params (seed, temperature
+    # on gpt-5) are silently dropped instead of erroring. The framework's
+    # ``agentic-autorag optimize`` CLI calls this; the bench has its own entry
+    # point and must call it explicitly to inherit identical LLM semantics.
+    configure_litellm_runtime()
     bench = BenchConfig.load(config_path)
 
     benchmark = HotpotQABenchmark(
