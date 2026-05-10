@@ -34,6 +34,22 @@ def _find_extracted_sample(project_dir: Path) -> Path | None:
     return None
 
 
+def _find_latest_trial_dir(project_dir: Path) -> Path | None:
+    """AutoRAG writes trial outputs as numbered subdirs under project_dir (0/, 1/, ...).
+
+    The ``extract_best_config`` command needs the trial dir, not the project
+    dir. Returns the highest-numbered trial dir, or None if no trials yet.
+    """
+    candidates: list[tuple[int, Path]] = []
+    for child in project_dir.iterdir():
+        if not child.is_dir() or not child.name.isdigit():
+            continue
+        candidates.append((int(child.name), child))
+    if not candidates:
+        return None
+    return max(candidates, key=lambda x: x[0])[1]
+
+
 @dataclass
 class AutoRAGOptimizer:
     """Marker-Inc AutoRAG baseline (RAGAS-native or MCQ-ablation variant).
@@ -118,11 +134,13 @@ class AutoRAGOptimizer:
                 "Re-run scripts/setup_autorag_venv.sh."
             )
 
-        if _find_extracted_sample(autorag_dir) is None:
-            env = dict(os.environ)
-            if self.qa_variant == "mcq":
-                env["PYTHONPATH"] = f"{autorag_dir}:{env.get('PYTHONPATH', '')}"
-            logger.info("Invoking AutoRAG (%s variant)", self.qa_variant)
+        env = dict(os.environ)
+
+        # Skip the long subprocess if a previous invocation already produced
+        # a trial dir AND its extracted_sample.yaml. Re-extract is cheap.
+        existing_trial = _find_latest_trial_dir(autorag_dir)
+        if existing_trial is None or not (existing_trial / "summary.csv").exists():
+            logger.info("Invoking AutoRAG evaluate (%s variant)", self.qa_variant)
             result = subprocess.run(
                 [
                     str(autorag_bin), "evaluate",
@@ -140,9 +158,28 @@ class AutoRAGOptimizer:
             if result.returncode != 0:
                 raise RuntimeError(f"AutoRAG evaluate exited with rc={result.returncode}")
 
-        extracted = _find_extracted_sample(autorag_dir)
-        if extracted is None:
-            raise RuntimeError(f"AutoRAG produced no extracted_sample.yaml under {autorag_dir}")
+        # AutoRAG v0.3 doesn't auto-emit extracted_sample.yaml — the user must
+        # call ``autorag extract_best_config`` explicitly with the trial dir.
+        trial_dir = _find_latest_trial_dir(autorag_dir)
+        if trial_dir is None:
+            raise RuntimeError(f"AutoRAG produced no trial directory under {autorag_dir}")
+        extracted = autorag_dir / "extracted_sample.yaml"
+        if not extracted.exists():
+            logger.info("Extracting best config from trial %s", trial_dir.name)
+            result = subprocess.run(
+                [
+                    str(autorag_bin), "extract_best_config",
+                    "--trial_path", str(trial_dir),
+                    "--output_path", str(extracted),
+                ],
+                check=False, env=env, capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"AutoRAG extract_best_config exited with rc={result.returncode}: {result.stderr}"
+                )
+        if not extracted.exists():
+            raise RuntimeError(f"AutoRAG produced no extracted_sample.yaml at {extracted}")
 
         trial_config = translate_extracted_to_trial_config(extracted, orch.config.search_space)
         violations = orch.config.validate_trial(trial_config)

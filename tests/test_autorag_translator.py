@@ -255,7 +255,60 @@ def test_falls_back_when_vectordb_name_not_in_registry(tmp_path) -> None:
     assert config.embedding_model == "sentence-transformers/all-MiniLM-L6-v2"
 
 
-def test_openailike_model_translates_to_azure_litellm_id(tmp_path) -> None:
+def test_openai_with_azure_base_translates_to_azure_litellm_id(tmp_path) -> None:
+    extracted = {
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "generator",
+                        "modules": [
+                            {
+                                "module_type": "llama_index_llm",
+                                "llm": "openai",
+                                "model": "gpt-4o-mini",
+                                "api_base": "https://david-test.cognitiveservices.azure.com/openai/v1",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ]
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    config = translate_extracted_to_trial_config(path, _curated_space())
+    assert config.llm_model == "azure/gpt-4o-mini"
+
+
+def test_openai_without_azure_base_remains_openai(tmp_path) -> None:
+    extracted = {
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "generator",
+                        "modules": [
+                            {
+                                "module_type": "llama_index_llm",
+                                "llm": "openai",
+                                "model": "gpt-4o-mini",
+                                # No api_base → not Azure
+                            }
+                        ],
+                    }
+                ]
+            }
+        ]
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    # The curated space's llm_models only contains azure/gpt-4o-mini, so
+    # openai/gpt-4o-mini falls back to the search-space default.
+    config = translate_extracted_to_trial_config(path, _curated_space())
+    assert config.llm_model == "azure/gpt-4o-mini"  # search-space default
+
+
+def test_openailike_legacy_translates_to_azure(tmp_path) -> None:
+    """Older v0.3 configs may still use ``llm: openailike`` — accept for back-compat."""
     extracted = {
         "node_lines": [
             {

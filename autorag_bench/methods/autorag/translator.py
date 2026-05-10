@@ -51,6 +51,17 @@ def _scalar_or_first(value: object) -> object:
     return value[0] if isinstance(value, list) and value else value
 
 
+def _normalize_module_type(s: str | None) -> str:
+    """AutoRAG v0.3 extract_best_config emits CamelCase ``module_type`` strings
+    (e.g. ``PassReranker``, ``VectorDB``, ``HybridCC``, ``LlamaIndexLLM``)
+    even though the input config uses snake_case. Normalise to lowercase
+    snake-equivalent for matching.
+    """
+    if not s:
+        return ""
+    return s.strip().lower()
+
+
 def _vectordb_to_embedding(extracted: dict) -> dict[str, str | None]:
     """Reverse-map: vectordb name → its embedding model id.
 
@@ -87,18 +98,24 @@ def _read_top_k(node: dict, module: dict) -> int | None:
     return None
 
 
-def _autorag_llm_to_litellm(llm_provider: str | None, model: str | None) -> str | None:
+def _autorag_llm_to_litellm(
+    llm_provider: str | None, model: str | None, api_base: str | None = None
+) -> str | None:
     """Reverse-map AutoRAG generator output to a litellm model id.
 
-    Mirror of native_config._translate_llm. The translator returns the
-    raw assembled string; the caller validates against the search space.
+    Mirror of native_config._translate_llm. Disambiguates ``openai`` between
+    real OpenAI vs Azure by checking whether ``api_base`` contains an Azure
+    host. The translator returns the raw assembled string; the caller
+    validates against the search space.
     """
     if not llm_provider or not model:
         return None
+    api_base_str = (api_base or "").lower()
+    is_azure = "azure" in api_base_str or "cognitiveservices" in api_base_str
+    if llm_provider == "openai":
+        return f"azure/{model}" if is_azure else f"openai/{model}"
     if llm_provider in {"openailike", "azure"}:
         return f"azure/{model}"
-    if llm_provider == "openai":
-        return f"openai/{model}"
     if llm_provider == "bedrock":
         return f"bedrock/{model}"
     return None
@@ -153,49 +170,61 @@ def translate_extracted_to_trial_config(
     lex = nodes.get("lexical_retrieval")
 
     if hybrid:
-        # Hybrid wins if both semantic and hybrid resolved (extracted_sample
-        # only emits the winning module per node line, so this is mostly
-        # just "hybrid was selected").
+        # In v0.3, all three retrieval nodes always run; ``hybrid_retrieval``
+        # produces the un-suffixed retrieval columns the reranker consumes.
+        # The chosen BM25 weight tells us where on the BM25↔vector spectrum
+        # the optimum landed: weight=0 → fully vector → hybrid_alpha=1.0;
+        # weight=1 → fully BM25 → hybrid_alpha=0.0.
         m = _winning_module(hybrid)
-        fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
-        # AutoRAG weight_range is BM25's. The "weight" key in the resolved
-        # extracted_sample is a scalar (the chosen weight).
         weight = m.get("weight") if "weight" in m else m.get("weight_range")
-        if weight is not None:
-            w = float(_scalar_or_first(weight))
-            fields["hybrid_alpha"] = round(max(0.0, min(1.0, 1.0 - w)), 4)
+        chosen_weight = float(_scalar_or_first(weight)) if weight is not None else None
+        # Map the BM25 weight to (index_type, hybrid_alpha):
+        if chosen_weight is None or chosen_weight in (0.0, 0):
+            # Fully vector, treated as vector_only when our space allows it.
+            if IndexType.VECTOR_ONLY in search_space.index_types:
+                fields["index_type"] = IndexType.VECTOR_ONLY
+            else:
+                fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
+                fields["hybrid_alpha"] = 1.0
+        else:
+            fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
+            fields["hybrid_alpha"] = round(max(0.0, min(1.0, 1.0 - chosen_weight)), 4)
         tk = _read_top_k(hybrid, m)
         if tk is not None:
             fields["top_k"] = tk
     elif sem:
         m = _winning_module(sem)
         fields["index_type"] = IndexType.VECTOR_ONLY
-        if m.get("module_type") == "vectordb":
-            vname = m.get("vectordb")
-            if vname and vname in vectordb_index and vectordb_index[vname] in search_space.embedding_models:
-                fields["embedding_model"] = vectordb_index[vname]
-            # Also accept the v0.2 form where embedding_model was on the module.
-            elif "embedding_model" in m and _scalar_or_first(m["embedding_model"]) in search_space.embedding_models:
-                fields["embedding_model"] = _scalar_or_first(m["embedding_model"])
         tk = _read_top_k(sem, m)
         if tk is not None:
             fields["top_k"] = tk
     elif lex:
-        # Lexical-only is not in our search space, but the node may still be
-        # present in extracted_sample. Best-effort: treat as hybrid with vector=0.
+        # Lexical-only — best-effort: treat as hybrid with vector=0.
         m = _winning_module(lex)
         if IndexType.HYBRID_BM25_VECTOR in search_space.index_types:
             fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
-            fields["hybrid_alpha"] = 0.0  # vector contribution = 0
+            fields["hybrid_alpha"] = 0.0
         tk = _read_top_k(lex, m)
         if tk is not None:
             fields["top_k"] = tk
+
+    # Embedding model — read from semantic_retrieval's vectordb reference,
+    # regardless of which retrieval node "won". Falls back to defaults if
+    # missing.
+    if sem:
+        sem_m = _winning_module(sem)
+        if _normalize_module_type(sem_m.get("module_type")) == "vectordb":
+            vname = sem_m.get("vectordb")
+            if vname and vname in vectordb_index and vectordb_index[vname] in search_space.embedding_models:
+                fields["embedding_model"] = vectordb_index[vname]
+            elif "embedding_model" in sem_m and _scalar_or_first(sem_m["embedding_model"]) in search_space.embedding_models:
+                fields["embedding_model"] = _scalar_or_first(sem_m["embedding_model"])
 
     # ===== Reranker =====
     reranker_node = nodes.get("passage_reranker")
     if reranker_node:
         m = _winning_module(reranker_node)
-        mtype = m.get("module_type")
+        mtype = _normalize_module_type(m.get("module_type"))
         if mtype in {"pass_reranker", "pass_passage_reranker"}:
             fields["reranker"] = "none"
         else:
@@ -213,7 +242,7 @@ def translate_extracted_to_trial_config(
     qe_node = nodes.get("query_expansion")
     if qe_node:
         m = _winning_module(qe_node)
-        mtype = m.get("module_type", "")
+        mtype = _normalize_module_type(m.get("module_type"))
         if mtype == "pass_query_expansion":
             fields["query_expansion"] = "none"
         elif mtype == "hyde" and "hyde" in search_space.query_expansion:
@@ -229,8 +258,9 @@ def translate_extracted_to_trial_config(
         m = _winning_module(gen)
         provider = m.get("llm")
         model = _scalar_or_first(m.get("model")) if m.get("model") is not None else None
-        # First try the v0.3 reverse-map (provider + model → litellm).
-        candidate = _autorag_llm_to_litellm(provider, model)
+        api_base = m.get("api_base")
+        # First try the v0.3 reverse-map (provider + model + base → litellm).
+        candidate = _autorag_llm_to_litellm(provider, model, api_base)
         if candidate and candidate in search_space.llm_models:
             fields["llm_model"] = candidate
         # Fall back to v0.2 form: ``llm`` already contained the full litellm id.
