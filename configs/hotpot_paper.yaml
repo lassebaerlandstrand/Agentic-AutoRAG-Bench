@@ -1,0 +1,46 @@
+# Bench-suite paper config: the (method × seed) matrix definition.
+#
+# Resolved at runtime by autorag_bench.run; references a framework-shaped
+# project YAML (paper_project) for the search space, examiner, agent
+# settings, and corpus.
+
+# Framework project config — search space, examiner, agent, parsing, corpus.
+project_config: ./hotpot_paper_project.yaml
+
+# Methods to run. Each appears as one row in the paper table.
+#   - random / bayesian / agentic: stochastic, run once per seed.
+#   - autorag_ragas / autorag_mcq: deterministic-conditional, run once.
+methods:
+  - agentic
+  - random
+  - bayesian
+  - autorag_mcq
+  - autorag_ragas
+
+# Seeds for stochastic methods. AutoRAG variants ignore seeds.
+seeds: [1, 2, 3]
+
+# Per-seed trial budget for sequential methods. AutoRAG enumerates per-node
+# and ignores ``max_trials`` — its wall-clock + cost is reported separately.
+budget:
+  max_trials: 30
+
+# HotpotQA preparation. The framework's benchmark-prepare materialises
+# corpus/ + qa.json deterministically given (split, sample_size, prep_seed).
+hotpot:
+  split: validation
+  sample_size: 2000
+  prep_seed: 42
+  output_dir: ./benchmark_data/hotpot_val_2000
+
+# Held-out scoring config.
+#   - limit=100 for dev iteration (cheap). Remove or set 2000 for the
+#     camera-ready paper run.
+#   - judge_model is locked across all rows to remove a confound.
+hold_out:
+  limit: 100
+  judge_model: gemini/gemini-3-flash-preview
+  concurrency: 10
+
+# Per-method per-seed results live under <output_root>/<method>/seed_<n>/.
+output_root: ./results
