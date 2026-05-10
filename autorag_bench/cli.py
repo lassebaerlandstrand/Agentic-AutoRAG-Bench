@@ -31,7 +31,12 @@ def analyze(
     output: str = typer.Option("paper_artifacts/", "--output", "-o", help="Where to write Table_1.tex + figures"),
 ) -> None:
     """Aggregate committed results into paper artifacts (LaTeX table + trajectory figure)."""
-    raise NotImplementedError("Wired up in the analyzer commit")
+    import logging
+
+    from autorag_bench.analyze import analyze as run_analyze
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
+    run_analyze(results_dir, output)
 
 
 if __name__ == "__main__":
