@@ -72,6 +72,30 @@ uv run autorag-bench run --config configs/hotpot_paper.yaml
 uv run autorag-bench analyze
 ```
 
+## AutoRAG baseline — known limitations (paper appendix)
+
+- **Schema fidelity**: AutoRAG v0.3 split retrieval into three node types
+  (lexical / semantic / hybrid). The reranker downstream needs the un-suffixed
+  retrieval columns, which only `hybrid_retrieval` produces. We therefore
+  always emit all three retrieval nodes; for a `vector_only`-only search
+  space we pin `hybrid_cc.weight=0` so it acts as a pass-through. This is
+  documented in the per-run `translation_notes.json`.
+- **Chunking is not enumerated by AutoRAG inside `evaluate`** — it runs in a
+  separate `chunk` phase. We freeze chunking at the project's chosen
+  `(strategy, chunk_size, overlap)` triple and disclose this exclusion. A
+  future revision could sweep chunkings as an outer loop.
+- **LLM provider**: AutoRAG's `llm: openailike` drops `is_chat_model` through
+  `pop_params` (it's a Pydantic class attribute, not an init arg), routing
+  chat models to `/completions` (HTTP 400). We use `llm: openai` with
+  `api_base=${AZURE_API_BASE}/openai/v1` instead — model-name-based chat
+  detection then routes correctly.
+- **Azure content filter**: a single offending question (e.g. a HotpotQA
+  Wikipedia paragraph that triggers `ResponsibleAIPolicyViolation` for
+  violence) crashes the entire AutoRAG pipeline (no per-question retry).
+  When this happens the matrix runner catches the exception and the AutoRAG
+  row is omitted; rerunning against a less restrictive deployment or
+  pre-filtering the QA set is the workaround.
+
 ## Framework dependency
 
 Pinned via `pyproject.toml`. During development this is a path dep on

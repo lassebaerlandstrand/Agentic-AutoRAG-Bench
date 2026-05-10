@@ -156,6 +156,18 @@ class AutoRAGOptimizer:
             if result.stderr:
                 logger.warning(result.stderr.rstrip())
             if result.returncode != 0:
+                # Common failure paths worth surfacing:
+                #   - Azure ResponsibleAIPolicyViolation (content filter):
+                #     a single offending question kills the whole AutoRAG
+                #     enumeration. Document it; the matrix runner catches
+                #     this exception and the row is omitted from the table.
+                stderr = result.stderr or ""
+                if "ResponsibleAIPolicyViolation" in stderr or "content_filter" in stderr:
+                    raise RuntimeError(
+                        f"AutoRAG evaluate hit Azure content filter "
+                        f"(rc={result.returncode}). Skipping this AutoRAG row; "
+                        "see translation_notes.json for known limitations."
+                    )
                 raise RuntimeError(f"AutoRAG evaluate exited with rc={result.returncode}")
 
         # AutoRAG v0.3 doesn't auto-emit extracted_sample.yaml — the user must
