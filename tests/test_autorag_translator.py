@@ -1,4 +1,4 @@
-"""Tests for the AutoRAG ``extracted_sample.yaml`` → ``TrialConfig`` translator."""
+"""Tests for the AutoRAG v0.3.x ``extracted_sample.yaml`` → ``TrialConfig`` translator."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _curated_space() -> SearchSpace:
             top_n=NumericRange(min=3, max=10),
         ),
         query_expansion=["none", "hyde", "multi_query"],
-        llm_models=["bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"],
+        llm_models=["azure/gpt-4o-mini"],
         temperature=NumericRange(min=1.0, max=1.0),
     )
 
@@ -42,62 +42,75 @@ def _write_extracted_yaml(tmp_path, content: dict) -> str:
     return str(path)
 
 
-def test_translates_vector_only_winner(tmp_path) -> None:
+def test_translates_v03_semantic_retrieval_with_vectordb_reference(tmp_path) -> None:
+    """v0.3 names retrieval modules by vectordb registry name; we resolve back to the HF model."""
     extracted = {
+        "vectordb": [
+            {
+                "name": "embed_1",
+                "db_type": "chroma",
+                "embedding_model": "huggingface",
+                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+            },
+        ],
         "node_lines": [
             {
                 "nodes": [
                     {
-                        "node_type": "chunker",
-                        "modules": [{"chunk_method": "token", "chunk_size": 384, "chunk_overlap": 32}],
+                        "node_type": "semantic_retrieval",
+                        "strategy": {"metrics": ["retrieval_f1"]},
+                        "modules": [{"module_type": "vectordb", "vectordb": "embed_1", "top_k": 10}],
                     },
                     {
-                        "node_type": "retrieval",
-                        "modules": [{"module_type": "vectordb", "embedding_model": "BAAI/bge-m3", "top_k": 10}],
+                        "node_type": "passage_reranker",
+                        "modules": [{"module_type": "pass_reranker"}],
                     },
-                    {"node_type": "passage_reranker", "modules": [{"module_type": "pass_passage_reranker"}]},
                     {"node_type": "query_expansion", "modules": [{"module_type": "pass_query_expansion"}]},
                     {
                         "node_type": "generator",
                         "modules": [
                             {
                                 "module_type": "llama_index_llm",
-                                "llm": "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+                                "llm": "openailike",
+                                "model": "gpt-4o-mini",
                                 "temperature": 1.0,
                             }
                         ],
                     },
                 ]
             }
-        ]
+        ],
     }
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
-
-    assert config.chunking_strategy == "recursive"  # token → recursive
-    assert config.chunk_token_size == 384
-    assert config.chunk_token_overlap == 32
     assert config.index_type == IndexType.VECTOR_ONLY
     assert config.embedding_model == "BAAI/bge-m3"
     assert config.top_k == 10
     assert config.reranker == "none"
     assert config.query_expansion == "none"
-    assert config.llm_model == "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+    assert config.llm_model == "azure/gpt-4o-mini"
 
 
-def test_translates_hybrid_inverts_weight(tmp_path) -> None:
-    """If AutoRAG picks BM25 weight=0.3, we store hybrid_alpha=0.7 (vector weight)."""
+def test_translates_v03_hybrid_retrieval_inverts_weight(tmp_path) -> None:
+    """v0.3 hybrid_cc.weight on extracted_sample = BM25 weight; we invert to hybrid_alpha."""
     extracted = {
+        "vectordb": [
+            {
+                "name": "embed_0",
+                "embedding_model": "huggingface",
+                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+            },
+        ],
         "node_lines": [
             {
                 "nodes": [
                     {
-                        "node_type": "retrieval",
+                        "node_type": "hybrid_retrieval",
                         "modules": [{"module_type": "hybrid_cc", "weight": 0.3, "top_k": 8}],
                     },
                 ]
             }
-        ]
+        ],
     }
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
@@ -106,14 +119,21 @@ def test_translates_hybrid_inverts_weight(tmp_path) -> None:
     assert config.top_k == 8
 
 
-def test_translates_reranker_with_explicit_model(tmp_path) -> None:
+def test_translates_v03_reranker_with_explicit_model(tmp_path) -> None:
     extracted = {
+        "vectordb": [
+            {
+                "name": "embed_1",
+                "embedding_model": "huggingface",
+                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+            },
+        ],
         "node_lines": [
             {
                 "nodes": [
                     {
-                        "node_type": "retrieval",
-                        "modules": [{"module_type": "vectordb", "embedding_model": "BAAI/bge-m3", "top_k": 10}],
+                        "node_type": "semantic_retrieval",
+                        "modules": [{"module_type": "vectordb", "vectordb": "embed_1", "top_k": 10}],
                     },
                     {
                         "node_type": "passage_reranker",
@@ -127,7 +147,7 @@ def test_translates_reranker_with_explicit_model(tmp_path) -> None:
                     },
                 ]
             }
-        ]
+        ],
     }
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
@@ -136,16 +156,34 @@ def test_translates_reranker_with_explicit_model(tmp_path) -> None:
     assert config.top_k == 10  # the clamp invariant: reranker_top_n <= top_k
 
 
+def test_accepts_pass_reranker_v03_and_pass_passage_reranker_v02(tmp_path) -> None:
+    """Both spellings of the pass-through reranker module are accepted."""
+    for spelling in ("pass_reranker", "pass_passage_reranker"):
+        extracted = {
+            "node_lines": [
+                {"nodes": [{"node_type": "passage_reranker", "modules": [{"module_type": spelling}]}]}
+            ]
+        }
+        path = _write_extracted_yaml(tmp_path, extracted)
+        config = translate_extracted_to_trial_config(path, _curated_space())
+        assert config.reranker == "none", f"{spelling!r} should map to reranker=none"
+
+
 def test_clamps_reranker_top_n_to_top_k(tmp_path) -> None:
-    """reranker_top_n must be <= top_k; the translator clamps when AutoRAG's
-    discretization picks an inconsistent pair."""
     extracted = {
+        "vectordb": [
+            {
+                "name": "embed_1",
+                "embedding_model": "huggingface",
+                "embedding_model_kwargs": {"model_name": "BAAI/bge-m3"},
+            },
+        ],
         "node_lines": [
             {
                 "nodes": [
                     {
-                        "node_type": "retrieval",
-                        "modules": [{"module_type": "vectordb", "embedding_model": "BAAI/bge-m3", "top_k": 5}],
+                        "node_type": "semantic_retrieval",
+                        "modules": [{"module_type": "vectordb", "vectordb": "embed_1", "top_k": 5}],
                     },
                     {
                         "node_type": "passage_reranker",
@@ -155,7 +193,7 @@ def test_clamps_reranker_top_n_to_top_k(tmp_path) -> None:
                     },
                 ]
             }
-        ]
+        ],
     }
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
@@ -190,7 +228,7 @@ def test_clamps_overlap_below_chunk_size(tmp_path) -> None:
                 "nodes": [
                     {
                         "node_type": "chunker",
-                        "modules": [{"chunk_method": "token", "chunk_size": 100, "chunk_overlap": 100}],
+                        "modules": [{"chunk_method": "Token", "chunk_size": 100, "chunk_overlap": 100}],
                     }
                 ]
             }
@@ -201,15 +239,40 @@ def test_clamps_overlap_below_chunk_size(tmp_path) -> None:
     assert config.chunk_token_overlap < config.chunk_token_size
 
 
-def test_handles_list_valued_resolved_fields(tmp_path) -> None:
-    """Older AutoRAG versions left singleton lists in extracted_sample.yaml."""
+def test_falls_back_when_vectordb_name_not_in_registry(tmp_path) -> None:
+    """If extracted_sample.yaml references a vectordb name that isn't declared, use the search-space default."""
     extracted = {
         "node_lines": [
             {
                 "nodes": [
                     {
-                        "node_type": "retrieval",
-                        "modules": [{"module_type": "vectordb", "embedding_model": ["BAAI/bge-m3"], "top_k": [12]}],
+                        "node_type": "semantic_retrieval",
+                        "modules": [{"module_type": "vectordb", "vectordb": "missing_name", "top_k": 7}],
+                    }
+                ]
+            }
+        ],
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    config = translate_extracted_to_trial_config(path, _curated_space())
+    assert config.top_k == 7
+    assert config.embedding_model == "sentence-transformers/all-MiniLM-L6-v2"
+
+
+def test_openailike_model_translates_to_azure_litellm_id(tmp_path) -> None:
+    extracted = {
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "generator",
+                        "modules": [
+                            {
+                                "module_type": "llama_index_llm",
+                                "llm": "openailike",
+                                "model": "gpt-4o-mini",
+                            }
+                        ],
                     }
                 ]
             }
@@ -217,5 +280,4 @@ def test_handles_list_valued_resolved_fields(tmp_path) -> None:
     }
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
-    assert config.embedding_model == "BAAI/bge-m3"
-    assert config.top_k == 12
+    assert config.llm_model == "azure/gpt-4o-mini"

@@ -1,11 +1,17 @@
 """Translate AutoRAG's resolved ``extracted_sample.yaml`` → our ``TrialConfig``.
 
-After ``autorag evaluate`` finishes, the winning pipeline is materialised as
-``extracted_sample.yaml`` (one resolved module per node). Because ``native_config``
-constrains AutoRAG to exactly our dimensions, every winning module corresponds
-1:1 to a ``TrialConfig`` field — this is structured field extraction, not a
-lossy mapping. Anything missing falls back to the search-space minimum so the
-result is always a valid ``TrialConfig``.
+Targets AutoRAG v0.3.x. The key shape differences from v0.2:
+- Retrieval is one of ``lexical_retrieval`` / ``semantic_retrieval`` /
+  ``hybrid_retrieval`` instead of a single ``retrieval`` node_type.
+- ``vectordb`` is a top-level YAML key (a list of named entries); the
+  ``semantic_retrieval`` module's ``vectordb: <name>`` references it.
+- ``top_k`` lives at the module level (or node level — both occur in
+  practice). We read whichever is set.
+
+Anything missing falls back to the search-space minimum so the result is
+always a valid ``TrialConfig``. Chunking is not enumerated by AutoRAG v0.3
+inside ``autorag evaluate`` (it's a separate pre-step) so we fall back to
+search-space defaults and surface a hint in translation_notes.json.
 """
 
 from __future__ import annotations
@@ -22,11 +28,16 @@ def _midpoint(r: NumericRange) -> float:
 
 
 def _walk_nodes(extracted: dict) -> dict[str, dict]:
+    """Map node_type → node dict, with the first occurrence winning.
+
+    AutoRAG's extracted_sample.yaml has one node per node_type since it's
+    the resolved (best-of) pipeline.
+    """
     nodes: dict[str, dict] = {}
     for line in extracted.get("node_lines", []) or []:
         for node in line.get("nodes", []) or []:
             ntype = node.get("node_type")
-            if ntype:
+            if ntype and ntype not in nodes:
                 nodes[ntype] = node
     return nodes
 
@@ -40,12 +51,63 @@ def _scalar_or_first(value: object) -> object:
     return value[0] if isinstance(value, list) and value else value
 
 
+def _vectordb_to_embedding(extracted: dict) -> dict[str, str | None]:
+    """Reverse-map: vectordb name → its embedding model spec (HF model_name).
+
+    Returns the model_name for ``huggingface``-backed vectordbs, or the
+    embedding_model registry key (e.g. "openai") otherwise. None if the
+    vectordb name isn't found.
+    """
+    out: dict[str, str | None] = {}
+    for entry in extracted.get("vectordb", []) or []:
+        name = entry.get("name")
+        if not name:
+            continue
+        em = entry.get("embedding_model")
+        if em == "huggingface":
+            kwargs = entry.get("embedding_model_kwargs") or {}
+            out[name] = kwargs.get("model_name")
+        else:
+            out[name] = em
+    return out
+
+
+def _read_top_k(node: dict, module: dict) -> int | None:
+    """top_k may be on the module (v0.3 common form), or at node level (also v0.3)."""
+    if "top_k" in module:
+        return int(_scalar_or_first(module["top_k"]))
+    if "top_k" in node:
+        return int(_scalar_or_first(node["top_k"]))
+    strategy = node.get("strategy") or {}
+    if "top_k" in strategy:
+        return int(_scalar_or_first(strategy["top_k"]))
+    return None
+
+
+def _autorag_llm_to_litellm(llm_provider: str | None, model: str | None) -> str | None:
+    """Reverse-map AutoRAG generator output to a litellm model id.
+
+    Mirror of native_config._translate_llm. The translator returns the
+    raw assembled string; the caller validates against the search space.
+    """
+    if not llm_provider or not model:
+        return None
+    if llm_provider in {"openailike", "azure"}:
+        return f"azure/{model}"
+    if llm_provider == "openai":
+        return f"openai/{model}"
+    if llm_provider == "bedrock":
+        return f"bedrock/{model}"
+    return None
+
+
 def translate_extracted_to_trial_config(
     extracted_yaml_path: Path | str,
     search_space: SearchSpace,
 ) -> TrialConfig:
     raw = yaml.safe_load(Path(extracted_yaml_path).read_text(encoding="utf-8"))
     nodes = _walk_nodes(raw)
+    vectordb_index = _vectordb_to_embedding(raw)
 
     fields: dict = {
         "chunking_strategy": search_space.chunking.strategies[0],
@@ -63,12 +125,15 @@ def translate_extracted_to_trial_config(
         "reasoning": False,
     }
 
-    chunker = nodes.get("chunker") or nodes.get("chunking")
-    if chunker:
-        m = _winning_module(chunker)
-        if "chunk_method" in m:
-            cm = _scalar_or_first(m["chunk_method"])
-            if cm == "token":
+    # Chunker (v0.2 left this in the eval YAML; v0.3 separates chunking).
+    # We still read it if present — the v0.3 ``autorag evaluate`` doesn't
+    # emit chunker but a separate ``chunker.yaml`` consumer could write one.
+    chunker_node = nodes.get("chunker") or nodes.get("chunking")
+    if chunker_node:
+        m = _winning_module(chunker_node)
+        cm = _scalar_or_first(m.get("chunk_method", ""))
+        if isinstance(cm, str):
+            if cm.lower() in {"token", "recursive", "recursivecharacter"}:
                 fields["chunking_strategy"] = "recursive"
             elif cm in search_space.chunking.strategies:
                 fields["chunking_strategy"] = cm
@@ -79,34 +144,56 @@ def translate_extracted_to_trial_config(
         if fields["chunk_token_overlap"] >= fields["chunk_token_size"]:
             fields["chunk_token_overlap"] = max(0, fields["chunk_token_size"] - 1)
 
-    retrieval = nodes.get("retrieval") or nodes.get("retrieve")
-    if retrieval:
-        m = _winning_module(retrieval)
-        mtype = m.get("module_type", "")
-        if mtype == "vectordb":
-            fields["index_type"] = IndexType.VECTOR_ONLY
-            embed = _scalar_or_first(m.get("embedding_model"))
-            if embed in search_space.embedding_models:
-                fields["embedding_model"] = embed
-        elif mtype in {"hybrid_cc", "hybrid_rrf", "bm25"}:
-            fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
-            weight = m.get("weight")
-            if weight is not None:
-                # AutoRAG weight is BM25's; we store vector's complement.
-                w = float(_scalar_or_first(weight))
-                fields["hybrid_alpha"] = round(max(0.0, min(1.0, 1.0 - w)), 4)
-        if "top_k" in m:
-            fields["top_k"] = int(_scalar_or_first(m["top_k"]))
-        else:
-            strat = retrieval.get("strategy", {}) or {}
-            tk = strat.get("top_k")
-            if tk:
-                fields["top_k"] = int(_scalar_or_first(tk))
+    # ===== Retrieval: v0.3 has three separate node types =====
+    sem = nodes.get("semantic_retrieval")
+    hybrid = nodes.get("hybrid_retrieval")
+    lex = nodes.get("lexical_retrieval")
 
-    reranker = nodes.get("passage_reranker")
-    if reranker:
-        m = _winning_module(reranker)
-        if m.get("module_type") == "pass_passage_reranker":
+    if hybrid:
+        # Hybrid wins if both semantic and hybrid resolved (extracted_sample
+        # only emits the winning module per node line, so this is mostly
+        # just "hybrid was selected").
+        m = _winning_module(hybrid)
+        fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
+        # AutoRAG weight_range is BM25's. The "weight" key in the resolved
+        # extracted_sample is a scalar (the chosen weight).
+        weight = m.get("weight") if "weight" in m else m.get("weight_range")
+        if weight is not None:
+            w = float(_scalar_or_first(weight))
+            fields["hybrid_alpha"] = round(max(0.0, min(1.0, 1.0 - w)), 4)
+        tk = _read_top_k(hybrid, m)
+        if tk is not None:
+            fields["top_k"] = tk
+    elif sem:
+        m = _winning_module(sem)
+        fields["index_type"] = IndexType.VECTOR_ONLY
+        if m.get("module_type") == "vectordb":
+            vname = m.get("vectordb")
+            if vname and vname in vectordb_index and vectordb_index[vname] in search_space.embedding_models:
+                fields["embedding_model"] = vectordb_index[vname]
+            # Also accept the v0.2 form where embedding_model was on the module.
+            elif "embedding_model" in m and _scalar_or_first(m["embedding_model"]) in search_space.embedding_models:
+                fields["embedding_model"] = _scalar_or_first(m["embedding_model"])
+        tk = _read_top_k(sem, m)
+        if tk is not None:
+            fields["top_k"] = tk
+    elif lex:
+        # Lexical-only is not in our search space, but the node may still be
+        # present in extracted_sample. Best-effort: treat as hybrid with vector=0.
+        m = _winning_module(lex)
+        if IndexType.HYBRID_BM25_VECTOR in search_space.index_types:
+            fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
+            fields["hybrid_alpha"] = 0.0  # vector contribution = 0
+        tk = _read_top_k(lex, m)
+        if tk is not None:
+            fields["top_k"] = tk
+
+    # ===== Reranker =====
+    reranker_node = nodes.get("passage_reranker")
+    if reranker_node:
+        m = _winning_module(reranker_node)
+        mtype = m.get("module_type")
+        if mtype in {"pass_reranker", "pass_passage_reranker"}:
             fields["reranker"] = "none"
         else:
             model_name = m.get("model_name") or m.get("model")
@@ -114,12 +201,15 @@ def translate_extracted_to_trial_config(
                 fields["reranker"] = model_name
             elif "none" in search_space.reranker.models:
                 fields["reranker"] = "none"
-        if "top_k" in m and fields["reranker"] != "none":
-            fields["reranker_top_n"] = int(_scalar_or_first(m["top_k"]))
+        if fields["reranker"] != "none":
+            tk = _read_top_k(reranker_node, m)
+            if tk is not None:
+                fields["reranker_top_n"] = tk
 
-    qe = nodes.get("query_expansion")
-    if qe:
-        m = _winning_module(qe)
+    # ===== Query expansion =====
+    qe_node = nodes.get("query_expansion")
+    if qe_node:
+        m = _winning_module(qe_node)
         mtype = m.get("module_type", "")
         if mtype == "pass_query_expansion":
             fields["query_expansion"] = "none"
@@ -130,12 +220,19 @@ def translate_extracted_to_trial_config(
         elif mtype in search_space.query_expansion:
             fields["query_expansion"] = mtype
 
+    # ===== Generator =====
     gen = nodes.get("generator")
     if gen:
         m = _winning_module(gen)
-        llm = m.get("llm") or m.get("model")
-        if llm and llm in search_space.llm_models:
-            fields["llm_model"] = llm
+        provider = m.get("llm")
+        model = _scalar_or_first(m.get("model")) if m.get("model") is not None else None
+        # First try the v0.3 reverse-map (provider + model → litellm).
+        candidate = _autorag_llm_to_litellm(provider, model)
+        if candidate and candidate in search_space.llm_models:
+            fields["llm_model"] = candidate
+        # Fall back to v0.2 form: ``llm`` already contained the full litellm id.
+        elif provider and provider in search_space.llm_models:
+            fields["llm_model"] = provider
         if "temperature" in m:
             fields["temperature"] = float(_scalar_or_first(m["temperature"]))
 
