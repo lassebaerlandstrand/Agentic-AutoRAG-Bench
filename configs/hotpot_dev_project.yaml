@@ -17,6 +17,8 @@ meta:
   output_dir: "./results_dev/.shared_cache"
   max_trials: 3
   cache_max_gb: 5.0
+  # Polish phase off in dev so trial counts match across methods.
+  polish_fraction: 0.0
 
 agent:
   examiner_model: "azure/gpt-4o-mini"

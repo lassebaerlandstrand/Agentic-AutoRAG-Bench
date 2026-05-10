@@ -26,6 +26,15 @@ meta:
   output_dir: "./results/.shared_cache"
   max_trials: 10
   cache_max_gb: 5.0
+  # Disable cost-polish for the headline paper comparison so all sequential
+  # methods spend the full 10-trial budget on score search. The framework's
+  # default polish_fraction=0.3 makes agentic spend trials 8-10 on cost
+  # reduction (gated on best_score>=0.5), which would handicap the
+  # score-only comparison against bayesian/random. Polish is studied
+  # separately as an ablation. Keeping ``polish_score_floor`` and
+  # ``polish_score_tolerance`` at framework defaults; they're inert when
+  # polish_fraction=0.
+  polish_fraction: 0.0
 
 agent:
   # Examiner composes the MCQ exam; needs reliable structured output across
