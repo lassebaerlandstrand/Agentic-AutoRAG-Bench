@@ -1,0 +1,97 @@
+# Dev-mode framework project config.
+#
+# Same shape as hotpot_paper_project.yaml but minimized for fast iteration:
+#   - 1 embedding model (smallest, no GPU pressure)
+#   - 1 index type (vector_only — skip hybrid_bm25_vector)
+#   - 1 reranker option (none)
+#   - 2 LLMs (the two cheapest azure models)
+#   - exam_size 30 (down from 100)
+#   - max_trials 3 (overridden by bench, but kept consistent)
+
+meta:
+  project_name: "hotpot-dev"
+  corpus_path: "./benchmark_data/hotpot_val_50/corpus"
+  corpus_description: |
+    Tiny dev-mode HotpotQA corpus (50 questions, ~500 Wikipedia paragraphs).
+    Used only to verify the bench plumbing — not for paper results.
+  output_dir: "./results_dev/.shared_cache"
+  max_trials: 3
+  cache_max_gb: 5.0
+
+agent:
+  examiner_model: "azure/gpt-4o-mini"
+  optimizer_model: "azure/gpt-4o-mini"
+  judge_model: "azure/gpt-4o-mini"
+  optimizer_reasoning_effort: medium
+  examiner_reasoning_effort: medium
+  max_history_trials: 10
+  concurrency: 5
+
+examiner:
+  exam_size: 30
+  pair_overgeneration_factor: 3.0
+  probe_selection: true
+  composition_batch_size: 4
+  composition_temperature: 1.0
+  composition_temperature_numeric: 0.2
+  question_type_weights:
+    extraction: 0.10
+    definitional: 0.05
+    bridge: 0.40
+    comparison: 0.25
+    numeric: 0.20
+  seed_mix:
+    single_chunk: 0.10
+    same_doc_pair: 0.10
+    cross_doc_pair: 0.80
+  same_doc_pair_cosine_min: 0.4
+  same_doc_pair_cosine_max: 0.85
+  pair_embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  pair_top_k_per_chunk: 5
+  doc_split_word_threshold: 120000
+  doc_section_word_size: 500
+  min_doc_words: 20
+  eligible_section_types:
+    - body
+    - abstract
+    - methods
+    - results
+    - discussion
+    - other
+  source_fact_verify_fuzzy_threshold: 0.9
+  chunk_relevance_min_overlap_chars: 50
+  chunk_relevance_ngram_size: 5
+  chunk_relevance_overlap_threshold: 0.5
+  chunk_relevance_min_run: 5
+  retrieval_quality_alpha: 0.7
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+
+parsing:
+  parser: "docling"
+  ocr: false
+  table_structure: false
+  near_duplicate_detection_enabled: true
+  near_duplicate_threshold: 0.85
+
+search_space:
+  chunking:
+    strategies: ["recursive"]
+    chunk_token_size: { min: 256, max: 512 }
+    chunk_token_overlap: { min: 0, max: 64 }
+  embedding_models:
+    - "sentence-transformers/all-MiniLM-L6-v2"
+  index_types:
+    - "vector_only"
+  top_k: { min: 3, max: 10 }
+  hybrid_alpha: { min: 0.0, max: 1.0 }
+  reranker:
+    models:
+      - "none"
+    top_n: { min: 3, max: 5 }
+  query_expansion: ["none"]
+  llm_models:
+    - "azure/gpt-4o-mini"
+    - "azure/gpt-5.4-nano"
+  temperature: { min: 1.0, max: 1.0 }
+  reasoning: false
+  reasoning_effort: medium

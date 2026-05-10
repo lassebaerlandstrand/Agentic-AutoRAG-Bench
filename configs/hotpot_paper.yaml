@@ -23,7 +23,7 @@ seeds: [1, 2, 3]
 # Per-seed trial budget for sequential methods. AutoRAG enumerates per-node
 # and ignores ``max_trials`` — its wall-clock + cost is reported separately.
 budget:
-  max_trials: 30
+  max_trials: 10
 
 # HotpotQA preparation. The framework's benchmark-prepare materialises
 # corpus/ + qa.json deterministically given (split, sample_size, prep_seed).
@@ -39,7 +39,7 @@ hotpot:
 #   - judge_model is locked across all rows to remove a confound.
 hold_out:
   limit: 100
-  judge_model: gemini/gemini-3-flash-preview
+  judge_model: azure/gpt-4o
   concurrency: 10
 
 # Per-method per-seed results live under <output_root>/<method>/seed_<n>/.

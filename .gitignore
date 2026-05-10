@@ -36,3 +36,6 @@ benchmark_data/
 
 # Environment
 .env
+
+# Dev / paper run outputs (results/ keep extracted_sample only, see above)
+results_dev/

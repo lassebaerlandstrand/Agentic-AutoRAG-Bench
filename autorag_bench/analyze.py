@@ -47,16 +47,20 @@ class MethodResult:
 
     @property
     def per_question_judge(self) -> np.ndarray:
-        # judge: True/False/None per row; None when judge wasn't called (eg em already 1).
+        # Schema (BenchmarkResult.per_question -> QAResult): ``judge: int | None``
+        # where 1=correct, 0=incorrect, None=disabled or parse-fail. For aggregate
+        # accuracy, fall back to EM when judge is None (matches framework's
+        # OpenEndedEvaluator: judge only runs when EM=0, so judge=None implies EM
+        # already decided the verdict — which we infer from em>0.5).
         out = []
         for r in self.benchmark.get("per_question", []):
-            v = r.get("llm_judge_correct")
-            if v is None and float(r.get("em", 0.0)) > 0.5:
+            v = r.get("judge")
+            if v == 1:
                 out.append(1.0)
-            elif v is True:
-                out.append(1.0)
-            else:
+            elif v == 0:
                 out.append(0.0)
+            else:  # judge is None — verdict already set by EM
+                out.append(1.0 if float(r.get("em", 0.0)) > 0.5 else 0.0)
         return np.array(out)
 
 
