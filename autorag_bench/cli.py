@@ -18,15 +18,11 @@ def version() -> None:
 @app.command()
 def run(
     config: str = typer.Option(..., "--config", "-c", help="Path to paper-mode YAML"),
-    methods: str | None = typer.Option(
-        None, "--methods", "-m", help="Comma-separated subset (random,bayesian,agentic,autorag_ragas,autorag_mcq)"
-    ),
-    seeds: str | None = typer.Option(
-        None, "--seeds", help="Comma-separated seed list; overrides config.seeds"
-    ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
-    raise NotImplementedError("Wired up in the orchestrator commit")
+    from autorag_bench.run import run_cli
+
+    run_cli(config)
 
 
 @app.command()

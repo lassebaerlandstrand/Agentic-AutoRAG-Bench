@@ -1,0 +1,197 @@
+"""Matrix orchestrator: iterate over (method × seed), run each, score held-out.
+
+The bench config (``configs/hotpot_paper.yaml``) declares which methods, which
+seeds, what budget, and what held-out scoring settings to use. This module
+loads it, prepares HotpotQA once, sets up a shared framework Orchestrator
+whose ``evaluate_trial`` is the evaluator every sequential method calls, then
+runs each method-seed pair into ``output_root/<method>/seed_<n>/``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+from agentic_autorag.config.models import TrialConfig
+from agentic_autorag.orchestrator import Orchestrator
+
+from autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
+from autorag_bench.methods.agentic import AgenticOptimizer
+from autorag_bench.methods.autorag.driver import AutoRAGOptimizer
+from autorag_bench.methods.bayesian import BayesianSearch
+from autorag_bench.methods.random import RandomSearch
+from autorag_bench.types import Budget, SearchResult, TrialResult
+
+logger = logging.getLogger("autorag_bench.run")
+
+STOCHASTIC_METHODS = {"random", "bayesian", "agentic"}
+DETERMINISTIC_METHODS = {"autorag_ragas", "autorag_mcq"}
+ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
+
+
+@dataclass
+class BenchConfig:
+    project_config_path: Path
+    methods: list[str]
+    seeds: list[int]
+    max_trials: int
+    hotpot_split: str
+    hotpot_sample_size: int | None
+    hotpot_prep_seed: int
+    hotpot_output_dir: Path
+    hold_out_limit: int | None
+    hold_out_judge_model: str | None
+    hold_out_concurrency: int
+    output_root: Path
+
+    @classmethod
+    def load(cls, config_path: str | Path) -> BenchConfig:
+        config_path = Path(config_path).resolve()
+        raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        project_path = (config_path.parent / raw["project_config"]).resolve()
+        unknown = set(raw["methods"]) - ALL_METHODS
+        if unknown:
+            raise ValueError(f"Unknown methods in {config_path}: {sorted(unknown)}")
+        return cls(
+            project_config_path=project_path,
+            methods=list(raw["methods"]),
+            seeds=list(raw.get("seeds", [42])),
+            max_trials=int(raw["budget"]["max_trials"]),
+            hotpot_split=raw["hotpot"]["split"],
+            hotpot_sample_size=raw["hotpot"].get("sample_size"),
+            hotpot_prep_seed=int(raw["hotpot"].get("prep_seed", 42)),
+            hotpot_output_dir=(config_path.parent / raw["hotpot"]["output_dir"]).resolve(),
+            hold_out_limit=raw["hold_out"].get("limit"),
+            hold_out_judge_model=raw["hold_out"].get("judge_model"),
+            hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
+            output_root=(config_path.parent / raw["output_root"]).resolve(),
+        )
+
+
+def _persist_search_result(sr: SearchResult, dest: Path) -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    (dest / "search_result.json").write_text(json.dumps(sr.to_dict(), indent=2), encoding="utf-8")
+    (dest / "best_config.yaml").write_text(yaml.safe_dump(sr.best_config, sort_keys=False), encoding="utf-8")
+    (dest / "history.jsonl").write_text(
+        "\n".join(json.dumps(h.to_dict()) for h in sr.history) + ("\n" if sr.history else ""),
+        encoding="utf-8",
+    )
+    (dest / "optimizer_meta.json").write_text(
+        json.dumps(
+            {
+                "method": sr.method,
+                "seed": sr.seed,
+                "deterministic": sr.deterministic,
+                "optimizer_usd": sr.optimizer_usd,
+                "trial_usd_total": sr.trial_usd_total,
+                "wall_clock_s": sr.wall_clock_s,
+                "n_trials_completed": len(sr.history),
+                "extras": sr.extras,
+            },
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _build_optimizer(
+    name: str,
+    *,
+    project,
+    bench: BenchConfig,
+    output_dir: Path,
+):
+    if name == "random":
+        return RandomSearch(project=project)
+    if name == "bayesian":
+        return BayesianSearch(project=project, storage_dir=output_dir)
+    if name == "agentic":
+        return AgenticOptimizer(config_path=str(bench.project_config_path), output_dir=str(output_dir))
+    if name in {"autorag_ragas", "autorag_mcq"}:
+        variant = "ragas" if name == "autorag_ragas" else "mcq"
+        return AutoRAGOptimizer(
+            config_path=str(bench.project_config_path),
+            output_dir=str(output_dir),
+            qa_variant=variant,
+        )
+    raise ValueError(f"Unknown method {name!r}")
+
+
+async def run_matrix(config_path: str | Path) -> None:
+    bench = BenchConfig.load(config_path)
+
+    benchmark = HotpotQABenchmark(
+        output_dir=bench.hotpot_output_dir,
+        split=bench.hotpot_split,
+        sample_size=bench.hotpot_sample_size,
+        seed=bench.hotpot_prep_seed,
+    )
+    benchmark.prepare()
+
+    # Shared orchestrator: provides the evaluator that every sequential method
+    # calls per trial. setup() is idempotent — the parsed corpus, exam.json,
+    # and ingredient cache live under the project YAML's meta.output_dir
+    # (./results/.shared_cache by default) so they're reused across methods.
+    logger.info("Setting up shared orchestrator (will generate exam.json on first run)")
+    shared = Orchestrator(str(bench.project_config_path))
+    try:
+        await shared.setup()
+
+        async def evaluator(config: TrialConfig) -> TrialResult:
+            return TrialResult.from_exam_result(await shared.evaluate_trial(config))
+
+        budget = Budget(max_trials=bench.max_trials)
+
+        for method_name in bench.methods:
+            seeds_for_method = bench.seeds if method_name in STOCHASTIC_METHODS else [None]
+            for seed in seeds_for_method:
+                seed_label = f"seed_{seed}" if seed is not None else "default"
+                method_dir = bench.output_root / method_name / seed_label
+                logger.info("=" * 60)
+                logger.info("RUNNING %s | %s", method_name, seed_label)
+                logger.info("=" * 60)
+
+                optimizer = _build_optimizer(method_name, project=shared.config, bench=bench, output_dir=method_dir)
+                try:
+                    sr = await optimizer.search(evaluator, budget, seed=seed)
+                except Exception:
+                    logger.exception("%s seed=%s failed", method_name, seed)
+                    continue
+
+                _persist_search_result(sr, method_dir)
+                logger.info(
+                    "%s seed=%s done | best_score=%.3f | trials=%d | wall=%.1fs | trial_usd=$%.4f | optim_usd=$%.4f",
+                    method_name, seed,
+                    max((h.score for h in sr.history), default=0.0),
+                    len(sr.history),
+                    sr.wall_clock_s,
+                    sr.trial_usd_total,
+                    sr.optimizer_usd,
+                )
+
+                # Held-out scoring on the same QA, same evaluator semantics.
+                trial_config = TrialConfig(**sr.best_config)
+                await benchmark.evaluate(
+                    project_config_path=str(bench.project_config_path),
+                    trial_config=trial_config,
+                    output_path=method_dir / "benchmark_results.json",
+                    judge_model=bench.hold_out_judge_model,
+                    limit=bench.hold_out_limit,
+                    concurrency=bench.hold_out_concurrency,
+                )
+    finally:
+        await shared.cleanup()
+
+
+def run_cli(config_path: str) -> None:
+    """Sync wrapper for the Typer CLI."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
+    run_logger = logging.getLogger("autorag_bench.run")
+    run_logger.setLevel(logging.INFO)
+    asyncio.run(run_matrix(config_path))
