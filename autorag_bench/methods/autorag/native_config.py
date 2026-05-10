@@ -188,19 +188,26 @@ def _build_vectordb_entries(embedding_models: list[str]) -> tuple[list[dict], di
 
 
 def _vectordb_embedding_block(model: str) -> dict:
-    """Translate a HuggingFace embedding model into the AutoRAG vectordb spec.
+    """Translate an embedding model id into AutoRAG's vectordb.embedding_model spec.
 
-    AutoRAG accepts ``embedding_model`` as a string registry key, or with the
-    explicit ``huggingface`` form. We use the explicit form so any
-    ``sentence-transformers/...`` or ``BAAI/...`` etc model loads via the
-    HuggingFace adapter.
+    AutoRAG's ``embedding_model`` field accepts (verified by reading
+    ``autorag.embedding.base.EmbeddingModel.load``):
+    - a registry name (str): "openai", "huggingface", "mock", "ollama", "vllm"
+    - a list of one dict: ``[{type: <one of above>, model_name: ..., ...kwargs}]``
+
+    We emit the list-of-dict form so the actual HF / openai-compatible model
+    is pinned (the bare string "huggingface" requires AutoRAG to default to
+    its own ``HF_EMBEDDING_MODEL`` env var, which we don't want to depend on).
+    Type ``huggingface`` requires the ``AutoRAG[gpu]`` install; ``openai_like``
+    routes through llama_index's OpenAI-compatible adapter (Azure-friendly).
     """
-    if model.startswith(("openai", "azure")):
-        # Unlikely in our search space, but supported for completeness.
-        return {"embedding_model": "openai"}
     return {
-        "embedding_model": "huggingface",
-        "embedding_model_kwargs": {"model_name": model},
+        "embedding_model": [
+            {
+                "type": "huggingface",
+                "model_name": model,
+            }
+        ]
     }
 
 

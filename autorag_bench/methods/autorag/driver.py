@@ -108,6 +108,16 @@ class AutoRAGOptimizer:
         autorag_config_path.write_text(yaml.safe_dump(autorag_config_dict, sort_keys=False), encoding="utf-8")
         (autorag_dir / "translation_notes.json").write_text(json.dumps(notes, indent=2), encoding="utf-8")
 
+        # AutoRAG installs an ``autorag`` console script next to ``python`` in
+        # the venv; the package has no __main__, so ``python -m autorag`` won't
+        # work. Locate the console script alongside the python interpreter.
+        autorag_bin = Path(autorag_python).parent / "autorag"
+        if not autorag_bin.exists():
+            raise RuntimeError(
+                f"AutoRAG console script not found at {autorag_bin}. "
+                "Re-run scripts/setup_autorag_venv.sh."
+            )
+
         if _find_extracted_sample(autorag_dir) is None:
             env = dict(os.environ)
             if self.qa_variant == "mcq":
@@ -115,7 +125,7 @@ class AutoRAGOptimizer:
             logger.info("Invoking AutoRAG (%s variant)", self.qa_variant)
             result = subprocess.run(
                 [
-                    autorag_python, "-m", "autorag", "evaluate",
+                    str(autorag_bin), "evaluate",
                     "--config", str(autorag_config_path),
                     "--qa_data_path", str(qa_parquet),
                     "--corpus_data_path", str(corpus_parquet),
