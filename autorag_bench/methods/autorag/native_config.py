@@ -118,8 +118,14 @@ def _reranker_module_for(model: str) -> str:
 def _translate_llm(litellm_model: str) -> tuple[str, str]:
     """Convert a litellm model id to (autorag_llm_provider, autorag_model_name).
 
-    Azure: ``azure/gpt-4o-mini`` → (``openailike``, ``gpt-4o-mini``). Endpoint
-    is wired from env vars in the ``llama_index_llm`` module-level params.
+    Azure: ``azure/gpt-4o-mini`` → (``openai``, ``gpt-4o-mini``) with the
+    base URL pointed at Azure's OpenAI-compatible endpoint
+    ``<AZURE_API_BASE>/openai/v1``. Verified manually: OpenAILike drops
+    ``is_chat_model`` through AutoRAG's ``pop_params`` because the field
+    is a Pydantic class attribute (not declared on ``__init__``), so the
+    chat/completion routing breaks. The plain ``openai`` provider's
+    metadata-driven chat detection recognises ``gpt-4o-mini`` etc. as chat
+    models without needing the ``is_chat_model`` knob.
     OpenAI: ``openai/gpt-4o-mini`` → (``openai``, ``gpt-4o-mini``).
     Bedrock: ``bedrock/<id>`` → (``bedrock``, ``<id>``).
 
@@ -128,15 +134,13 @@ def _translate_llm(litellm_model: str) -> tuple[str, str]:
     if "/" not in litellm_model:
         raise ValueError(f"litellm model id {litellm_model!r} must have a provider prefix (e.g. 'azure/...')")
     provider, suffix = litellm_model.split("/", 1)
-    if provider == "azure":
-        return "openailike", suffix
-    if provider == "openai":
+    if provider in ("azure", "openai"):
         return "openai", suffix
     if provider == "bedrock":
         return "bedrock", suffix
     raise ValueError(
         f"Provider {provider!r} not supported in AutoRAG baseline. "
-        "Supported: azure (via openailike), openai, bedrock. "
+        "Supported: azure (via openai+v1-compat base), openai, bedrock. "
         "Extend _translate_llm in native_config.py if you add another."
     )
 
@@ -144,18 +148,19 @@ def _translate_llm(litellm_model: str) -> tuple[str, str]:
 def _build_generator_module(litellm_model: str, temperatures: list[float]) -> dict:
     """One ``llama_index_llm`` module for the given model + temperature grid."""
     autorag_llm, autorag_model = _translate_llm(litellm_model)
+    is_azure = litellm_model.startswith("azure/")
     module: dict = {
         "module_type": "llama_index_llm",
         "llm": autorag_llm,
         "model": [autorag_model],
         "temperature": temperatures,
     }
-    if autorag_llm == "openailike":
-        # AutoRAG's openailike wrapper threads kwargs into llama_index's
-        # OpenAILike(...) ctor. ${VAR} is AutoRAG's own env-var syntax.
-        module["api_base"] = "${AZURE_API_BASE}"
+    if is_azure:
+        # Azure's cognitive-services hosts respond to standard OpenAI chat
+        # completions under ``<base>/openai/v1``. ``${VAR}`` is AutoRAG's
+        # env-var substitution syntax.
+        module["api_base"] = "${AZURE_API_BASE}/openai/v1"
         module["api_key"] = "${AZURE_API_KEY}"
-        module["is_chat_model"] = True
     return module
 
 
@@ -223,7 +228,7 @@ def _build_query_expansion_modules(query_expansion: list[str], generator_module:
         if qe == "none":
             out.append({"module_type": "pass_query_expansion"})
             continue
-        gen_block = {
+        gen_block: dict = {
             "generator_module_type": "llama_index_llm",
             "llm": generator_module["llm"],
             "model": list(generator_module["model"]),
@@ -231,7 +236,6 @@ def _build_query_expansion_modules(query_expansion: list[str], generator_module:
         if "api_base" in generator_module:
             gen_block["api_base"] = generator_module["api_base"]
             gen_block["api_key"] = generator_module["api_key"]
-            gen_block["is_chat_model"] = True
         if qe == "hyde":
             out.append({"module_type": "hyde", "max_token": 64, **gen_block})
         elif qe == "multi_query":
@@ -272,51 +276,66 @@ def generate_autorag_config(
     # LLM for its expansion calls.
     generator_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models]
 
-    # ===== Retrieval nodes (split: lexical / semantic / hybrid) =====
-    retrieve_nodes: list[dict] = []
-    if IndexType.HYBRID_BM25_VECTOR in ss.index_types or IndexType.VECTOR_ONLY not in ss.index_types:
-        # BM25 is a building block of hybrid; expose it as lexical_retrieval
-        # whenever hybrid is in the space.
-        retrieve_nodes.append(
-            {
-                "node_type": "lexical_retrieval",
-                "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-                "top_k": top_ks[-1],
-                "modules": [{"module_type": "bm25"}],
-            }
-        )
-    if IndexType.VECTOR_ONLY in ss.index_types:
-        retrieve_nodes.append(
-            {
-                "node_type": "semantic_retrieval",
-                "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-                "top_k": top_ks[-1],
-                "modules": [
-                    {"module_type": "vectordb", "vectordb": vname}
-                    for vname in model_to_name.values()
-                ],
-            }
-        )
-    if IndexType.HYBRID_BM25_VECTOR in ss.index_types:
-        # AutoRAG's ``hybrid_cc.weight_range`` is the BM25 contribution; ours
-        # is the vector's. Translation: bm25_weight = 1 - hybrid_alpha.
-        bm25_lo = round(1.0 - ss.hybrid_alpha.max, 4)
-        bm25_hi = round(1.0 - ss.hybrid_alpha.min, 4)
-        retrieve_nodes.append(
-            {
-                "node_type": "hybrid_retrieval",
-                "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-                "top_k": top_ks[-1],
-                "modules": [
-                    {
-                        "module_type": "hybrid_cc",
-                        "normalize_method": ["mm", "tmm"],
-                        "weight_range": (bm25_lo, bm25_hi),
-                        "test_weight_size": 21,
-                    }
-                ],
-            }
-        )
+    # ===== Retrieval nodes =====
+    # AutoRAG v0.3 ALWAYS requires all three retrieval node_types when a
+    # passage_reranker follows: lexical and semantic emit suffixed columns
+    # (``retrieved_contents_lexical`` / ``_semantic``); hybrid is the only
+    # node that produces the un-suffixed ``retrieved_contents`` the reranker
+    # consumes (autorag/nodes/passagereranker/run.py line 129 unconditionally
+    # drops these columns). So we always emit all three.
+    #
+    # For "vector_only" in our search space, we still let hybrid_cc enumerate
+    # weight values — the translator reads the winning BM25 weight back and
+    # maps weight=1.0 → hybrid_bm25_vector with α≈0, weight=0.0 → α≈1, etc.
+    # This isn't exactly "vector_only" (BM25 still scored as a candidate) but
+    # is the most faithful mirror of our space under AutoRAG's mandatory
+    # three-node structure.
+    bm25_lo_default = round(1.0 - ss.hybrid_alpha.max, 4)
+    bm25_hi_default = round(1.0 - ss.hybrid_alpha.min, 4)
+    # If our space only has vector_only, set hybrid_cc weight=0 (no BM25).
+    # If only hybrid, sweep the full alpha range.
+    if IndexType.HYBRID_BM25_VECTOR in ss.index_types and IndexType.VECTOR_ONLY in ss.index_types:
+        bm25_lo, bm25_hi = bm25_lo_default, bm25_hi_default
+    elif IndexType.HYBRID_BM25_VECTOR in ss.index_types:
+        bm25_lo, bm25_hi = bm25_lo_default, bm25_hi_default
+    else:
+        # vector_only only — pin BM25 weight to 0 so hybrid_cc is effectively a pass-through.
+        bm25_lo, bm25_hi = 0.0, 0.0
+
+    retrieve_nodes: list[dict] = [
+        {
+            "node_type": "lexical_retrieval",
+            "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
+            "top_k": top_ks[-1],
+            "modules": [{"module_type": "bm25", "bm25_tokenizer": ["porter_stemmer", "space"]}],
+        },
+        {
+            "node_type": "semantic_retrieval",
+            "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
+            "top_k": top_ks[-1],
+            "modules": [
+                {"module_type": "vectordb", "vectordb": vname}
+                for vname in model_to_name.values()
+            ],
+        },
+        {
+            "node_type": "hybrid_retrieval",
+            "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
+            "top_k": top_ks[-1],
+            "modules": [
+                {
+                    "module_type": "hybrid_cc",
+                    "normalize_method": ["mm", "tmm"],
+                    # AutoRAG's custom YAML loader recognises the string form
+                    # ``"(a, b)"`` as a tuple (autorag.utils.util:convert_string_to_tuple_in_dict).
+                    # PyYAML can't dump Python tuples → we emit the string form
+                    # directly so AutoRAG re-tuplifies on load.
+                    "weight_range": f"({bm25_lo}, {bm25_hi})",
+                    "test_weight_size": 21 if bm25_lo != bm25_hi else 1,
+                }
+            ],
+        },
+    ]
 
     # ===== Reranker node =====
     reranker_modules: list[dict] = []
@@ -333,15 +352,18 @@ def generate_autorag_config(
     )
 
     # ===== Metric registration =====
+    # Both variants score the winning AutoRAG pipeline through our framework's
+    # held-out evaluator afterwards, so AutoRAG's *internal* metric just needs
+    # to be reasonable for ranking. We use ``rouge`` (token overlap with the
+    # gold answer) — cheap, deterministic, no LLM judge cost.
+    # ``mcq_accuracy`` (our custom substring-match metric) would require
+    # patching AutoRAG's ``GENERATION_METRIC_FUNC_DICT`` at runtime; we keep
+    # it simple and use built-in metrics only.
     if qa_variant == "mcq":
-        gen_metrics = ["mcq_accuracy"]
+        gen_metrics = ["rouge"]
         prompt_template = MCQ_PROMPT_TEMPLATE
     else:
-        gen_metrics = [
-            {"metric_name": "bleu"},
-            {"metric_name": "rouge"},
-            {"metric_name": "g_eval"},
-        ]
+        gen_metrics = ["rouge", "bleu"]
         prompt_template = FREE_FORM_PROMPT_TEMPLATE
 
     # ===== Assemble node_lines =====
@@ -401,8 +423,11 @@ def generate_autorag_config(
         "hybrid_rrf — we only enumerate hybrid_cc (CC fusion); RRF is excluded for "
         "search-space symmetry with our hybrid_alpha (continuous)",
     ]
-    if qa_variant == "mcq":
-        excluded_dimensions.append("g_eval / sem_score / bleu / rouge generation metrics — replaced by mcq_accuracy")
+    excluded_dimensions.append(
+        "custom ``mcq_accuracy`` metric — replaced by AutoRAG's built-in rouge "
+        "(winning config is re-scored through our framework's evaluator anyway, "
+        "so AutoRAG's internal ranking signal need only correlate with our final metric)"
+    )
 
     notes = {
         "qa_variant": qa_variant,
@@ -417,7 +442,7 @@ def generate_autorag_config(
         "embedding_model_to_vectordb_name": model_to_name,
         "hybrid_alpha_convention": "AutoRAG's hybrid_cc.weight_range is BM25's; "
         "we pass (1-hybrid_alpha_max, 1-hybrid_alpha_min)",
-        "llm_provider_translation": "azure/<m> → openailike with model=<m>, api_base=$AZURE_API_BASE",
+        "llm_provider_translation": "azure/<m> → openai with model=<m>, api_base=$AZURE_API_BASE/openai/v1",
         "azure_env_vars_required": ["AZURE_API_KEY", "AZURE_API_BASE"],
         "azure_api_base_present": bool(os.environ.get("AZURE_API_BASE")),
         "azure_api_key_present": bool(os.environ.get("AZURE_API_KEY")),

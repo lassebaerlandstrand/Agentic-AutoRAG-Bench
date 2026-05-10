@@ -56,22 +56,28 @@ def _find_node(config: dict, node_type: str) -> dict:
 
 
 class TestGenerateAutoragConfig:
-    def test_mcq_variant_uses_mcq_prompt_and_metric(self) -> None:
+    def test_mcq_variant_uses_mcq_prompt_and_rouge_metric(self) -> None:
+        """The mcq variant uses the MCQ prompt template + rouge as the internal AutoRAG metric.
+
+        Custom mcq_accuracy was retired because it required runtime-patching of
+        AutoRAG's frozen metric registry. Rouge (token overlap with the gold
+        answer text) is a reasonable monotonic proxy for substring match on
+        short MCQ-style answers, and we re-score winners through our framework
+        evaluator anyway.
+        """
         config, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
         assert notes["qa_variant"] == "mcq"
         prompt_node = _find_node(config, "prompt_maker")
         assert prompt_node["modules"][0]["prompt"][0] == MCQ_PROMPT_TEMPLATE
         gen_node = _find_node(config, "generator")
-        assert gen_node["strategy"]["metrics"] == ["mcq_accuracy"]
+        assert gen_node["strategy"]["metrics"] == ["rouge"]
 
-    def test_ragas_variant_uses_free_form_and_g_eval(self) -> None:
+    def test_ragas_variant_uses_free_form_and_rouge_plus_bleu(self) -> None:
         config, _ = generate_autorag_config(_curated_space(), qa_variant="ragas")
         prompt_node = _find_node(config, "prompt_maker")
         assert prompt_node["modules"][0]["prompt"][0] == FREE_FORM_PROMPT_TEMPLATE
         gen_metrics = _find_node(config, "generator")["strategy"]["metrics"]
-        # Free-form metrics: bleu / rouge / g_eval as dicts (v0.3 metric form).
-        names = {m["metric_name"] if isinstance(m, dict) else m for m in gen_metrics}
-        assert "g_eval" in names
+        assert set(gen_metrics) == {"rouge", "bleu"}
 
     def test_rejects_unknown_qa_variant(self) -> None:
         with pytest.raises(ValueError, match="qa_variant"):
@@ -133,14 +139,30 @@ class TestGenerateAutoragConfig:
             }
 
     def test_hybrid_alpha_inverts_to_bm25_weight(self) -> None:
-        """AutoRAG's hybrid_cc.weight_range is BM25's; ours is the vector's."""
+        """AutoRAG's hybrid_cc.weight_range is BM25's; ours is the vector's.
+
+        AutoRAG's YAML loader interprets the literal string ``"(a, b)"`` as a
+        2-tuple (utils.util.convert_string_to_tuple_in_dict). PyYAML can't
+        dump tuples, so we emit the string form directly.
+        """
         config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
         hybrid_node = _find_node(config, "hybrid_retrieval")
         hybrid_mod = next(m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_cc")
-        bm25_lo, bm25_hi = hybrid_mod["weight_range"]
-        # Our hybrid_alpha range is [0.0, 1.0] → BM25 weight range is [0.0, 1.0]
-        assert bm25_lo == 0.0
-        assert bm25_hi == 1.0
+        assert hybrid_mod["weight_range"] == "(0.0, 1.0)"
+
+    def test_hybrid_alpha_pins_zero_when_only_vector_only_in_search_space(self) -> None:
+        """vector_only-only space → hybrid_cc weight pinned at 0 (no BM25 contribution)."""
+        space = _curated_space()
+        space.index_types = [IndexType.VECTOR_ONLY]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        hybrid_mod = next(
+            m
+            for n in _all_nodes(config)
+            if n["node_type"] == "hybrid_retrieval"
+            for m in n["modules"]
+            if m["module_type"] == "hybrid_cc"
+        )
+        assert hybrid_mod["weight_range"] == "(0.0, 0.0)"
 
     def test_pass_through_reranker_uses_pass_reranker_v03_name(self) -> None:
         """v0.3 renamed pass_passage_reranker → pass_reranker."""
@@ -165,16 +187,28 @@ class TestGenerateAutoragConfig:
         with pytest.raises(KeyError, match="No AutoRAG reranker module mapping"):
             generate_autorag_config(space, qa_variant="mcq")
 
-    def test_azure_llm_translates_to_openailike(self) -> None:
+    def test_azure_llm_translates_to_openai_with_v1_base(self) -> None:
+        """Azure routes through AutoRAG's ``openai`` provider (not ``openailike``).
+
+        Reason: AutoRAG's ``pop_params`` filters kwargs against
+        ``OpenAILike.__init__``'s declared parameter names. ``is_chat_model`` is a
+        Pydantic class attribute (not a declared init param), so it gets dropped
+        and the LLM defaults to ``is_chat_model=False`` — which routes chat
+        models like gpt-4o-mini to ``/completions`` (400 Bad Request from Azure).
+        The plain ``openai`` provider uses model-name-based chat detection that
+        recognises gpt-4o-mini correctly without needing the flag.
+        """
         config, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
         gen = _find_node(config, "generator")
         assert len(gen["modules"]) == 1
         mod = gen["modules"][0]
-        assert mod["llm"] == "openailike"
+        assert mod["llm"] == "openai"
         assert mod["model"] == ["gpt-4o-mini"]
-        assert mod["api_base"] == "${AZURE_API_BASE}"
+        # Azure cognitive-services hosts respond to standard OpenAI chat
+        # completions under ``/openai/v1``.
+        assert mod["api_base"] == "${AZURE_API_BASE}/openai/v1"
         assert mod["api_key"] == "${AZURE_API_KEY}"
-        assert "azure/<m> → openailike" in notes["llm_provider_translation"]
+        assert "azure/<m> → openai" in notes["llm_provider_translation"]
 
     def test_translation_notes_record_excluded_dimensions(self) -> None:
         _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")

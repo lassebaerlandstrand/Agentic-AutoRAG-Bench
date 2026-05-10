@@ -3,13 +3,13 @@
 Reproducibility artifact for the EMNLP submission comparing
 [Agentic AutoRAG](https://github.com/lassebaerlandstrand/Agentic-AutoRAG) against:
 
-| Row | Method | Optimization signal |
-|---|---|---|
-| 1 | Agentic AutoRAG (ours) | MCQ exam |
-| 2 | Random search | MCQ exam |
-| 3 | Bayesian (Optuna TPE) | MCQ exam |
-| 4 | Marker-Inc AutoRAG (RAGAS native) | RAGAS bootstrap QA |
-| 5 | Marker-Inc AutoRAG (greedy + our MCQ) | MCQ exam |
+| Row | Method                                | Optimization signal     | Sequential? |
+|-----|---------------------------------------|--------------------------|-------------|
+| 1   | Agentic AutoRAG (ours)                | Framework's open-ended exam | yes      |
+| 2   | Random search                         | Framework's open-ended exam | yes      |
+| 3   | Bayesian (Optuna TPE)                 | Framework's open-ended exam | yes      |
+| 4   | Marker-Inc AutoRAG (RAGAS native)     | AutoRAG-bootstrapped QA     | greedy/no |
+| 5   | Marker-Inc AutoRAG (greedy + our exam)| Framework's open-ended exam | greedy/no |
 
 All five rows search the same `TrialConfig` configuration space and are scored
 by the same held-out HotpotQA QA via Agentic AutoRAG's `benchmark-evaluate`.
@@ -35,13 +35,24 @@ tests/
 
 ```bash
 uv sync --extra dev
-bash scripts/setup_autorag_venv.sh   # installs Marker-Inc AutoRAG into .autorag-venv/
+# AutoRAG runs in its own venv (it pins numpy<2, conflicting with our base
+# deps). The script defaults to API-mode; add [gpu] for local HF embedders.
+bash scripts/setup_autorag_venv.sh
+.autorag-venv/bin/pip install "AutoRAG[gpu]"   # needed for HF embedders / rerankers
 export AUTORAG_PYTHON=$(pwd)/.autorag-venv/bin/python
 ```
+
+The bench reads `.env` (symlinked to the framework's own `.env`) for
+`AZURE_API_KEY`, `AZURE_API_BASE`. All paper configs use azure/ LLM ids.
 
 ## Run the matrix
 
 ```bash
+# Dev iteration: 1 seed, 3 trials, 50 questions — finishes in minutes.
+uv run autorag-bench run --config configs/hotpot_dev.yaml
+uv run autorag-bench analyze --results-dir results_dev/ --output dev_artifacts/
+
+# Paper run: 3 seeds, 10 trials, 2000 questions — hours.
 uv run autorag-bench run --config configs/hotpot_paper.yaml
 uv run autorag-bench analyze --results-dir results/ --output paper_artifacts/
 ```
