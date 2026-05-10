@@ -75,9 +75,12 @@ parsing:
 
 search_space:
   chunking:
+    # MiniLM-L6-v2 has max_seq_length=256 — keep the range under that so
+    # the optuna sampler doesn't lose trials to embedding-incompatibility
+    # prunes (the paper config includes higher-limit embeddings).
     strategies: ["recursive"]
-    chunk_token_size: { min: 256, max: 512 }
-    chunk_token_overlap: { min: 0, max: 64 }
+    chunk_token_size: { min: 128, max: 256 }
+    chunk_token_overlap: { min: 0, max: 32 }
   embedding_models:
     - "sentence-transformers/all-MiniLM-L6-v2"
   index_types:
