@@ -1,6 +1,6 @@
 # Bench-suite paper config: the (method × seed) matrix definition.
 #
-# Resolved at runtime by autorag_bench.run; references a framework-shaped
+# Resolved at runtime by agentic_autorag_bench.run; references a framework-shaped
 # project YAML (paper_project) for the search space, examiner, agent
 # settings, and corpus.
 
@@ -39,7 +39,7 @@ hotpot:
 #   - judge_model is locked across all rows to remove a confound.
 hold_out:
   limit: 100
-  judge_model: azure/gpt-4o
+  judge_model: azure/DeepSeek-V3.2
   concurrency: 10
 
 # Per-method per-seed results live under <output_root>/<method>/seed_<n>/.
