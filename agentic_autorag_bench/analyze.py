@@ -3,11 +3,13 @@
 Reads ``results/<method>/seed_<n>/{benchmark_results.json, optimizer_meta.json,
 history.jsonl}`` for every (method, seed) the matrix produced. Emits:
 
-- ``paper_artifacts/Table_1.tex``: per-method held-out scores with bootstrap
-  95% CIs, plus optimizer/trial $ split and wall-clock.
-- ``paper_artifacts/figure_trajectory.pdf``: best-so-far vs trial number for
-  the three sequential methods (mean ± std across seeds). AutoRAG variants
-  are excluded — their trajectory shape is per-node greedy, not per-trial.
+- ``Table_1.md``: per-method held-out scores with bootstrap 95% CIs, plus
+  optimizer/trial $ split and wall-clock, as a Markdown pipe-table.
+- ``figure_holdout_scores.png``: grouped bars of EM / F1 / Judge per method.
+- ``figure_efficiency.png``: 1×2 panel of score-vs-cost and score-vs-wallclock.
+- ``figure_trajectory.png``: best-so-far vs trial number for the three
+  sequential methods (mean ± std across seeds). AutoRAG variants are excluded
+  — their trajectory shape is per-node greedy, not per-trial.
 
 Statistical method: nonparametric bootstrap (1000 boots) on the held-out
 per-question EM/F1/Judge scores, paired across methods that share the same
@@ -27,6 +29,15 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 
 N_BOOTSTRAP = 1000
 CI_ALPHA = 0.05
+
+# Stable display order shared by the LaTeX, Markdown, and figure writers so the
+# paper's narrative ("agentic vs. random/bayesian vs. AutoRAG") reads the same
+# everywhere.
+METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
+
+
+def _ordered_methods(stats: dict[str, dict]) -> list[str]:
+    return [m for m in METHOD_ORDER if m in stats]
 
 
 @dataclass
@@ -48,10 +59,13 @@ class MethodResult:
     @property
     def per_question_judge(self) -> np.ndarray:
         # Schema (BenchmarkResult.per_question -> QAResult): ``judge: int | None``
-        # where 1=correct, 0=incorrect, None=disabled or parse-fail. For aggregate
-        # accuracy, fall back to EM when judge is None (matches framework's
-        # OpenEndedEvaluator: judge only runs when EM=0, so judge=None implies EM
-        # already decided the verdict — which we infer from em>0.5).
+        # where 1=correct, 0=incorrect, None=parse/timeout failure. The hold-out
+        # evaluator (FreeFormEvaluator) calls the judge for *every* row when
+        # judge_model is set — unlike the framework's trial-time evaluator which
+        # only calls the judge on EM=0 — so judge=None here means the judge call
+        # failed (timeout, parse error, content filter), not "EM already
+        # decided". Drop those rows from the denominator: return NaN so callers
+        # using np.nanmean treat them as missing rather than biased.
         out = []
         for r in self.benchmark.get("per_question", []):
             v = r.get("judge")
@@ -59,8 +73,8 @@ class MethodResult:
                 out.append(1.0)
             elif v == 0:
                 out.append(0.0)
-            else:  # judge is None — verdict already set by EM
-                out.append(1.0 if float(r.get("em", 0.0)) > 0.5 else 0.0)
+            else:
+                out.append(np.nan)
         return np.array(out)
 
 
@@ -100,14 +114,22 @@ def load_results(results_dir: Path) -> list[MethodResult]:
 
 
 def bootstrap_ci(values: np.ndarray, n_boot: int = N_BOOTSTRAP, alpha: float = CI_ALPHA) -> tuple[float, float, float]:
-    """Return (mean, lo, hi) for ``values`` under the empirical bootstrap."""
+    """Return (mean, lo, hi) for ``values`` under the empirical bootstrap.
+
+    NaN entries are dropped before resampling — ``per_question_judge`` uses NaN
+    to flag rows where the judge call itself failed (timeout / parse error),
+    which would otherwise propagate through ``np.choice``-mean.
+    """
     if values.size == 0:
         return 0.0, 0.0, 0.0
+    clean = values[~np.isnan(values)] if values.dtype.kind == "f" else values
+    if clean.size == 0:
+        return 0.0, 0.0, 0.0
     rng = np.random.default_rng(seed=42)
-    boots = rng.choice(values, size=(n_boot, values.size), replace=True).mean(axis=1)
+    boots = rng.choice(clean, size=(n_boot, clean.size), replace=True).mean(axis=1)
     lo = float(np.quantile(boots, alpha / 2))
     hi = float(np.quantile(boots, 1 - alpha / 2))
-    return float(values.mean()), lo, hi
+    return float(clean.mean()), lo, hi
 
 
 def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
@@ -138,6 +160,13 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
         optim_usds = [float(r.optimizer_meta.get("optimizer_usd", 0.0)) for r in runs]
         trial_usds = [float(r.optimizer_meta.get("trial_usd_total", 0.0)) for r in runs]
 
+        cost_caveat = ""
+        for r in runs:
+            note = r.optimizer_meta.get("extras", {}).get("cost_caveat")
+            if note:
+                cost_caveat = note
+                break
+
         out[method] = {
             "n_seeds": len(runs),
             "em": bootstrap_ci(em_pool),
@@ -150,56 +179,58 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
             "wall_clock_s_list": wall_clocks,
             "optimizer_usd_list": optim_usds,
             "trial_usd_list": trial_usds,
+            "cost_caveat": cost_caveat,
         }
     return out
 
 
-def write_latex_table(stats: dict[str, dict], out_path: Path) -> None:
-    """Method × {EM, F1, Judge, MRR, $, wall-clock} as a booktabs table."""
+def write_markdown_table(stats: dict[str, dict], out_path: Path) -> None:
+    """Per-method results as a Markdown pipe-table, plus any cost caveats below."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    method_order = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
-    rows = []
-    for m in method_order:
+    rows: list[str] = []
+    caveats: dict[str, str] = {}
+    for m in METHOD_ORDER:
         if m not in stats:
             continue
         s = stats[m]
         em_m, em_lo, em_hi = s["em"]
         f1_m, f1_lo, f1_hi = s["f1"]
         j_m, j_lo, j_hi = s["judge"]
+        label = m.replace("_", "-")
+        # Star methods that disclose a cost caveat so the row visibly carries a
+        # footnote marker in the table.
+        marker = "*" if s.get("cost_caveat") else ""
         rows.append(
-            f"  {m.replace('_', '-')} & "
-            f"{em_m:.3f} [{em_lo:.3f}, {em_hi:.3f}] & "
-            f"{f1_m:.3f} [{f1_lo:.3f}, {f1_hi:.3f}] & "
-            f"{j_m:.3f} [{j_lo:.3f}, {j_hi:.3f}] & "
-            f"{s['mrr']:.3f} & "
-            f"\\${s['optimizer_usd_mean']:.2f} / \\${s['trial_usd_mean']:.2f} & "
-            f"{s['wall_clock_s_mean']:.0f}s \\\\"
+            f"| {label}{marker} "
+            f"| {em_m:.3f} [{em_lo:.3f}, {em_hi:.3f}] "
+            f"| {f1_m:.3f} [{f1_lo:.3f}, {f1_hi:.3f}] "
+            f"| {j_m:.3f} [{j_lo:.3f}, {j_hi:.3f}] "
+            f"| {s['mrr']:.3f} "
+            f"| ${s['optimizer_usd_mean']:.4f} "
+            f"| ${s['trial_usd_mean']:.4f} "
+            f"| {s['wall_clock_s_mean']:.0f}s |"
         )
-    body = "\n".join(rows) if rows else "  \\multicolumn{6}{c}{no results yet} \\\\"
-    table = (
-        "\\begin{table}[t]\n"
-        "  \\centering\n"
-        "  \\caption{HotpotQA-distractor held-out scores. Mean and bootstrap 95\\% CIs over per-question metrics, "
-        "pooled across seeds. Cost column: optimizer-side / trial-side USD. Wall-clock is mean across seeds.}\n"
-        "  \\label{tab:hotpot_main}\n"
-        "  \\begin{tabular}{lccccrr}\n"
-        "  \\toprule\n"
-        "  Method & EM & Token-F1 & Judge & MRR & Cost (\\$) & Wall \\\\\n"
-        "  \\midrule\n"
-        f"{body}\n"
-        "  \\bottomrule\n"
-        "  \\end{tabular}\n"
-        "\\end{table}\n"
+        if s.get("cost_caveat"):
+            caveats[label] = s["cost_caveat"]
+    header = (
+        "| Method | EM | Token-F1 | LLM Judge | MRR | Optimizer $ | Trial $ | Wall |\n"
+        "|---|---|---|---|---|---|---|---|"
     )
-    out_path.write_text(table, encoding="utf-8")
+    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | |"
+    footnote = ""
+    if caveats:
+        footnote = "\n\n**Cost caveats** (*-marked rows):\n\n" + "\n".join(
+            f"- `{label}` — {note}" for label, note in caveats.items()
+        )
+    text = (
+        "# HotpotQA-distractor held-out scores\n\n"
+        "Mean and 95% bootstrap CIs over per-question metrics, pooled across seeds. "
+        "Cost columns are mean across seeds.\n\n"
+        f"{header}\n{body}\n"
+        f"{footnote}\n"
+    )
+    out_path.write_text(text, encoding="utf-8")
     logger.info("wrote %s", out_path)
-
-
-METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
-
-
-def _ordered_methods(stats: dict[str, dict]) -> list[str]:
-    return [m for m in METHOD_ORDER if m in stats]
 
 
 def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
@@ -246,7 +277,7 @@ def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
     ax.legend(loc="best", frameon=False)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
-    fig.savefig(out_path)
+    fig.savefig(out_path, dpi=150)
     plt.close(fig)
     logger.info("wrote %s", out_path)
 
@@ -271,8 +302,9 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
     if not methods:
         return
 
-    fig, (ax_cost, ax_time) = plt.subplots(1, 2, figsize=(9.5, 3.8))
+    fig, (ax_cost, ax_time) = plt.subplots(1, 2, figsize=(9.5, 4.2))
 
+    caveated: list[str] = []
     for m in methods:
         s = stats[m]
         judge_m, judge_lo, judge_hi = s["judge"]
@@ -288,8 +320,13 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
         cost_err = float(np.std(cost_seeds)) if len(cost_seeds) > 1 else 0.0
         wall_err = float(np.std(wall_seeds)) if len(wall_seeds) > 1 else 0.0
         label = m.replace("_", "-")
-        ax_cost.errorbar(cost_m, judge_m, xerr=cost_err, yerr=score_yerr, fmt="o", capsize=3, label=label)
-        ax_time.errorbar(wall_m, judge_m, xerr=wall_err, yerr=score_yerr, fmt="o", capsize=3, label=label)
+        if s.get("cost_caveat"):
+            label_marked = f"{label}*"
+            caveated.append(label)
+        else:
+            label_marked = label
+        ax_cost.errorbar(cost_m, judge_m, xerr=cost_err, yerr=score_yerr, fmt="o", capsize=3, label=label_marked)
+        ax_time.errorbar(wall_m, judge_m, xerr=wall_err, yerr=score_yerr, fmt="o", capsize=3, label=label_marked)
 
     for ax, xlabel, title in (
         (ax_cost, "Total search cost (USD)", "Score vs. cost"),
@@ -301,8 +338,14 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
         ax.grid(alpha=0.3)
 
     ax_cost.legend(loc="best", frameon=False, fontsize=8)
+    if caveated:
+        fig.text(
+            0.5, 0.02,
+            "* enumeration cost not instrumented — cost-axis value is a lower bound (bench-side re-scoring only)",
+            ha="center", fontsize=7, style="italic",
+        )
     fig.tight_layout()
-    fig.savefig(out_path)
+    fig.savefig(out_path, dpi=150)
     plt.close(fig)
     logger.info("wrote %s", out_path)
 
@@ -348,7 +391,7 @@ def write_trajectory_figure(results: list[MethodResult], out_path: Path) -> None
     ax.legend()
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(out_path)
+    fig.savefig(out_path, dpi=150)
     plt.close(fig)
     logger.info("wrote %s", out_path)
 
@@ -361,7 +404,7 @@ def analyze(results_dir: str | Path, output_dir: str | Path) -> None:
         logger.warning("No results found under %s — nothing to analyze", results_dir)
         return
     stats = aggregate_by_method(results)
-    write_latex_table(stats, output_dir / "Table_1.tex")
-    write_holdout_scores_figure(stats, output_dir / "figure_holdout_scores.pdf")
-    write_efficiency_figure(stats, output_dir / "figure_efficiency.pdf")
-    write_trajectory_figure(results, output_dir / "figure_trajectory.pdf")
+    write_markdown_table(stats, output_dir / "Table_1.md")
+    write_holdout_scores_figure(stats, output_dir / "figure_holdout_scores.png")
+    write_efficiency_figure(stats, output_dir / "figure_efficiency.png")
+    write_trajectory_figure(results, output_dir / "figure_trajectory.png")
