@@ -13,6 +13,21 @@ from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchR
 logger = logging.getLogger("agentic_autorag_bench.run")
 
 
+def _surface_debug_prompts_to_console() -> None:
+    """Bump the framework's console handler so ``--debug-prompts`` reaches the terminal.
+
+    The framework installs the ``agentic_autorag.run`` logger at DEBUG with a
+    file handler at DEBUG and a stream handler at INFO — by design, so
+    routine runs stay quiet but ``run.log`` keeps every prompt/response. The
+    bench's ``--debug-prompts`` flag is opt-in, so when it's on we promote the
+    console handler to DEBUG too so the operator can read the proposer
+    reasoning live without tailing a file.
+    """
+    for handler in logging.getLogger("agentic_autorag.run").handlers:
+        if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+            handler.setLevel(logging.DEBUG)
+
+
 @dataclass
 class AgenticOptimizer:
     """Wraps ``Orchestrator.run()`` so it conforms to the bench Optimizer protocol.
@@ -29,6 +44,7 @@ class AgenticOptimizer:
     output_dir: str
     name: str = "agentic"
     deterministic: bool = False
+    debug_prompts: bool = False
 
     async def search(
         self,
@@ -44,7 +60,10 @@ class AgenticOptimizer:
             self.config_path,
             output_dir_override=self.output_dir,
             seed=seed,
+            debug_prompts=self.debug_prompts,
         )
+        if self.debug_prompts:
+            _surface_debug_prompts_to_console()
         # NB: the framework enables ``litellm.drop_params=True`` so reasoning
         # models that don't accept ``seed`` (e.g. azure/o4-mini) silently
         # ignore it. With ``optimizer_model: azure/o4-mini`` the per-seed

@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-
 from agentic_autorag.config.models import TrialConfig
 from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
@@ -126,13 +125,18 @@ def _build_optimizer(
     project,
     bench: BenchConfig,
     output_dir: Path,
+    debug_prompts: bool = False,
 ):
     if name == "random":
         return RandomSearch(project=project)
     if name == "bayesian":
         return BayesianSearch(project=project, storage_dir=output_dir)
     if name == "agentic":
-        return AgenticOptimizer(config_path=str(bench.project_config_path), output_dir=str(output_dir))
+        return AgenticOptimizer(
+            config_path=str(bench.project_config_path),
+            output_dir=str(output_dir),
+            debug_prompts=debug_prompts,
+        )
     if name in {"autorag_ragas", "autorag_mcq"}:
         variant = "ragas" if name == "autorag_ragas" else "mcq"
         return AutoRAGOptimizer(
@@ -143,13 +147,29 @@ def _build_optimizer(
     raise ValueError(f"Unknown method {name!r}")
 
 
-async def run_matrix(config_path: str | Path) -> None:
+async def run_matrix(
+    config_path: str | Path,
+    *,
+    methods_override: list[str] | None = None,
+    debug_prompts: bool = False,
+) -> None:
     # litellm.drop_params=True so provider-specific params (seed, temperature
     # on gpt-5) are silently dropped instead of erroring. The framework's
     # ``agentic-autorag optimize`` CLI calls this; the bench has its own entry
     # point and must call it explicitly to inherit identical LLM semantics.
     configure_litellm_runtime()
     bench = BenchConfig.load(config_path)
+    if methods_override is not None:
+        unknown = set(methods_override) - ALL_METHODS
+        if unknown:
+            raise ValueError(f"Unknown methods in --methods override: {sorted(unknown)}")
+        missing = set(methods_override) - set(bench.methods)
+        if missing:
+            raise ValueError(
+                f"--methods includes {sorted(missing)} which are not in {config_path}; "
+                "edit the config or pick a subset of its methods"
+            )
+        bench.methods = [m for m in bench.methods if m in set(methods_override)]
 
     benchmark = HotpotQABenchmark(
         output_dir=bench.hotpot_output_dir,
@@ -182,7 +202,13 @@ async def run_matrix(config_path: str | Path) -> None:
                 logger.info("RUNNING %s | %s", method_name, seed_label)
                 logger.info("=" * 60)
 
-                optimizer = _build_optimizer(method_name, project=shared.config, bench=bench, output_dir=method_dir)
+                optimizer = _build_optimizer(
+                    method_name,
+                    project=shared.config,
+                    bench=bench,
+                    output_dir=method_dir,
+                    debug_prompts=debug_prompts,
+                )
                 try:
                     sr = await optimizer.search(evaluator, budget, seed=seed)
                 except Exception:
@@ -214,9 +240,14 @@ async def run_matrix(config_path: str | Path) -> None:
         await shared.cleanup()
 
 
-def run_cli(config_path: str) -> None:
+def run_cli(
+    config_path: str,
+    *,
+    methods: list[str] | None = None,
+    debug_prompts: bool = False,
+) -> None:
     """Sync wrapper for the Typer CLI."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
     run_logger = logging.getLogger("agentic_autorag_bench.run")
     run_logger.setLevel(logging.INFO)
-    asyncio.run(run_matrix(config_path))
+    asyncio.run(run_matrix(config_path, methods_override=methods, debug_prompts=debug_prompts))

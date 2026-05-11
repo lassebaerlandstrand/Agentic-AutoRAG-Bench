@@ -18,11 +18,22 @@ def version() -> None:
 @app.command()
 def run(
     config: str = typer.Option(..., "--config", "-c", help="Path to paper-mode YAML"),
+    methods: list[str] = typer.Option(
+        None,
+        "--methods",
+        "-m",
+        help="Subset of methods to run (must be present in the config; repeat flag for multiple).",
+    ),
+    debug_prompts: bool = typer.Option(
+        False,
+        "--debug-prompts",
+        help="For the agentic method, log every proposer prompt + response to run.log.",
+    ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
     from agentic_autorag_bench.run import run_cli
 
-    run_cli(config)
+    run_cli(config, methods=methods or None, debug_prompts=debug_prompts)
 
 
 @app.command()
