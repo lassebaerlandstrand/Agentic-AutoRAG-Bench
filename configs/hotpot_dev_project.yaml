@@ -22,9 +22,14 @@ meta:
   polish_fraction: 0.0
 
 agent:
-  examiner_model: "azure/gpt-4o-mini"
-  optimizer_model: "azure/gpt-4o-mini"
-  judge_model: "azure/gpt-4o-mini"
+  # All three set to azure/o4-mini for the experimentation phase per the
+  # user's standing directive — keep dev consistent with hotpot_paper_project
+  # so the proposer trajectory we observe here is representative of paper-run
+  # behaviour, not a cheap-model artefact. Swap to a non-OpenAI judge for the
+  # camera-ready run; see hotpot_paper_project.yaml comment.
+  examiner_model: "azure/o4-mini"
+  optimizer_model: "azure/o4-mini"
+  judge_model: "azure/o4-mini"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
   max_history_trials: 10
@@ -78,14 +83,18 @@ parsing:
 
 search_space:
   chunking:
-    # MiniLM-L6-v2 has max_seq_length=256 — keep the range under that so
-    # the optuna sampler doesn't lose trials to embedding-incompatibility
-    # prunes (the paper config includes higher-limit embeddings).
+    # Range upper bound chosen for the broadest embedding here
+    # (BAAI/bge-m3 / bge-large-en-v1.5 / e5-large-v2 all accept ≥512 tokens).
+    # MiniLM-L6-v2 caps at 256 — the framework's per-embedding token-limit
+    # cross-check prunes (chunk_size > model max) trials automatically, so
+    # the optuna sampler doesn't need a hard lower bound to stay valid.
     strategies: ["recursive"]
-    chunk_token_size: { min: 128, max: 256 }
-    chunk_token_overlap: { min: 0, max: 32 }
+    chunk_token_size: { min: 128, max: 512 }
+    chunk_token_overlap: { min: 0, max: 64 }
   embedding_models:
     - "sentence-transformers/all-MiniLM-L6-v2"
+    - "BAAI/bge-large-en-v1.5"
+    - "BAAI/bge-m3"
   index_types:
     - "vector_only"
   top_k: { min: 3, max: 10 }
@@ -98,6 +107,7 @@ search_space:
   llm_models:
     - "azure/gpt-4o-mini"
     - "azure/gpt-5.4-nano"
+    - "azure/o4-mini"
   temperature: { min: 1.0, max: 1.0 }
   reasoning: false
   reasoning_effort: medium
