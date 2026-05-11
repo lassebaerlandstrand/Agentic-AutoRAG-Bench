@@ -12,7 +12,7 @@ from agentic_autorag.config.models import (
     SearchSpace,
 )
 
-from autorag_bench.methods.autorag.native_config import (
+from agentic_autorag_bench.methods.autorag.native_config import (
     FREE_FORM_PROMPT_TEMPLATE,
     MCQ_PROMPT_TEMPLATE,
     RERANKER_MODULE_MAP,

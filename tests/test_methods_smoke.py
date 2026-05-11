@@ -22,9 +22,9 @@ from agentic_autorag.config.models import (
     TrialConfig,
 )
 
-from autorag_bench.methods.bayesian import BayesianSearch
-from autorag_bench.methods.random import RandomSearch
-from autorag_bench.types import Budget, TrialResult
+from agentic_autorag_bench.methods.bayesian import BayesianSearch
+from agentic_autorag_bench.methods.random import RandomSearch
+from agentic_autorag_bench.types import Budget, TrialResult
 
 
 def _tiny_project() -> ProjectConfig:

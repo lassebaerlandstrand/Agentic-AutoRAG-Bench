@@ -18,7 +18,7 @@ by the same held-out HotpotQA QA via Agentic AutoRAG's `benchmark-evaluate`.
 
 ```
 configs/                    paper-mode YAML (search space, budget, seeds, judge)
-autorag_bench/
+agentic_autorag_bench/
   types.py                  Optimizer protocol + shared dataclasses
   space.py                  SearchSpaceSpec ↔ framework SearchSpace
   methods/                  random, bayesian, agentic, autorag
@@ -51,12 +51,12 @@ The bench reads `.env` (symlinked to the framework's own `.env`) for
 # Dev iteration: 1 seed, 3 trials, 50-question exam, 100-question hold-out
 # on the full ~19k-doc hotpot_val_2000 corpus. Smaller search space than the
 # paper run (1 embed, 2 LLMs, vector_only); ~tens of minutes per method.
-uv run autorag-bench run --config configs/hotpot_dev.yaml
-uv run autorag-bench analyze --results-dir results_dev/ --output dev_artifacts/
+uv run agentic-autorag-bench run --config configs/hotpot_dev.yaml
+uv run agentic-autorag-bench analyze --results-dir results_dev/ --output dev_artifacts/
 
 # Paper run: 3 seeds, 10 trials, 2000 questions — hours.
-uv run autorag-bench run --config configs/hotpot_paper.yaml
-uv run autorag-bench analyze --results-dir results/ --output paper_artifacts/
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml
+uv run agentic-autorag-bench analyze --results-dir results/ --output paper_artifacts/
 ```
 
 ## Reproducing the paper
@@ -70,8 +70,8 @@ To re-run from scratch (compute-heavy):
 
 ```bash
 rm -rf results/
-uv run autorag-bench run --config configs/hotpot_paper.yaml
-uv run autorag-bench analyze
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml
+uv run agentic-autorag-bench analyze
 ```
 
 ## AutoRAG baseline — known limitations (paper appendix)
