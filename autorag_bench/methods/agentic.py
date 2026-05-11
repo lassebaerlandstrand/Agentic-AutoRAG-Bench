@@ -52,10 +52,11 @@ class AgenticOptimizer:
         t_start = time.monotonic()
         await orch.run()
 
+        include_graph = orch.config.uses_graph()
         history: list[HistoryEntry] = [
             HistoryEntry(
                 trial_number=record.trial_number,
-                config=record.config.model_dump(mode="json"),
+                config=record.config.to_prompt_dump(include_graph=include_graph),
                 score=float(record.score),
                 metrics={
                     "answer_accuracy": float(record.answer_accuracy),

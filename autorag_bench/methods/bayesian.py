@@ -105,7 +105,7 @@ class BayesianSearch:
             history.append(
                 HistoryEntry(
                     trial_number=trial_num,
-                    config=config.model_dump(mode="json"),
+                    config=config.to_prompt_dump(include_graph=self.project.uses_graph()),
                     score=result.score,
                     metrics=result.metrics,
                     eval_usd=result.eval_usd,
