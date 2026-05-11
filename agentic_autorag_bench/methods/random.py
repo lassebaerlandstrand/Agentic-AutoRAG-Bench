@@ -19,9 +19,11 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 class RandomSearch:
     """Uniformly samples ``TrialConfig`` from the project's ``SearchSpace``.
 
-    Validation rejects skip the trial (with a logged warning) and don't count
-    against ``budget.max_trials`` — sampling is cheap and skipping keeps the
-    effective trial budget honest across baselines.
+    Each iteration of the loop occupies one slot of ``budget.max_trials``.
+    Validation rejects and per-trial evaluation failures still consume their
+    slot (``continue`` skips the score-record but does not re-sample): the
+    budget reflects work attempted, not work that succeeded. ``extras``
+    surfaces ``n_validation_rejects`` so the paper can report the count.
     """
 
     project: ProjectConfig

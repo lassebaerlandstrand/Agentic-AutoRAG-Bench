@@ -45,6 +45,14 @@ class AgenticOptimizer:
             output_dir_override=self.output_dir,
             seed=seed,
         )
+        # NB: the framework enables ``litellm.drop_params=True`` so reasoning
+        # models that don't accept ``seed`` (e.g. azure/o4-mini) silently
+        # ignore it. With ``optimizer_model: azure/o4-mini`` the per-seed
+        # proposer trajectories are driven only by intrinsic LLM nondeterminism,
+        # not by the bench's ``seeds: [1,2,3]`` knob. The paper appendix calls
+        # this out — agentic's cross-seed variance is *not* a controlled-seed
+        # signal for non-seed-accepting models, while random/bayesian variance
+        # is genuinely re-randomised.
         # Honour the bench-side budget. The YAML may carry a different value
         # for developer use; the bench overrides it for the paper run.
         orch.config.meta.max_trials = budget.max_trials
