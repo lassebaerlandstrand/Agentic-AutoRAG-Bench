@@ -16,14 +16,14 @@ import yaml
 
 from agentic_autorag.orchestrator import Orchestrator
 
-from autorag_bench.methods.autorag.corpus_export import export_corpus_to_parquet
-from autorag_bench.methods.autorag.native_config import generate_autorag_config
-from autorag_bench.methods.autorag.qa_mcq import export_mcq_exam_to_parquet
-from autorag_bench.methods.autorag.qa_ragas import export_ragas_qa_via_subprocess
-from autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
-from autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult, TrialResult
+from agentic_autorag_bench.methods.autorag.corpus_export import export_corpus_to_parquet
+from agentic_autorag_bench.methods.autorag.native_config import generate_autorag_config
+from agentic_autorag_bench.methods.autorag.qa_mcq import export_mcq_exam_to_parquet
+from agentic_autorag_bench.methods.autorag.qa_ragas import export_ragas_qa_via_subprocess
+from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
+from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult, TrialResult
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
 QAVariant = Literal["ragas", "mcq"]
 

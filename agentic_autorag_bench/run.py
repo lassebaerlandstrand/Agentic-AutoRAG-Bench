@@ -21,14 +21,14 @@ from agentic_autorag.config.models import TrialConfig
 from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
 
-from autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
-from autorag_bench.methods.agentic import AgenticOptimizer
-from autorag_bench.methods.autorag.driver import AutoRAGOptimizer
-from autorag_bench.methods.bayesian import BayesianSearch
-from autorag_bench.methods.random import RandomSearch
-from autorag_bench.types import Budget, SearchResult, TrialResult
+from agentic_autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
+from agentic_autorag_bench.methods.agentic import AgenticOptimizer
+from agentic_autorag_bench.methods.autorag.driver import AutoRAGOptimizer
+from agentic_autorag_bench.methods.bayesian import BayesianSearch
+from agentic_autorag_bench.methods.random import RandomSearch
+from agentic_autorag_bench.types import Budget, SearchResult, TrialResult
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
 STOCHASTIC_METHODS = {"random", "bayesian", "agentic"}
 DETERMINISTIC_METHODS = {"autorag_ragas", "autorag_mcq"}
@@ -209,6 +209,6 @@ async def run_matrix(config_path: str | Path) -> None:
 def run_cli(config_path: str) -> None:
     """Sync wrapper for the Typer CLI."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
-    run_logger = logging.getLogger("autorag_bench.run")
+    run_logger = logging.getLogger("agentic_autorag_bench.run")
     run_logger.setLevel(logging.INFO)
     asyncio.run(run_matrix(config_path))

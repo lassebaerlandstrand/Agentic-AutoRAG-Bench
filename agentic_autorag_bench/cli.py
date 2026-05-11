@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import typer
 
-app = typer.Typer(name="autorag-bench", help="Agentic AutoRAG benchmark suite")
+app = typer.Typer(name="agentic-autorag-bench", help="Agentic AutoRAG benchmark suite")
 
 
 @app.command()
 def version() -> None:
     """Print the bench suite version."""
-    from autorag_bench import __version__
+    from agentic_autorag_bench import __version__
 
     print(__version__)
 
@@ -20,7 +20,7 @@ def run(
     config: str = typer.Option(..., "--config", "-c", help="Path to paper-mode YAML"),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
-    from autorag_bench.run import run_cli
+    from agentic_autorag_bench.run import run_cli
 
     run_cli(config)
 
@@ -33,7 +33,7 @@ def analyze(
     """Aggregate committed results into paper artifacts (LaTeX table + trajectory figure)."""
     import logging
 
-    from autorag_bench.analyze import analyze as run_analyze
+    from agentic_autorag_bench.analyze import analyze as run_analyze
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
     run_analyze(results_dir, output)

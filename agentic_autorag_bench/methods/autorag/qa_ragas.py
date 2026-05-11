@@ -13,7 +13,7 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
 _BOOTSTRAP_SCRIPT = textwrap.dedent(
     """

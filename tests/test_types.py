@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from autorag_bench.types import Budget, HistoryEntry, SearchResult, TrialResult
+from agentic_autorag_bench.types import Budget, HistoryEntry, SearchResult, TrialResult
 
 
 def test_budget_defaults_unbounded() -> None:

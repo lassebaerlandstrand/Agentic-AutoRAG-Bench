@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
 N_BOOTSTRAP = 1000
 CI_ALPHA = 0.05

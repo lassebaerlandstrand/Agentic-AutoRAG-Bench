@@ -18,7 +18,7 @@ from agentic_autorag.benchmark_eval.runner import run as run_benchmark_evaluate
 from agentic_autorag.benchmarks import prepare as prepare_benchmark
 from agentic_autorag.config.models import TrialConfig
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
 
 @dataclass

@@ -7,7 +7,7 @@ import json
 import numpy as np
 import yaml
 
-from autorag_bench.analyze import (
+from agentic_autorag_bench.analyze import (
     aggregate_by_method,
     bootstrap_ci,
     load_results,

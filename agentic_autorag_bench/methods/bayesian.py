@@ -16,12 +16,12 @@ from pathlib import Path
 
 from agentic_autorag.config.models import ProjectConfig
 
-from autorag_bench.methods._sampler import sample_optuna
-from autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
+from agentic_autorag_bench.methods._sampler import sample_optuna
+from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
-_STUDY_NAME = "autorag_bench_bayesian"
+_STUDY_NAME = "agentic_autorag_bench_bayesian"
 _DB_NAME = "optuna.db"
 _SAMPLER_PICKLE = "optuna_sampler.pkl"
 

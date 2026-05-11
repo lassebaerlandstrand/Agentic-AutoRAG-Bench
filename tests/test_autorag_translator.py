@@ -12,7 +12,7 @@ from agentic_autorag.config.models import (
     SearchSpace,
 )
 
-from autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
+from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
 
 
 def _curated_space() -> SearchSpace:

@@ -8,9 +8,9 @@ from dataclasses import dataclass
 
 from agentic_autorag.orchestrator import Orchestrator
 
-from autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
+from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
 
-logger = logging.getLogger("autorag_bench.run")
+logger = logging.getLogger("agentic_autorag_bench.run")
 
 
 @dataclass
