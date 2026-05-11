@@ -1,0 +1,32 @@
+# Smoke-test matrix config — end-to-end pipeline verification.
+#
+# All 5 methods, 1 seed, 2 trials, 100-question hotpot slice, 5-question exam,
+# 10-question hold-out. Target: ~15-25 min total wall clock. Use to confirm
+# every code path runs before launching the paper config.
+
+project_config: ./hotpot_smoke_project.yaml
+
+methods:
+  - random
+  - bayesian
+  - agentic
+  - autorag_mcq
+  - autorag_ragas
+
+seeds: [1]
+
+budget:
+  max_trials: 2
+
+hotpot:
+  split: validation
+  sample_size: 100
+  prep_seed: 42
+  output_dir: ./benchmark_data/hotpot_val_100
+
+hold_out:
+  limit: 10
+  judge_model: azure/o4-mini
+  concurrency: 5
+
+output_root: ./results_smoke

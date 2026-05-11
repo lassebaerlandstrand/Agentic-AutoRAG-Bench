@@ -36,10 +36,16 @@ hotpot:
 # Held-out scoring config.
 #   - limit=100 for dev iteration (cheap). Remove or set 2000 for the
 #     camera-ready paper run.
-#   - judge_model is locked across all rows to remove a confound.
+#   - judge_model is locked across all rows to remove a confound. Currently
+#     azure/o4-mini for the experimentation phase (Azure AI Foundry's
+#     azure_ai/ route has an ~8% transient-timeout rate even with retries —
+#     fine for triage, bad for a 1500-call paper run). Before the
+#     camera-ready run, swap back to a non-OpenAI-family judge (e.g.
+#     azure_ai/deepseek-v3.2) to eliminate the self-grading bias against the
+#     search-space LLMs.
 hold_out:
   limit: 100
-  judge_model: azure_ai/deepseek-v3.2
+  judge_model: azure/o4-mini
   concurrency: 10
 
 # Per-method per-seed results live under <output_root>/<method>/seed_<n>/.

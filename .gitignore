@@ -40,4 +40,6 @@ benchmark_data/
 # Dev / paper run outputs (results/ keep extracted_sample only, see above)
 results_dev/
 results_dev_bayesian/
+results_smoke/
 dev_artifacts/
+smoke_artifacts/

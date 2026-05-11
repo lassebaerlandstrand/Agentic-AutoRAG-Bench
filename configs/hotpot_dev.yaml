@@ -31,10 +31,9 @@ hotpot:
 
 hold_out:
   limit: 100
-  # Mirrors the paper config so the dev path exercises the Azure AI Foundry
-  # (azure_ai/) route end-to-end. Without this, a credential or pricing
-  # regression on the judge model only shows up at paper-run time.
-  judge_model: azure_ai/deepseek-v3.2
+  # Mirrors the paper config. Currently azure/o4-mini for the experimentation
+  # phase; swap to a non-OpenAI-family judge for the camera-ready run.
+  judge_model: azure/o4-mini
   concurrency: 5
 
 output_root: ./results_dev
