@@ -39,7 +39,7 @@ hotpot:
 #   - judge_model is locked across all rows to remove a confound.
 hold_out:
   limit: 100
-  judge_model: azure/DeepSeek-V3.2
+  judge_model: azure_ai/deepseek-v3.2
   concurrency: 10
 
 # Per-method per-seed results live under <output_root>/<method>/seed_<n>/.

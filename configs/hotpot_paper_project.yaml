@@ -47,8 +47,10 @@ agent:
   # Trial-time judge: pin to a model strictly outside the search space so
   # judge calls don't routinely depend on whichever search-space LLM happens
   # to be selected. DeepSeek-V3.2 is from a different model family than every
-  # search-space generator (all OpenAI-family), eliminating self-grading bias.
-  judge_model: "azure/DeepSeek-V3.2"
+  # search-space generator (all OpenAI-family), eliminating self-grading
+  # bias. Served via Azure AI Foundry (azure_ai/ prefix) so litellm tracks
+  # per-call cost via its catalog entry.
+  judge_model: "azure_ai/deepseek-v3.2"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
   max_history_trials: 10
