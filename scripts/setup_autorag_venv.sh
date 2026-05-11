@@ -28,8 +28,9 @@ VENV_PYTHON="$VENV_DIR/bin/python"
 echo "upgrading pip"
 "$VENV_PIP" install --quiet --upgrade pip
 
-echo "installing AutoRAG"
-"$VENV_PIP" install --quiet "AutoRAG>=0.3,<0.4"
+echo "installing AutoRAG (with [gpu] extras: sentence-transformers, FlagEmbedding,"
+echo "  torch — required by the paper's HF embedders & rerankers)"
+"$VENV_PIP" install --quiet "AutoRAG[gpu]>=0.3,<0.4"
 
 echo "verifying autorag CLI"
 # AutoRAG installs an entry-point ``autorag`` script next to python — ``python
@@ -39,6 +40,15 @@ if ! "$VENV_DIR/bin/autorag" --help >/dev/null 2>&1; then
     echo "Try a different base Python: PYTHON_BIN=python3.11 bash scripts/setup_autorag_venv.sh" >&2
     exit 1
 fi
+
+echo "installing bench's AutoRAG runtime patches (.pth-driven)"
+# ``Chroma.add_embedding`` doesn't chunk, so corpora >5461 docs blow up on
+# Chroma's SQLite batch cap. The patch is in scripts/autorag_patches.py;
+# we drop it into site-packages plus a .pth line so every interpreter
+# invocation (including the ``autorag`` CLI subprocess) picks it up.
+SITE_PACKAGES="$("$VENV_PYTHON" -c "import sysconfig; print(sysconfig.get_paths()['purelib'])")"
+cp "$(dirname "$0")/autorag_patches.py" "$SITE_PACKAGES/bench_autorag_patches.py"
+echo "import bench_autorag_patches" > "$SITE_PACKAGES/bench_autorag_patches.pth"
 
 ABS_PYTHON="$(cd "$(dirname "$VENV_PYTHON")/.." && pwd)/bin/python"
 echo
