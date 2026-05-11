@@ -27,8 +27,8 @@ agentic_autorag_bench/
   analyze.py                bootstrap CIs, paper tables, trajectory figures
 scripts/setup_autorag_venv.sh
 results/                    committed: best_config.yaml + history.jsonl + benchmark_results.json
-paper_artifacts/            committed: Table_1.tex, figure_holdout_scores.pdf,
-                                       figure_efficiency.pdf, figure_trajectory.pdf
+paper_artifacts/            committed: Table_1.md, figure_holdout_scores.png,
+                                       figure_efficiency.png, figure_trajectory.png
 tests/
 ```
 
@@ -37,9 +37,8 @@ tests/
 ```bash
 uv sync --extra dev
 # AutoRAG runs in its own venv (it pins numpy<2, conflicting with our base
-# deps). The script defaults to API-mode; add [gpu] for local HF embedders.
+# deps). The script installs AutoRAG[gpu] + drops a chroma-batching patch.
 bash scripts/setup_autorag_venv.sh
-.autorag-venv/bin/pip install "AutoRAG[gpu]"   # needed for HF embedders / rerankers
 export AUTORAG_PYTHON=$(pwd)/.autorag-venv/bin/python
 ```
 
@@ -63,15 +62,16 @@ uv run agentic-autorag-bench analyze --results-dir results/ --output paper_artif
 ## Reproducing the paper
 
 The published `results/` directory contains every winning config and its
-held-out scoring; `analyze.py` regenerates the LaTeX table and the comparison
-figures from those committed artifacts in seconds, without re-running the
-(~5-day, ~$300) matrix:
+held-out scoring; `analyze.py` regenerates the table and the comparison figures
+from those committed artifacts in seconds, without re-running the (~5-day,
+~$300) matrix:
 
-- `Table_1.tex` — per-method EM / F1 / Judge with bootstrap CIs, cost, wall.
-- `figure_holdout_scores.pdf` — grouped bars of EM / F1 / Judge per method.
-- `figure_efficiency.pdf` — score vs. cost and score vs. wall-clock (one
+- `Table_1.md` — per-method EM / F1 / Judge with bootstrap CIs, cost, wall, as
+  a Markdown pipe-table.
+- `figure_holdout_scores.png` — grouped bars of EM / F1 / Judge per method.
+- `figure_efficiency.png` — score vs. cost and score vs. wall-clock (one
   point per method, 95% bootstrap CI on the score axis).
-- `figure_trajectory.pdf` — best-so-far exam score per trial, mean ± std
+- `figure_trajectory.png` — best-so-far exam score per trial, mean ± std
   across seeds (sequential methods only).
 
 To re-run from scratch (compute-heavy):
@@ -105,6 +105,18 @@ uv run agentic-autorag-bench analyze
   When this happens the matrix runner catches the exception and the AutoRAG
   row is omitted; rerunning against a less restrictive deployment or
   pre-filtering the QA set is the workaround.
+- **Chroma SQLite batch cap**: `Chroma.add_embedding` hands the whole corpus
+  to chroma in one `.add()` call, which exceeds the SQLite backend's 5461-row
+  batch limit on our 19k-doc corpus (`Batch size of N is greater than max
+  batch size of 5461`). `scripts/setup_autorag_venv.sh` drops
+  `scripts/autorag_patches.py` into the autorag venv's site-packages via a
+  `.pth` line so every interpreter invocation chunks the insert. Re-run the
+  setup script if you rebuild the venv.
+- **RAGAS QA bootstrap**: AutoRAG v0.3.x exposes the QA-generation chain at
+  `autorag.data.qa.*` (not `autorag.data.beta.*` as in earlier builds) and
+  uses the `Corpus().sample().make_retrieval_gt_contents().batch_apply()`
+  pipeline. The bench's `qa_ragas.py` routes the bootstrap LLM through Azure
+  with the same `<AZURE_API_BASE>/openai/v1` shim used elsewhere.
 
 ## Framework dependency
 

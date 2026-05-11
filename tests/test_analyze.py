@@ -14,7 +14,7 @@ from agentic_autorag_bench.analyze import (
     load_results,
     write_efficiency_figure,
     write_holdout_scores_figure,
-    write_latex_table,
+    write_markdown_table,
 )
 
 
@@ -77,8 +77,10 @@ def _write_method_dir(root, method: str, seed: int | None, em_scores: list[float
     )
 
 
-def test_per_question_judge_falls_back_to_em_when_judge_none(tmp_path) -> None:
-    """When ``judge`` is None, accuracy = EM>0.5 (framework only runs judge on EM=0)."""
+def test_per_question_judge_returns_nan_when_judge_missing(tmp_path) -> None:
+    """Hold-out eval calls the judge for every row; ``judge=None`` means the call
+    failed (timeout / parse / content filter). Drop those rows from the
+    denominator by emitting NaN rather than falling back to EM."""
     seed_dir = (tmp_path / "agentic") / "seed_1"
     seed_dir.mkdir(parents=True, exist_ok=True)
     (seed_dir / "benchmark_results.json").write_text(
@@ -89,17 +91,29 @@ def test_per_question_judge_falls_back_to_em_when_judge_none(tmp_path) -> None:
                 "f1": 0.5,
                 "mrr": 0.5,
                 "per_question": [
-                    {"em": 1.0, "f1": 1.0, "judge": None},  # EM=1 → correct
-                    {"em": 0.0, "f1": 0.0, "judge": 1},     # EM=0, judge YES → correct
-                    {"em": 0.0, "f1": 0.0, "judge": 0},     # EM=0, judge NO → wrong
-                    {"em": 0.0, "f1": 0.0, "judge": None},  # EM=0, no judge run → wrong
+                    {"em": 1.0, "f1": 1.0, "judge": 1},
+                    {"em": 0.0, "f1": 0.0, "judge": 1},
+                    {"em": 0.0, "f1": 0.0, "judge": 0},
+                    {"em": 0.0, "f1": 0.0, "judge": None},  # judge call failed
                 ],
             }
         )
     )
     results = load_results(tmp_path)
     judge = results[0].per_question_judge
-    assert list(judge) == [1.0, 1.0, 0.0, 0.0]
+    assert judge[0] == 1.0
+    assert judge[1] == 1.0
+    assert judge[2] == 0.0
+    assert np.isnan(judge[3])
+
+
+def test_bootstrap_ci_drops_nan_rows() -> None:
+    """``bootstrap_ci`` should ignore NaN entries (judge-call failures)."""
+    values = np.array([1.0, 1.0, 0.0, np.nan, 1.0])
+    mean, lo, hi = bootstrap_ci(values)
+    # 3/4 of the non-NaN rows are 1.0, so mean ≈ 0.75
+    assert abs(mean - 0.75) < 1e-9
+    assert lo <= mean <= hi
 
 
 def test_load_results_round_trip(tmp_path) -> None:
@@ -122,7 +136,20 @@ def test_aggregate_pools_seeds(tmp_path) -> None:
     assert abs(em_mean - 0.5) < 0.05  # pooled mean across the two seeds
 
 
-def test_write_latex_table_emits_booktabs(tmp_path) -> None:
+def test_write_holdout_scores_figure_skips_when_no_methods(tmp_path) -> None:
+    out_path = tmp_path / "figure_holdout_scores.png"
+    write_holdout_scores_figure({}, out_path)
+    # No methods → no file emitted (matches the table's "no results yet" early-return shape).
+    assert not out_path.exists()
+
+
+def test_write_efficiency_figure_skips_when_no_methods(tmp_path) -> None:
+    out_path = tmp_path / "figure_efficiency.png"
+    write_efficiency_figure({}, out_path)
+    assert not out_path.exists()
+
+
+def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
     stats = {
         "agentic": {
             "n_seeds": 3,
@@ -135,37 +162,22 @@ def test_write_latex_table_emits_booktabs(tmp_path) -> None:
             "trial_usd_mean": 1.50,
         }
     }
-    out_path = tmp_path / "Table_1.tex"
-    write_latex_table(stats, out_path)
+    out_path = tmp_path / "Table_1.md"
+    write_markdown_table(stats, out_path)
     text = out_path.read_text(encoding="utf-8")
-    assert "\\toprule" in text
-    assert "\\bottomrule" in text
-    assert "agentic" in text
-    assert "[0.450, 0.550]" in text  # EM CI
+    assert "| Method |" in text
+    assert "| agentic |" in text
+    assert "[0.450, 0.550]" in text
 
 
-def test_write_latex_table_handles_empty_stats(tmp_path) -> None:
-    out_path = tmp_path / "Table_1.tex"
-    write_latex_table({}, out_path)
-    text = out_path.read_text(encoding="utf-8")
-    assert "no results yet" in text
-
-
-def test_write_holdout_scores_figure_skips_when_no_methods(tmp_path) -> None:
-    out_path = tmp_path / "figure_holdout_scores.pdf"
-    write_holdout_scores_figure({}, out_path)
-    # No methods → no file emitted (matches the table's "no results yet" early-return shape).
-    assert not out_path.exists()
-
-
-def test_write_efficiency_figure_skips_when_no_methods(tmp_path) -> None:
-    out_path = tmp_path / "figure_efficiency.pdf"
-    write_efficiency_figure({}, out_path)
-    assert not out_path.exists()
+def test_write_markdown_table_handles_empty_stats(tmp_path) -> None:
+    out_path = tmp_path / "Table_1.md"
+    write_markdown_table({}, out_path)
+    assert "no results yet" in out_path.read_text(encoding="utf-8")
 
 
 def test_analyze_emits_all_artifacts(tmp_path) -> None:
-    """End-to-end: results tree → table + three figures, all non-empty."""
+    """End-to-end: results tree → tables + three figures, all non-empty."""
     results_dir = tmp_path / "results"
     output_dir = tmp_path / "artifacts"
     _write_method_dir(results_dir, "agentic", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
@@ -176,10 +188,10 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
     analyze(results_dir, output_dir)
 
     for name in (
-        "Table_1.tex",
-        "figure_holdout_scores.pdf",
-        "figure_efficiency.pdf",
-        "figure_trajectory.pdf",
+        "Table_1.md",
+        "figure_holdout_scores.png",
+        "figure_efficiency.png",
+        "figure_trajectory.png",
     ):
         path = output_dir / name
         assert path.exists(), f"missing {name}"

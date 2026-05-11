@@ -100,6 +100,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "agentic-autorag" },
+    { name = "matplotlib" },
     { name = "numpy" },
     { name = "optuna" },
     { name = "pandas" },
@@ -111,7 +112,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "matplotlib" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
@@ -120,7 +120,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "agentic-autorag", editable = "../Agentic-AutoRAG" },
-    { name = "matplotlib", marker = "extra == 'dev'", specifier = ">=3.10" },
+    { name = "matplotlib", specifier = ">=3.10" },
     { name = "numpy" },
     { name = "optuna", specifier = ">=3.6,<5.0" },
     { name = "pandas", specifier = ">=2" },
