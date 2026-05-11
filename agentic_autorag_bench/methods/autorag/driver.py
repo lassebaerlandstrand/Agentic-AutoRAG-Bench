@@ -34,6 +34,31 @@ def _find_extracted_sample(project_dir: Path) -> Path | None:
     return None
 
 
+# Env vars whose literal values must never land in a committed YAML / JSON.
+# When AutoRAG's ``extract_best_config`` expands ``${VAR}`` placeholders we
+# undo the expansion so the artifact is safe to commit. Ordered so longer
+# prefixes are matched first (e.g. AZURE_AI_API_KEY before AZURE_API_KEY).
+_SCRUB_ENV_VARS = (
+    "AZURE_AI_API_KEY",
+    "AZURE_AI_API_BASE",
+    "AZURE_API_KEY",
+    "AZURE_API_BASE",
+    "OPENAI_API_KEY",
+)
+
+
+def _scrub_env_placeholders(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
+    scrubbed = text
+    for var in _SCRUB_ENV_VARS:
+        literal = os.environ.get(var)
+        if literal and literal in scrubbed:
+            scrubbed = scrubbed.replace(literal, "${" + var + "}")
+    if scrubbed != text:
+        path.write_text(scrubbed, encoding="utf-8")
+        logger.info("Scrubbed env-var placeholders in %s", path.name)
+
+
 def _find_latest_trial_dir(project_dir: Path) -> Path | None:
     """AutoRAG writes trial outputs as numbered subdirs under project_dir (0/, 1/, ...).
 
@@ -193,6 +218,13 @@ class AutoRAGOptimizer:
         if not extracted.exists():
             raise RuntimeError(f"AutoRAG produced no extracted_sample.yaml at {extracted}")
 
+        # SECURITY: AutoRAG's ``extract_best_config`` substitutes ``${AZURE_API_KEY}``
+        # (and any other env-var placeholders) with their literal values before
+        # writing the file. This file is part of the committed paper artifact,
+        # so the literal key would leak into git. Scrub it back to the placeholder
+        # form before anything else reads or persists it.
+        _scrub_env_placeholders(extracted)
+
         trial_config = translate_extracted_to_trial_config(extracted, orch.config.search_space)
         violations = orch.config.validate_trial(trial_config)
         if violations:
@@ -221,7 +253,21 @@ class AutoRAGOptimizer:
             deterministic=self.deterministic,
             best_config=trial_dump,
             history=history,
-            optimizer_usd=0.0,  # AutoRAG's internal eval cost lives in extras.subprocess_cost
+            # ``optimizer_usd`` is set to 0 deliberately: AutoRAG's enumerate
+            # subprocess makes many internal LLM calls during pipeline
+            # evaluation (one per (config × QA-row) for each generator module)
+            # but does not surface a token-level cost ledger. AutoRAG only
+            # records ``average_output_token`` per module in summary.csv —
+            # prompt tokens, the dominant share of cost, are not captured.
+            # We therefore *cannot* report a comparable optimizer_usd here
+            # without re-tokenising every prompt, which would conflate this
+            # with the real cost we'd see in production. The ``trial_usd_total``
+            # below reflects only the bench-side re-scoring of the winning
+            # config (apples-to-apples with the other rows' final-trial cost).
+            # Reviewers should treat the cost column as a strict lower bound;
+            # the ``cost_caveat`` flag in ``extras`` is consumed by analyze.py
+            # to surface the disclaimer in Table_1.md and figure_efficiency.png.
+            optimizer_usd=0.0,
             trial_usd_total=rescore.eval_usd,
             wall_clock_s=wall_clock,
             extras={
@@ -229,5 +275,11 @@ class AutoRAGOptimizer:
                 "translation_notes": notes,
                 "extracted_sample_path": str(extracted),
                 "autorag_python": autorag_python,
+                "cost_caveat": (
+                    "AutoRAG's internal enumeration cost is not instrumented; "
+                    "optimizer_usd=0 and trial_usd_total reflects only the "
+                    "bench-side re-scoring of the winning config. The true "
+                    "search cost is higher."
+                ),
             },
         )

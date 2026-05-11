@@ -89,10 +89,18 @@ def _persist_search_result(sr: SearchResult, dest: Path) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     (dest / "search_result.json").write_text(json.dumps(sr.to_dict(), indent=2), encoding="utf-8")
     (dest / "best_config.yaml").write_text(yaml.safe_dump(sr.best_config, sort_keys=False), encoding="utf-8")
-    (dest / "history.jsonl").write_text(
-        "\n".join(json.dumps(h.to_dict()) for h in sr.history) + ("\n" if sr.history else ""),
-        encoding="utf-8",
-    )
+    # Agentic's framework Orchestrator writes a richer ``history.jsonl`` during
+    # ``orch.run()`` — per-question results, judge breakdown, proposer meta,
+    # diagnosis, frontier flags. The bench's reduced HistoryEntry is a strict
+    # subset (trial_number / config / score / metrics / eval_usd), all of which
+    # also exist on the framework's TrialRecord, so analyze.py reads either
+    # equivalently. Don't overwrite the rich version.
+    history_path = dest / "history.jsonl"
+    if sr.method != "agentic" or not history_path.exists():
+        history_path.write_text(
+            "\n".join(json.dumps(h.to_dict()) for h in sr.history) + ("\n" if sr.history else ""),
+            encoding="utf-8",
+        )
     (dest / "optimizer_meta.json").write_text(
         json.dumps(
             {
