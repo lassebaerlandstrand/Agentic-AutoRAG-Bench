@@ -30,7 +30,7 @@ def analyze(
     results_dir: str = typer.Option("results/", "--results-dir", help="Where the matrix run wrote outputs"),
     output: str = typer.Option("paper_artifacts/", "--output", "-o", help="Where to write Table_1.tex + figures"),
 ) -> None:
-    """Aggregate committed results into paper artifacts (LaTeX table + trajectory figure)."""
+    """Aggregate committed results into paper artifacts (LaTeX table + comparison figures)."""
     import logging
 
     from agentic_autorag_bench.analyze import analyze as run_analyze

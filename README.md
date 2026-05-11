@@ -27,7 +27,8 @@ agentic_autorag_bench/
   analyze.py                bootstrap CIs, paper tables, trajectory figures
 scripts/setup_autorag_venv.sh
 results/                    committed: best_config.yaml + history.jsonl + benchmark_results.json
-paper_artifacts/            committed: Table_1.tex, figure_trajectory.pdf
+paper_artifacts/            committed: Table_1.tex, figure_holdout_scores.pdf,
+                                       figure_efficiency.pdf, figure_trajectory.pdf
 tests/
 ```
 
@@ -62,9 +63,16 @@ uv run agentic-autorag-bench analyze --results-dir results/ --output paper_artif
 ## Reproducing the paper
 
 The published `results/` directory contains every winning config and its
-held-out scoring; `analyze.py` regenerates `paper_artifacts/Table_1.tex` and
-`figure_trajectory.pdf` from those committed artifacts in seconds, without
-re-running the (~5-day, ~$300) matrix.
+held-out scoring; `analyze.py` regenerates the LaTeX table and the comparison
+figures from those committed artifacts in seconds, without re-running the
+(~5-day, ~$300) matrix:
+
+- `Table_1.tex` — per-method EM / F1 / Judge with bootstrap CIs, cost, wall.
+- `figure_holdout_scores.pdf` — grouped bars of EM / F1 / Judge per method.
+- `figure_efficiency.pdf` — score vs. cost and score vs. wall-clock (one
+  point per method, 95% bootstrap CI on the score axis).
+- `figure_trajectory.pdf` — best-so-far exam score per trial, mean ± std
+  across seeds (sequential methods only).
 
 To re-run from scratch (compute-heavy):
 

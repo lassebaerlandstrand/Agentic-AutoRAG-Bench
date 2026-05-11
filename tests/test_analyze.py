@@ -9,8 +9,11 @@ import yaml
 
 from agentic_autorag_bench.analyze import (
     aggregate_by_method,
+    analyze,
     bootstrap_ci,
     load_results,
+    write_efficiency_figure,
+    write_holdout_scores_figure,
     write_latex_table,
 )
 
@@ -146,6 +149,41 @@ def test_write_latex_table_handles_empty_stats(tmp_path) -> None:
     write_latex_table({}, out_path)
     text = out_path.read_text(encoding="utf-8")
     assert "no results yet" in text
+
+
+def test_write_holdout_scores_figure_skips_when_no_methods(tmp_path) -> None:
+    out_path = tmp_path / "figure_holdout_scores.pdf"
+    write_holdout_scores_figure({}, out_path)
+    # No methods → no file emitted (matches the table's "no results yet" early-return shape).
+    assert not out_path.exists()
+
+
+def test_write_efficiency_figure_skips_when_no_methods(tmp_path) -> None:
+    out_path = tmp_path / "figure_efficiency.pdf"
+    write_efficiency_figure({}, out_path)
+    assert not out_path.exists()
+
+
+def test_analyze_emits_all_artifacts(tmp_path) -> None:
+    """End-to-end: results tree → table + three figures, all non-empty."""
+    results_dir = tmp_path / "results"
+    output_dir = tmp_path / "artifacts"
+    _write_method_dir(results_dir, "agentic", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
+    _write_method_dir(results_dir, "agentic", 2, [1.0, 1.0, 0.0, 1.0], [True, True, False, True])
+    _write_method_dir(results_dir, "random", 1, [0.0, 0.0, 1.0, 0.0], [False, False, True, False])
+    _write_method_dir(results_dir, "autorag_mcq", None, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
+
+    analyze(results_dir, output_dir)
+
+    for name in (
+        "Table_1.tex",
+        "figure_holdout_scores.pdf",
+        "figure_efficiency.pdf",
+        "figure_trajectory.pdf",
+    ):
+        path = output_dir / name
+        assert path.exists(), f"missing {name}"
+        assert path.stat().st_size > 0, f"empty {name}"
 
 
 def test_yaml_round_trip_unrelated_to_pyyaml_warnings(tmp_path) -> None:
