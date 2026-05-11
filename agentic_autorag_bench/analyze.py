@@ -48,13 +48,25 @@ class MethodResult:
     optimizer_meta: dict
     history: list[dict]
 
+    def _scoring_rows(self) -> list[dict]:
+        """Per-question rows used for bootstrap, with the union-exclusion
+        applied. ``excluded_question_ids`` is populated by the post-matrix
+        union pass — any id in that list is dropped from every method so all
+        rows bootstrap over the same denominator. Falls back to "all rows"
+        when the registry is absent (older results dir)."""
+        excluded = set(self.benchmark.get("excluded_question_ids") or [])
+        return [
+            r for r in self.benchmark.get("per_question", [])
+            if r.get("id") not in excluded
+        ]
+
     @property
     def per_question_em(self) -> np.ndarray:
-        return np.array([float(r.get("em", 0.0)) for r in self.benchmark.get("per_question", [])])
+        return np.array([float(r.get("em", 0.0)) for r in self._scoring_rows()])
 
     @property
     def per_question_f1(self) -> np.ndarray:
-        return np.array([float(r.get("f1", 0.0)) for r in self.benchmark.get("per_question", [])])
+        return np.array([float(r.get("f1", 0.0)) for r in self._scoring_rows()])
 
     @property
     def per_question_judge(self) -> np.ndarray:
@@ -67,7 +79,7 @@ class MethodResult:
         # decided". Drop those rows from the denominator: return NaN so callers
         # using np.nanmean treat them as missing rather than biased.
         out = []
-        for r in self.benchmark.get("per_question", []):
+        for r in self._scoring_rows():
             v = r.get("judge")
             if v == 1:
                 out.append(1.0)

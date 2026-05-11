@@ -20,6 +20,7 @@ from agentic_autorag.config.models import TrialConfig
 from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
 
+from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
 from agentic_autorag_bench.methods.autorag.driver import AutoRAGOptimizer
@@ -238,6 +239,11 @@ async def run_matrix(
                 )
     finally:
         await shared.cleanup()
+
+    # Cross-method content-filter exclusion: drop any question that any
+    # method's best config got rejected on, so all rows score the same
+    # denominator. Runs after every hold-out so the union is complete.
+    apply_union_exclusion(bench.output_root)
 
 
 def run_cli(
