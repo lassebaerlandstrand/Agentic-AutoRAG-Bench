@@ -37,17 +37,18 @@ meta:
   polish_fraction: 0.0
 
 agent:
-  # Examiner composes the MCQ exam; needs reliable structured output across
-  # ~exam_size questions. gpt-4o-mini is cheap and reliable.
-  examiner_model: "azure/gpt-4o-mini"
+  # Examiner composes the open-ended exam; needs reliable structured output
+  # across ~exam_size questions. o4-mini's reasoning produces sharper exam
+  # items than gpt-4o-mini at comparable cost.
+  examiner_model: "azure/o4-mini"
   # Proposer (diagnoser + recommender) — benefits from reasoning. o4-mini is
   # the cheapest reasoning model in our pool.
   optimizer_model: "azure/o4-mini"
-  # Trial-time judge: pin to gpt-4o so judge calls don't routinely depend on
-  # whichever search-space LLM happens to be selected (auto-pick can land on
-  # a flaky model). gpt-4o is strictly stronger than every search-space LLM
-  # here for grading purposes.
-  judge_model: "azure/gpt-4o"
+  # Trial-time judge: pin to a model strictly outside the search space so
+  # judge calls don't routinely depend on whichever search-space LLM happens
+  # to be selected. DeepSeek-V3.2 is from a different model family than every
+  # search-space generator (all OpenAI-family), eliminating self-grading bias.
+  judge_model: "azure/DeepSeek-V3.2"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
   max_history_trials: 10
