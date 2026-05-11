@@ -147,6 +147,9 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
             "wall_clock_s_mean": float(np.mean(wall_clocks)) if wall_clocks else 0.0,
             "optimizer_usd_mean": float(np.mean(optim_usds)) if optim_usds else 0.0,
             "trial_usd_mean": float(np.mean(trial_usds)) if trial_usds else 0.0,
+            "wall_clock_s_list": wall_clocks,
+            "optimizer_usd_list": optim_usds,
+            "trial_usd_list": trial_usds,
         }
     return out
 
@@ -189,6 +192,118 @@ def write_latex_table(stats: dict[str, dict], out_path: Path) -> None:
         "\\end{table}\n"
     )
     out_path.write_text(table, encoding="utf-8")
+    logger.info("wrote %s", out_path)
+
+
+METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
+
+
+def _ordered_methods(stats: dict[str, dict]) -> list[str]:
+    return [m for m in METHOD_ORDER if m in stats]
+
+
+def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
+    """Grouped bars of held-out EM, Token-F1, and LLM-Judge accuracy per method.
+
+    Error bars use the bootstrap 95% CI from ``aggregate_by_method``. This is the
+    primary "which method scores best?" view — the LaTeX table carries the same
+    numbers but the grouping makes cross-method comparison readable at a glance.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    methods = _ordered_methods(stats)
+    if not methods:
+        return
+
+    metrics = [("em", "Exact Match"), ("f1", "Token F1"), ("judge", "LLM Judge")]
+    fig, ax = plt.subplots(figsize=(7.5, 3.8))
+    x = np.arange(len(methods))
+    bar_width = 0.27
+
+    for i, (metric, label) in enumerate(metrics):
+        means = [stats[m][metric][0] for m in methods]
+        # Asymmetric error bars from bootstrap CI.
+        lo_err = [stats[m][metric][0] - stats[m][metric][1] for m in methods]
+        hi_err = [stats[m][metric][2] - stats[m][metric][0] for m in methods]
+        ax.bar(
+            x + (i - 1) * bar_width,
+            means,
+            bar_width,
+            yerr=[lo_err, hi_err],
+            capsize=3,
+            label=label,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([m.replace("_", "-") for m in methods])
+    ax.set_ylabel("Score (held-out)")
+    ax.set_title("Held-out evaluation scores (mean, 95% bootstrap CI)")
+    ax.set_ylim(0, 1)
+    ax.legend(loc="best", frameon=False)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+    logger.info("wrote %s", out_path)
+
+
+def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
+    """Score-vs-cost and score-vs-wallclock scatter (1x2 panel).
+
+    Each method is one point; vertical bars are the held-out Judge CI, horizontal
+    bars are the per-seed std of the corresponding axis (or zero for the
+    deterministic AutoRAG variants, which have a single run).
+
+    This is the headline "value" plot: a method in the upper-left corner of either
+    panel is the best score per dollar / per second.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    methods = _ordered_methods(stats)
+    if not methods:
+        return
+
+    fig, (ax_cost, ax_time) = plt.subplots(1, 2, figsize=(9.5, 3.8))
+
+    for m in methods:
+        s = stats[m]
+        judge_m, judge_lo, judge_hi = s["judge"]
+        score_yerr = [[judge_m - judge_lo], [judge_hi - judge_m]]
+        # Total search cost = optimizer-side + trial-side per seed.
+        cost_seeds = [
+            o + t for o, t in zip(s["optimizer_usd_list"], s["trial_usd_list"], strict=True)
+        ]
+        wall_seeds = s["wall_clock_s_list"]
+        cost_m = float(np.mean(cost_seeds)) if cost_seeds else 0.0
+        wall_m = float(np.mean(wall_seeds)) if wall_seeds else 0.0
+        # Use std as a simple per-seed spread indicator; 0 for n_seeds=1 (autorag).
+        cost_err = float(np.std(cost_seeds)) if len(cost_seeds) > 1 else 0.0
+        wall_err = float(np.std(wall_seeds)) if len(wall_seeds) > 1 else 0.0
+        label = m.replace("_", "-")
+        ax_cost.errorbar(cost_m, judge_m, xerr=cost_err, yerr=score_yerr, fmt="o", capsize=3, label=label)
+        ax_time.errorbar(wall_m, judge_m, xerr=wall_err, yerr=score_yerr, fmt="o", capsize=3, label=label)
+
+    for ax, xlabel, title in (
+        (ax_cost, "Total search cost (USD)", "Score vs. cost"),
+        (ax_time, "Wall-clock (s)", "Score vs. wall-clock"),
+    ):
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("Held-out LLM-Judge accuracy")
+        ax.set_title(title)
+        ax.grid(alpha=0.3)
+
+    ax_cost.legend(loc="best", frameon=False, fontsize=8)
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
     logger.info("wrote %s", out_path)
 
 
@@ -247,4 +362,6 @@ def analyze(results_dir: str | Path, output_dir: str | Path) -> None:
         return
     stats = aggregate_by_method(results)
     write_latex_table(stats, output_dir / "Table_1.tex")
+    write_holdout_scores_figure(stats, output_dir / "figure_holdout_scores.pdf")
+    write_efficiency_figure(stats, output_dir / "figure_efficiency.pdf")
     write_trajectory_figure(results, output_dir / "figure_trajectory.pdf")
