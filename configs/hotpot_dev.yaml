@@ -25,12 +25,12 @@ budget:
 
 hotpot:
   split: validation
-  sample_size: 30
-  prep_seed: 7
-  output_dir: ./benchmark_data/hotpot_val_30_seed7
+  sample_size: 2000
+  prep_seed: 42
+  output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 10
+  limit: 100
   judge_model: azure/gpt-4o-mini
   concurrency: 5
 

@@ -10,10 +10,11 @@
 
 meta:
   project_name: "hotpot-dev"
-  corpus_path: "./benchmark_data/hotpot_val_30_seed7/corpus"
+  corpus_path: "./benchmark_data/hotpot_val_2000/corpus"
   corpus_description: |
-    Tiny dev-mode HotpotQA corpus (30 questions, ~300 Wikipedia paragraphs).
-    Used only to verify the bench plumbing — not for paper results.
+    HotpotQA distractor validation split, pooled 2000-question corpus
+    (~19k Wikipedia paragraph documents). Shared with the paper run; dev
+    differs only in search space size, trial budget, and hold-out size.
   output_dir: "./results_dev/.shared_cache"
   max_trials: 3
   cache_max_gb: 5.0
@@ -30,7 +31,7 @@ agent:
   concurrency: 5
 
 examiner:
-  exam_size: 30
+  exam_size: 50
   pair_overgeneration_factor: 3.0
   probe_selection: true
   composition_batch_size: 4

@@ -48,7 +48,9 @@ The bench reads `.env` (symlinked to the framework's own `.env`) for
 ## Run the matrix
 
 ```bash
-# Dev iteration: 1 seed, 3 trials, 50 questions — finishes in minutes.
+# Dev iteration: 1 seed, 3 trials, 50-question exam, 100-question hold-out
+# on the full ~19k-doc hotpot_val_2000 corpus. Smaller search space than the
+# paper run (1 embed, 2 LLMs, vector_only); ~tens of minutes per method.
 uv run autorag-bench run --config configs/hotpot_dev.yaml
 uv run autorag-bench analyze --results-dir results_dev/ --output dev_artifacts/
 
