@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-
 from agentic_autorag.orchestrator import Orchestrator
 
 from agentic_autorag_bench.methods.autorag.corpus_export import export_corpus_to_parquet
 from agentic_autorag_bench.methods.autorag.native_config import generate_autorag_config
 from agentic_autorag_bench.methods.autorag.qa_mcq import export_mcq_exam_to_parquet
+from agentic_autorag_bench.methods.autorag.qa_prescreen import prescreen_qa_for_content_filter
 from agentic_autorag_bench.methods.autorag.qa_ragas import export_ragas_qa_via_subprocess
 from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
 from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult, TrialResult
@@ -147,6 +147,19 @@ class AutoRAGOptimizer:
         autorag_config_dict, notes = generate_autorag_config(orch.config.search_space, qa_variant=self.qa_variant)
         autorag_config_path = autorag_dir / "autorag_config.yaml"
         autorag_config_path.write_text(yaml.safe_dump(autorag_config_dict, sort_keys=False), encoding="utf-8")
+
+        # Drop rows that Azure's content filter rejects before AutoRAG's
+        # enumerate subprocess sees them — even one rejection aborts the
+        # whole AutoRAG run, so this is the only place we get to intervene.
+        # Probe with the cheapest search-space LLM since Azure's filter
+        # applies at the gateway, not per-deployment.
+        prescreen_model = orch.config.search_space.llm_models[0]
+        dropped = await prescreen_qa_for_content_filter(qa_parquet, model=prescreen_model)
+        if dropped:
+            notes = dict(notes)
+            notes["content_filter_dropped_qids"] = dropped
+            notes["content_filter_prescreen_model"] = prescreen_model
+
         (autorag_dir / "translation_notes.json").write_text(json.dumps(notes, indent=2), encoding="utf-8")
 
         # AutoRAG installs an ``autorag`` console script next to ``python`` in
