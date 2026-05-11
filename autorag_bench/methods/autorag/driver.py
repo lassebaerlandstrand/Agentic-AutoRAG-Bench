@@ -202,10 +202,12 @@ class AutoRAGOptimizer:
         # ``best_config``'s metrics are directly comparable to other rows.
         rescore: TrialResult = await evaluator(trial_config)
 
+        include_graph = orch.config.uses_graph()
+        trial_dump = trial_config.to_prompt_dump(include_graph=include_graph)
         history = [
             HistoryEntry(
                 trial_number=1,
-                config=trial_config.model_dump(mode="json"),
+                config=trial_dump,
                 score=rescore.score,
                 metrics=rescore.metrics,
                 eval_usd=rescore.eval_usd,
@@ -217,7 +219,7 @@ class AutoRAGOptimizer:
             method=self.name,
             seed=None,
             deterministic=self.deterministic,
-            best_config=trial_config.model_dump(mode="json"),
+            best_config=trial_dump,
             history=history,
             optimizer_usd=0.0,  # AutoRAG's internal eval cost lives in extras.subprocess_cost
             trial_usd_total=rescore.eval_usd,
