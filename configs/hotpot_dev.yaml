@@ -14,9 +14,9 @@ methods:
   - random
   - bayesian
   - agentic
-  - autorag_mcq  # requires .autorag-venv with AutoRAG[gpu]; set AUTORAG_PYTHON
-  # autorag_ragas: needs RAGAS bootstrap which calls OpenAI directly (not
-  # Azure-friendly without code changes); deferred for dev.
+  - autorag_mcq    # requires .autorag-venv with AutoRAG[gpu]; set AUTORAG_PYTHON
+  - autorag_ragas  # same venv; bootstrap QA against the project's examiner_model
+                   # via Azure's OpenAI-compat v1 shim (see qa_ragas.py)
 
 seeds: [1]
 
@@ -31,7 +31,10 @@ hotpot:
 
 hold_out:
   limit: 100
-  judge_model: azure/gpt-4o-mini
+  # Mirrors the paper config so the dev path exercises the Azure AI Foundry
+  # (azure_ai/) route end-to-end. Without this, a credential or pricing
+  # regression on the judge model only shows up at paper-run time.
+  judge_model: azure_ai/deepseek-v3.2
   concurrency: 5
 
 output_root: ./results_dev
