@@ -144,3 +144,96 @@ async def test_bayesian_rejects_when_budget_missing(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="max_trials"):
         await optimizer.search(evaluator, Budget(), seed=0)
+
+
+def _multi_embedding_project() -> ProjectConfig:
+    """Search space with heterogeneous embedding token limits.
+
+    Regression coverage for the Optuna ``CategoricalDistribution`` static-domain
+    constraint: a previous implementation filtered the embedding list against
+    the sampled ``chunk_token_size`` and crashed on trial 2 with
+    ``CategoricalDistribution does not support dynamic value space``. Three
+    models with different limits and a chunk range that straddles them is the
+    minimum case that exercises this.
+    """
+    return ProjectConfig(
+        search_space=SearchSpace(
+            chunking=ChunkingSearchSpace(
+                strategies=["recursive"],
+                chunk_token_size=NumericRange(min=128, max=512),
+                chunk_token_overlap=NumericRange(min=0, max=64),
+            ),
+            embedding_models=[
+                "sentence-transformers/all-MiniLM-L6-v2",
+                "BAAI/bge-large-en-v1.5",
+                "BAAI/bge-m3",
+            ],
+            index_types=[IndexType.VECTOR_ONLY],
+            top_k=NumericRange(min=3, max=10),
+            hybrid_alpha=NumericRange(min=0.0, max=1.0),
+            reranker=RerankerSearchSpace(
+                models=["none"],
+                top_n=NumericRange(min=3, max=10),
+            ),
+            query_expansion=["none"],
+            llm_models=["ollama/llama3.2"],
+            temperature=NumericRange(min=0.0, max=1.0),
+        ),
+        embedding_token_limits={
+            "sentence-transformers/all-MiniLM-L6-v2": 256,
+            "BAAI/bge-large-en-v1.5": 512,
+            "BAAI/bge-m3": 8192,
+        },
+    )
+
+
+@pytest.mark.asyncio
+async def test_bayesian_with_mixed_embedding_limits_runs_all_trials(tmp_path: Path) -> None:
+    """All 8 trials must complete — none pruned by the previous dynamic-domain crash."""
+    project = _multi_embedding_project()
+    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    evaluator = _make_evaluator([0.3, 0.4, 0.5, 0.6, 0.7, 0.55, 0.45, 0.35])
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=8), seed=42)
+
+    assert len(sr.history) == 8
+    for entry in sr.history:
+        embedding = entry.config["embedding_model"]
+        chunk_size = entry.config["chunk_token_size"]
+        limit = project.embedding_token_limits[embedding]
+        assert chunk_size <= limit, (
+            f"trial {entry.trial_number}: {embedding} (limit {limit}) got chunk_size={chunk_size}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_random_with_mixed_embedding_limits_respects_per_embedding_chunk_bound() -> None:
+    project = _multi_embedding_project()
+    optimizer = RandomSearch(project=project)
+    evaluator = _make_evaluator([0.5] * 20)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=20), seed=42)
+
+    assert len(sr.history) == 20
+    for entry in sr.history:
+        embedding = entry.config["embedding_model"]
+        chunk_size = entry.config["chunk_token_size"]
+        limit = project.embedding_token_limits[embedding]
+        assert chunk_size <= limit
+
+
+@pytest.mark.asyncio
+async def test_bayesian_with_mixed_embedding_limits_explores_all_embeddings(tmp_path: Path) -> None:
+    """Static embedding categorical → Bayesian's first few trials see every embedding,
+    not just the ones compatible with whatever chunk_token_size happened to land first.
+    """
+    project = _multi_embedding_project()
+    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    evaluator = _make_evaluator([0.5] * 15)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=15), seed=42)
+
+    seen_embeddings = {h.config["embedding_model"] for h in sr.history}
+    assert seen_embeddings == set(project.search_space.embedding_models), (
+        f"Expected all three embeddings, saw {seen_embeddings}"
+    )

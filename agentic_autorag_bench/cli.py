@@ -25,29 +25,52 @@ def run(
         help="Subset of methods to run (must be present in the config; repeat flag for multiple).",
     ),
     debug_prompts: bool = typer.Option(
-        False,
-        "--debug-prompts",
-        help="For the agentic method, log every proposer prompt + response to run.log.",
+        True,
+        "--debug-prompts/--no-debug-prompts",
+        help="For the agentic method, log every proposer prompt + response to run.log. "
+             "Defaults to ON because proposer-side bugs aren't reproducible from per-trial "
+             "JSON alone; pass --no-debug-prompts to silence.",
+    ),
+    clean: bool = typer.Option(
+        True,
+        "--clean/--no-clean",
+        help="Reset the per-method dirs about to be run (and the cross-method "
+             "figures/ dir) so their contents reflect the current run only. "
+             "Method dirs not in this run, .shared_cache/, and any user "
+             "files at output_root are preserved — running -m agentic does "
+             "not touch the random/ or bayesian/ dirs from a previous run. "
+             "Pass --no-clean to resume a partial run within a method.",
     ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
     from agentic_autorag_bench.run import run_cli
 
-    run_cli(config, methods=methods or None, debug_prompts=debug_prompts)
+    run_cli(config, methods=methods or None, debug_prompts=debug_prompts, clean=clean)
 
 
 @app.command()
 def analyze(
-    results_dir: str = typer.Option("results/", "--results-dir", help="Where the matrix run wrote outputs"),
-    output: str = typer.Option("paper_artifacts/", "--output", "-o", help="Where to write Table_1.tex + figures"),
+    results_dir: str = typer.Option("results_paper/", "--results-dir", help="Where the matrix run wrote outputs"),
+    output: str = typer.Option(
+        "",
+        "--output", "-o",
+        help="Where to write the figures/ subtree. Empty (default) means write "
+             "alongside the run data, i.e. <results-dir>/figures/. Pass an "
+             "explicit path to re-render figures into a separate directory.",
+    ),
 ) -> None:
-    """Aggregate committed results into paper artifacts (LaTeX table + comparison figures)."""
+    """Re-render matrix-level figures + Table_1.md from a committed results tree.
+
+    Per-method and per-seed figures are auto-emitted by ``run`` and live under
+    the run's output tree; this command re-renders the matrix-level views
+    (and ``Table_1.md``) without re-running the matrix.
+    """
     import logging
 
     from agentic_autorag_bench.analyze import analyze as run_analyze
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
-    run_analyze(results_dir, output)
+    run_analyze(results_dir, output or results_dir)
 
 
 if __name__ == "__main__":

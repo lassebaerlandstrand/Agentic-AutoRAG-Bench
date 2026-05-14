@@ -83,14 +83,16 @@ parsing:
 
 search_space:
   chunking:
-    # Range upper bound chosen for the broadest embedding here
-    # (BAAI/bge-m3 / bge-large-en-v1.5 / e5-large-v2 all accept ≥512 tokens).
-    # MiniLM-L6-v2 caps at 256 — the framework's per-embedding token-limit
-    # cross-check prunes (chunk_size > model max) trials automatically, so
-    # the optuna sampler doesn't need a hard lower bound to stay valid.
+    # Frozen across all 5 methods: AutoRAG's chunk phase is decoupled from
+    # ``evaluate`` (chunk_overlap is scalar-only in AutoRAG's YAML, no chunk
+    # node exists inside the optimizer, no auto-selection), so giving Random
+    # / Bayesian / Agentic a searchable chunking dimension AutoRAG can't
+    # match would inflate their optimization power unfairly. Size=256 fits
+    # every embedding in the search space (MiniLM caps at 256); overlap=0
+    # avoids cross-chunk information leakage.
     strategies: ["recursive"]
-    chunk_token_size: { min: 128, max: 512 }
-    chunk_token_overlap: { min: 0, max: 64 }
+    chunk_token_size: { min: 256, max: 256 }
+    chunk_token_overlap: { min: 0, max: 0 }
   embedding_models:
     - "sentence-transformers/all-MiniLM-L6-v2"
     - "BAAI/bge-large-en-v1.5"

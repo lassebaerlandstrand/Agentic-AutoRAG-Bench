@@ -15,7 +15,8 @@ __pycache__/
 .vscode/
 .DS_Store
 
-# Run artefacts (caches; final committed paper results live elsewhere)
+# Run artefacts inside the committed paper results/ tree — keep only the
+# small per-method best_config + history + benchmark_results JSONs.
 results/**/.cache/
 results/**/lightrag/
 results/**/run.log
@@ -23,12 +24,12 @@ results/**/optuna.db
 results/**/optuna_sampler.pkl
 
 # AutoRAG project_dir caches (subprocess outputs are big; we keep
-# extracted_sample.yaml + translation_notes.json only)
+# extracted_sample.yaml + translation_notes.json only).
 results/**/autorag_project/data/
 results/**/autorag_project/0/
 results/**/autorag_project/resources/
 
-# Benchmark data is regeneratable via `agentic-autorag benchmark-prepare`
+# Benchmark data is regeneratable via `agentic-autorag benchmark-prepare`.
 benchmark_data/
 
 # Editor state
@@ -41,9 +42,11 @@ logs/
 # Environment
 .env
 
-# Dev / paper run outputs (results/ keep extracted_sample only, see above)
-results_dev/
-results_dev_bayesian/
-results_smoke/
-dev_artifacts/
-smoke_artifacts/
+# Dev / exploratory run outputs: any `results_<variant>/` directory at the
+# repo root (results_dev, results_smoke, results_larger, ...). The single
+# committed `results/` tree above is the only one that ships with the paper;
+# if a specific variant ever needs to ship, override with `!results_<name>/`.
+results_*/
+
+# Exploratory analysis artifacts paired with the results_* runs.
+*_artifacts/

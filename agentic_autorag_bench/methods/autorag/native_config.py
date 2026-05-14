@@ -276,31 +276,27 @@ def generate_autorag_config(
     # LLM for its expansion calls.
     generator_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models]
 
-    # ===== Retrieval nodes =====
     # AutoRAG v0.3 ALWAYS requires all three retrieval node_types when a
     # passage_reranker follows: lexical and semantic emit suffixed columns
     # (``retrieved_contents_lexical`` / ``_semantic``); hybrid is the only
     # node that produces the un-suffixed ``retrieved_contents`` the reranker
-    # consumes (autorag/nodes/passagereranker/run.py line 129 unconditionally
-    # drops these columns). So we always emit all three.
+    # consumes (autorag/nodes/passagereranker/run.py drops the suffixed
+    # columns unconditionally). So we always emit all three.
     #
-    # For "vector_only" in our search space, we still let hybrid_cc enumerate
-    # weight values — the translator reads the winning BM25 weight back and
-    # maps weight=1.0 → hybrid_bm25_vector with α≈0, weight=0.0 → α≈1, etc.
-    # This isn't exactly "vector_only" (BM25 still scored as a candidate) but
-    # is the most faithful mirror of our space under AutoRAG's mandatory
-    # three-node structure.
-    bm25_lo_default = round(1.0 - ss.hybrid_alpha.max, 4)
-    bm25_hi_default = round(1.0 - ss.hybrid_alpha.min, 4)
-    # If our space only has vector_only, set hybrid_cc weight=0 (no BM25).
-    # If only hybrid, sweep the full alpha range.
-    if IndexType.HYBRID_BM25_VECTOR in ss.index_types and IndexType.VECTOR_ONLY in ss.index_types:
-        bm25_lo, bm25_hi = bm25_lo_default, bm25_hi_default
-    elif IndexType.HYBRID_BM25_VECTOR in ss.index_types:
-        bm25_lo, bm25_hi = bm25_lo_default, bm25_hi_default
+    # AutoRAG hybrid_cc's ``weight`` is the *semantic* weight: weight=1.0 →
+    # semantic-only, weight=0.0 → lexical/BM25-only (verified against
+    # autorag/nodes/hybridretrieval/hybrid_cc.py docstring). Our SearchSpace's
+    # ``hybrid_alpha`` uses the same convention via ``HybridAlphaReranker``
+    # (relevance = alpha*vector + (1-alpha)*fts), so the two map 1:1 with no
+    # inversion.
+    semantic_lo = round(float(ss.hybrid_alpha.min), 4)
+    semantic_hi = round(float(ss.hybrid_alpha.max), 4)
+    if IndexType.HYBRID_BM25_VECTOR in ss.index_types:
+        weight_lo, weight_hi = semantic_lo, semantic_hi
     else:
-        # vector_only only — pin BM25 weight to 0 so hybrid_cc is effectively a pass-through.
-        bm25_lo, bm25_hi = 0.0, 0.0
+        # vector_only only — pin hybrid_cc weight=1.0 so the fusion is fully
+        # semantic and acts as a pass-through of the semantic retriever.
+        weight_lo, weight_hi = 1.0, 1.0
 
     retrieve_nodes: list[dict] = [
         {
@@ -330,8 +326,8 @@ def generate_autorag_config(
                     # ``"(a, b)"`` as a tuple (autorag.utils.util:convert_string_to_tuple_in_dict).
                     # PyYAML can't dump Python tuples → we emit the string form
                     # directly so AutoRAG re-tuplifies on load.
-                    "weight_range": f"({bm25_lo}, {bm25_hi})",
-                    "test_weight_size": 21 if bm25_lo != bm25_hi else 1,
+                    "weight_range": f"({weight_lo}, {weight_hi})",
+                    "test_weight_size": 21 if weight_lo != weight_hi else 1,
                 }
             ],
         },
@@ -440,8 +436,8 @@ def generate_autorag_config(
         },
         "reranker_module_map": {m: RERANKER_MODULE_MAP.get(m, "pass_reranker") for m in ss.reranker.models},
         "embedding_model_to_vectordb_name": model_to_name,
-        "hybrid_alpha_convention": "AutoRAG's hybrid_cc.weight_range is BM25's; "
-        "we pass (1-hybrid_alpha_max, 1-hybrid_alpha_min)",
+        "hybrid_alpha_convention": "AutoRAG hybrid_cc.weight is the *semantic* weight "
+        "(weight=1.0 → semantic-only), identical to our hybrid_alpha; passed straight through",
         "llm_provider_translation": "azure/<m> → openai with model=<m>, api_base=$AZURE_API_BASE/openai/v1",
         "azure_env_vars_required": ["AZURE_API_KEY", "AZURE_API_BASE"],
         "azure_api_base_present": bool(os.environ.get("AZURE_API_BASE")),

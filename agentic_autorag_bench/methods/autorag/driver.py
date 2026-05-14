@@ -279,7 +279,7 @@ class AutoRAGOptimizer:
             # config (apples-to-apples with the other rows' final-trial cost).
             # Reviewers should treat the cost column as a strict lower bound;
             # the ``cost_caveat`` flag in ``extras`` is consumed by analyze.py
-            # to surface the disclaimer in Table_1.md and figure_efficiency.png.
+            # to surface the disclaimer in Table_1.md and efficiency.png.
             optimizer_usd=0.0,
             trial_usd_total=rescore.eval_usd,
             wall_clock_s=wall_clock,

@@ -170,17 +170,16 @@ def translate_extracted_to_trial_config(
     lex = nodes.get("lexical_retrieval")
 
     if hybrid:
-        # In v0.3, all three retrieval nodes always run; ``hybrid_retrieval``
+        # In v0.3 all three retrieval nodes always run; ``hybrid_retrieval``
         # produces the un-suffixed retrieval columns the reranker consumes.
-        # The chosen BM25 weight tells us where on the BM25↔vector spectrum
-        # the optimum landed: weight=0 → fully vector → hybrid_alpha=1.0;
-        # weight=1 → fully BM25 → hybrid_alpha=0.0.
+        # AutoRAG's ``weight`` is the SEMANTIC weight (weight=1.0 →
+        # semantic-only, weight=0.0 → BM25-only), identical convention to our
+        # ``hybrid_alpha``. Use directly with no inversion.
         m = _winning_module(hybrid)
         weight = m.get("weight") if "weight" in m else m.get("weight_range")
         chosen_weight = float(_scalar_or_first(weight)) if weight is not None else None
-        # Map the BM25 weight to (index_type, hybrid_alpha):
-        if chosen_weight is None or chosen_weight in (0.0, 0):
-            # Fully vector, treated as vector_only when our space allows it.
+        if chosen_weight is None or chosen_weight >= 1.0:
+            # Fully semantic — collapse to vector_only when the space supports it.
             if IndexType.VECTOR_ONLY in search_space.index_types:
                 fields["index_type"] = IndexType.VECTOR_ONLY
             else:
@@ -188,7 +187,7 @@ def translate_extracted_to_trial_config(
                 fields["hybrid_alpha"] = 1.0
         else:
             fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
-            fields["hybrid_alpha"] = round(max(0.0, min(1.0, 1.0 - chosen_weight)), 4)
+            fields["hybrid_alpha"] = round(max(0.0, min(1.0, chosen_weight)), 4)
         tk = _read_top_k(hybrid, m)
         if tk is not None:
             fields["top_k"] = tk
