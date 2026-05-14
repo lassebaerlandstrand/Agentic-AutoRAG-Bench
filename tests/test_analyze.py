@@ -177,7 +177,7 @@ def test_write_markdown_table_handles_empty_stats(tmp_path) -> None:
 
 
 def test_analyze_emits_all_artifacts(tmp_path) -> None:
-    """End-to-end: results tree → tables + three figures, all non-empty."""
+    """End-to-end: results tree → matrix figures + Table_1.md under figures/."""
     results_dir = tmp_path / "results"
     output_dir = tmp_path / "artifacts"
     _write_method_dir(results_dir, "agentic", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
@@ -187,13 +187,19 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
 
     analyze(results_dir, output_dir)
 
+    figures_dir = output_dir / "figures"
+    # Canonical names emitted by plots.make_matrix_figures plus the legacy
+    # figure_trajectory.png that analyze.analyze keeps writing for compat.
     for name in (
         "Table_1.md",
-        "figure_holdout_scores.png",
-        "figure_efficiency.png",
+        "holdout_metrics.png",
+        "efficiency.png",
+        "score_per_trial.png",
+        "best_so_far.png",
+        "cost_breakdown.png",
         "figure_trajectory.png",
     ):
-        path = output_dir / name
+        path = figures_dir / name
         assert path.exists(), f"missing {name}"
         assert path.stat().st_size > 0, f"empty {name}"
 

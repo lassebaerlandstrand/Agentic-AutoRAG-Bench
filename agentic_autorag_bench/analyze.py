@@ -1,19 +1,24 @@
-"""Aggregate committed results into paper artifacts.
+"""Aggregate committed results into matrix-level figures and Table_1.md.
 
-Reads ``results/<method>/seed_<n>/{benchmark_results.json, optimizer_meta.json,
-history.jsonl}`` for every (method, seed) the matrix produced. Emits:
+Reads ``<results_dir>/<method>/seed_<n>/{benchmark_results.json,
+optimizer_meta.json, history.jsonl}`` for every (method, seed) the matrix
+produced.
 
-- ``Table_1.md``: per-method held-out scores with bootstrap 95% CIs, plus
-  optimizer/trial $ split and wall-clock, as a Markdown pipe-table.
-- ``figure_holdout_scores.png``: grouped bars of EM / F1 / Judge per method.
-- ``figure_efficiency.png``: 1×2 panel of score-vs-cost and score-vs-wallclock.
-- ``figure_trajectory.png``: best-so-far vs trial number for the three
-  sequential methods (mean ± std across seeds). AutoRAG variants are excluded
-  — their trajectory shape is per-node greedy, not per-trial.
+The ``run`` command auto-emits every matrix figure as the matrix runs; this
+module's ``analyze`` entry point is the re-render path — point it at a
+committed ``results_dir`` and it rewrites every figure under
+``<output_dir>/figures/`` without re-running the matrix.
 
-Statistical method: nonparametric bootstrap (1000 boots) on the held-out
-per-question EM/F1/Judge scores, paired across methods that share the same
-test questions. Reported as ``mean [lo, hi]``.
+Statistical method (``bootstrap_ci``, ``aggregate_by_method``): nonparametric
+bootstrap (1000 boots) on the held-out per-question EM/F1/Judge scores,
+paired across methods that share the same test questions. Reported as
+``mean [lo, hi]``.
+
+The figure writers (``write_markdown_table``, ``write_holdout_scores_figure``,
+``write_efficiency_figure``, ``write_trajectory_figure``) are also called by
+``plots.make_matrix_figures`` so the in-run hook and the standalone
+``analyze`` command share one implementation. They take an explicit
+``out_path`` so plots.py can route each one into ``figures/``.
 """
 
 from __future__ import annotations
@@ -90,10 +95,23 @@ class MethodResult:
         return np.array(out)
 
 
+_NON_METHOD_DIRS = {"figures", ".shared_cache"}
+
+
 def load_results(results_dir: Path) -> list[MethodResult]:
     out: list[MethodResult] = []
-    for method_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
-        for seed_dir in sorted(p for p in method_dir.iterdir() if p.is_dir()):
+    method_dirs = sorted(
+        p for p in results_dir.iterdir()
+        if p.is_dir() and p.name not in _NON_METHOD_DIRS
+    )
+    for method_dir in method_dirs:
+        # The per-method ``figures/`` subdir is co-located with seed dirs in
+        # the auto-run layout; exclude it from the seed scan.
+        seed_dirs = sorted(
+            p for p in method_dir.iterdir()
+            if p.is_dir() and p.name not in _NON_METHOD_DIRS
+        )
+        for seed_dir in seed_dirs:
             bench_path = seed_dir / "benchmark_results.json"
             meta_path = seed_dir / "optimizer_meta.json"
             history_path = seed_dir / "history.jsonl"
@@ -409,14 +427,37 @@ def write_trajectory_figure(results: list[MethodResult], out_path: Path) -> None
 
 
 def analyze(results_dir: str | Path, output_dir: str | Path) -> None:
+    """Regenerate matrix-level figures + Table_1.md from a committed results tree.
+
+    Writes everything under ``<output_dir>/figures/`` to match the in-run
+    layout (``run.py`` emits the same files under
+    ``<results_dir>/figures/``). When the user passes
+    ``--output <results_dir>`` (or omits the flag), this is exactly what the
+    run hook produced — but the call still rewrites, so it is the canonical
+    re-render path after edits to the figure code.
+
+    Also writes the legacy single best-so-far trajectory figure
+    ``figure_trajectory.png`` for backward compat with paper drafts that
+    embed it under that name; the new ``best_so_far.png`` (written by
+    ``make_matrix_figures``) is the same plot under the canonical name.
+    """
+    from agentic_autorag_bench.plots import make_matrix_figures
+
     results_dir = Path(results_dir)
     output_dir = Path(output_dir)
+    figures_dir = output_dir / "figures"
+    make_matrix_figures(results_dir, figures_dir=figures_dir)
+    # Best-so-far trajectory is also emitted by make_matrix_figures as
+    # ``best_so_far.png``; keep the legacy name alongside it for any
+    # downstream consumer still referencing it. Skipped when hold-out scoring
+    # is missing for every seed (load_results returns []), since the plot
+    # would be empty.
     results = load_results(results_dir)
-    if not results:
-        logger.warning("No results found under %s — nothing to analyze", results_dir)
-        return
-    stats = aggregate_by_method(results)
-    write_markdown_table(stats, output_dir / "Table_1.md")
-    write_holdout_scores_figure(stats, output_dir / "figure_holdout_scores.png")
-    write_efficiency_figure(stats, output_dir / "figure_efficiency.png")
-    write_trajectory_figure(results, output_dir / "figure_trajectory.png")
+    if results:
+        write_trajectory_figure(results, figures_dir / "figure_trajectory.png")
+    else:
+        logger.info(
+            "analyze: no hold-out results under %s — trajectory + bars only; "
+            "table requires per-question scores",
+            results_dir,
+        )

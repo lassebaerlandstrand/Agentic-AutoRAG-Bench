@@ -90,8 +90,10 @@ def test_translates_v03_semantic_retrieval_with_vectordb_reference(tmp_path) -> 
     assert config.llm_model == "azure/gpt-4o-mini"
 
 
-def test_translates_v03_hybrid_retrieval_inverts_weight(tmp_path) -> None:
-    """v0.3 hybrid_cc.weight on extracted_sample = BM25 weight; we invert to hybrid_alpha."""
+def test_translates_v03_hybrid_retrieval_passes_weight_through_as_alpha(tmp_path) -> None:
+    """AutoRAG's hybrid_cc.weight is the SEMANTIC weight (weight=1.0 → semantic-only),
+    identical convention to our hybrid_alpha: passed through directly with no inversion.
+    """
     extracted = {
         "vectordb": [
             {
@@ -113,8 +115,59 @@ def test_translates_v03_hybrid_retrieval_inverts_weight(tmp_path) -> None:
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
     assert config.index_type == IndexType.HYBRID_BM25_VECTOR
-    assert config.hybrid_alpha == 0.7
+    assert config.hybrid_alpha == 0.3
     assert config.top_k == 8
+
+
+def test_translates_v03_hybrid_weight_one_collapses_to_vector_only_when_allowed(tmp_path) -> None:
+    """weight=1.0 → fully semantic; collapse to vector_only when the search space allows it."""
+    extracted = {
+        "vectordb": [
+            {
+                "name": "embed_0",
+                "embedding_model": [{"type": "huggingface", "model_name": "BAAI/bge-m3"}],
+            },
+        ],
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "hybrid_retrieval",
+                        "modules": [{"module_type": "hybrid_cc", "weight": 1.0, "top_k": 5}],
+                    },
+                ]
+            }
+        ],
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    config = translate_extracted_to_trial_config(path, _curated_space())
+    assert config.index_type == IndexType.VECTOR_ONLY
+
+
+def test_translates_v03_hybrid_weight_zero_pins_alpha_to_bm25_only(tmp_path) -> None:
+    """weight=0.0 → BM25-only → hybrid_alpha=0.0 with HYBRID_BM25_VECTOR index_type."""
+    extracted = {
+        "vectordb": [
+            {
+                "name": "embed_0",
+                "embedding_model": [{"type": "huggingface", "model_name": "BAAI/bge-m3"}],
+            },
+        ],
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "hybrid_retrieval",
+                        "modules": [{"module_type": "hybrid_cc", "weight": 0.0, "top_k": 5}],
+                    },
+                ]
+            }
+        ],
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    config = translate_extracted_to_trial_config(path, _curated_space())
+    assert config.index_type == IndexType.HYBRID_BM25_VECTOR
+    assert config.hybrid_alpha == 0.0
 
 
 def test_translates_v03_reranker_with_explicit_model(tmp_path) -> None:

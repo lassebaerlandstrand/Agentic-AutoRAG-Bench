@@ -1,52 +1,39 @@
-# Bench-suite paper config: the (method × seed) matrix definition.
+# Paper-scale matrix config — eventually generates the EMNLP Table 1.
 #
-# Resolved at runtime by agentic_autorag_bench.run; references a framework-shaped
-# project YAML (paper_project) for the search space, examiner, agent
-# settings, and corpus.
+# Currently dialled DOWN for iteration: single seed, 10 trials, 100-question
+# hold-out. Bump these before the camera-ready run:
+#   seeds: [1, 2, 3]      # so bootstrap CIs narrow enough to distinguish methods
+#   max_trials: 25        # trials/space ratio ≈ 0.03 over 864 discrete configs
+#   hold_out.limit: 500   # tighter CIs on the held-out HotpotQA-gold scoring
+#
+# Run a single method with: -m random  (or any subset present in `methods`).
 
-# Framework project config — search space, examiner, agent, parsing, corpus.
 project_config: ./hotpot_paper_project.yaml
 
-# Methods to run. Each appears as one row in the paper table.
-#   - random / bayesian / agentic: stochastic, run once per seed.
-#   - autorag_ragas / autorag_mcq: deterministic-conditional, run once.
 methods:
-  - agentic
   - random
   - bayesian
-  - autorag_mcq
-  - autorag_ragas
+  - agentic
+  - autorag_mcq    # requires .autorag-venv with AutoRAG[gpu]; set AUTORAG_PYTHON
+  - autorag_ragas  # same venv
 
-# Seeds for stochastic methods. AutoRAG variants ignore seeds.
-seeds: [1, 2, 3]
+seeds: [1]
 
-# Per-seed trial budget for sequential methods. AutoRAG enumerates per-node
-# and ignores ``max_trials`` — its wall-clock + cost is reported separately.
 budget:
-  max_trials: 10
+  max_trials: 5
 
-# HotpotQA preparation. The framework's benchmark-prepare materialises
-# corpus/ + qa.json deterministically given (split, sample_size, prep_seed).
 hotpot:
   split: validation
   sample_size: 2000
   prep_seed: 42
   output_dir: ./benchmark_data/hotpot_val_2000
 
-# Held-out scoring config.
-#   - limit=100 for dev iteration (cheap). Remove or set 2000 for the
-#     camera-ready paper run.
-#   - judge_model is locked across all rows to remove a confound. Currently
-#     azure/o4-mini for the experimentation phase (Azure AI Foundry's
-#     azure_ai/ route has an ~8% transient-timeout rate even with retries —
-#     fine for triage, bad for a 1500-call paper run). Before the
-#     camera-ready run, swap back to a non-OpenAI-family judge (e.g.
-#     azure_ai/deepseek-v3.2) to eliminate the self-grading bias against the
-#     search-space LLMs.
 hold_out:
   limit: 100
+  # Currently azure/o4-mini for the experimentation phase; swap to a
+  # non-OpenAI-family judge for the camera-ready run to break any
+  # in-family bias (proposer + judge sharing model lineage).
   judge_model: azure/o4-mini
-  concurrency: 10
+  concurrency: 5
 
-# Per-method per-seed results live under <output_root>/<method>/seed_<n>/.
-output_root: ./results
+output_root: ./results_paper

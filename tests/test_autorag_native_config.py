@@ -138,8 +138,9 @@ class TestGenerateAutoragConfig:
                 "BAAI/bge-m3",
             }
 
-    def test_hybrid_alpha_inverts_to_bm25_weight(self) -> None:
-        """AutoRAG's hybrid_cc.weight_range is BM25's; ours is the vector's.
+    def test_hybrid_weight_range_passes_alpha_through_as_semantic_weight(self) -> None:
+        """AutoRAG hybrid_cc.weight is the SEMANTIC weight (weight=1.0 → semantic-only),
+        matching our hybrid_alpha convention 1:1 — passed through with no inversion.
 
         AutoRAG's YAML loader interprets the literal string ``"(a, b)"`` as a
         2-tuple (utils.util.convert_string_to_tuple_in_dict). PyYAML can't
@@ -150,8 +151,10 @@ class TestGenerateAutoragConfig:
         hybrid_mod = next(m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_cc")
         assert hybrid_mod["weight_range"] == "(0.0, 1.0)"
 
-    def test_hybrid_alpha_pins_zero_when_only_vector_only_in_search_space(self) -> None:
-        """vector_only-only space → hybrid_cc weight pinned at 0 (no BM25 contribution)."""
+    def test_hybrid_weight_pinned_to_one_when_only_vector_only_in_search_space(self) -> None:
+        """vector_only-only space → hybrid_cc weight pinned at 1.0 (fully semantic, BM25
+        contribution zeroed) so hybrid_retrieval is effectively a pass-through of the
+        semantic retriever."""
         space = _curated_space()
         space.index_types = [IndexType.VECTOR_ONLY]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
@@ -162,7 +165,7 @@ class TestGenerateAutoragConfig:
             for m in n["modules"]
             if m["module_type"] == "hybrid_cc"
         )
-        assert hybrid_mod["weight_range"] == "(0.0, 0.0)"
+        assert hybrid_mod["weight_range"] == "(1.0, 1.0)"
 
     def test_pass_through_reranker_uses_pass_reranker_v03_name(self) -> None:
         """v0.3 renamed pass_passage_reranker → pass_reranker."""

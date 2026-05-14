@@ -1,0 +1,667 @@
+"""Auto-generated benchmark figures.
+
+Called from ``run.py`` at three nesting levels so the user sees plots as soon
+as enough data exists to draw them:
+
+- ``make_seed_figures(seed_dir)`` — after one ``(method, seed)`` run finishes
+  its hold-out scoring. Writes ``<seed_dir>/figures/``.
+- ``make_method_figures(method_dir)`` — after the seed loop for one method
+  closes. Pools all seeds of that method. Writes ``<method_dir>/figures/``.
+- ``make_matrix_figures(output_root)`` — after the full matrix completes
+  (post union-exclusion). Writes ``<output_root>/figures/``.
+
+Every function is idempotent and best-effort: a corrupt history.jsonl in one
+seed will not abort the matrix. The standalone ``analyze`` CLI calls
+``make_matrix_figures(...)`` on a committed results tree to regenerate the
+matrix-level summary without re-running the matrix.
+
+Figure file names are stable across all three levels (``score_per_trial.png``,
+``best_so_far.png``, ``holdout_metrics.png``, ``efficiency.png``,
+``cost_breakdown.png``, ``cost_per_trial.png``) so a reader can navigate
+``results_paper/`` → ``results_paper/<method>/`` → ``results_paper/<method>/<seed>/``
+and recognise the same view zoomed at each level.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from collections.abc import Callable
+from pathlib import Path
+
+import numpy as np
+
+logger = logging.getLogger("agentic_autorag_bench.run")
+
+# Stable color per method so all figures (across all three levels) share one
+# implicit legend.
+METHOD_COLOR = {
+    "agentic": "#1f77b4",
+    "random": "#ff7f0e",
+    "bayesian": "#2ca02c",
+    "autorag_mcq": "#d62728",
+    "autorag_ragas": "#9467bd",
+}
+
+# Stable display order. Mirrors ``analyze.METHOD_ORDER``; the two must agree.
+METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
+
+# Methods whose per-trial trajectory is meaningful. AutoRAG enumerates per-node
+# and re-scores a single winning config — its history.jsonl carries one entry,
+# so line plots over it would be misleading.
+SEQUENTIAL = {"agentic", "random", "bayesian"}
+
+# Directory names that live next to method dirs under ``output_root`` but are
+# not method results. ``_seed_dirs`` and ``make_matrix_figures`` skip these.
+_NON_METHOD_DIRS = {"figures", ".shared_cache"}
+
+
+# ---------------------------------------------------------------- I/O helpers
+
+
+def _entry_score(e: dict) -> float:
+    return float(e.get("score", 0.0))
+
+
+def _entry_eval_usd(e: dict) -> float:
+    """Per-trial evaluation cost across both history schemas.
+
+    The framework writes ``total_llm_cost_usd`` into agentic's
+    ``history.jsonl``; the bench's reduced ``HistoryEntry`` writes
+    ``eval_usd`` for random/bayesian/autorag. Both name the same quantity.
+    """
+    if "eval_usd" in e:
+        return float(e["eval_usd"])
+    return float(e.get("total_llm_cost_usd", 0.0))
+
+
+def _read_history(seed_dir: Path) -> list[dict]:
+    path = seed_dir / "history.jsonl"
+    if not path.exists():
+        return []
+    out: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            out.append(json.loads(line))
+    out.sort(key=lambda e: int(e.get("trial_number", 0)))
+    return out
+
+
+def _read_benchmark(seed_dir: Path) -> dict | None:
+    path = seed_dir / "benchmark_results.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _seed_dirs(method_dir: Path) -> list[Path]:
+    return sorted(
+        p for p in method_dir.iterdir()
+        if p.is_dir() and p.name not in _NON_METHOD_DIRS
+    )
+
+
+def _method_dirs(output_root: Path) -> list[Path]:
+    return sorted(
+        p for p in output_root.iterdir()
+        if p.is_dir() and p.name not in _NON_METHOD_DIRS
+    )
+
+
+def _holdout_judge_mean(benchmark: dict) -> float | None:
+    """Mean LLM-judge accuracy, dropping rows where the judge call failed.
+
+    ``judge: None`` in a per-question row means the judge timed out / failed
+    to parse / hit a content filter — not "judge said incorrect". Drop those
+    rows from the denominator. Returns None if no judge column at all.
+    """
+    excluded = set(benchmark.get("excluded_question_ids") or [])
+    vals: list[float] = []
+    saw_judge = False
+    for r in benchmark.get("per_question", []):
+        if r.get("id") in excluded:
+            continue
+        v = r.get("judge")
+        if v is None:
+            saw_judge = saw_judge or "judge" in r
+            continue
+        saw_judge = True
+        vals.append(1.0 if v == 1 else 0.0)
+    if not saw_judge:
+        return None
+    if not vals:
+        return 0.0
+    return float(np.mean(vals))
+
+
+def _pad_edge(curves: list[np.ndarray]) -> np.ndarray:
+    """Pad ragged curves to the max length using edge replication.
+
+    Correct for best-so-far curves: if seed K stopped at trial T<max, its
+    best-so-far does not regress past trial T, so edge replication keeps the
+    mean honest.
+    """
+    max_len = max(len(c) for c in curves)
+    return np.array([np.pad(c, (0, max_len - len(c)), mode="edge") for c in curves])
+
+
+def _pad_nan(curves: list[np.ndarray]) -> np.ndarray:
+    """Pad ragged curves to the max length using NaN.
+
+    Use for raw per-trial scores. A seed that stopped at trial T should not
+    contribute to mean/std past T — replication would flatten the tail with
+    a synthetic value. ``np.nanmean`` / ``np.nanstd`` handle the pads.
+    """
+    max_len = max(len(c) for c in curves)
+    return np.array(
+        [np.pad(c.astype(float), (0, max_len - len(c)), mode="constant", constant_values=np.nan)
+         for c in curves]
+    )
+
+
+def _import_matplotlib():
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    return plt
+
+
+def _integer_xticks(ax) -> None:
+    """Force integer-only ticks on the x-axis.
+
+    Trial numbers are integers; with few data points matplotlib's default
+    auto-ticker interpolates to decimals (e.g. 1.0, 1.2, 1.4 for two trials)
+    which is meaningless for a trial-index axis.
+    """
+    from matplotlib.ticker import MaxNLocator
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+
+def _safely(name: str, fn: Callable[[], None]) -> None:
+    """Run a figure-writer; log+swallow failures.
+
+    Figures are best-effort: a corrupt seed should not abort the matrix or
+    block downstream analysis. Each call site keeps its own try/except so
+    one bad figure doesn't take the rest down.
+    """
+    try:
+        fn()
+    except Exception:
+        logger.warning("Figure %s failed", name, exc_info=True)
+
+
+# -------------------------------------------------------------------- per-seed
+
+
+def make_seed_figures(seed_dir: Path) -> None:
+    """Render figures for a single ``(method, seed)`` run.
+
+    Writes into ``seed_dir/figures/``. Reads ``history.jsonl`` for the
+    trajectory and ``benchmark_results.json`` for the hold-out reference
+    line (if scoring has completed; absence is non-fatal).
+    """
+    history = _read_history(seed_dir)
+    if not history:
+        return
+
+    figures_dir = seed_dir / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+
+    method = seed_dir.parent.name
+    seed_label = seed_dir.name
+    color = METHOD_COLOR.get(method, "#1f77b4")
+
+    trial_nums = np.array([int(e["trial_number"]) for e in history])
+    scores = np.array([_entry_score(e) for e in history])
+    eval_usds = np.array([_entry_eval_usd(e) for e in history])
+    benchmark = _read_benchmark(seed_dir)
+
+    _safely(
+        f"seed score_per_trial: {seed_dir}",
+        lambda: _seed_score_per_trial(
+            figures_dir / "score_per_trial.png",
+            trial_nums, scores, benchmark, method, seed_label, color,
+        ),
+    )
+    _safely(
+        f"seed cost_per_trial: {seed_dir}",
+        lambda: _seed_cost_per_trial(
+            figures_dir / "cost_per_trial.png",
+            trial_nums, eval_usds, method, seed_label, color,
+        ),
+    )
+
+
+def _seed_score_per_trial(
+    out_path: Path,
+    trial_nums: np.ndarray,
+    scores: np.ndarray,
+    benchmark: dict | None,
+    method: str,
+    seed_label: str,
+    color: str,
+) -> None:
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(6.5, 3.8))
+    ax.plot(trial_nums, scores, "o-", color=color, label="Trial score", alpha=0.9)
+    if len(trial_nums) > 1:
+        best = np.maximum.accumulate(scores)
+        ax.plot(trial_nums, best, "--", color="black", label="Best so far", alpha=0.55)
+    if benchmark is not None:
+        judge = _holdout_judge_mean(benchmark)
+        if judge is not None:
+            ax.axhline(
+                judge, color="firebrick", linestyle=":", alpha=0.7,
+                label=f"Hold-out judge = {judge:.2f}",
+            )
+    ax.set_xlabel("Trial number")
+    ax.set_ylabel("Exam score")
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{method} / {seed_label}: score per trial")
+    ax.grid(alpha=0.3)
+    ax.legend(loc="lower right", frameon=False, fontsize=9)
+    _integer_xticks(ax)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _seed_cost_per_trial(
+    out_path: Path,
+    trial_nums: np.ndarray,
+    eval_usds: np.ndarray,
+    method: str,
+    seed_label: str,
+    color: str,
+) -> None:
+    plt = _import_matplotlib()
+    fig, (ax_per, ax_cum) = plt.subplots(1, 2, figsize=(9.0, 3.4))
+    ax_per.bar(trial_nums, eval_usds, color=color, alpha=0.8)
+    ax_per.set_xlabel("Trial number")
+    ax_per.set_ylabel("Per-trial cost (USD)")
+    ax_per.set_title("Per-trial cost")
+    ax_per.grid(alpha=0.3, axis="y")
+
+    ax_cum.plot(trial_nums, np.cumsum(eval_usds), "o-", color=color)
+    ax_cum.set_xlabel("Trial number")
+    ax_cum.set_ylabel("Cumulative cost (USD)")
+    ax_cum.set_title("Cumulative cost")
+    ax_cum.grid(alpha=0.3)
+
+    _integer_xticks(ax_per)
+    _integer_xticks(ax_cum)
+
+    fig.suptitle(f"{method} / {seed_label}: trial cost", fontsize=11)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+# ------------------------------------------------------------------ per-method
+
+
+def make_method_figures(method_dir: Path) -> None:
+    """Render figures aggregated across seeds for one method.
+
+    Writes into ``method_dir/figures/``. For deterministic methods with one
+    seed, the per-seed and per-method views collapse to the same plot — we
+    still write the method-level files so the layout is consistent.
+    """
+    seed_dirs = _seed_dirs(method_dir)
+    if not seed_dirs:
+        return
+
+    figures_dir = method_dir / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+
+    method = method_dir.name
+    color = METHOD_COLOR.get(method, "#1f77b4")
+
+    seed_runs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]] = []
+    for sd in seed_dirs:
+        hist = _read_history(sd)
+        if not hist:
+            continue
+        trial_nums = np.array([int(e["trial_number"]) for e in hist])
+        scores = np.array([_entry_score(e) for e in hist])
+        best = np.maximum.accumulate(scores)
+        seed_runs.append((sd.name, trial_nums, scores, best))
+
+    if seed_runs:
+        _safely(
+            f"method score_per_trial: {method_dir}",
+            lambda: _method_score_per_trial(
+                figures_dir / "score_per_trial.png", method, color, seed_runs,
+            ),
+        )
+        _safely(
+            f"method best_so_far: {method_dir}",
+            lambda: _method_best_so_far(
+                figures_dir / "best_so_far.png", method, color, seed_runs,
+            ),
+        )
+
+    # Hold-out per seed — independent of history availability (autorag has a
+    # history of length 1 but still has hold-out scoring).
+    seed_metrics: list[tuple[str, dict]] = []
+    for sd in seed_dirs:
+        bm = _read_benchmark(sd)
+        if bm is not None:
+            seed_metrics.append((sd.name, bm))
+    if seed_metrics:
+        _safely(
+            f"method holdout_metrics: {method_dir}",
+            lambda: _method_holdout_metrics(
+                figures_dir / "holdout_metrics.png", method, seed_metrics,
+            ),
+        )
+
+
+def _method_score_per_trial(
+    out_path: Path,
+    method: str,
+    color: str,
+    seed_runs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]],
+) -> None:
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    raw_curves = [scores for _, _, scores, _ in seed_runs]
+    if len(raw_curves) >= 2:
+        padded = _pad_nan(raw_curves)
+        with np.errstate(invalid="ignore"):
+            mean = np.nanmean(padded, axis=0)
+            std = np.nanstd(padded, axis=0)
+        x = np.arange(1, padded.shape[1] + 1)
+        ax.fill_between(
+            x, mean - std, mean + std,
+            alpha=0.15, color=color, label="mean ± std",
+        )
+        ax.plot(x, mean, "-", color=color, alpha=0.9)
+    for name, trial_nums, scores, _ in seed_runs:
+        ax.plot(trial_nums, scores, "o-", alpha=0.6, label=name)
+    ax.set_xlabel("Trial number")
+    ax.set_ylabel("Exam score (per trial)")
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{method}: score per trial")
+    ax.grid(alpha=0.3)
+    ax.legend(loc="lower right", frameon=False, fontsize=8)
+    _integer_xticks(ax)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _method_best_so_far(
+    out_path: Path,
+    method: str,
+    color: str,
+    seed_runs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]],
+) -> None:
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    best_curves = [best for _, _, _, best in seed_runs]
+    if len(best_curves) >= 2:
+        padded = _pad_edge(best_curves)
+        mean = padded.mean(axis=0)
+        std = padded.std(axis=0)
+        x = np.arange(1, padded.shape[1] + 1)
+        ax.fill_between(
+            x, mean - std, mean + std,
+            alpha=0.15, color=color, label="mean ± std",
+        )
+        ax.plot(x, mean, "-", color=color, alpha=0.9)
+    for name, trial_nums, _, best in seed_runs:
+        ax.plot(trial_nums, best, "o-", alpha=0.6, label=name)
+    ax.set_xlabel("Trial number")
+    ax.set_ylabel("Best-so-far exam score")
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{method}: best-so-far trajectory")
+    ax.grid(alpha=0.3)
+    ax.legend(loc="lower right", frameon=False, fontsize=8)
+    _integer_xticks(ax)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _method_holdout_metrics(
+    out_path: Path,
+    method: str,
+    seed_metrics: list[tuple[str, dict]],
+) -> None:
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.0, 3.8))
+    labels = [name for name, _ in seed_metrics]
+    x = np.arange(len(labels))
+    bw = 0.27
+    metric_specs: list[tuple[str, str, Callable[[dict], float]]] = [
+        ("EM", "#1f77b4", lambda b: float(b.get("em", 0.0))),
+        ("F1", "#ff7f0e", lambda b: float(b.get("f1", 0.0))),
+        ("Judge", "#2ca02c", lambda b: _holdout_judge_mean(b) or 0.0),
+    ]
+    for i, (label, mcolor, getter) in enumerate(metric_specs):
+        vals = [getter(bm) for _, bm in seed_metrics]
+        ax.bar(x + (i - 1) * bw, vals, bw, color=mcolor, label=label)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=0)
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Held-out score")
+    ax.set_title(f"{method}: hold-out metrics per seed")
+    ax.legend(frameon=False)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+# -------------------------------------------------------------------- matrix
+
+
+def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -> None:
+    """Render cross-method figures into ``figures_dir`` (default
+    ``output_root/figures/``).
+
+    Idempotent: reads the full tree under ``output_root`` and rewrites every
+    matrix-level figure plus ``Table_1.md`` from scratch. Safe to call at any
+    point — partial matrices render partial figures.
+
+    ``figures_dir`` is the output override. The in-run hook leaves it None so
+    everything stays under ``output_root``; ``analyze.analyze`` passes an
+    explicit override when the user wants a separate paper-artifact directory.
+
+    Delegates the bootstrap-CI stats (``aggregate_by_method``) and the
+    summary writers (``write_markdown_table``, ``write_holdout_scores_figure``,
+    ``write_efficiency_figure``) to ``analyze.py`` to keep one source of
+    truth for the table the paper consumes.
+    """
+    if not output_root.exists():
+        return
+    method_dirs = _method_dirs(output_root)
+    if not method_dirs:
+        return
+
+    # Late import to avoid a plots ↔ analyze import cycle (analyze does not
+    # import plots, but a future caller might add the inverse).
+    from agentic_autorag_bench.analyze import (
+        aggregate_by_method,
+        load_results,
+        write_efficiency_figure,
+        write_holdout_scores_figure,
+        write_markdown_table,
+    )
+
+    if figures_dir is None:
+        figures_dir = output_root / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+
+    # Trajectory plots only need history.jsonl; render them first so a
+    # mid-matrix run with no hold-out scoring yet still gets a useful view.
+    _safely(
+        "matrix score_per_trial.png",
+        lambda: _matrix_score_per_trial(figures_dir / "score_per_trial.png", output_root),
+    )
+    _safely(
+        "matrix best_so_far.png",
+        lambda: _matrix_best_so_far(figures_dir / "best_so_far.png", output_root),
+    )
+
+    # The remaining figures need hold-out scoring. ``load_results`` skips a
+    # seed dir that has no benchmark_results.json (with a warning).
+    results = load_results(output_root)
+    if not results:
+        logger.info(
+            "make_matrix_figures: no hold-out results yet under %s; "
+            "wrote trajectory plots only", output_root,
+        )
+        return
+    stats = aggregate_by_method(results)
+
+    _safely(
+        "matrix Table_1.md",
+        lambda: write_markdown_table(stats, figures_dir / "Table_1.md"),
+    )
+    _safely(
+        "matrix holdout_metrics.png",
+        lambda: write_holdout_scores_figure(stats, figures_dir / "holdout_metrics.png"),
+    )
+    _safely(
+        "matrix efficiency.png",
+        lambda: write_efficiency_figure(stats, figures_dir / "efficiency.png"),
+    )
+    _safely(
+        "matrix cost_breakdown.png",
+        lambda: _matrix_cost_breakdown(figures_dir / "cost_breakdown.png", stats),
+    )
+
+
+def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
+    """Per-trial score across methods (sequential methods only).
+
+    Mean ± std across seeds per method; NaN-padded so an aborted seed does
+    not artificially flatten the mean at the tail. AutoRAG variants are
+    omitted: their per-trial trajectory is a single re-scored config, not a
+    sweep.
+    """
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    has_data = False
+    for method in METHOD_ORDER:
+        if method not in SEQUENTIAL:
+            continue
+        method_dir = output_root / method
+        if not method_dir.is_dir():
+            continue
+        per_seed_scores: list[np.ndarray] = []
+        for sd in _seed_dirs(method_dir):
+            hist = _read_history(sd)
+            if hist:
+                per_seed_scores.append(np.array([_entry_score(e) for e in hist]))
+        if not per_seed_scores:
+            continue
+        color = METHOD_COLOR.get(method)
+        if len(per_seed_scores) >= 2:
+            padded = _pad_nan(per_seed_scores)
+            with np.errstate(invalid="ignore"):
+                mean = np.nanmean(padded, axis=0)
+                std = np.nanstd(padded, axis=0)
+            x = np.arange(1, padded.shape[1] + 1)
+            ax.fill_between(x, mean - std, mean + std, alpha=0.15, color=color)
+            ax.plot(x, mean, "o-", color=color, label=method)
+        else:
+            scores = per_seed_scores[0]
+            ax.plot(np.arange(1, scores.size + 1), scores, "o-", color=color, label=method)
+        has_data = True
+    if not has_data:
+        plt.close(fig)
+        return
+    ax.set_xlabel("Trial number")
+    ax.set_ylabel("Exam score (per trial)")
+    ax.set_ylim(0, 1)
+    ax.set_title("Per-trial exam score across methods (mean ± std across seeds)")
+    ax.grid(alpha=0.3)
+    ax.legend(loc="lower right", frameon=False)
+    _integer_xticks(ax)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _matrix_best_so_far(out_path: Path, output_root: Path) -> None:
+    """Best-so-far trajectory across methods (sequential only).
+
+    Replaces the legacy ``figure_trajectory.png`` produced by ``analyze.py``.
+    Same semantics — kept here so the matrix-level layout is a single
+    coherent ``figures/`` directory.
+    """
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    has_data = False
+    for method in METHOD_ORDER:
+        if method not in SEQUENTIAL:
+            continue
+        method_dir = output_root / method
+        if not method_dir.is_dir():
+            continue
+        per_seed_best: list[np.ndarray] = []
+        for sd in _seed_dirs(method_dir):
+            hist = _read_history(sd)
+            if hist:
+                scores = np.array([_entry_score(e) for e in hist])
+                per_seed_best.append(np.maximum.accumulate(scores))
+        if not per_seed_best:
+            continue
+        color = METHOD_COLOR.get(method)
+        if len(per_seed_best) >= 2:
+            padded = _pad_edge(per_seed_best)
+            mean = padded.mean(axis=0)
+            std = padded.std(axis=0)
+            x = np.arange(1, padded.shape[1] + 1)
+            ax.fill_between(x, mean - std, mean + std, alpha=0.15, color=color)
+            ax.plot(x, mean, "-", color=color, label=method)
+        else:
+            best = per_seed_best[0]
+            ax.plot(np.arange(1, best.size + 1), best, "-", color=color, label=method)
+        has_data = True
+    if not has_data:
+        plt.close(fig)
+        return
+    ax.set_xlabel("Trial number")
+    ax.set_ylabel("Best-so-far exam score")
+    ax.set_ylim(0, 1)
+    ax.set_title("Best-so-far trajectory across methods (mean ± std across seeds)")
+    ax.grid(alpha=0.3)
+    ax.legend(loc="lower right", frameon=False)
+    _integer_xticks(ax)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _matrix_cost_breakdown(out_path: Path, stats: dict[str, dict]) -> None:
+    """Stacked bar: optimizer-side vs trial-side USD per method.
+
+    The point of separating the two is to show whether a method "wins by
+    spending more on the optimizer" (e.g. agentic reasoning) vs. "wins per
+    trial of evaluation". Mean across seeds per stack — see Table_1 for the
+    per-seed spread.
+    """
+    plt = _import_matplotlib()
+    methods = [m for m in METHOD_ORDER if m in stats]
+    if not methods:
+        return
+    optim = np.array([stats[m]["optimizer_usd_mean"] for m in methods])
+    trial = np.array([stats[m]["trial_usd_mean"] for m in methods])
+    fig, ax = plt.subplots(figsize=(7.0, 3.8))
+    x = np.arange(len(methods))
+    ax.bar(x, optim, color="#1f77b4", label="Optimizer-side $")
+    ax.bar(x, trial, bottom=optim, color="#ff7f0e", label="Trial-side $")
+    ax.set_xticks(x)
+    ax.set_xticklabels([m.replace("_", "-") for m in methods])
+    ax.set_ylabel("Mean search cost per seed (USD)")
+    ax.set_title("Search cost by source")
+    ax.legend(loc="best", frameon=False)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)

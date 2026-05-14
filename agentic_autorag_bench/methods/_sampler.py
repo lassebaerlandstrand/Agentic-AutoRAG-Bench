@@ -4,6 +4,15 @@ Both honour the same active-dimension gates the agent's proposer must respect
 (graph fields only render for graph index types, ``hybrid_alpha`` only when
 hybrid, ``reranker_top_n`` only when a reranker is selected). Optuna's TPE
 surrogate therefore observes only relevant dimensions.
+
+Embedding / chunk_token_size ordering: both samplers pick the embedding model
+first (static categorical, full list) and then bound ``chunk_token_size`` by
+that embedding's max-token limit. Optuna's ``CategoricalDistribution`` cannot
+change its value set across trials, so the previous chunk-first / filtered-
+embedding approach broke Bayesian search; the int distribution's bounds may
+vary trial-to-trial without that constraint. The two samplers therefore draw
+from the same joint distribution: every embedding gets an equal share of
+trials, with chunk size uniform inside the embedding's feasible interval.
 """
 
 from __future__ import annotations
@@ -27,15 +36,14 @@ def _midpoint(r: NumericRange) -> float:
     return (r.min + r.max) / 2.0
 
 
-def _filter_compatible_embeddings(
-    embedding_models: list[str],
-    chunk_token_size: int,
+def _chunk_size_upper_bound(
+    embedding_model: str,
     embedding_token_limits: dict[str, int],
-) -> list[str]:
-    return [
-        m for m in embedding_models
-        if embedding_token_limits.get(m) is None or chunk_token_size <= embedding_token_limits[m]
-    ]
+    fallback: int,
+) -> int:
+    """Max chunk_token_size that fits in the embedding's context window."""
+    limit = embedding_token_limits.get(embedding_model)
+    return fallback if limit is None else min(fallback, int(limit))
 
 
 def sample_random(
@@ -48,23 +56,17 @@ def sample_random(
     ss = search_space
 
     chunking_strategy = rng.choice(ss.chunking.strategies)
+
+    embedding_model = rng.choice(list(ss.embedding_models))
+
     cs_lo = int(ss.chunking.chunk_token_size.min)
-    cs_hi = int(ss.chunking.chunk_token_size.max)
+    cs_hi = _chunk_size_upper_bound(embedding_model, embedding_token_limits, int(ss.chunking.chunk_token_size.max))
+    cs_hi = max(cs_lo, cs_hi)
     chunk_token_size = rng.randint(cs_lo, cs_hi)
 
     co_lo = int(ss.chunking.chunk_token_overlap.min)
     co_hi = max(co_lo, min(int(ss.chunking.chunk_token_overlap.max), chunk_token_size - 1))
     chunk_token_overlap = rng.randint(co_lo, co_hi)
-
-    compatible = _filter_compatible_embeddings(ss.embedding_models, chunk_token_size, embedding_token_limits)
-    if not compatible:
-        max_supported = max(embedding_token_limits.values()) if embedding_token_limits else cs_hi
-        chunk_token_size = max(cs_lo, min(chunk_token_size, max_supported))
-        chunk_token_overlap = min(chunk_token_overlap, max(co_lo, chunk_token_size - 1))
-        compatible = _filter_compatible_embeddings(
-            ss.embedding_models, chunk_token_size, embedding_token_limits
-        ) or list(ss.embedding_models)
-    embedding_model = rng.choice(compatible)
 
     index_type = rng.choice(list(ss.index_types))
     top_k = rng.randint(int(ss.top_k.min), int(ss.top_k.max))
@@ -119,25 +121,23 @@ def sample_optuna(
     search_space: SearchSpace,
     embedding_token_limits: dict[str, int] | None = None,
 ) -> TrialConfig:
-    """Define-by-run sample. Raises ``optuna.TrialPruned`` if no embedding fits."""
-    import optuna
-
+    """Define-by-run sample. ``embedding_model`` is a fixed-domain categorical;
+    ``chunk_token_size`` is then bounded by the chosen embedding's token limit.
+    """
     embedding_token_limits = embedding_token_limits or {}
     ss = search_space
 
     chunking_strategy = trial.suggest_categorical("chunking_strategy", ss.chunking.strategies)
+    embedding_model = trial.suggest_categorical("embedding_model", list(ss.embedding_models))
+
     cs_lo = int(ss.chunking.chunk_token_size.min)
-    cs_hi = int(ss.chunking.chunk_token_size.max)
+    cs_hi = _chunk_size_upper_bound(embedding_model, embedding_token_limits, int(ss.chunking.chunk_token_size.max))
+    cs_hi = max(cs_lo, cs_hi)
     chunk_token_size = trial.suggest_int("chunk_token_size", cs_lo, cs_hi)
 
     co_lo = int(ss.chunking.chunk_token_overlap.min)
     co_hi = max(co_lo, min(int(ss.chunking.chunk_token_overlap.max), chunk_token_size - 1))
     chunk_token_overlap = trial.suggest_int("chunk_token_overlap", co_lo, co_hi)
-
-    compatible = _filter_compatible_embeddings(ss.embedding_models, chunk_token_size, embedding_token_limits)
-    if not compatible:
-        raise optuna.TrialPruned(f"No embedding model supports chunk_token_size={chunk_token_size}")
-    embedding_model = trial.suggest_categorical("embedding_model", compatible)
 
     index_type = IndexType(trial.suggest_categorical("index_type", [it.value for it in ss.index_types]))
     top_k = trial.suggest_int("top_k", int(ss.top_k.min), int(ss.top_k.max))

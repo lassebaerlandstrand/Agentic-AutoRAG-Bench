@@ -1,65 +1,41 @@
-# Paper-mode framework project config — curated search space.
+# Paper-scale framework project config.
 #
-# Used by every method in the matrix as the source of truth for:
-#   - search_space (TrialConfig dimensions every method searches over)
-#   - examiner (the MCQ exam — generated once, cached, shared by methods 1/2/3/5)
-#   - agent (proposer + judge LLMs)
-#   - meta (corpus_path, output_dir, max_trials)
-#   - parsing
+# Same shape as hotpot_dev_project.yaml but with the discrete search space
+# expanded ~96x (9 → 864 discrete combinations, plus continuous top_k,
+# hybrid_alpha, reranker_top_n). Every added dimension is AutoRAG v0.3.x-
+# compatible (see methods/autorag/native_config.py): no passage_compressor,
+# passage_filter, passage_augmenter, reasoning toggle, or chunking sweep —
+# AutoRAG's translator drops those, so including them in the proposer space
+# would create an asymmetry random / Bayesian / agentic could exploit but
+# AutoRAG can't match.
 #
-# meta.output_dir is the SHARED cache (parsed corpus, exam.json, ingredient
-# cache). Per-method results live under results/<method>/seed_<n>/ instead.
-#
-# 5 embeddings × 6 LLMs × 3 rerankers — tractable for AutoRAG enumeration,
-# defensible as a paper-table footprint. All LLMs are azure/-prefixed so the
-# bench runs against a single provider tier; this removes cross-provider
-# latency/cost variance as a confound when comparing optimizers.
+# Dev config stays at 3-trial / 9-config minimum for fast smoke runs; this
+# config is what the EMNLP table is generated from.
 
 meta:
-  project_name: "hotpot-paper-curated"
+  project_name: "hotpot-paper"
   corpus_path: "./benchmark_data/hotpot_val_2000/corpus"
   corpus_description: |
-    HotpotQA distractor validation split, pooled 2000-question corpus:
-    Wikipedia paragraph-level documents (2 gold + 8 distractors per question,
-    deduplicated by title). Multi-hop reasoning, mostly 2 hops, bridge and
-    comparison question types.
-  output_dir: "./results/.shared_cache"
-  max_trials: 10
-  cache_max_gb: 5.0
-  # Disable cost-polish for the headline paper comparison so all sequential
-  # methods spend the full 10-trial budget on score search. The framework's
-  # default polish_fraction=0.3 makes agentic spend trials 8-10 on cost
-  # reduction (gated on best_score>=0.5), which would handicap the
-  # score-only comparison against bayesian/random. Polish is studied
-  # separately as an ablation. Keeping ``polish_score_floor`` and
-  # ``polish_score_tolerance`` at framework defaults; they're inert when
-  # polish_fraction=0.
+    HotpotQA distractor validation split, pooled 2000-question corpus
+    (~19k Wikipedia paragraph documents). Shared with the dev run; paper
+    differs only in search space size, trial budget, and hold-out size.
+  output_dir: "./results_paper/.shared_cache"
+  max_trials: 25
+  cache_max_gb: 20.0
   polish_fraction: 0.0
 
 agent:
-  # Examiner composes the open-ended exam; needs reliable structured output
-  # across ~exam_size questions. o4-mini's reasoning produces sharper exam
-  # items than gpt-4o-mini at comparable cost.
   examiner_model: "azure/o4-mini"
-  # Proposer (diagnoser + recommender) — benefits from reasoning. o4-mini is
-  # the cheapest reasoning model in our pool.
   optimizer_model: "azure/o4-mini"
-  # Trial-time judge: currently azure/o4-mini for the experimentation phase.
-  # Smoke matrix on the Azure AI Foundry route (azure_ai/deepseek-v3.2)
-  # showed an ~8% timeout rate even with two-attempt retries — usable but
-  # not paper-quality. Before the camera-ready run, swap back to a non-
-  # OpenAI-family judge (azure_ai/deepseek-v3.2 or similar) so the judge
-  # is structurally independent of the search-space LLMs (all OpenAI-family)
-  # and the self-grading bias is eliminated.
   judge_model: "azure/o4-mini"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
-  max_history_trials: 10
-  concurrency: 10
+  max_history_trials: 25
+  concurrency: 5
 
 examiner:
-  exam_size: 100
-  pair_overgeneration_factor: 5.0
+  exam_size: 80
+  pair_overgeneration_factor: 3.0
   probe_selection: true
   composition_batch_size: 4
   composition_temperature: 1.0
@@ -76,7 +52,7 @@ examiner:
     cross_doc_pair: 0.80
   same_doc_pair_cosine_min: 0.4
   same_doc_pair_cosine_max: 0.85
-  pair_embedding_model: "BAAI/bge-m3"
+  pair_embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
   pair_top_k_per_chunk: 5
   doc_split_word_threshold: 120000
   doc_section_word_size: 500
@@ -105,34 +81,56 @@ parsing:
 
 search_space:
   chunking:
-    strategies: ["recursive", "fixed"]
-    chunk_token_size: { min: 256, max: 512 }
-    chunk_token_overlap: { min: 0, max: 64 }
+    # Frozen across all 5 methods. AutoRAG v0.3's ``chunk`` phase is decoupled
+    # from ``evaluate`` — sweeping chunk_size/overlap there would require
+    # running ``autorag chunk`` per (strategy, size, overlap) tuple (see
+    # native_config.py:27). Until that engineering is in, freezing chunking
+    # keeps the comparison honest. Size=256 fits every embedding's context
+    # window; overlap=0 avoids cross-chunk leakage.
+    strategies: ["recursive"]
+    chunk_token_size: { min: 256, max: 256 }
+    chunk_token_overlap: { min: 0, max: 0 }
   embedding_models:
+    # 6 models, mixed size + family + provenance. Order from "intentionally
+    # weak baseline" to "strong recent release" so the search has signal:
+    # MiniLM is a known floor; bge-large / bge-m3 are widely deployed mid-tier;
+    # e5-large-v2 and mxbai-embed-large-v1 are alternative families (not
+    # BAAI-derivative); arctic-embed-l-v2.0 is a 2025 release. Every entry
+    # is HF-loadable and has a working vectordb mapping in native_config.py.
     - "sentence-transformers/all-MiniLM-L6-v2"
-    - "BAAI/bge-m3"
     - "BAAI/bge-large-en-v1.5"
+    - "BAAI/bge-m3"
     - "intfloat/e5-large-v2"
-    - "Alibaba-NLP/gte-large-en-v1.5"
+    - "mixedbread-ai/mxbai-embed-large-v1"
+    - "Snowflake/snowflake-arctic-embed-l-v2.0"
   index_types:
     - "vector_only"
     - "hybrid_bm25_vector"
   top_k: { min: 3, max: 20 }
   hybrid_alpha: { min: 0.0, max: 1.0 }
   reranker:
+    # 4 options: none + 3 mapped rerankers from native_config.RERANKER_MODULE_MAP.
+    # Excludes Qwen3-Reranker-0.6B for the same reason the framework config
+    # excludes it (architecture mismatch, sentence-transformers loads a random
+    # score head — outputs noise).
     models:
       - "none"
       - "BAAI/bge-reranker-v2-m3"
       - "cross-encoder/ms-marco-MiniLM-L-6-v2"
+      - "mixedbread-ai/mxbai-rerank-base-v2"
     top_n: { min: 3, max: 10 }
   query_expansion: ["none", "hyde", "multi_query"]
   llm_models:
-    - "azure/gpt-4o"
+    # 6 models spanning provider / size / reasoning tier. Azure models reuse
+    # the dev set's deployments; bedrock entries are picked for size diversity
+    # (8B / lite / haiku-4.5). Every provider has a verified _translate_llm
+    # path in native_config.py.
     - "azure/gpt-4o-mini"
-    - "azure/o4-mini"
-    - "azure/gpt-5.1-chat"
-    - "azure/gpt-5.4-mini"
     - "azure/gpt-5.4-nano"
+    - "azure/o4-mini"
+    - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+    - "bedrock/global.amazon.nova-2-lite-v1:0"
+    - "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
   temperature: { min: 1.0, max: 1.0 }
-  reasoning: true
+  reasoning: false
   reasoning_effort: medium
