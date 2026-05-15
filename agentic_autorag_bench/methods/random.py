@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from agentic_autorag.config.models import ProjectConfig
 
+from agentic_autorag_bench.methods._logging import log_trial_banner
 from agentic_autorag_bench.methods._sampler import sample_random
 from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
 
@@ -54,6 +55,8 @@ class RandomSearch:
                 n_validation_rejects += 1
                 continue
 
+            log_trial_banner(logger, trial_num, budget.max_trials, config)
+
             try:
                 result = await evaluator(config)
             except Exception:
@@ -72,6 +75,7 @@ class RandomSearch:
             trial_usd_total += result.eval_usd
             best = max(h.score for h in history)
             logger.info("random trial %d done | score=%.3f | best so far=%.3f", trial_num, result.score, best)
+            logger.info("")
 
         if not history:
             raise RuntimeError("Random search produced no successful trials")

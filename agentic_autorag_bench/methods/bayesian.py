@@ -16,6 +16,7 @@ from pathlib import Path
 
 from agentic_autorag.config.models import ProjectConfig
 
+from agentic_autorag_bench.methods._logging import log_trial_banner
 from agentic_autorag_bench.methods._sampler import sample_optuna
 from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
 
@@ -94,6 +95,8 @@ class BayesianSearch:
                 n_validation_rejects += 1
                 continue
 
+            log_trial_banner(logger, trial_num, budget.max_trials, config)
+
             try:
                 result = await evaluator(config)
             except Exception:
@@ -120,6 +123,7 @@ class BayesianSearch:
 
             best = max(h.score for h in history)
             logger.info("bayesian trial %d done | score=%.3f | best so far=%.3f", trial_num, result.score, best)
+            logger.info("")
 
         if not history:
             raise RuntimeError("Bayesian search produced no successful trials")
