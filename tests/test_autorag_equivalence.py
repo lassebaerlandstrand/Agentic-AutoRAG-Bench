@@ -283,3 +283,99 @@ def test_flag_embedding_reranker_vs_framework_crossencoder(tmp_path) -> None:
         "Either switch native_config.RERANKER_MODULE_MAP['BAAI/bge-reranker-v2-m3'] to "
         "'sentence_transformer_reranker' or document the divergence."
     )
+
+
+# AutoRAG-side bedrock_converse probe. Issues a single non-streaming chat
+# completion via ``BedrockConverse.complete`` (the same path AutoRAG's
+# llama_index_llm node walks). Writes a JSON payload with the response text.
+_AUTORAG_BEDROCK_CONVERSE_PROBE = textwrap.dedent(
+    """
+    import json, sys
+    from llama_index.llms.bedrock_converse import BedrockConverse
+
+    payload = json.loads(sys.stdin.read())
+    llm = BedrockConverse(
+        model=payload["model"],
+        region_name=payload["region"],
+        temperature=0.0,
+        max_tokens=64,
+    )
+    resp = llm.complete(payload["prompt"])
+    with open(sys.argv[1], "w") as f:
+        json.dump({"text": str(resp).strip()}, f)
+    """
+).strip()
+
+
+# Cheapest bedrock entry in the paper search space — minimises live-API spend
+# for the smoke. The model selection mirrors the production llm_models list
+# so we exercise the same boto3 client_creation path the bench actually uses.
+SMOKE_BEDROCK_MODEL = "us.meta.llama3-1-8b-instruct-v1:0"
+BEDROCK_PROBE_PROMPT = (
+    "Reply with exactly one word and nothing else: the capital of France."
+)
+
+
+def _aws_creds_present() -> bool:
+    return (
+        bool(os.environ.get("AWS_ACCESS_KEY_ID"))
+        and bool(os.environ.get("AWS_SECRET_ACCESS_KEY"))
+        and bool(os.environ.get("AWS_REGION_NAME"))
+    )
+
+
+@pytest.mark.skipif(_autorag_python() is None, reason="AUTORAG_PYTHON not set")
+@pytest.mark.skipif(not _aws_creds_present(), reason="AWS bedrock creds not set in env")
+def test_bedrock_converse_vs_litellm_bedrock_smoke(tmp_path) -> None:
+    """End-to-end smoke: same prompt + model on AutoRAG's ``BedrockConverse``
+    (the modern path patched into ``autorag.generator_models`` — see
+    scripts/autorag_patches.py) and the framework's litellm ``bedrock/*``
+    route must both return non-empty text and broadly agree.
+
+    The two stacks ultimately call the same AWS Bedrock Converse endpoint
+    with the same model id, so identical outputs at T=0 are the natural
+    expectation. We assert weakly (non-empty + 1-token overlap) so harmless
+    formatting jitter (trailing punctuation, "Paris." vs "Paris") doesn't
+    flap the test — but a hard *divergence* (one side returns gibberish or
+    refuses) still fails. Burns one short Bedrock call per side; gated on
+    AWS env creds so dev machines without bedrock access skip cleanly.
+    """
+    region = os.environ["AWS_REGION_NAME"]
+
+    autorag = _run_autorag_probe(
+        _AUTORAG_BEDROCK_CONVERSE_PROBE,
+        {"model": SMOKE_BEDROCK_MODEL, "region": region, "prompt": BEDROCK_PROBE_PROMPT},
+        tmp_path,
+    )
+    autorag_text = autorag["text"]
+    assert autorag_text, "AutoRAG BedrockConverse returned empty text"
+
+    # Framework side: same call via litellm.completion. Sync API to keep the
+    # test simple — the bench's async wrapper is the same code path under the
+    # hood, just awaited.
+    import litellm
+
+    resp = litellm.completion(
+        model=f"bedrock/{SMOKE_BEDROCK_MODEL}",
+        messages=[{"role": "user", "content": BEDROCK_PROBE_PROMPT}],
+        temperature=0.0,
+        max_tokens=64,
+    )
+    bench_text = resp.choices[0].message.content.strip()
+    assert bench_text, "litellm bedrock returned empty text"
+
+    # Weak agreement: at least one tokenised word in common after normalisation.
+    # The prompt asks for a one-word answer, so the intersection should contain
+    # at least "paris" (or the model's chosen city). A divergence like one side
+    # refusing ("I cannot answer") would have zero intersection with a city
+    # name — that's the failure mode this guards against.
+    autorag_words = {w.strip(".,!?\"'").lower() for w in autorag_text.split()}
+    bench_words = {w.strip(".,!?\"'").lower() for w in bench_text.split()}
+    overlap = autorag_words & bench_words
+    assert overlap, (
+        f"BedrockConverse vs litellm produced disjoint answers: "
+        f"autorag={autorag_text!r} bench={bench_text!r}. "
+        f"Either the model_id is being mis-translated on one side, or one "
+        f"stack is silently refusing — investigate before trusting AutoRAG "
+        f"bedrock rows in the paper."
+    )

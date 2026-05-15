@@ -213,6 +213,70 @@ class TestGenerateAutoragConfig:
         assert mod["api_key"] == "${AZURE_API_KEY}"
         assert "azure/<m> → openai" in notes["llm_provider_translation"]
 
+    def test_bedrock_llm_translates_to_bedrock_converse_with_region(self) -> None:
+        """Bedrock models route through ``bedrock_converse`` (a patched-in provider).
+
+        Reason: AutoRAG 0.3 bundles ``llama-index-llms-bedrock`` (deprecated),
+        whose ``Bedrock`` class hard-restricts ``model`` to a pre-2024 registry
+        (no Llama 3.1, Nova 2, Claude Haiku 4.5). ``scripts/autorag_patches.py``
+        registers ``BedrockConverse`` under the new provider name. The region
+        must be passed explicitly because boto3 doesn't read ``AWS_REGION_NAME``
+        (it reads AWS_REGION / AWS_DEFAULT_REGION).
+        """
+        space = _curated_space()
+        space.llm_models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0"]
+        config, notes = generate_autorag_config(space, qa_variant="mcq")
+        mod = _find_node(config, "generator")["modules"][0]
+        assert mod["llm"] == "bedrock_converse"
+        assert mod["model"] == ["us.meta.llama3-1-8b-instruct-v1:0"]
+        assert mod["region_name"] == "${AWS_REGION_NAME}"
+        # No Azure-style keys leak onto bedrock modules.
+        assert "api_base" not in mod and "api_key" not in mod
+        assert notes["bedrock_in_search_space"] is True
+        assert "AWS_REGION_NAME" in notes["bedrock_env_vars_required"]
+        assert "bedrock_converse" in notes["llm_provider_translation"]
+
+    def test_bedrock_query_expansion_threads_region_when_first_llm_is_bedrock(self) -> None:
+        """HyDE / multi_query borrow auth from generator_modules[0]. If that's
+        bedrock_converse, the QE block must carry ``region_name`` so the
+        expansion LLM has a working endpoint."""
+        space = _curated_space()
+        space.llm_models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        qe_node = _find_node(config, "query_expansion")
+        hyde = next(m for m in qe_node["modules"] if m["module_type"] == "hyde")
+        assert hyde["llm"] == "bedrock_converse"
+        assert hyde["region_name"] == "${AWS_REGION_NAME}"
+        assert "api_base" not in hyde and "api_key" not in hyde
+
+    def test_bedrock_not_in_search_space_omits_bedrock_notes(self) -> None:
+        """When no bedrock entries exist, the notes shouldn't claim AWS env vars are required."""
+        _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        assert notes["bedrock_in_search_space"] is False
+        assert notes["bedrock_env_vars_required"] == []
+
+    def test_embedding_batch_tuned_for_gpu(self) -> None:
+        """Embedding batch should be GPU-tuned (>= 128 per HF perf docs). The
+        previous value (64) underutilised the 4080; bumped to 256 once the
+        free-after-ingest patch keeps only one embedder resident at a time."""
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        for entry in config["vectordb"]:
+            assert entry["embedding_batch"] >= 128, (
+                f"vectordb entry {entry['name']} has embedding_batch="
+                f"{entry['embedding_batch']}; raise to ≥128 to use GPU bandwidth"
+            )
+
+    def test_huggingface_embeddings_use_fp16(self) -> None:
+        """HF embedders should load in fp16. fp32→fp16 cosine drift is ~1e-6
+        per a smoke check (well below the 0.999 threshold in
+        test_huggingface_embedding_equivalence_minilm), and we halve VRAM."""
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        for entry in config["vectordb"]:
+            spec = entry["embedding_model"][0]
+            assert spec["model_kwargs"]["torch_dtype"] == "float16", (
+                f"{entry['name']} missing fp16 model_kwargs"
+            )
+
     def test_translation_notes_record_excluded_dimensions(self) -> None:
         _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
         excluded = " ".join(notes["excluded_dimensions"])

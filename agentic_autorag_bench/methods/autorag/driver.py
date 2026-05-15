@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -75,12 +76,19 @@ def resolve_autorag_python(explicit: str | None = None) -> str:
 # When AutoRAG's ``extract_best_config`` expands ``${VAR}`` placeholders we
 # undo the expansion so the artifact is safe to commit. Ordered so longer
 # prefixes are matched first (e.g. AZURE_AI_API_KEY before AZURE_API_KEY).
+# AWS_REGION_NAME is included because native_config.py embeds it as
+# ``${AWS_REGION_NAME}`` for the bedrock_converse modules; the literal region
+# isn't a secret but we keep the placeholder form for environment portability.
 _SCRUB_ENV_VARS = (
     "AZURE_AI_API_KEY",
     "AZURE_AI_API_BASE",
     "AZURE_API_KEY",
     "AZURE_API_BASE",
     "OPENAI_API_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
+    "AWS_REGION_NAME",
 )
 
 
@@ -110,6 +118,60 @@ def _find_latest_trial_dir(project_dir: Path) -> Path | None:
     if not candidates:
         return None
     return max(candidates, key=lambda x: x[0])[1]
+
+
+def _compute_resources_cache_key(corpus_parquet: Path, embedding_models: list[str]) -> str:
+    """Stable hash over (corpus content, embedder set) for the AutoRAG cache.
+
+    Both inputs determine what lives under ``resources/``: corpus content is
+    embedded into Chroma + BM25 indexes; embedder names + ordering decide
+    which Chroma collection (``embed_N``) holds which model's vectors. Adding
+    or removing an embedder shifts collection indices and invalidates the
+    whole cache, so we hash on both axes. Other axes that *don't* affect the
+    on-disk artifacts (LLM choice, reranker, top_k) are excluded.
+    """
+    h = hashlib.sha256()
+    with open(corpus_parquet, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 16), b""):
+            h.update(chunk)
+    h.update(b"\0embedders\0")
+    for m in embedding_models:
+        h.update(m.encode("utf-8"))
+        h.update(b"\0")
+    return h.hexdigest()[:16]
+
+
+def _setup_resources_cache(autorag_dir: Path, cache_root: Path, cache_key: str) -> Path:
+    """Symlink ``<autorag_dir>/resources`` to a shared, corpus-keyed dir.
+
+    AutoRAG writes Chroma collections + BM25 pickles + ``vectordb.yaml`` under
+    ``<project_dir>/resources/`` (hard-coded in ``evaluator.py``). By making
+    that subdir a symlink to a shared cache, ``filter_exist_ids`` and
+    ``bm25_ingest`` see existing entries on subsequent runs and short-circuit
+    the (slow) embedding phase. The cache key encodes corpus content + the
+    embedder list, so changes to either invalidate cleanly.
+
+    Returns the resolved cache directory path for logging.
+    """
+    cache_dir = cache_root / f"autorag_resources_{cache_key}"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    resources_link = autorag_dir / "resources"
+    desired_target = cache_dir.resolve()
+    if resources_link.is_symlink():
+        if Path(os.readlink(resources_link)).resolve() == desired_target:
+            return cache_dir
+        resources_link.unlink()
+    elif resources_link.exists():
+        # Previous run created a real directory (e.g. before caching landed).
+        # Migrate any populated artifacts into the cache so we don't redo work,
+        # then replace the dir with the symlink.
+        for child in resources_link.iterdir():
+            target = cache_dir / child.name
+            if not target.exists():
+                shutil.move(str(child), str(target))
+        shutil.rmtree(resources_link)
+    resources_link.symlink_to(desired_target, target_is_directory=True)
+    return cache_dir
 
 
 @dataclass
@@ -156,6 +218,17 @@ class AutoRAGOptimizer:
         n_corpus = export_corpus_to_parquet(Path(orch.config.meta.corpus_path), corpus_parquet)
         logger.info("Exported %d documents to %s", n_corpus, corpus_parquet.name)
 
+        # Symlink ``autorag_project/resources/`` to a corpus-keyed shared cache
+        # so repeat runs reuse Chroma collections + BM25 pickles instead of
+        # rebuilding from scratch. AutoRAG's own filter_exist_ids /
+        # bm25_ingest handle the "already populated" case natively, so this
+        # is plug-and-play: the first run pays the embedding cost; subsequent
+        # runs skip straight to retrieval. Cache invalidates on (corpus,
+        # embedder list) changes.
+        cache_key = _compute_resources_cache_key(corpus_parquet, list(orch.config.search_space.embedding_models))
+        cache_dir = _setup_resources_cache(autorag_dir, orch.cache_dir, cache_key)
+        logger.info("AutoRAG resources cache: %s", cache_dir)
+
         qa_parquet = autorag_dir / "qa.parquet"
         if self.qa_variant == "mcq":
             exam_json = orch.cache_dir / "exam.json"
@@ -180,6 +253,19 @@ class AutoRAGOptimizer:
         autorag_config_dict, notes = generate_autorag_config(orch.config.search_space, qa_variant=self.qa_variant)
         autorag_config_path = autorag_dir / "autorag_config.yaml"
         autorag_config_path.write_text(yaml.safe_dump(autorag_config_dict, sort_keys=False), encoding="utf-8")
+
+        # Fail fast on missing bedrock env. AutoRAG's ``convert_env_in_dict``
+        # silently substitutes unset ``${VAR}`` with empty string, so a
+        # missing AWS_REGION_NAME doesn't error until boto3 tries to resolve
+        # the bedrock endpoint mid-eval and raises NoRegionError after every
+        # other node has already run. Surface it before the long subprocess.
+        if notes.get("bedrock_in_search_space") and not os.environ.get("AWS_REGION_NAME"):
+            raise RuntimeError(
+                "AWS_REGION_NAME is unset but the search space contains bedrock/* models. "
+                "AutoRAG's bedrock_converse LLM needs a region (boto3 doesn't read "
+                "AWS_REGION_NAME on its own, so we pass it explicitly via ${AWS_REGION_NAME}). "
+                "Either export AWS_REGION_NAME (e.g. us-east-1) or drop bedrock/* from llm_models."
+            )
 
         # Drop rows that Azure's content filter rejects before AutoRAG's
         # enumerate subprocess sees them — even one rejection aborts the

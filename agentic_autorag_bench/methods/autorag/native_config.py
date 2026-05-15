@@ -89,6 +89,22 @@ TEMPERATURE_GRID_N = 1  # our search space pins temperature; one value is enough
 DEFAULT_VECTORDB_NAME = "default"
 DEFAULT_VECTORDB_BACKEND = "chroma"
 
+# Embedding batch tuned for GPU throughput. AutoRAG's default is 100; the
+# upstream HuggingFaceEmbedding default is 10. With six HF embedders and 19k
+# docs the corpus ingest dominates setup time, and HF's own perf guide
+# recommends batch sizes ≥128 on GPU ("quantized models reach peak throughput
+# at batch size 128"). 256 is comfortably in-VRAM once
+# _patch_free_embedder_after_ingest (see scripts/autorag_patches.py) keeps
+# only one embedder resident at a time.
+EMBEDDING_BATCH = 256
+
+# Use fp16 weights for HF embedders. Halves VRAM and ~1.5× throughput on the
+# 4080. Numeric drift from fp32 → fp16 is well below the cosine ≥ 0.999
+# threshold the existing equivalence test enforces (test_autorag_equivalence
+# .test_huggingface_embedding_equivalence_minilm); these sentence-transformer
+# models are calibrated for half-precision inference.
+EMBEDDING_TORCH_DTYPE = "float16"
+
 
 def _discretize_int(r: NumericRange, n: int) -> list[int]:
     lo, hi = int(r.min), int(r.max)
@@ -127,7 +143,12 @@ def _translate_llm(litellm_model: str) -> tuple[str, str]:
     metadata-driven chat detection recognises ``gpt-4o-mini`` etc. as chat
     models without needing the ``is_chat_model`` knob.
     OpenAI: ``openai/gpt-4o-mini`` → (``openai``, ``gpt-4o-mini``).
-    Bedrock: ``bedrock/<id>`` → (``bedrock``, ``<id>``).
+    Bedrock: ``bedrock/<id>`` → (``bedrock_converse``, ``<id>``). We route
+    through the modern ``BedrockConverse`` LLM (registered as a new AutoRAG
+    provider by scripts/autorag_patches.py) because AutoRAG 0.3's bundled
+    deprecated ``llama_index.llms.bedrock.Bedrock`` hard-restricts ``model``
+    to a fixed pre-2024 registry — our search-space entries (Llama 3.1, Nova
+    2 Lite, Claude Haiku 4.5) all fail there with a ``context_size`` error.
 
     Anything else raises so we don't silently mis-translate.
     """
@@ -137,10 +158,10 @@ def _translate_llm(litellm_model: str) -> tuple[str, str]:
     if provider in ("azure", "openai"):
         return "openai", suffix
     if provider == "bedrock":
-        return "bedrock", suffix
+        return "bedrock_converse", suffix
     raise ValueError(
         f"Provider {provider!r} not supported in AutoRAG baseline. "
-        "Supported: azure (via openai+v1-compat base), openai, bedrock. "
+        "Supported: azure (via openai+v1-compat base), openai, bedrock (via bedrock_converse). "
         "Extend _translate_llm in native_config.py if you add another."
     )
 
@@ -149,6 +170,7 @@ def _build_generator_module(litellm_model: str, temperatures: list[float]) -> di
     """One ``llama_index_llm`` module for the given model + temperature grid."""
     autorag_llm, autorag_model = _translate_llm(litellm_model)
     is_azure = litellm_model.startswith("azure/")
+    is_bedrock = litellm_model.startswith("bedrock/")
     module: dict = {
         "module_type": "llama_index_llm",
         "llm": autorag_llm,
@@ -158,9 +180,18 @@ def _build_generator_module(litellm_model: str, temperatures: list[float]) -> di
     if is_azure:
         # Azure's cognitive-services hosts respond to standard OpenAI chat
         # completions under ``<base>/openai/v1``. ``${VAR}`` is AutoRAG's
-        # env-var substitution syntax.
+        # env-var substitution syntax (autorag.utils.util.convert_env_in_dict).
         module["api_base"] = "${AZURE_API_BASE}/openai/v1"
         module["api_key"] = "${AZURE_API_KEY}"
+    if is_bedrock:
+        # ``BedrockConverse.__init__`` accepts ``region_name`` and is happy to
+        # pick up AWS credentials from boto3's standard env-var chain
+        # (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY). The region is the only
+        # thing boto3 can't infer: it reads AWS_REGION / AWS_DEFAULT_REGION but
+        # *not* the litellm-convention AWS_REGION_NAME the rest of the bench
+        # uses, so we plumb it explicitly. AutoRAG substitutes ``${VAR}`` at
+        # YAML load.
+        module["region_name"] = "${AWS_REGION_NAME}"
     return module
 
 
@@ -184,8 +215,12 @@ def _build_vectordb_entries(embedding_models: list[str]) -> tuple[list[dict], di
             "db_type": DEFAULT_VECTORDB_BACKEND,
             "client_type": "persistent",
             "collection_name": name,
+            # ``${PROJECT_DIR}/resources`` is symlinked by the driver to a
+            # corpus-keyed shared cache (see methods/autorag/driver.py:
+            # ``_setup_resources_cache``); AutoRAG's ``filter_exist_ids``
+            # then short-circuits re-embedding on subsequent runs.
             "path": "${PROJECT_DIR}/resources/chroma",
-            "embedding_batch": 64,
+            "embedding_batch": EMBEDDING_BATCH,
         }
         entry.update(provider_specific)
         entries.append(entry)
@@ -211,6 +246,12 @@ def _vectordb_embedding_block(model: str) -> dict:
             {
                 "type": "huggingface",
                 "model_name": model,
+                # fp16 weights — halve VRAM and ~1.5× throughput on the 4080.
+                # llama-index's HuggingFaceEmbedding forwards ``model_kwargs``
+                # to ``SentenceTransformer(... model_kwargs=...)``, which
+                # passes ``torch_dtype`` straight to ``transformers``'
+                # ``from_pretrained``.
+                "model_kwargs": {"torch_dtype": EMBEDDING_TORCH_DTYPE},
             }
         ]
     }
@@ -221,7 +262,9 @@ def _build_query_expansion_modules(query_expansion: list[str], generator_module:
 
     HyDE / multi-query expansion in AutoRAG need ``generator_module_type``,
     ``llm`` and ``model`` set (so the expansion call has somewhere to land).
-    We thread the first search-space LLM through as the expansion LLM.
+    We thread the first search-space LLM through as the expansion LLM, copying
+    whichever provider-specific auth keys it carries (Azure: api_base/api_key,
+    Bedrock: region_name).
     """
     out: list[dict] = []
     for qe in query_expansion:
@@ -233,9 +276,9 @@ def _build_query_expansion_modules(query_expansion: list[str], generator_module:
             "llm": generator_module["llm"],
             "model": list(generator_module["model"]),
         }
-        if "api_base" in generator_module:
-            gen_block["api_base"] = generator_module["api_base"]
-            gen_block["api_key"] = generator_module["api_key"]
+        for key in ("api_base", "api_key", "region_name"):
+            if key in generator_module:
+                gen_block[key] = generator_module[key]
         if qe == "hyde":
             out.append({"module_type": "hyde", "max_token": 64, **gen_block})
         elif qe == "multi_query":
@@ -425,6 +468,8 @@ def generate_autorag_config(
         "so AutoRAG's internal ranking signal need only correlate with our final metric)"
     )
 
+    has_bedrock = any(m.startswith("bedrock/") for m in ss.llm_models)
+
     notes = {
         "qa_variant": qa_variant,
         "autorag_target_version": "0.3.x",
@@ -438,9 +483,20 @@ def generate_autorag_config(
         "embedding_model_to_vectordb_name": model_to_name,
         "hybrid_alpha_convention": "AutoRAG hybrid_cc.weight is the *semantic* weight "
         "(weight=1.0 → semantic-only), identical to our hybrid_alpha; passed straight through",
-        "llm_provider_translation": "azure/<m> → openai with model=<m>, api_base=$AZURE_API_BASE/openai/v1",
+        "llm_provider_translation": (
+            "azure/<m> → openai with model=<m>, api_base=$AZURE_API_BASE/openai/v1; "
+            "bedrock/<m> → bedrock_converse with model=<m>, region_name=$AWS_REGION_NAME "
+            "(bedrock_converse is registered by scripts/autorag_patches.py; the deprecated "
+            "bedrock provider can't load 2024+ model IDs)"
+        ),
         "azure_env_vars_required": ["AZURE_API_KEY", "AZURE_API_BASE"],
         "azure_api_base_present": bool(os.environ.get("AZURE_API_BASE")),
         "azure_api_key_present": bool(os.environ.get("AZURE_API_KEY")),
+        "bedrock_in_search_space": has_bedrock,
+        "bedrock_env_vars_required": (
+            ["AWS_REGION_NAME", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"] if has_bedrock else []
+        ),
+        "aws_region_name_present": bool(os.environ.get("AWS_REGION_NAME")),
+        "aws_access_key_id_present": bool(os.environ.get("AWS_ACCESS_KEY_ID")),
     }
     return config, notes

@@ -383,3 +383,65 @@ def test_openailike_legacy_translates_to_azure(tmp_path) -> None:
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, _curated_space())
     assert config.llm_model == "azure/gpt-4o-mini"
+
+
+def _bedrock_space() -> SearchSpace:
+    space = _curated_space()
+    space.llm_models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
+    return space
+
+
+def test_bedrock_converse_provider_reverse_maps_to_bedrock_litellm_id(tmp_path) -> None:
+    """``bedrock_converse`` is the modern provider native_config emits for
+    bedrock/* entries (the deprecated ``bedrock`` provider rejects 2024+ model
+    IDs). The translator must reverse it back to the litellm ``bedrock/<m>``
+    form so re-scoring round-trips."""
+    extracted = {
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "generator",
+                        "modules": [
+                            {
+                                "module_type": "llama_index_llm",
+                                "llm": "bedrock_converse",
+                                "model": "us.meta.llama3-1-8b-instruct-v1:0",
+                                "region_name": "us-east-1",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ]
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    config = translate_extracted_to_trial_config(path, _bedrock_space())
+    assert config.llm_model == "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+
+
+def test_legacy_bedrock_provider_still_reverse_maps(tmp_path) -> None:
+    """Old extracted_sample.yaml files (predating the bedrock_converse switch)
+    still carry ``llm: bedrock``. Keep accepting that for back-compat so we
+    can re-score historical artifacts."""
+    extracted = {
+        "node_lines": [
+            {
+                "nodes": [
+                    {
+                        "node_type": "generator",
+                        "modules": [
+                            {
+                                "module_type": "llama_index_llm",
+                                "llm": "bedrock",
+                                "model": "us.meta.llama3-1-8b-instruct-v1:0",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ]
+    }
+    path = _write_extracted_yaml(tmp_path, extracted)
+    config = translate_extracted_to_trial_config(path, _bedrock_space())
+    assert config.llm_model == "bedrock/us.meta.llama3-1-8b-instruct-v1:0"

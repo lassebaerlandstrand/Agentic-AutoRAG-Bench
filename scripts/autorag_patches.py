@@ -12,9 +12,34 @@ Patches applied:
   under Chroma's SQLite-backed 5461-row batch cap. Without this, ingest fails
   on any corpus >~5k documents with ``Batch size of N is greater than max
   batch size of 5461``. The bench's hotpot corpora are ~19k docs.
+
+- ``autorag.generator_models["bedrock_converse"]`` — register the modern
+  ``BedrockConverse`` LLM as a new provider. AutoRAG 0.3 ships
+  ``llama-index-llms-bedrock`` (deprecated), whose ``Bedrock`` class
+  hard-restricts ``model`` to a fixed pre-2024 registry. The paper's
+  search-space bedrock entries (us.meta.llama3-1-8b, global.amazon.nova-2-lite,
+  global.anthropic.claude-haiku-4-5) are all 2024+ and aren't in that registry,
+  so they fail at construction with a ``context_size`` error. The Converse API
+  has no such restriction. We surface it as a separate provider name
+  (``bedrock_converse``) rather than replacing ``bedrock`` so the deprecated
+  path keeps working for anyone with a pinned older config.
+
+- ``autorag.nodes.semanticretrieval.vectordb.vectordb_ingest_huggingface`` —
+  release each SentenceTransformer's VRAM after its corpus ingest. Upstream
+  AutoRAG loops through every vectordb in ``Evaluator.start_trial`` and
+  ingests each in turn, but the embedder instance stays referenced inside
+  the ``BaseVectorStore`` for the rest of the evaluator's lifetime. With six
+  HuggingFace embedders (MiniLM + 5×1024-dim models ≈ 7.5 GB FP32) this
+  hard-pins ~7.5 GB of VRAM during ingest before retrieval even starts —
+  catastrophic when the 4080 (16 GB) shares with another workload. AutoRAG's
+  retrieval node *already* re-loads the model per module evaluation
+  (``Initialize retrieval node`` / ``Deleting retrieval node`` log lines in
+  base.py), so dropping the ingest-time reference is safe.
 """
 
 from __future__ import annotations
+
+from typing import Any
 
 
 def _patch_chroma_add_embedding() -> None:
@@ -34,4 +59,65 @@ def _patch_chroma_add_embedding() -> None:
     Chroma.add_embedding = add_embedding
 
 
+def _patch_register_bedrock_converse() -> None:
+    try:
+        import autorag
+        from llama_index.llms.bedrock_converse import BedrockConverse
+    except ImportError:
+        return  # AutoRAG or bedrock-converse not installed in this interpreter.
+
+    # AutoRAG's generator interface calls ``acomplete`` on the llm instance,
+    # but the upstream ``BedrockConverse.acomplete`` is missing on some
+    # llama-index releases. Mirror AutoRAG's own ``AutoRAGBedrock`` shim so
+    # the sync ``complete`` is re-exposed as async.
+    class AutoRAGBedrockConverse(BedrockConverse):
+        async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any):
+            return self.complete(prompt, formatted=formatted, **kwargs)
+
+    autorag.generator_models["bedrock_converse"] = AutoRAGBedrockConverse
+
+
+def _patch_free_embedder_after_ingest() -> None:
+    try:
+        from autorag.nodes.semanticretrieval import vectordb as _vdb_mod
+        from autorag import evaluator as _eval_mod
+    except ImportError:
+        return  # AutoRAG not installed in this interpreter; nothing to patch.
+
+    original = _vdb_mod.vectordb_ingest_huggingface
+
+    def _wrapped(vectordb, corpus_data):
+        original(vectordb, corpus_data)
+        # The SentenceTransformer (and its tokenizer) live under
+        # ``vectordb.embedding._model`` / ``._tokenizer`` (HuggingFaceEmbedding
+        # internals). Drop the references so Python GC + torch's CUDA caching
+        # allocator can release the VRAM before the next vectordb ingests.
+        # Retrieval re-loads each model lazily per module, so this doesn't
+        # break query-time embedding (verified against base.py:18/28 logs:
+        # ``Initialize retrieval node - VectorDB`` / ``Loading
+        # SentenceTransformer model``).
+        emb = getattr(vectordb, "embedding", None)
+        if emb is not None:
+            for attr in ("_model", "_tokenizer"):
+                try:
+                    delattr(emb, attr)
+                except AttributeError:
+                    pass
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
+
+    _vdb_mod.vectordb_ingest_huggingface = _wrapped
+    # ``evaluator.py`` imports ``vectordb_ingest_huggingface`` by name into
+    # its own module namespace (``from autorag.nodes.semanticretrieval.vectordb
+    # import vectordb_ingest_huggingface``), so patching only the source
+    # module wouldn't rebind that local reference. Patch both.
+    _eval_mod.vectordb_ingest_huggingface = _wrapped
+
+
 _patch_chroma_add_embedding()
+_patch_register_bedrock_converse()
+_patch_free_embedder_after_ingest()
