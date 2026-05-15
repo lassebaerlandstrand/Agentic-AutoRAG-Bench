@@ -24,7 +24,7 @@ from agentic_autorag.orchestrator import Orchestrator
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
-from agentic_autorag_bench.methods.autorag.driver import AutoRAGOptimizer
+from agentic_autorag_bench.methods.autorag.driver import AutoRAGOptimizer, resolve_autorag_python
 from agentic_autorag_bench.methods.bayesian import BayesianSearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.plots import (
@@ -212,6 +212,13 @@ async def run_matrix(
                 "edit the config or pick a subset of its methods"
             )
         bench.methods = [m for m in bench.methods if m in set(methods_override)]
+
+    # Fail-fast if an AutoRAG method survived the -m filter but the venv set
+    # up by scripts/setup_autorag_venv.sh isn't resolvable. Without this, a
+    # 5-method run would spend hours on agentic/random/bayesian before the
+    # AutoRAG rows discover the missing interpreter at search() time.
+    if any(m.startswith("autorag") for m in bench.methods):
+        resolve_autorag_python()
 
     if clean:
         removed = _clear_output_root_for(bench.output_root, bench.methods)

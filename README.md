@@ -22,9 +22,10 @@ comparable across rows.
 ```bash
 uv sync --extra dev
 # AutoRAG runs in its own venv (pins numpy<2). The script also patches
-# chroma's batched insert for our 19k-doc corpus.
+# chroma's batched insert for our 19k-doc corpus. The bench auto-discovers
+# the resulting .autorag-venv/ — no env var needed for the default layout.
+# Set AUTORAG_PYTHON only if the venv lives somewhere else.
 bash scripts/setup_autorag_venv.sh
-export AUTORAG_PYTHON=$(pwd)/.autorag-venv/bin/python
 # Bench reads .env (symlink the framework's) for AZURE_API_KEY, AZURE_API_BASE.
 ```
 

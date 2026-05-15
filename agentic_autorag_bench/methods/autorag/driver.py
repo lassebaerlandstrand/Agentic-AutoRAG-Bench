@@ -34,6 +34,43 @@ def _find_extracted_sample(project_dir: Path) -> Path | None:
     return None
 
 
+# Convention: scripts/setup_autorag_venv.sh creates .autorag-venv at the bench
+# repo root. This driver lives at agentic_autorag_bench/methods/autorag/, so
+# the bench root is three parents up from this file's directory.
+_BENCH_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_AUTORAG_VENV_PYTHON = _BENCH_ROOT / ".autorag-venv" / "bin" / "python"
+
+
+def resolve_autorag_python(explicit: str | None = None) -> str:
+    """Resolve the path to the AutoRAG venv's python interpreter.
+
+    Priority: ``explicit`` arg > ``AUTORAG_PYTHON`` env var > the conventional
+    ``<bench_root>/.autorag-venv/bin/python`` path produced by
+    ``scripts/setup_autorag_venv.sh``. Raises with setup instructions if none
+    resolve to a usable interpreter + ``autorag`` console script.
+
+    Also used by ``run.py`` as a fail-fast preflight: a whole 5-method matrix
+    would otherwise spend hours on agentic/random/bayesian before the AutoRAG
+    rows discover the missing interpreter at ``search()`` time.
+    """
+    candidate = explicit or os.environ.get("AUTORAG_PYTHON") or str(_DEFAULT_AUTORAG_VENV_PYTHON)
+    if not Path(candidate).exists():
+        raise RuntimeError(
+            f"AutoRAG interpreter not found at {candidate}. "
+            "Run scripts/setup_autorag_venv.sh first, "
+            "or set AUTORAG_PYTHON to a custom path."
+        )
+    # AutoRAG installs an ``autorag`` console script next to ``python`` in the
+    # venv; the package has no __main__, so ``python -m autorag`` won't work.
+    autorag_bin = Path(candidate).parent / "autorag"
+    if not autorag_bin.exists():
+        raise RuntimeError(
+            f"AutoRAG console script not found at {autorag_bin}. "
+            "Re-run scripts/setup_autorag_venv.sh."
+        )
+    return candidate
+
+
 # Env vars whose literal values must never land in a committed YAML / JSON.
 # When AutoRAG's ``extract_best_config`` expands ``${VAR}`` placeholders we
 # undo the expansion so the artifact is safe to commit. Ordered so longer
@@ -108,11 +145,7 @@ class AutoRAGOptimizer:
         autorag_dir = out_dir / "autorag_project"
         autorag_dir.mkdir(parents=True, exist_ok=True)
 
-        autorag_python = self.autorag_python or os.environ.get("AUTORAG_PYTHON")
-        if not autorag_python:
-            raise RuntimeError(
-                "AUTORAG_PYTHON not set. Run scripts/setup_autorag_venv.sh first or pass --autorag-python."
-            )
+        autorag_python = resolve_autorag_python(self.autorag_python)
 
         orch = Orchestrator(self.config_path, output_dir_override=str(out_dir))
         await orch.setup()
@@ -162,15 +195,9 @@ class AutoRAGOptimizer:
 
         (autorag_dir / "translation_notes.json").write_text(json.dumps(notes, indent=2), encoding="utf-8")
 
-        # AutoRAG installs an ``autorag`` console script next to ``python`` in
-        # the venv; the package has no __main__, so ``python -m autorag`` won't
-        # work. Locate the console script alongside the python interpreter.
+        # resolve_autorag_python already verified the ``autorag`` console
+        # script exists alongside the interpreter.
         autorag_bin = Path(autorag_python).parent / "autorag"
-        if not autorag_bin.exists():
-            raise RuntimeError(
-                f"AutoRAG console script not found at {autorag_bin}. "
-                "Re-run scripts/setup_autorag_venv.sh."
-            )
 
         env = dict(os.environ)
 
