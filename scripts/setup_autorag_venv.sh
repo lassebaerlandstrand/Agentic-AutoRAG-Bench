@@ -32,6 +32,14 @@ echo "installing AutoRAG (with [gpu] extras: sentence-transformers, FlagEmbeddin
 echo "  torch — required by the paper's HF embedders & rerankers)"
 "$VENV_PIP" install --quiet "AutoRAG[gpu]>=0.3,<0.4"
 
+# AutoRAG 0.3 still pulls in the deprecated llama-index-llms-bedrock package,
+# which restricts ``model`` to a fixed pre-2024 registry (no Llama 3.1, Nova 2,
+# Claude Haiku 4.5). The paper's bedrock entries are all 2024+, so we add the
+# modern bedrock-converse LLM and register it as a new AutoRAG provider via
+# the .pth patch (see autorag_patches.py:_patch_register_bedrock_converse).
+echo "installing llama-index-llms-bedrock-converse (modern Bedrock API for newer models)"
+"$VENV_PIP" install --quiet "llama-index-llms-bedrock-converse>=0.4"
+
 echo "verifying autorag CLI"
 # AutoRAG installs an entry-point ``autorag`` script next to python — ``python
 # -m autorag`` doesn't work because the package has no __main__.

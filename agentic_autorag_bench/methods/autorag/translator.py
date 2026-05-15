@@ -107,6 +107,10 @@ def _autorag_llm_to_litellm(
     real OpenAI vs Azure by checking whether ``api_base`` contains an Azure
     host. The translator returns the raw assembled string; the caller
     validates against the search space.
+
+    ``bedrock_converse`` is the modern provider native_config emits for
+    bedrock/* entries (see scripts/autorag_patches.py); ``bedrock`` is kept
+    for backward compatibility with older extracted_sample.yaml files.
     """
     if not llm_provider or not model:
         return None
@@ -116,7 +120,7 @@ def _autorag_llm_to_litellm(
         return f"azure/{model}" if is_azure else f"openai/{model}"
     if llm_provider in {"openailike", "azure"}:
         return f"azure/{model}"
-    if llm_provider == "bedrock":
+    if llm_provider in {"bedrock", "bedrock_converse"}:
         return f"bedrock/{model}"
     return None
 

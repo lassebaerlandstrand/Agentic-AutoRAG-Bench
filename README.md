@@ -89,9 +89,17 @@ Schema is split into lexical / semantic / hybrid retrieval nodes (we emit all
 three with `hybrid_cc.weight=1.0` so a `vector_only` space is a semantic
 pass-through); chunking is frozen across all 5 methods
 (`strategy=recursive, chunk_size=256, overlap=0`) because AutoRAG's evaluator
-has no chunking node; LLM uses `llm: openai` against Azure's `/openai/v1`
+has no chunking node; Azure LLMs use `llm: openai` against Azure's `/openai/v1`
 shim (`openailike` drops `is_chat_model` and misroutes chat models to
-`/completions`). Long form in the paper appendix and `methods/autorag/`.
+`/completions`); Bedrock LLMs use `llm: bedrock_converse` (registered into
+`autorag.generator_models` by `scripts/autorag_patches.py`) because AutoRAG
+0.3's bundled `llama-index-llms-bedrock` is the deprecated package that
+hard-restricts `model` to a pre-2024 registry, and the search space's
+Llama 3.1 / Nova 2 / Claude Haiku 4.5 entries all fail there. `BedrockConverse`
+needs `region_name` (boto3 reads `AWS_REGION` / `AWS_DEFAULT_REGION`, not
+the litellm-convention `AWS_REGION_NAME`), so we plumb `${AWS_REGION_NAME}`
+explicitly into the generator modules. Long form in the paper appendix and
+`methods/autorag/`.
 
 ## Framework dependency
 
