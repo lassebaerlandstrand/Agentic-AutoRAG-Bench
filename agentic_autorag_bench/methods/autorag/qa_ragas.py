@@ -56,6 +56,19 @@ _BOOTSTRAP_SCRIPT = textwrap.dedent(
     # mirrors native_config._translate_llm: ``azure/<deployment>`` routes
     # through Azure's OpenAI-compat v1 shim at ``<AZURE_API_BASE>/openai/v1``.
     provider, _, model_name = litellm_model.partition("/")
+
+    # Azure/OpenAI reasoning models (o1/o3/o4-series) reject any temperature
+    # override — the API only accepts the model's default (1.0) and returns
+    # ``BadRequestError 400 unsupported_value`` for anything else. llama_index's
+    # OpenAI wrapper defaults to temperature=0.1 unconditionally, so without
+    # this branch the RAGAS bootstrap dies on its first ``achat`` (typically
+    # inside ``make_basic_gen_gt``). The main bench path doesn't hit this
+    # because ``configure_litellm_runtime`` sets ``litellm.drop_params=True``,
+    # but the bootstrap runs in the AutoRAG subprocess and uses llama_index
+    # directly, so we have to handle it here.
+    is_reasoning = any(model_name.startswith(p) for p in ("o1", "o3", "o4", "o5"))
+    extra_kwargs = {"temperature": 1.0} if is_reasoning else {}
+
     if provider == "azure":
         base = os.environ.get("AZURE_API_BASE")
         key = os.environ.get("AZURE_API_KEY")
@@ -68,9 +81,10 @@ _BOOTSTRAP_SCRIPT = textwrap.dedent(
             model=model_name,
             api_base=base.rstrip("/") + "/openai/v1",
             api_key=key,
+            **extra_kwargs,
         )
     elif provider == "openai":
-        llm = OpenAI(model=model_name)
+        llm = OpenAI(model=model_name, **extra_kwargs)
     else:
         raise SystemExit(
             "Unsupported provider for the RAGAS bootstrap: " + repr(provider)

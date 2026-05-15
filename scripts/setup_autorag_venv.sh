@@ -3,12 +3,11 @@
 #
 # AutoRAG 0.3.x pins ``numpy<2`` which conflicts with the bench's base deps
 # (opencv-python-headless>=4.13 needs numpy>=2). We isolate it in a sibling
-# venv and pass the interpreter path via AUTORAG_PYTHON to the bench's
-# autorag method driver.
+# .autorag-venv/, which the bench driver auto-discovers — no env var needed.
+# Only set AUTORAG_PYTHON if you've placed the venv somewhere else.
 #
 # Usage:
 #   bash scripts/setup_autorag_venv.sh
-#   export AUTORAG_PYTHON="$(pwd)/.autorag-venv/bin/python"
 
 set -euo pipefail
 
@@ -58,13 +57,11 @@ SITE_PACKAGES="$("$VENV_PYTHON" -c "import sysconfig; print(sysconfig.get_paths(
 cp "$(dirname "$0")/autorag_patches.py" "$SITE_PACKAGES/bench_autorag_patches.py"
 echo "import bench_autorag_patches" > "$SITE_PACKAGES/bench_autorag_patches.pth"
 
-ABS_PYTHON="$(cd "$(dirname "$VENV_PYTHON")/.." && pwd)/bin/python"
 echo
-echo "AutoRAG installed successfully (API-only mode)."
-echo "If you also need local HuggingFace embedders / rerankers, run:"
-echo "  $VENV_DIR/bin/pip install 'AutoRAG[gpu]'"
+echo "AutoRAG installed successfully at $VENV_DIR/."
+echo "The bench's matrix runner auto-discovers this location — no export needed."
+echo "Run e.g.: uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m autorag_ragas"
 echo
-echo "Add this to your shell environment before running bench tasks:"
-echo
-echo "  export AUTORAG_PYTHON=\"$ABS_PYTHON\""
+echo "Only set AUTORAG_PYTHON if you've moved the venv elsewhere, or you want to"
+echo "exercise the AUTORAG_PYTHON-gated equivalence tests (tests/test_autorag_equivalence.py)."
 echo

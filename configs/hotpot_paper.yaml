@@ -14,13 +14,13 @@ methods:
   - random
   - bayesian
   - agentic
-  - autorag_mcq    # requires .autorag-venv with AutoRAG[gpu]; set AUTORAG_PYTHON
+  - autorag_mcq    # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
   - autorag_ragas  # same venv
 
 seeds: [1]
 
 budget:
-  max_trials: 5
+  max_trials: 4
 
 hotpot:
   split: validation
@@ -29,7 +29,7 @@ hotpot:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 100
+  limit: 70
   # Currently azure/o4-mini for the experimentation phase; swap to a
   # non-OpenAI-family judge for the camera-ready run to break any
   # in-family bias (proposer + judge sharing model lineage).
