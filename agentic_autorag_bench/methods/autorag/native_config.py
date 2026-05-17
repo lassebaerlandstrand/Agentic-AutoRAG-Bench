@@ -483,17 +483,30 @@ def generate_autorag_config(
         # semantic and acts as a pass-through of the semantic retriever.
         weight_lo, weight_hi = 1.0, 1.0
 
+    # ``top_k`` is a node-level parameter in AutoRAG. ``Node.from_dict``
+    # (autorag/schema/node.py:50) routes every non-strategy/non-modules key
+    # into ``node_params``; ``get_param_combinations`` then merges those into
+    # each module's ``module_param`` and runs ``make_combinations``
+    # (autorag/utils/util.py:137) which ``itertools.product``s every
+    # list-valued key. So passing a *list* of top_k values causes AutoRAG to
+    # enumerate (top_k, module-params) pairs natively — no outer loop needed.
+    # Pinning to ``top_ks[-1]`` (a prior version of this translator) silently
+    # locked AutoRAG to a single top_k value at every retrieval node, which
+    # is a strict fairness regression vs. random/Bayesian/agentic methods
+    # that sample top_k freely. All retrieval module signatures
+    # (bm25.py:200, vectordb.py:85, hybrid_rrf.py:13, hybrid_cc.py:57)
+    # accept ``top_k: int`` per call, so the list is consumed correctly.
     retrieve_nodes: list[dict] = [
         {
             "node_type": "lexical_retrieval",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-            "top_k": top_ks[-1],
+            "top_k": top_ks,
             "modules": [{"module_type": "bm25", "bm25_tokenizer": ["porter_stemmer", "space"]}],
         },
         {
             "node_type": "semantic_retrieval",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-            "top_k": top_ks[-1],
+            "top_k": top_ks,
             "modules": [
                 {"module_type": "vectordb", "vectordb": vname}
                 for vname in model_to_name.values()
@@ -502,7 +515,7 @@ def generate_autorag_config(
         {
             "node_type": "hybrid_retrieval",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-            "top_k": top_ks[-1],
+            "top_k": top_ks,
             "modules": _build_hybrid_modules(ss, weight_lo, weight_hi),
         },
     ]
@@ -559,7 +572,12 @@ def generate_autorag_config(
         {
             "node_type": "passage_reranker",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
-            "top_k": reranker_top_ks[-1],
+            # See top_k comment on retrieve_nodes above — same enumeration
+            # rule applies: list-valued node-level top_k is swept by AutoRAG
+            # via make_combinations. Pinning to ``reranker_top_ks[-1]`` (a
+            # prior translator bug) locked AutoRAG out of smaller reranker
+            # top_n values that adaptive methods could sample.
+            "top_k": reranker_top_ks,
             "modules": reranker_modules,
         },
     ]

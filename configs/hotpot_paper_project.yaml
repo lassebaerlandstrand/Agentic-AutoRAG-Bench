@@ -123,16 +123,9 @@ search_space:
     top_n: { min: 3, max: 10 }
   query_expansion: ["none", "hyde", "multi_query", "query_decompose"]
   llm_models:
-    # 6 models spanning provider / size / reasoning tier. Azure models reuse
-    # the dev set's deployments; bedrock entries are picked for size diversity
-    # (8B / lite / haiku-4.5). Every provider has a verified _translate_llm
-    # path in native_config.py.
     - "azure/gpt-4o-mini"
     - "azure/gpt-5.4-nano"
     - "azure/o4-mini"
-    # - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
-    # - "bedrock/global.amazon.nova-2-lite-v1:0"
-    # - "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
   temperature: { min: 1.0, max: 1.0 }
   # AutoRAG cannot toggle model-native reasoning; pin both so the
   # AutoRAG↔framework comparison stays apples-to-apples.
