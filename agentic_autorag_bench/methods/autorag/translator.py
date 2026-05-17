@@ -16,6 +16,7 @@ search-space defaults and surface a hint in translation_notes.json.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -51,15 +52,28 @@ def _scalar_or_first(value: object) -> object:
     return value[0] if isinstance(value, list) and value else value
 
 
+_CAMEL_TO_SNAKE_RE = re.compile(r"(?<!^)(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])")
+
+# AutoRAG class names that don't follow ordinary CamelCase splitting. The
+# generic regex turns ``HyDE`` into ``hy_de`` and ``VectorDB`` into
+# ``vector_db`` because of the trailing all-caps segment; the modules
+# themselves are referenced in snake_case YAML as ``hyde`` and ``vectordb``.
+_NORMALIZE_OVERRIDES: dict[str, str] = {
+    "hy_de": "hyde",
+    "vector_db": "vectordb",
+}
+
+
 def _normalize_module_type(s: str | None) -> str:
     """AutoRAG v0.3 extract_best_config emits CamelCase ``module_type`` strings
     (e.g. ``PassReranker``, ``VectorDB``, ``HybridCC``, ``LlamaIndexLLM``)
     even though the input config uses snake_case. Normalise to lowercase
-    snake-equivalent for matching.
+    snake_case so both forms match the translator's branches.
     """
     if not s:
         return ""
-    return s.strip().lower()
+    normalised = _CAMEL_TO_SNAKE_RE.sub("_", s.strip()).lower()
+    return _NORMALIZE_OVERRIDES.get(normalised, normalised)
 
 
 def _vectordb_to_embedding(extracted: dict) -> dict[str, str | None]:
@@ -125,6 +139,28 @@ def _autorag_llm_to_litellm(
     return None
 
 
+def _extract_stage_llm(module: dict, llm_models: list[str]) -> str | None:
+    """Read the LLM picked by AutoRAG's strategy at an LLM-bearing node.
+
+    For passage_compressor, the module dict carries ``llm`` + ``model``
+    directly. For query_expansion, the same fields are exposed (the
+    expansion module's ``generator_module_type`` is ``llama_index_llm``
+    with ``llm``/``model`` siblings). Returns a litellm id when the
+    AutoRAG provider+model resolves to a known search-space LLM, else
+    None — the caller decides whether absence is fatal.
+    """
+    provider = module.get("llm")
+    model_value = module.get("model")
+    model = _scalar_or_first(model_value) if model_value is not None else None
+    api_base = module.get("api_base")
+    candidate = _autorag_llm_to_litellm(provider, model, api_base)
+    if candidate and candidate in llm_models:
+        return candidate
+    if provider and provider in llm_models:
+        return provider
+    return None
+
+
 def translate_extracted_to_trial_config(
     extracted_yaml_path: Path | str,
     search_space: SearchSpace,
@@ -133,6 +169,12 @@ def translate_extracted_to_trial_config(
     nodes = _walk_nodes(raw)
     vectordb_index = _vectordb_to_embedding(raw)
 
+    default_passage_compressor = (
+        "none" if "none" in search_space.passage_compressor else search_space.passage_compressor[0]
+    )
+    default_query_expansion = (
+        "none" if "none" in search_space.query_expansion else search_space.query_expansion[0]
+    )
     fields: dict = {
         "chunking_strategy": search_space.chunking.strategies[0],
         "chunk_token_size": int(search_space.chunking.chunk_token_size.min),
@@ -141,10 +183,23 @@ def translate_extracted_to_trial_config(
         "index_type": search_space.index_types[0],
         "top_k": int(search_space.top_k.min),
         "hybrid_alpha": round(_midpoint(search_space.hybrid_alpha), 4),
+        "bm25_vector_fusion": search_space.bm25_vector_fusion[0],
+        "long_context_reorder": search_space.long_context_reorder[0],
+        "passage_compressor": default_passage_compressor,
         "reranker": "none" if "none" in search_space.reranker.models else search_space.reranker.models[0],
         "reranker_top_n": int(search_space.reranker.top_n.min),
-        "query_expansion": "none" if "none" in search_space.query_expansion else search_space.query_expansion[0],
-        "llm_model": search_space.llm_models[0],
+        "query_expansion": default_query_expansion,
+        # Per-stage LLMs. Defaults: generator gets the first search-space LLM
+        # (always set); compressor/expander are None when their stage default
+        # is "none", else first LLM. Overridden below from AutoRAG's resolved
+        # picks at each node.
+        "generator_llm": search_space.llm_models[0],
+        "compressor_llm": (
+            None if default_passage_compressor == "none" else search_space.llm_models[0]
+        ),
+        "expander_llm": (
+            None if default_query_expansion == "none" else search_space.llm_models[0]
+        ),
         "temperature": float(search_space.temperature.min),
         "reasoning": False,
     }
@@ -180,18 +235,38 @@ def translate_extracted_to_trial_config(
         # semantic-only, weight=0.0 → BM25-only), identical convention to our
         # ``hybrid_alpha``. Use directly with no inversion.
         m = _winning_module(hybrid)
-        weight = m.get("weight") if "weight" in m else m.get("weight_range")
-        chosen_weight = float(_scalar_or_first(weight)) if weight is not None else None
-        if chosen_weight is None or chosen_weight >= 1.0:
-            # Fully semantic — collapse to vector_only when the space supports it.
-            if IndexType.VECTOR_ONLY in search_space.index_types:
-                fields["index_type"] = IndexType.VECTOR_ONLY
+        mtype = _normalize_module_type(m.get("module_type"))
+        if mtype == "hybrid_rrf":
+            # RRF: ``weight`` here is rrf_k (default 60), not the semantic
+            # mix — ignore for hybrid_alpha and instead flag the fusion mode.
+            if "rrf" not in search_space.bm25_vector_fusion:
+                raise ValueError(
+                    "AutoRAG resolved a hybrid_rrf module but the search space's "
+                    "bm25_vector_fusion does not include 'rrf'. The native_config "
+                    "must be regenerated against the current search space."
+                )
+            fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
+            fields["bm25_vector_fusion"] = "rrf"
+        elif mtype in {"hybrid_cc", ""}:
+            # ``hybrid_cc`` (or pre-normalised module name) → alpha-blend.
+            fields["bm25_vector_fusion"] = "alpha"
+            weight = m.get("weight") if "weight" in m else m.get("weight_range")
+            chosen_weight = float(_scalar_or_first(weight)) if weight is not None else None
+            if chosen_weight is None or chosen_weight >= 1.0:
+                # Fully semantic — collapse to vector_only when the space supports it.
+                if IndexType.VECTOR_ONLY in search_space.index_types:
+                    fields["index_type"] = IndexType.VECTOR_ONLY
+                else:
+                    fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
+                    fields["hybrid_alpha"] = 1.0
             else:
                 fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
-                fields["hybrid_alpha"] = 1.0
+                fields["hybrid_alpha"] = round(max(0.0, min(1.0, chosen_weight)), 4)
         else:
-            fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
-            fields["hybrid_alpha"] = round(max(0.0, min(1.0, chosen_weight)), 4)
+            raise ValueError(
+                f"Unknown hybrid_retrieval module_type {mtype!r} from AutoRAG. "
+                "Add a translator branch before trusting this row."
+            )
         tk = _read_top_k(hybrid, m)
         if tk is not None:
             fields["top_k"] = tk
@@ -248,27 +323,86 @@ def translate_extracted_to_trial_config(
         mtype = _normalize_module_type(m.get("module_type"))
         if mtype == "pass_query_expansion":
             fields["query_expansion"] = "none"
+            fields["expander_llm"] = None
         elif mtype == "hyde" and "hyde" in search_space.query_expansion:
             fields["query_expansion"] = "hyde"
         elif mtype == "multi_query_expansion" and "multi_query" in search_space.query_expansion:
             fields["query_expansion"] = "multi_query"
+        elif mtype == "query_decompose":
+            if "query_decompose" not in search_space.query_expansion:
+                raise ValueError(
+                    "AutoRAG resolved a query_decompose module, but the search space's "
+                    "query_expansion does not include 'query_decompose'. The native_config "
+                    "must be regenerated against the current search space."
+                )
+            fields["query_expansion"] = "query_decompose"
         elif mtype in search_space.query_expansion:
             fields["query_expansion"] = mtype
+        # When the resolved strategy actually runs an LLM, read which one
+        # AutoRAG's strategy picked. None means the strategy was
+        # ``pass_query_expansion``. Falls back to the search-space's first
+        # LLM when the AutoRAG module doesn't surface llm/model fields —
+        # legacy ``extracted_sample.yaml`` files (and some pre-v0.3.x
+        # fixtures) omit them.
+        if fields["query_expansion"] != "none":
+            chosen_expander = _extract_stage_llm(m, list(search_space.llm_models))
+            fields["expander_llm"] = chosen_expander or search_space.llm_models[0]
+
+    # ===== Passage compressor =====
+    pc_node = nodes.get("passage_compressor")
+    if pc_node:
+        m = _winning_module(pc_node)
+        mtype = _normalize_module_type(m.get("module_type"))
+        if mtype in {"pass_compressor", ""}:
+            fields["passage_compressor"] = "none"
+            fields["compressor_llm"] = None
+        elif mtype in {"tree_summarize", "refine"}:
+            if mtype not in search_space.passage_compressor:
+                raise ValueError(
+                    f"AutoRAG resolved a {mtype!r} passage_compressor module, but the "
+                    f"search space's passage_compressor does not include {mtype!r}. "
+                    "The native_config must be regenerated against the current search space."
+                )
+            fields["passage_compressor"] = mtype
+        else:
+            raise ValueError(
+                f"Unknown passage_compressor module_type {mtype!r} from AutoRAG. "
+                "Add a translator branch before trusting this row."
+            )
+        # Same fallback as expander: when the compressor actually runs,
+        # read AutoRAG's pick, else fall back to first LLM in pool.
+        if fields["passage_compressor"] != "none":
+            chosen_compressor = _extract_stage_llm(m, list(search_space.llm_models))
+            fields["compressor_llm"] = chosen_compressor or search_space.llm_models[0]
+
+    # ===== Prompt maker =====
+    pm_node = nodes.get("prompt_maker")
+    if pm_node:
+        m = _winning_module(pm_node)
+        mtype = _normalize_module_type(m.get("module_type"))
+        if mtype == "long_context_reorder":
+            if True not in search_space.long_context_reorder:
+                raise ValueError(
+                    "AutoRAG resolved a long_context_reorder prompt_maker module, but "
+                    "the search space's long_context_reorder does not include True. "
+                    "The native_config must be regenerated against the current search space."
+                )
+            fields["long_context_reorder"] = True
+        elif mtype in {"fstring", ""}:
+            fields["long_context_reorder"] = False
+        else:
+            raise ValueError(
+                f"Unknown prompt_maker module_type {mtype!r} from AutoRAG. "
+                "Add a translator branch before trusting this row."
+            )
 
     # ===== Generator =====
     gen = nodes.get("generator")
     if gen:
         m = _winning_module(gen)
-        provider = m.get("llm")
-        model = _scalar_or_first(m.get("model")) if m.get("model") is not None else None
-        api_base = m.get("api_base")
-        # First try the v0.3 reverse-map (provider + model + base → litellm).
-        candidate = _autorag_llm_to_litellm(provider, model, api_base)
-        if candidate and candidate in search_space.llm_models:
-            fields["llm_model"] = candidate
-        # Fall back to v0.2 form: ``llm`` already contained the full litellm id.
-        elif provider and provider in search_space.llm_models:
-            fields["llm_model"] = provider
+        chosen_generator = _extract_stage_llm(m, list(search_space.llm_models))
+        if chosen_generator is not None:
+            fields["generator_llm"] = chosen_generator
         if "temperature" in m:
             fields["temperature"] = float(_scalar_or_first(m["temperature"]))
 

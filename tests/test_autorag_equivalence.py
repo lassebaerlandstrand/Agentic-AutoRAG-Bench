@@ -379,3 +379,372 @@ def test_bedrock_converse_vs_litellm_bedrock_smoke(tmp_path) -> None:
         f"stack is silently refusing — investigate before trusting AutoRAG "
         f"bedrock rows in the paper."
     )
+
+
+# AutoRAG-side hybrid_rrf probe. Calls ``autorag.nodes.hybridretrieval.hybrid_rrf``
+# with a single batched query (the function expects per-query lists of (id_list,
+# score_list) tuples wrapped in an outer tuple over retriever modes). Probe
+# inputs use distinct scores to avoid tie-handling differences (AutoRAG uses
+# pandas ``method="min"`` for rank assignment; our ``_rrf_merge`` ranks by
+# enumerate position, which is unstable for ties).
+_AUTORAG_HYBRID_RRF_PROBE = textwrap.dedent(
+    """
+    import json, sys
+    from autorag.nodes.hybridretrieval.hybrid_rrf import hybrid_rrf
+
+    payload = json.loads(sys.stdin.read())
+    ids = (
+        [payload["semantic_ids"]],  # one query
+        [payload["lexical_ids"]],
+    )
+    scores = (
+        [payload["semantic_scores"]],
+        [payload["lexical_scores"]],
+    )
+    fused_ids, fused_scores = hybrid_rrf(
+        ids,
+        scores,
+        payload["top_k"],
+        weight=payload["weight"],
+    )
+    with open(sys.argv[1], "w") as f:
+        json.dump({"ids": fused_ids[0], "scores": [float(s) for s in fused_scores[0]]}, f)
+    """
+).strip()
+
+
+# AutoRAG-side query_decompose parser probe. We don't need a real LLM call
+# for equivalence on the parser — we feed synthetic LLM outputs through
+# AutoRAG's ``get_query_decompose`` and compare against our framework's
+# ``_parse_decompose``. Both should produce identical lists.
+_AUTORAG_QUERY_DECOMPOSE_PARSER_PROBE = textwrap.dedent(
+    """
+    import json, sys
+    from autorag.nodes.queryexpansion.query_decompose import get_query_decompose
+
+    payload = json.loads(sys.stdin.read())
+    results = []
+    for case in payload["cases"]:
+        out = get_query_decompose(case["query"], case["answer"])
+        results.append(out)
+    with open(sys.argv[1], "w") as f:
+        json.dump({"results": results}, f)
+    """
+).strip()
+
+
+@pytest.mark.skipif(_autorag_python() is None, reason="AUTORAG_PYTHON not set")
+def test_query_decompose_parser_matches_autorag(tmp_path) -> None:
+    """Framework's ``_parse_decompose`` agrees with AutoRAG's
+    ``get_query_decompose`` on every probe input.
+
+    The parser is the part of query_decompose that affects the downstream
+    retrieval — wrong parsing = wrong sub-queries = different retrieval
+    fingerprint. Equivalence here means the cross-framework comparison is
+    grounded in identical sub-query lists for matching LLM outputs.
+    """
+    from agentic_autorag.engine.pipeline import _parse_decompose
+
+    probes = [
+        {"query": "Q1", "answer": "1: Where is Paris?\n2: When built?"},
+        {"query": "Q2", "answer": "The question needs no decomposition"},
+        {"query": "Q3", "answer": "THE QUESTION NEEDS NO DECOMPOSITION"},
+        {"query": "Q4", "answer": "Decompositions:\n1: First sub-q\n2: Second sub-q\n3: Third"},
+        {"query": "Q5", "answer": ""},
+        {"query": "Q6", "answer": "no colons no structure here"},
+        {"query": "Q7", "answer": "1: lone sub-question"},
+        {
+            "query": "Q8",
+            "answer": "Decompositions:\n1: A?\n2: B?\nrandom text\n3: C?",
+        },
+        # Leading/trailing whitespace — both sides strip().
+        {"query": "Q9", "answer": "   The question needs no decomposition   "},
+        # Multiple colons in one line — split(":", 1) only on first.
+        {
+            "query": "Q10",
+            "answer": "1: A: B: C\n2: D: E",
+        },
+        # Tabs and varied spacing.
+        {"query": "Q11", "answer": "1:\tspaced sub-q\n2:    indented sub-q"},
+        # Decompositions header at the START followed immediately by content.
+        {"query": "Q12", "answer": "Decompositions:\n1: only one\n"},
+        # No numbered prefix — colons in keywords like "Note:".
+        {"query": "Q13", "answer": "Note: The question needs no decomposition"},
+        # Single subquestion with non-numeric prefix.
+        {"query": "Q14", "answer": "Question: What is X?"},
+        # Mixed valid + truly broken lines.
+        {"query": "Q15", "answer": "1: ok\nrandom\n2: ok2\nrandom too\n3: ok3"},
+    ]
+
+    autorag = _run_autorag_probe(
+        _AUTORAG_QUERY_DECOMPOSE_PARSER_PROBE,
+        {"cases": probes},
+        tmp_path,
+    )
+    autorag_results = autorag["results"]
+
+    for probe, autorag_out in zip(probes, autorag_results, strict=True):
+        bench_out = _parse_decompose(probe["answer"], probe["query"])
+        assert bench_out == autorag_out, (
+            f"probe {probe['answer']!r}: framework {bench_out} != AutoRAG {autorag_out}. "
+            "Parser divergence — investigate before trusting query_decompose rows."
+        )
+
+
+# AutoRAG-side long_context_reorder probe. Instantiate ``LongContextReorder``
+# (BasePromptMaker requires a project_dir, otherwise unused for ``_pure``)
+# and call ``_pure`` with a minimal prompt template containing the two
+# placeholders the function expects. We then parse out the ordered passage
+# sequence by splitting on the join delimiter (AutoRAG uses ``"\n\n"``).
+_AUTORAG_LONG_CONTEXT_REORDER_PROBE = textwrap.dedent(
+    """
+    import json, sys
+    from autorag.nodes.promptmaker.long_context_reorder import LongContextReorder
+
+    payload = json.loads(sys.stdin.read())
+    reorderer = LongContextReorder(project_dir=payload["project_dir"])
+    # AutoRAG's _pure substitutes {query} and {retrieved_contents}; we use a
+    # marker before retrieved_contents so we can pull the ordered passages
+    # back out by splitting the result.
+    prompt_template = "MARKER:{retrieved_contents}"
+    prompts = reorderer._pure(
+        prompt_template,
+        [payload["query"]],
+        [payload["passages"]],
+        [payload["scores"]],
+    )
+    body = prompts[0].split("MARKER:", 1)[1]
+    # AutoRAG joins with double newline.
+    ordered = body.split("\\n\\n")
+    with open(sys.argv[1], "w") as f:
+        json.dump({"ordered_passages": ordered}, f)
+    """
+).strip()
+
+
+@pytest.mark.skipif(_autorag_python() is None, reason="AUTORAG_PYTHON not set")
+def test_long_context_reorder_passage_order_matches_autorag(tmp_path) -> None:
+    """Framework's ``RAGPipeline.prepare_context(long_context_reorder=True)``
+    produces the same passage *order* as AutoRAG's ``LongContextReorder._pure``.
+
+    Both append the top-by-score passage to the END of the original
+    (unsorted) retrieved list. The join delimiter differs (``"\\n"`` in our
+    framework vs ``"\\n\\n"`` in AutoRAG); we compare the passage sequence
+    only, not the joined string. That join divergence is documented in the
+    paper appendix — changing the framework join would shift grader behaviour
+    on every existing config.
+    """
+    from agentic_autorag.config.models import RuntimeConfig
+    from agentic_autorag.engine.pipeline import (
+        RAGPipeline,
+        RetrievalResult,
+        RetrievalTiming,
+        RetrievedDocument,
+    )
+
+    probes = [
+        {
+            "name": "monotonic_decreasing",
+            "passages": ["P0", "P1", "P2", "P3", "P4"],
+            "scores": [0.9, 0.7, 0.5, 0.3, 0.1],
+            "expected_top_value": "P0",
+        },
+        {
+            "name": "top_in_middle",
+            "passages": ["P0", "P1", "P2", "P3", "P4"],
+            "scores": [0.1, 0.3, 0.9, 0.5, 0.2],
+            "expected_top_value": "P2",
+        },
+        {
+            "name": "two_passages",
+            "passages": ["onlyA", "onlyB"],
+            "scores": [0.2, 0.8],
+            "expected_top_value": "onlyB",
+        },
+        {
+            # Top is at the end already — duplication does not change order,
+            # only doubles the last entry.
+            "name": "top_at_end",
+            "passages": ["P0", "P1", "P2"],
+            "scores": [0.1, 0.2, 0.9],
+            "expected_top_value": "P2",
+        },
+        {
+            # Top is at the start — original order ends with non-top item;
+            # duplication appends the top.
+            "name": "top_at_start",
+            "passages": ["P0", "P1", "P2"],
+            "scores": [0.9, 0.2, 0.1],
+            "expected_top_value": "P0",
+        },
+        {
+            # Large list (10 passages) — exercise sorted vs. original mismatch
+            # over a non-trivial span.
+            "name": "ten_passages_zigzag",
+            "passages": [f"X{i}" for i in range(10)],
+            "scores": [0.5, 0.95, 0.3, 0.7, 0.1, 0.8, 0.4, 0.6, 0.2, 0.55],
+            "expected_top_value": "X1",
+        },
+    ]
+
+    for probe in probes:
+        autorag = _run_autorag_probe(
+            _AUTORAG_LONG_CONTEXT_REORDER_PROBE,
+            {
+                "project_dir": str(tmp_path),
+                "query": "what is the answer",
+                "passages": probe["passages"],
+                "scores": probe["scores"],
+            },
+            tmp_path,
+        )
+        autorag_order = autorag["ordered_passages"]
+
+        # Framework side: instantiate the pipeline with long_context_reorder=True
+        # and synthesize a RetrievalResult.
+        import asyncio
+
+        from unittest.mock import MagicMock
+
+        cfg = RuntimeConfig(generator_llm="test/model", long_context_reorder=True)
+        pipe = RAGPipeline(
+            vector_store=MagicMock(),
+            graph_store=None,
+            config=cfg,
+            embedder=MagicMock(),
+            index_type=__import__("agentic_autorag.config.models", fromlist=["IndexType"]).IndexType.VECTOR_ONLY,
+        )
+        result = RetrievalResult(
+            documents=[
+                RetrievedDocument(id=f"d{i}", text=t, score=s)
+                for i, (t, s) in enumerate(zip(probe["passages"], probe["scores"], strict=True))
+            ],
+            timing=RetrievalTiming(),
+            expansion_cost={"usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0},
+        )
+        context, _ = asyncio.run(pipe.prepare_context("q", result))
+        bench_order = context.split("\n")
+
+        assert bench_order == autorag_order, (
+            f"probe {probe['name']!r}: framework order {bench_order} != "
+            f"AutoRAG order {autorag_order}. AutoRAG semantics: append top-by-score "
+            f"to the original list; our prepare_context must mirror that."
+        )
+        # Sanity: the duplicate at the end is the top-scored passage.
+        assert bench_order[-1] == probe["expected_top_value"]
+
+
+@pytest.mark.skipif(_autorag_python() is None, reason="AUTORAG_PYTHON not set")
+def test_hybrid_rrf_top_k_matches_autorag(tmp_path) -> None:
+    """Framework's ``RAGPipeline._rrf_merge`` agrees with AutoRAG's ``hybrid_rrf``
+    on top-K ranking for distinct-score probes.
+
+    The formulas are mathematically equivalent:
+      - AutoRAG: ``1 / (r + rrf_k)`` where ``r`` is 1-indexed rank (from
+        ``rank_df.rank(ascending=False, method="min")``).
+      - Framework: ``1.0 / (k + rank + 1)`` where ``rank`` is 0-indexed from
+        ``enumerate(list)``.
+    Substituting ``r = rank + 1`` shows them identical when ties are absent.
+    This test exercises three overlap regimes (full, partial, disjoint) and
+    asserts identical top-3 ranking.
+    """
+    from agentic_autorag.engine.pipeline import RAGPipeline
+
+    probes = [
+        {
+            "name": "partial_overlap",
+            "semantic_ids": ["a", "b", "c", "d"],
+            "semantic_scores": [0.9, 0.7, 0.5, 0.3],
+            "lexical_ids": ["b", "c", "e", "f"],
+            "lexical_scores": [0.95, 0.6, 0.4, 0.2],
+        },
+        {
+            "name": "full_overlap",
+            "semantic_ids": ["x", "y", "z"],
+            "semantic_scores": [0.9, 0.5, 0.2],
+            "lexical_ids": ["z", "y", "x"],
+            "lexical_scores": [0.8, 0.4, 0.1],
+        },
+        {
+            "name": "disjoint",
+            "semantic_ids": ["a", "b", "c"],
+            "semantic_scores": [0.9, 0.6, 0.3],
+            "lexical_ids": ["x", "y", "z"],
+            "lexical_scores": [0.9, 0.6, 0.3],
+        },
+        {
+            # Reverse ordering on one side — common when BM25 and vector
+            # disagree sharply (e.g. lexical match vs semantic paraphrase).
+            "name": "reverse_lexical",
+            "semantic_ids": ["p", "q", "r", "s"],
+            "semantic_scores": [0.95, 0.75, 0.55, 0.35],
+            "lexical_ids": ["s", "r", "q", "p"],
+            "lexical_scores": [0.96, 0.76, 0.56, 0.36],
+        },
+        {
+            # Single overlap at the top — the one shared doc should win.
+            "name": "single_overlap_top",
+            "semantic_ids": ["a", "b", "c", "d", "e"],
+            "semantic_scores": [0.99, 0.7, 0.5, 0.3, 0.1],
+            "lexical_ids": ["a", "x", "y", "z", "w"],
+            "lexical_scores": [0.97, 0.65, 0.45, 0.25, 0.05],
+        },
+        {
+            # Single overlap at the bottom — much weaker fusion signal.
+            "name": "single_overlap_bottom",
+            "semantic_ids": ["a", "b", "c", "d", "e"],
+            "semantic_scores": [0.99, 0.7, 0.5, 0.3, 0.1],
+            "lexical_ids": ["x", "y", "z", "w", "e"],
+            "lexical_scores": [0.97, 0.65, 0.45, 0.25, 0.05],
+        },
+        {
+            # Tiny score gap — sensitive to the exact rrf_k value.
+            "name": "tight_score_gap",
+            "semantic_ids": ["a", "b", "c"],
+            "semantic_scores": [0.501, 0.500, 0.499],
+            "lexical_ids": ["c", "b", "a"],
+            "lexical_scores": [0.601, 0.600, 0.599],
+        },
+        {
+            # Large list (10 items each) with partial overlap so RRF ranks
+            # diverge. Pure-disjoint long lists tie pairwise on RRF score
+            # (s_i and l_i both end up at rank i+1 on their own retriever),
+            # and tie-breaking depends on pandas DataFrame index order vs.
+            # our dict-insertion order — that's an undefined-behaviour gap
+            # for disjoint top-3, not a formula bug. Partial overlap forces
+            # at least one fused-rank dominance.
+            "name": "long_list_partial_overlap",
+            "semantic_ids": [f"s{i}" for i in range(10)],
+            "semantic_scores": [round(1.0 - 0.07 * i, 4) for i in range(10)],
+            "lexical_ids": ["s2", "s5", "s8"] + [f"l{i}" for i in range(7)],
+            "lexical_scores": [
+                0.98, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15, 0.05
+            ],
+        },
+    ]
+
+    for probe in probes:
+        autorag = _run_autorag_probe(
+            _AUTORAG_HYBRID_RRF_PROBE,
+            {
+                "semantic_ids": probe["semantic_ids"],
+                "semantic_scores": probe["semantic_scores"],
+                "lexical_ids": probe["lexical_ids"],
+                "lexical_scores": probe["lexical_scores"],
+                "top_k": 3,
+                "weight": 60,
+            },
+            tmp_path,
+        )
+        autorag_top = autorag["ids"][:3]
+
+        list_a = [{"id": i, "score": s, "text": ""} for i, s in zip(probe["semantic_ids"], probe["semantic_scores"], strict=True)]
+        list_b = [{"id": i, "score": s, "text": ""} for i, s in zip(probe["lexical_ids"], probe["lexical_scores"], strict=True)]
+        bench_merged = RAGPipeline._rrf_merge(list_a, list_b, k=60)
+        bench_top = [d["id"] for d in bench_merged[:3]]
+
+        assert autorag_top == bench_top, (
+            f"probe {probe['name']!r}: AutoRAG top-3 {autorag_top} != bench top-3 {bench_top}. "
+            "RRF formula divergence — investigate before trusting bm25_vector_fusion='rrf' "
+            "rows in the paper."
+        )

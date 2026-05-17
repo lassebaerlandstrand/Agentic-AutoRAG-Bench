@@ -44,6 +44,10 @@ from __future__ import annotations
 import os
 
 from agentic_autorag.config.models import IndexType, NumericRange, SearchSpace
+from agentic_autorag.engine.pipeline import (
+    _DEFAULT_REFINE_PROMPT_TMPL,
+    _DEFAULT_TREE_SUMMARIZE_PROMPT_TMPL,
+)
 
 MCQ_PROMPT_TEMPLATE = (
     "Answer the following multiple-choice question by giving the text of the correct option.\n"
@@ -257,34 +261,172 @@ def _vectordb_embedding_block(model: str) -> dict:
     }
 
 
-def _build_query_expansion_modules(query_expansion: list[str], generator_module: dict) -> list[dict]:
+_HYBRID_FUSION_MODULE_MAP: dict[str, str] = {
+    "alpha": "hybrid_cc",
+    "rrf": "hybrid_rrf",
+}
+
+
+_PASSAGE_COMPRESSOR_MODULE_MAP: dict[str, str] = {
+    "none": "pass_compressor",
+    "tree_summarize": "tree_summarize",
+    "refine": "refine",
+}
+
+# Pin the prompt for every llama_index compressor variant. AutoRAG's
+# ``LlamaIndexCompressor`` picks ``prompt`` for non-chat LLMs and ``chat_prompt``
+# for chat-capable LLMs (``is_chat_model`` returns True for ``Bedrock``). Pinning
+# both to the same string forces AutoRAG into a deterministic branch matching
+# the framework's prepare_context output regardless of model type.
+_COMPRESSOR_PROMPT_TMPL: dict[str, str] = {
+    "tree_summarize": _DEFAULT_TREE_SUMMARIZE_PROMPT_TMPL,
+    "refine": _DEFAULT_REFINE_PROMPT_TMPL,
+}
+
+
+def _build_passage_compressor_modules(
+    search_space: SearchSpace,
+    generator_modules: list[dict],
+    temperatures: list[float],
+) -> list[dict]:
+    """Emit AutoRAG passage_compressor modules.
+
+    For every non-"none" compressor type, emits one module per LLM in
+    ``generator_modules`` so AutoRAG's strategy can pick a compressor LLM
+    independently of the generator LLM. The ``prompt`` and ``chat_prompt``
+    kwargs are pinned to the framework's templates so AutoRAG runs against
+    the same wording regardless of the underlying LLM's chat-mode.
+    ``temperature`` is pinned explicitly to prevent reasoning models from
+    falling back to llama_index defaults.
+    """
+    modules: list[dict] = []
+    for compressor in search_space.passage_compressor:
+        if compressor == "none":
+            modules.append({"module_type": "pass_compressor"})
+            continue
+        if compressor not in _PASSAGE_COMPRESSOR_MODULE_MAP:
+            raise ValueError(
+                f"Unknown passage_compressor {compressor!r}. "
+                "Add an entry to _PASSAGE_COMPRESSOR_MODULE_MAP."
+            )
+        for gen_mod in generator_modules:
+            compressor_module: dict = {
+                "module_type": _PASSAGE_COMPRESSOR_MODULE_MAP[compressor],
+                "llm": gen_mod["llm"],
+                "model": list(gen_mod["model"]),
+                "temperature": list(temperatures),
+                "prompt": _COMPRESSOR_PROMPT_TMPL[compressor],
+                "chat_prompt": _COMPRESSOR_PROMPT_TMPL[compressor],
+            }
+            for key in ("api_base", "api_key", "region_name"):
+                if key in gen_mod:
+                    compressor_module[key] = gen_mod[key]
+            modules.append(compressor_module)
+    return modules
+
+
+def _build_prompt_maker_modules(search_space: SearchSpace, prompt_template: str) -> list[dict]:
+    """Emit prompt_maker modules from ``search_space.long_context_reorder``.
+
+    ``False`` → ``fstring`` (substitute only); ``True`` →
+    ``long_context_reorder`` (append top-by-score passage to the end before
+    substitution).
+    """
+    modules: list[dict] = []
+    for enabled in search_space.long_context_reorder:
+        if enabled is False:
+            modules.append({"module_type": "fstring", "prompt": [prompt_template]})
+        elif enabled is True:
+            modules.append({"module_type": "long_context_reorder", "prompt": [prompt_template]})
+        else:
+            raise ValueError(
+                f"long_context_reorder values must be bool; got {enabled!r}"
+            )
+    return modules
+
+
+def _build_hybrid_modules(search_space: SearchSpace, weight_lo: float, weight_hi: float) -> list[dict]:
+    """Emit one AutoRAG hybrid_retrieval module per enumerated fusion strategy.
+
+    ``"alpha"`` → ``hybrid_cc`` with the hybrid_alpha range mapped to
+    AutoRAG's ``weight`` (same semantic-weight convention). ``"rrf"`` →
+    ``hybrid_rrf`` with ``weight=60`` (rrf_k) pinned.
+    """
+    modules: list[dict] = []
+    for fusion in search_space.bm25_vector_fusion:
+        if fusion == "alpha":
+            modules.append(
+                {
+                    "module_type": "hybrid_cc",
+                    "normalize_method": ["mm", "tmm"],
+                    # AutoRAG's YAML loader re-tuplifies the string form
+                    # ``"(a, b)"`` (autorag.utils.util.convert_string_to_tuple_in_dict).
+                    # PyYAML can't dump Python tuples, so we emit the string.
+                    "weight_range": f"({weight_lo}, {weight_hi})",
+                    "test_weight_size": 21 if weight_lo != weight_hi else 1,
+                }
+            )
+        elif fusion == "rrf":
+            # AutoRAG's HybridRRF.run_evaluator enumerates ``weight`` (its name
+            # for rrf_k) across ``np.linspace(weight_range[0], weight_range[1],
+            # weight_range[1] - weight_range[0] + 1)``. Pin the range to a
+            # single point so the enumeration collapses to ``[60]`` — matches
+            # the framework's ``_rrf_merge`` k=60 default.
+            modules.append({"module_type": "hybrid_rrf", "weight_range": "(60, 60)"})
+        else:
+            raise ValueError(
+                f"Unknown bm25_vector_fusion {fusion!r}. "
+                f"Add an entry to _HYBRID_FUSION_MODULE_MAP."
+            )
+    return modules
+
+
+def _build_query_expansion_modules(
+    query_expansion: list[str],
+    generator_modules: list[dict],
+    temperatures: list[float],
+) -> list[dict]:
     """Translate our query-expansion choices to AutoRAG modules.
 
-    HyDE / multi-query expansion in AutoRAG need ``generator_module_type``,
-    ``llm`` and ``model`` set (so the expansion call has somewhere to land).
-    We thread the first search-space LLM through as the expansion LLM, copying
-    whichever provider-specific auth keys it carries (Azure: api_base/api_key,
-    Bedrock: region_name).
+    For each non-"none" strategy, emits one module per LLM in
+    ``generator_modules`` so AutoRAG's strategy can pick the expander LLM
+    independently of the generator. HyDE / multi-query / query_decompose
+    all need ``generator_module_type`` / ``llm`` / ``model`` plus the
+    provider-specific auth keys. ``temperature`` is pinned to prevent
+    llama_index defaults on reasoning models.
     """
     out: list[dict] = []
     for qe in query_expansion:
         if qe == "none":
             out.append({"module_type": "pass_query_expansion"})
             continue
-        gen_block: dict = {
-            "generator_module_type": "llama_index_llm",
-            "llm": generator_module["llm"],
-            "model": list(generator_module["model"]),
-        }
-        for key in ("api_base", "api_key", "region_name"):
-            if key in generator_module:
-                gen_block[key] = generator_module[key]
-        if qe == "hyde":
-            out.append({"module_type": "hyde", "max_token": 64, **gen_block})
-        elif qe == "multi_query":
-            out.append({"module_type": "multi_query_expansion", **gen_block})
-        else:
-            raise ValueError(f"Unknown query_expansion {qe!r} — add an explicit AutoRAG mapping")
+        for gen_mod in generator_modules:
+            gen_block: dict = {
+                "generator_module_type": "llama_index_llm",
+                "llm": gen_mod["llm"],
+                "model": list(gen_mod["model"]),
+                "temperature": list(temperatures),
+            }
+            for key in ("api_base", "api_key", "region_name"):
+                if key in gen_mod:
+                    gen_block[key] = gen_mod[key]
+            if qe == "hyde":
+                out.append({"module_type": "hyde", "max_token": 64, **gen_block})
+            elif qe == "multi_query":
+                out.append({"module_type": "multi_query_expansion", **gen_block})
+            elif qe == "query_decompose":
+                # Passing ``prompt: ""`` forces AutoRAG into the
+                # ``bool(prompt) is False`` branch in
+                # ``QueryDecompose._pure``, which substitutes the question
+                # cleanly via ``decompose_prompt.format(question=query)`` —
+                # matching the framework's behaviour. With the default
+                # ``prompt=decompose_prompt`` AutoRAG instead wraps the prompt
+                # as ``f"prompt: {decompose_prompt}\n\n question: {query}"``,
+                # leaving a literal ``{question}`` placeholder in the example
+                # slot.
+                out.append({"module_type": "query_decompose", "prompt": "", **gen_block})
+            else:
+                raise ValueError(f"Unknown query_expansion {qe!r} — add an explicit AutoRAG mapping")
     return out
 
 
@@ -361,18 +503,7 @@ def generate_autorag_config(
             "node_type": "hybrid_retrieval",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
             "top_k": top_ks[-1],
-            "modules": [
-                {
-                    "module_type": "hybrid_cc",
-                    "normalize_method": ["mm", "tmm"],
-                    # AutoRAG's custom YAML loader recognises the string form
-                    # ``"(a, b)"`` as a tuple (autorag.utils.util:convert_string_to_tuple_in_dict).
-                    # PyYAML can't dump Python tuples → we emit the string form
-                    # directly so AutoRAG re-tuplifies on load.
-                    "weight_range": f"({weight_lo}, {weight_hi})",
-                    "test_weight_size": 21 if weight_lo != weight_hi else 1,
-                }
-            ],
+            "modules": _build_hybrid_modules(ss, weight_lo, weight_hi),
         },
     ]
 
@@ -385,9 +516,13 @@ def generate_autorag_config(
             reranker_modules.append({"module_type": _reranker_module_for(model), "model_name": model})
 
     # ===== Query expansion =====
+    # All LLMs in the search space are emitted at the expander node so
+    # AutoRAG's strategy can pick the expander LLM independently of the
+    # generator. Matches the framework's per-stage ``expander_llm`` field.
     query_expansion_modules = _build_query_expansion_modules(
         list(ss.query_expansion),
-        generator_modules[0],
+        generator_modules,
+        temperatures,
     )
 
     # ===== Metric registration =====
@@ -420,27 +555,55 @@ def generate_autorag_config(
         }
     ]
 
-    post_retrieve_nodes = [
+    post_retrieve_nodes: list[dict] = [
         {
             "node_type": "passage_reranker",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
             "top_k": reranker_top_ks[-1],
             "modules": reranker_modules,
         },
-        {
-            "node_type": "prompt_maker",
-            "strategy": {
-                "metrics": gen_metrics,
-                "generator_modules": [generator_modules[0]],  # only one for prompt tuning
-            },
-            "modules": [{"module_type": "fstring", "prompt": [prompt_template]}],
-        },
-        {
-            "node_type": "generator",
-            "strategy": {"metrics": gen_metrics},
-            "modules": generator_modules,
-        },
     ]
+    # Omit the passage_compressor node entirely when only "none" is
+    # enumerated — AutoRAG would otherwise evaluate a no-op module per trial.
+    if any(c != "none" for c in ss.passage_compressor):
+        # AutoRAG's passage_compressor node restricts strategy.metrics to
+        # the retrieval-token metric family (validated at
+        # autorag/nodes/passagecompressor/run.py:82-89). Using generator
+        # metrics like rouge / bleu here raises ``ValueError: metrics must be
+        # one of ...``.
+        post_retrieve_nodes.append(
+            {
+                "node_type": "passage_compressor",
+                "strategy": {
+                    "metrics": [
+                        "retrieval_token_f1",
+                        "retrieval_token_recall",
+                        "retrieval_token_precision",
+                    ]
+                },
+                "modules": _build_passage_compressor_modules(ss, generator_modules, temperatures),
+            }
+        )
+    post_retrieve_nodes.extend(
+        [
+            {
+                "node_type": "prompt_maker",
+                "strategy": {
+                    "metrics": gen_metrics,
+                    # All generator-stage LLMs are exposed at prompt_maker too
+                    # so AutoRAG's strategy enumerates the full per-stage pool
+                    # at every node that touches an LLM.
+                    "generator_modules": generator_modules,
+                },
+                "modules": _build_prompt_maker_modules(ss, prompt_template),
+            },
+            {
+                "node_type": "generator",
+                "strategy": {"metrics": gen_metrics},
+                "modules": generator_modules,
+            },
+        ]
+    )
 
     config: dict = {
         "vectordb": vectordb_entries,
@@ -453,14 +616,12 @@ def generate_autorag_config(
 
     excluded_dimensions = [
         "chunking — fixed externally; AutoRAG's chunk phase is separate from evaluate",
-        "passage_compressor (tree_summarize / refine / longllmlingua)",
+        "passage_compressor longllmlingua module (LLMLingua dependency excluded)",
         "passage_filter (similarity_threshold_cutoff / percentile_cutoff / recency_filter)",
         "passage_augmenter (prev_next_augmenter)",
-        "prompt_maker template tuning beyond the single fstring",
-        "long_context_reorder + window_replacement variants of prompt_maker",
-        "query_expansion modules outside {none, hyde, multi_query} (e.g. query_decompose)",
-        "hybrid_rrf — we only enumerate hybrid_cc (CC fusion); RRF is excluded for "
-        "search-space symmetry with our hybrid_alpha (continuous)",
+        "prompt_maker template tuning beyond the single fstring (and "
+        "long_context_reorder when enumerated)",
+        "window_replacement variants of prompt_maker",
     ]
     excluded_dimensions.append(
         "custom ``mcq_accuracy`` metric — replaced by AutoRAG's built-in rouge "

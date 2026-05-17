@@ -19,6 +19,12 @@ def log_trial_banner(
     logger.info("TRIAL %d/%d", trial_num, max_trials)
     logger.info(_BAR)
     reasoning_tag = " +reasoning" if config.reasoning else ""
+    parts = {"gen": config.generator_llm, "comp": config.compressor_llm, "exp": config.expander_llm}
+    active = [v for v in parts.values() if v is not None]
+    llm_str = (
+        active[0] if active and all(v == active[0] for v in active)
+        else "|".join(f"{k}:{v if v is not None else 'null'}" for k, v in parts.items())
+    )
     logger.info(
         "Config | chunk=%s strategy=%s embed=%s index=%s top_k=%s reranker=%s llm=%s%s temp=%s",
         config.chunk_token_size,
@@ -27,7 +33,7 @@ def log_trial_banner(
         config.index_type.value,
         config.top_k,
         config.reranker,
-        config.llm_model,
+        llm_str,
         reasoning_tag,
         config.temperature,
     )

@@ -72,8 +72,14 @@ def sample_random(
     top_k = rng.randint(int(ss.top_k.min), int(ss.top_k.max))
 
     if index_type == IndexType.HYBRID_BM25_VECTOR:
-        hybrid_alpha = round(rng.uniform(ss.hybrid_alpha.min, ss.hybrid_alpha.max), 4)
+        bm25_vector_fusion = rng.choice(ss.bm25_vector_fusion)
+        # hybrid_alpha only feeds alpha-blend; skip sampling it under rrf.
+        if bm25_vector_fusion == "alpha":
+            hybrid_alpha = round(rng.uniform(ss.hybrid_alpha.min, ss.hybrid_alpha.max), 4)
+        else:
+            hybrid_alpha = round(_midpoint(ss.hybrid_alpha), 4)
     else:
+        bm25_vector_fusion = ss.bm25_vector_fusion[0]
         hybrid_alpha = round(_midpoint(ss.hybrid_alpha), 4)
 
     reranker = rng.choice(ss.reranker.models)
@@ -85,9 +91,16 @@ def sample_random(
         reranker_top_n = int(ss.reranker.top_n.min)
 
     query_expansion = rng.choice(ss.query_expansion)
-    llm_model = rng.choice(ss.llm_models)
+    long_context_reorder = rng.choice(ss.long_context_reorder)
+    passage_compressor = rng.choice(ss.passage_compressor)
+    # Per-stage LLMs: generator always sampled; compressor/expander only
+    # when the stage actually runs (matches TrialConfig's cross-field
+    # validator). All draw from the same shared ``llm_models`` pool.
+    generator_llm = rng.choice(ss.llm_models)
+    compressor_llm = rng.choice(ss.llm_models) if passage_compressor != "none" else None
+    expander_llm = rng.choice(ss.llm_models) if query_expansion != "none" else None
     temperature = round(rng.uniform(ss.temperature.min, ss.temperature.max), 4)
-    reasoning = rng.choice([False, True]) if ss.is_reasoning_allowed(llm_model) else False
+    reasoning = rng.choice([False, True]) if ss.is_reasoning_allowed(generator_llm) else False
 
     if index_type in GRAPH_INDEX_TYPES and ss.graph_retrieval is not None:
         gr = ss.graph_retrieval
@@ -105,10 +118,15 @@ def sample_random(
         index_type=index_type,
         top_k=top_k,
         hybrid_alpha=hybrid_alpha,
+        bm25_vector_fusion=bm25_vector_fusion,
+        long_context_reorder=long_context_reorder,
+        passage_compressor=passage_compressor,
         reranker=reranker,
         reranker_top_n=reranker_top_n,
         query_expansion=query_expansion,
-        llm_model=llm_model,
+        generator_llm=generator_llm,
+        compressor_llm=compressor_llm,
+        expander_llm=expander_llm,
         temperature=temperature,
         reasoning=reasoning,
         graph_query_mode=graph_query_mode,
@@ -143,8 +161,13 @@ def sample_optuna(
     top_k = trial.suggest_int("top_k", int(ss.top_k.min), int(ss.top_k.max))
 
     if index_type == IndexType.HYBRID_BM25_VECTOR:
-        hybrid_alpha = trial.suggest_float("hybrid_alpha", ss.hybrid_alpha.min, ss.hybrid_alpha.max)
+        bm25_vector_fusion = trial.suggest_categorical("bm25_vector_fusion", ss.bm25_vector_fusion)
+        if bm25_vector_fusion == "alpha":
+            hybrid_alpha = trial.suggest_float("hybrid_alpha", ss.hybrid_alpha.min, ss.hybrid_alpha.max)
+        else:
+            hybrid_alpha = _midpoint(ss.hybrid_alpha)
     else:
+        bm25_vector_fusion = ss.bm25_vector_fusion[0]
         hybrid_alpha = _midpoint(ss.hybrid_alpha)
 
     reranker = trial.suggest_categorical("reranker", ss.reranker.models)
@@ -156,11 +179,24 @@ def sample_optuna(
         reranker_top_n = int(ss.reranker.top_n.min)
 
     query_expansion = trial.suggest_categorical("query_expansion", ss.query_expansion)
-    llm_model = trial.suggest_categorical("llm_model", ss.llm_models)
+    long_context_reorder = trial.suggest_categorical("long_context_reorder", ss.long_context_reorder)
+    passage_compressor = trial.suggest_categorical("passage_compressor", ss.passage_compressor)
+    # Per-stage LLMs: generator always sampled; compressor/expander only
+    # when the stage runs (TPE skips dead dimensions on the inactive
+    # branches of conditional suggests).
+    generator_llm = trial.suggest_categorical("generator_llm", ss.llm_models)
+    if passage_compressor != "none":
+        compressor_llm = trial.suggest_categorical("compressor_llm", ss.llm_models)
+    else:
+        compressor_llm = None
+    if query_expansion != "none":
+        expander_llm = trial.suggest_categorical("expander_llm", ss.llm_models)
+    else:
+        expander_llm = None
     temperature = trial.suggest_float("temperature", ss.temperature.min, ss.temperature.max)
     reasoning = (
         trial.suggest_categorical("reasoning", [False, True])
-        if ss.is_reasoning_allowed(llm_model)
+        if ss.is_reasoning_allowed(generator_llm)
         else False
     )
 
@@ -180,10 +216,15 @@ def sample_optuna(
         index_type=index_type,
         top_k=top_k,
         hybrid_alpha=hybrid_alpha,
+        bm25_vector_fusion=bm25_vector_fusion,
+        long_context_reorder=long_context_reorder,
+        passage_compressor=passage_compressor,
         reranker=reranker,
         reranker_top_n=reranker_top_n,
         query_expansion=query_expansion,
-        llm_model=llm_model,
+        generator_llm=generator_llm,
+        compressor_llm=compressor_llm,
+        expander_llm=expander_llm,
         temperature=temperature,
         reasoning=reasoning,
         graph_query_mode=graph_query_mode,
