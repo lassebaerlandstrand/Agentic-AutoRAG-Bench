@@ -151,6 +151,90 @@ class TestGenerateAutoragConfig:
         hybrid_mod = next(m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_cc")
         assert hybrid_mod["weight_range"] == "(0.0, 1.0)"
 
+    def test_hybrid_rrf_emitted_when_search_space_includes_rrf(self) -> None:
+        """When ``bm25_vector_fusion`` includes ``'rrf'``, the hybrid_retrieval
+        node carries a ``hybrid_rrf`` module alongside ``hybrid_cc`` (or
+        replacing it if only RRF is enumerated). AutoRAG's HybridRRF
+        enumerates ``weight`` over ``weight_range``; we pin the range to
+        ``(60, 60)`` so AutoRAG runs a single ``weight=60`` candidate
+        matching the framework's ``_rrf_merge`` k=60."""
+        space = _curated_space()
+        space.bm25_vector_fusion = ["alpha", "rrf"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        hybrid_node = _find_node(config, "hybrid_retrieval")
+        mtypes = {m["module_type"] for m in hybrid_node["modules"]}
+        assert "hybrid_cc" in mtypes
+        assert "hybrid_rrf" in mtypes
+        rrf_mod = next(m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_rrf")
+        assert rrf_mod["weight_range"] == "(60, 60)"
+        assert "weight" not in rrf_mod
+
+    def test_hybrid_rrf_only_when_alpha_not_in_search_space(self) -> None:
+        """Search space with bm25_vector_fusion=['rrf'] emits hybrid_rrf only."""
+        space = _curated_space()
+        space.bm25_vector_fusion = ["rrf"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        hybrid_node = _find_node(config, "hybrid_retrieval")
+        mtypes = [m["module_type"] for m in hybrid_node["modules"]]
+        assert mtypes == ["hybrid_rrf"]
+
+    def test_long_context_reorder_emitted_when_search_space_enumerates_true(self) -> None:
+        """``long_context_reorder: [False, True]`` → prompt_maker carries both
+        ``fstring`` (False) and ``long_context_reorder`` (True) modules."""
+        space = _curated_space()
+        space.long_context_reorder = [False, True]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        pm_node = _find_node(config, "prompt_maker")
+        mtypes = [m["module_type"] for m in pm_node["modules"]]
+        assert "fstring" in mtypes
+        assert "long_context_reorder" in mtypes
+
+    def test_long_context_reorder_only_when_fstring_not_in_search_space(self) -> None:
+        """``long_context_reorder: [True]`` only emits the reorder module."""
+        space = _curated_space()
+        space.long_context_reorder = [True]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        pm_node = _find_node(config, "prompt_maker")
+        mtypes = [m["module_type"] for m in pm_node["modules"]]
+        assert mtypes == ["long_context_reorder"]
+
+    def test_passage_compressor_node_omitted_when_all_none(self) -> None:
+        """No compression dimensions → no extra passage_compressor node (avoid
+        pass-through overhead in baseline runs)."""
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        node_types = {n["node_type"] for n in _all_nodes(config)}
+        assert "passage_compressor" not in node_types
+
+    def test_passage_compressor_node_emitted_when_search_space_enumerates_compressors(self) -> None:
+        """When tree_summarize/refine is enumerated, a passage_compressor node
+        appears with corresponding modules. ``pass_compressor`` represents the
+        "none" choice; LLM modules carry the search-space generator's auth and
+        pinned framework prompts (both ``prompt`` and ``chat_prompt``) so the
+        AutoRAG run uses the same wording as the framework regardless of the
+        LLM's chat-mode."""
+        space = _curated_space()
+        space.passage_compressor = ["none", "tree_summarize", "refine"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        pc_node = _find_node(config, "passage_compressor")
+        mtypes = [m["module_type"] for m in pc_node["modules"]]
+        assert set(mtypes) == {"pass_compressor", "tree_summarize", "refine"}
+        for m in pc_node["modules"]:
+            if m["module_type"] == "pass_compressor":
+                assert "prompt" not in m
+                continue
+            assert m["llm"] == "openai"
+            assert m["model"] == ["gpt-4o-mini"]
+            assert m["api_base"] == "${AZURE_API_BASE}/openai/v1"
+            assert m["prompt"] == m["chat_prompt"]
+            if m["module_type"] == "tree_summarize":
+                assert "multiple sources" in m["prompt"]
+                assert "{context_str}" in m["prompt"]
+                assert "{query_str}" in m["prompt"]
+            elif m["module_type"] == "refine":
+                assert "Refined Answer" in m["prompt"]
+                assert "{existing_answer}" in m["prompt"]
+                assert "{context_msg}" in m["prompt"]
+
     def test_hybrid_weight_pinned_to_one_when_only_vector_only_in_search_space(self) -> None:
         """vector_only-only space → hybrid_cc weight pinned at 1.0 (fully semantic, BM25
         contribution zeroed) so hybrid_retrieval is effectively a pass-through of the
@@ -284,7 +368,8 @@ class TestGenerateAutoragConfig:
         assert "passage_compressor" in excluded
         assert "passage_filter" in excluded
         assert "prompt_maker template tuning" in excluded
-        assert "hybrid_rrf" in excluded
+        # hybrid_rrf is enumerated under bm25_vector_fusion, not excluded.
+        assert "hybrid_rrf" not in excluded
 
     def test_discretization_grid_recorded(self) -> None:
         _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
@@ -301,12 +386,75 @@ class TestGenerateAutoragConfig:
         assert "hyde" in mtypes
         assert "multi_query_expansion" in mtypes
 
+    def test_query_decompose_module_emitted_when_in_search_space(self) -> None:
+        """When ``query_expansion`` contains ``'query_decompose'``, the AutoRAG
+        config emits a ``query_decompose`` module carrying the generator's
+        llm + auth, with ``prompt: ""`` so AutoRAG substitutes the
+        ``{question}`` placeholder cleanly via ``decompose_prompt.format(...)``
+        (matching the framework's behaviour). The default prompt-handling path
+        would otherwise leave a literal ``{question}`` placeholder in the
+        example slot."""
+        space = _curated_space()
+        space.query_expansion = ["none", "query_decompose"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        qe_node = _find_node(config, "query_expansion")
+        mtypes = [m["module_type"] for m in qe_node["modules"]]
+        assert "query_decompose" in mtypes
+        decompose_mod = next(m for m in qe_node["modules"] if m["module_type"] == "query_decompose")
+        assert decompose_mod["llm"] == "openai"
+        assert decompose_mod["api_base"] == "${AZURE_API_BASE}/openai/v1"
+        assert decompose_mod["prompt"] == ""
+
     def test_query_expansion_strategy_carries_retrieval_modules(self) -> None:
         """v0.3 query_expansion node embeds retrieval_modules in strategy so it can score query rewrites."""
         config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
         qe_node = _find_node(config, "query_expansion")
         assert "retrieval_modules" in qe_node["strategy"]
         assert qe_node["strategy"]["retrieval_modules"]
+
+    def test_passage_compressor_enumerates_all_llms_per_compressor_type(self) -> None:
+        """Multi-LLM search space → AutoRAG's compressor node gets one module
+        per (compressor_type × LLM). Matches the framework's per-stage
+        ``compressor_llm`` field — AutoRAG can pick the compressor LLM
+        independently of the generator LLM."""
+        space = _curated_space()
+        space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.passage_compressor = ["none", "tree_summarize"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        pc_node = _find_node(config, "passage_compressor")
+        tree_modules = [m for m in pc_node["modules"] if m["module_type"] == "tree_summarize"]
+        assert len(tree_modules) == 2
+        models_used = {m["model"][0] for m in tree_modules}
+        assert models_used == {"gpt-4o-mini", "o4-mini"}
+        # Temperature pinned to prevent llama_index defaults on reasoning models.
+        assert all(m["temperature"] == [1.0] for m in tree_modules)
+
+    def test_query_expansion_enumerates_all_llms_per_strategy(self) -> None:
+        """Multi-LLM search space → AutoRAG's expander node gets one module
+        per (strategy × LLM). Matches the framework's per-stage
+        ``expander_llm`` field."""
+        space = _curated_space()
+        space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.query_expansion = ["none", "query_decompose"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        qe_node = _find_node(config, "query_expansion")
+        decompose_modules = [m for m in qe_node["modules"] if m["module_type"] == "query_decompose"]
+        assert len(decompose_modules) == 2
+        models_used = {m["model"][0] for m in decompose_modules}
+        assert models_used == {"gpt-4o-mini", "o4-mini"}
+        assert all(m["temperature"] == [1.0] for m in decompose_modules)
+
+    def test_prompt_maker_strategy_enumerates_all_generator_llms(self) -> None:
+        """prompt_maker strategy.generator_modules now lists all LLMs so the
+        prompt-tuning step matches the generator node's enumeration."""
+        space = _curated_space()
+        space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        pm_node = _find_node(config, "prompt_maker")
+        generator_modules = pm_node["strategy"]["generator_modules"]
+        assert len(generator_modules) == 2
+        models_used = {gm["model"][0] for gm in generator_modules}
+        assert models_used == {"gpt-4o-mini", "o4-mini"}
 
 
 class TestRerankerModuleMap:

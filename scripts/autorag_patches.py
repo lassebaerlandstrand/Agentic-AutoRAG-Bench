@@ -35,6 +35,18 @@ Patches applied:
   retrieval node *already* re-loads the model per module evaluation
   (``Initialize retrieval node`` / ``Deleting retrieval node`` log lines in
   base.py), so dropping the ingest-time reference is safe.
+
+- ``TreeSummarize._pure`` / ``Refine._pure`` / ``LlamaIndexLLM.__pure_generate``
+  / ``LlamaIndexLLM.__pure_chat`` — per-row content-filter tolerance.
+  Upstream AutoRAG hands every per-row LLM task to ``process_batch`` which
+  uses ``asyncio.gather`` without ``return_exceptions``, so a single
+  Azure ``ResponsibleAIPolicyViolation`` aborts the entire enumeration.
+  Patched: wrap each task so content-filter rejections substitute an
+  empty result, which scores 0 in retrieval_token_f1 / rouge — dragging
+  the failing module's average down so AutoRAG's strategy correctly
+  de-prefers filter-prone modules (typically pass_compressor /
+  pass_query_expansion win on filter-prone rows). Other exceptions still
+  propagate.
 """
 
 from __future__ import annotations
@@ -118,6 +130,129 @@ def _patch_free_embedder_after_ingest() -> None:
     _eval_mod.vectordb_ingest_huggingface = _wrapped
 
 
+_CONTENT_FILTER_MARKERS: tuple[str, ...] = (
+    "content_filter",
+    "responsibleaipolicyviolation",
+    "content management policy",
+)
+
+
+def _is_content_filter_exc(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    return any(m in msg for m in _CONTENT_FILTER_MARKERS)
+
+
+def _patch_content_filter_row_tolerance() -> None:
+    import asyncio
+
+    try:
+        from autorag.nodes.passagecompressor.tree_summarize import TreeSummarize
+        from autorag.nodes.passagecompressor.refine import Refine
+        from autorag.nodes.generator.llama_index_llm import LlamaIndexLLM
+        from autorag.utils.util import get_event_loop, process_batch
+        from llama_index.core import PromptTemplate
+        from llama_index.core.base.llms.types import CompletionResponse, ChatResponse, ChatMessage
+        from llama_index.core.prompts import PromptType
+        from llama_index.core.prompts.utils import is_chat_model
+        from llama_index.core.response_synthesizers import (
+            TreeSummarize as _LITreeSummarize,
+            Refine as _LIRefine,
+        )
+    except ImportError:
+        return
+
+    async def _safe(coro, fallback):
+        try:
+            return await coro
+        except BaseException as exc:
+            if _is_content_filter_exc(exc):
+                return fallback
+            raise
+
+    def _tree_summarize_pure(self, queries, contents, prompt=None, chat_prompt=None, batch=16):
+        if prompt is not None and not is_chat_model(self.llm):
+            summary_template = PromptTemplate(prompt, prompt_type=PromptType.SUMMARY)
+        elif chat_prompt is not None and is_chat_model(self.llm):
+            summary_template = PromptTemplate(chat_prompt, prompt_type=PromptType.SUMMARY)
+        else:
+            summary_template = None
+        summarizer = _LITreeSummarize(llm=self.llm, summary_template=summary_template, use_async=True)
+        tasks = [
+            _safe(summarizer.aget_response(query, content), fallback="")
+            for query, content in zip(queries, contents)
+        ]
+        loop = get_event_loop()
+        return loop.run_until_complete(process_batch(tasks, batch_size=batch))
+
+    def _refine_pure(self, queries, contents, prompt=None, chat_prompt=None, batch=16):
+        if prompt is not None and not is_chat_model(self.llm):
+            refine_template = PromptTemplate(prompt, prompt_type=PromptType.REFINE)
+        elif chat_prompt is not None and is_chat_model(self.llm):
+            refine_template = PromptTemplate(chat_prompt, prompt_type=PromptType.REFINE)
+        else:
+            refine_template = None
+        summarizer = _LIRefine(llm=self.llm, refine_template=refine_template, verbose=True)
+        tasks = [
+            _safe(summarizer.aget_response(query, content), fallback="")
+            for query, content in zip(queries, contents)
+        ]
+        loop = get_event_loop()
+        return loop.run_until_complete(process_batch(tasks, batch_size=batch))
+
+    TreeSummarize._pure = _tree_summarize_pure
+    Refine._pure = _refine_pure
+
+    # LlamaIndexLLM has name-mangled ``__pure_generate`` / ``__pure_chat``.
+    # Build CompletionResponse / ChatResponse fallbacks with empty content
+    # so downstream metric calculation gives this row 0 for rouge / bleu /
+    # retrieval_token_f1 — dragging the failing LLM's average down so
+    # AutoRAG's strategy de-prefers filter-prone LLMs at the generator and
+    # query_expansion (LlamaIndexLLM-backed) nodes.
+    _empty_completion = CompletionResponse(text="")
+    _empty_chat = ChatResponse(message=ChatMessage(role="assistant", content=""))
+
+    _orig_pure_generate = LlamaIndexLLM._LlamaIndexLLM__pure_generate
+    _orig_pure_chat = LlamaIndexLLM._LlamaIndexLLM__pure_chat
+
+    def _safe_pure_generate(self, prompts, **kwargs):
+        tasks = [
+            _safe(self.llm_instance.acomplete(prompt), fallback=_empty_completion)
+            for prompt in prompts
+        ]
+        loop = get_event_loop()
+        results = loop.run_until_complete(process_batch(tasks, batch_size=self.batch))
+        generated_texts = [r.text for r in results]
+        tokenized_ids = self.get_default_tokenized_ids(generated_texts)
+        pseudo_log_probs = self.get_default_log_probs(tokenized_ids)
+        return generated_texts, tokenized_ids, pseudo_log_probs
+
+    def _safe_pure_chat(self, prompts, **kwargs):
+        llama_index_messages = [
+            [ChatMessage(role=msg["role"], content=msg["content"]) for msg in message]
+            for message in prompts
+        ]
+        tasks = [
+            _safe(self.llm_instance.achat(msg), fallback=_empty_chat)
+            for msg in llama_index_messages
+        ]
+        loop = get_event_loop()
+        results = loop.run_until_complete(process_batch(tasks, batch_size=self.batch))
+        generated_texts = [r.message.content for r in results]
+        if all(r.logprobs is not None for r in results if r is not _empty_chat):
+            # Logprobs absent on the filtered rows; force the no-logprob branch
+            # so downstream uses pseudo logprobs uniformly.
+            tokenized_ids = self.get_default_tokenized_ids(generated_texts)
+            pseudo_log_probs = self.get_default_log_probs(tokenized_ids)
+        else:
+            tokenized_ids = self.get_default_tokenized_ids(generated_texts)
+            pseudo_log_probs = self.get_default_log_probs(tokenized_ids)
+        return generated_texts, tokenized_ids, pseudo_log_probs
+
+    LlamaIndexLLM._LlamaIndexLLM__pure_generate = _safe_pure_generate
+    LlamaIndexLLM._LlamaIndexLLM__pure_chat = _safe_pure_chat
+
+
 _patch_chroma_add_embedding()
 _patch_register_bedrock_converse()
 _patch_free_embedder_after_ingest()
+_patch_content_filter_row_tolerance()
