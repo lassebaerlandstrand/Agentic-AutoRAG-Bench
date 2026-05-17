@@ -89,25 +89,32 @@ search_space:
     # every embedding in the search space (MiniLM caps at 256); overlap=0
     # avoids cross-chunk information leakage.
     strategies: ["recursive"]
-    chunk_token_size: { min: 256, max: 256 }
-    chunk_token_overlap: { min: 0, max: 0 }
+    chunk_token_size: { values: [256] }
+    chunk_token_overlap: { values: [0] }
   embedding_models:
     - "sentence-transformers/all-MiniLM-L6-v2"
     - "BAAI/bge-large-en-v1.5"
     - "BAAI/bge-m3"
   index_types:
     - "vector_only"
-  top_k: { min: 3, max: 10 }
-  hybrid_alpha: { min: 0.0, max: 1.0 }
+  # DiscreteValues grids match hotpot_paper_project.yaml shape but with
+  # smaller fan-outs so the dev smoke run finishes in minutes.
+  top_k: { values: [3, 10] }
+  hybrid_alpha: { values: [0.0, 0.5, 1.0] }
   reranker:
     models:
       - "none"
-    top_n: { min: 3, max: 5 }
+    top_n: { values: [3, 5] }
   query_expansion: ["none"]
   llm_models:
-    - "azure/gpt-4o-mini"
-    - "azure/gpt-5.4-nano"
-    - "azure/o4-mini"
+    generator:
+      - "azure/gpt-4o-mini"
+      - "azure/gpt-5.4-nano"
+      - "azure/o4-mini"
+    expander:
+      - "azure/gpt-4o-mini"
+    compressor:
+      - "azure/gpt-4o-mini"
   temperature: { min: 1.0, max: 1.0 }
   reasoning: false
   reasoning_effort: medium

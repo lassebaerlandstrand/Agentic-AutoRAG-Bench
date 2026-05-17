@@ -272,7 +272,7 @@ class AutoRAGOptimizer:
         # whole AutoRAG run, so this is the only place we get to intervene.
         # Probe with the cheapest search-space LLM since Azure's filter
         # applies at the gateway, not per-deployment.
-        prescreen_model = orch.config.search_space.llm_models[0]
+        prescreen_model = orch.config.search_space.llm_models.generator[0]
         dropped = await prescreen_qa_for_content_filter(qa_parquet, model=prescreen_model)
         if dropped:
             notes = dict(notes)

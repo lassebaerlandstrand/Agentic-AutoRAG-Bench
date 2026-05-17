@@ -6,10 +6,12 @@ import pytest
 
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
+    DiscreteValues,
     IndexType,
     NumericRange,
     RerankerSearchSpace,
     SearchSpace,
+    StageLLMs,
 )
 
 from agentic_autorag_bench.methods.autorag.native_config import (
@@ -24,22 +26,25 @@ def _curated_space() -> SearchSpace:
     return SearchSpace(
         chunking=ChunkingSearchSpace(
             strategies=["recursive", "fixed"],
-            chunk_token_size=NumericRange(min=256, max=512),
-            chunk_token_overlap=NumericRange(min=0, max=64),
+            # AutoRAG translator requires DiscreteValues for the five numeric
+            # dims (top_k, hybrid_alpha, reranker.top_n, chunk_token_size,
+            # chunk_token_overlap); see _require_discrete_int / _require_discrete_float.
+            chunk_token_size=DiscreteValues(values=[256, 512]),
+            chunk_token_overlap=DiscreteValues(values=[0, 64]),
         ),
         embedding_models=[
             "sentence-transformers/all-MiniLM-L6-v2",
             "BAAI/bge-m3",
         ],
         index_types=[IndexType.VECTOR_ONLY, IndexType.HYBRID_BM25_VECTOR],
-        top_k=NumericRange(min=3, max=20),
-        hybrid_alpha=NumericRange(min=0.0, max=1.0),
+        top_k=DiscreteValues(values=[3, 5, 10, 15, 20]),
+        hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
         reranker=RerankerSearchSpace(
             models=["none", "BAAI/bge-reranker-v2-m3", "cross-encoder/ms-marco-MiniLM-L-6-v2"],
-            top_n=NumericRange(min=3, max=10),
+            top_n=DiscreteValues(values=[3, 5, 10]),
         ),
         query_expansion=["none", "hyde", "multi_query"],
-        llm_models=["azure/gpt-4o-mini"],
+        llm_models=StageLLMs.uniform(["azure/gpt-4o-mini"]),
         temperature=NumericRange(min=1.0, max=1.0),
     )
 
@@ -269,7 +274,7 @@ class TestGenerateAutoragConfig:
         space = _curated_space()
         space.reranker = RerankerSearchSpace(
             models=["totally-fake-reranker/v9000"],
-            top_n=NumericRange(min=3, max=10),
+            top_n=DiscreteValues(values=[3, 5, 10]),
         )
         with pytest.raises(KeyError, match="No AutoRAG reranker module mapping"):
             generate_autorag_config(space, qa_variant="mcq")
@@ -308,7 +313,7 @@ class TestGenerateAutoragConfig:
         (it reads AWS_REGION / AWS_DEFAULT_REGION).
         """
         space = _curated_space()
-        space.llm_models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0"]
+        space.llm_models = StageLLMs.uniform(["bedrock/us.meta.llama3-1-8b-instruct-v1:0"])
         config, notes = generate_autorag_config(space, qa_variant="mcq")
         mod = _find_node(config, "generator")["modules"][0]
         assert mod["llm"] == "bedrock_converse"
@@ -325,7 +330,7 @@ class TestGenerateAutoragConfig:
         bedrock_converse, the QE block must carry ``region_name`` so the
         expansion LLM has a working endpoint."""
         space = _curated_space()
-        space.llm_models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
+        space.llm_models = StageLLMs.uniform(["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"])
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         qe_node = _find_node(config, "query_expansion")
         hyde = next(m for m in qe_node["modules"] if m["module_type"] == "hyde")
@@ -374,9 +379,8 @@ class TestGenerateAutoragConfig:
     def test_discretization_grid_recorded(self) -> None:
         _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
         grid = notes["discretization"]
-        assert grid["top_k"][0] == 3 and grid["top_k"][-1] == 20
-        assert len(grid["top_k"]) == 5
-        assert grid["reranker_top_k"][0] == 3 and grid["reranker_top_k"][-1] == 10
+        assert grid["top_k"] == [3, 5, 10, 15, 20]
+        assert grid["reranker_top_k"] == [3, 5, 10]
 
     def test_query_expansion_modules_include_pass_hyde_and_multi_query(self) -> None:
         config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
@@ -418,7 +422,7 @@ class TestGenerateAutoragConfig:
         ``compressor_llm`` field — AutoRAG can pick the compressor LLM
         independently of the generator LLM."""
         space = _curated_space()
-        space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
         space.passage_compressor = ["none", "tree_summarize"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pc_node = _find_node(config, "passage_compressor")
@@ -434,7 +438,7 @@ class TestGenerateAutoragConfig:
         per (strategy × LLM). Matches the framework's per-stage
         ``expander_llm`` field."""
         space = _curated_space()
-        space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
         space.query_expansion = ["none", "query_decompose"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         qe_node = _find_node(config, "query_expansion")
@@ -448,7 +452,7 @@ class TestGenerateAutoragConfig:
         """prompt_maker strategy.generator_modules now lists all LLMs so the
         prompt-tuning step matches the generator node's enumeration."""
         space = _curated_space()
-        space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pm_node = _find_node(config, "prompt_maker")
         generator_modules = pm_node["strategy"]["generator_modules"]
@@ -464,3 +468,125 @@ class TestRerankerModuleMap:
             "cross-encoder/ms-marco-MiniLM-L-6-v2",
         ]:
             assert model in RERANKER_MODULE_MAP, f"{model} should be in RERANKER_MODULE_MAP"
+
+
+class TestDiscreteValuesEnumeration:
+    """Regression tests for the top_k pin bug (project_autorag_top_k_bug):
+    node-level top_k / reranker_top_k must be emitted as *lists* so AutoRAG's
+    ``make_combinations`` enumerates them. Earlier translator versions
+    silently pinned them to the grid max, locking AutoRAG out of smaller
+    values that adaptive methods could sample.
+    """
+
+    def test_node_level_top_k_is_list_valued(self) -> None:
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        for node_type in {"lexical_retrieval", "semantic_retrieval", "hybrid_retrieval"}:
+            node = _find_node(config, node_type)
+            assert isinstance(node["top_k"], list), (
+                f"{node_type}: top_k must be list-valued (was {type(node['top_k']).__name__}); "
+                "AutoRAG only enumerates list-valued node-level keys via make_combinations."
+            )
+            assert node["top_k"] == [3, 5, 10, 15, 20]
+
+    def test_passage_reranker_top_k_is_list_valued(self) -> None:
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        reranker_node = _find_node(config, "passage_reranker")
+        assert isinstance(reranker_node["top_k"], list)
+        assert reranker_node["top_k"] == [3, 5, 10]
+
+    def test_strategy_top_k_in_query_expansion_is_scalar(self) -> None:
+        """``strategy`` blocks are passed verbatim to AutoRAG (not run through
+        make_combinations), so ``top_k`` inside ``strategy`` must stay scalar.
+        Setting it to the max gives expansion-candidate scoring a stable
+        reference point.
+        """
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        qe_node = _find_node(config, "query_expansion")
+        assert isinstance(qe_node["strategy"]["top_k"], int)
+
+
+class TestParityPins:
+    """Pin BM25 tokenizer + hybrid_cc normalize_method to single values so
+    AutoRAG doesn't get a silent enumeration advantage at hybrid+lexical
+    (the framework has no equivalent knob).
+    """
+
+    def test_bm25_tokenizer_pinned_scalar(self) -> None:
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        lex = _find_node(config, "lexical_retrieval")
+        bm25_mod = next(m for m in lex["modules"] if m["module_type"] == "bm25")
+        assert isinstance(bm25_mod["bm25_tokenizer"], str), (
+            f"bm25_tokenizer must be a single string (was {bm25_mod['bm25_tokenizer']!r}); "
+            "enumerating it gives AutoRAG a free 2x evaluation advantage."
+        )
+        assert bm25_mod["bm25_tokenizer"] == "porter_stemmer"
+
+    def test_hybrid_cc_normalize_method_pinned_scalar(self) -> None:
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        hyb = _find_node(config, "hybrid_retrieval")
+        cc_mod = next(m for m in hyb["modules"] if m["module_type"] == "hybrid_cc")
+        assert isinstance(cc_mod["normalize_method"], str)
+        assert cc_mod["normalize_method"] == "mm"
+
+    def test_hybrid_cc_test_weight_size_matches_adaptive_density(self) -> None:
+        """Adaptive methods sample one alpha per trial; AutoRAG's default
+        ``test_weight_size: 21`` gave it 21 alpha-tuning evaluations per call.
+        We drop it to 5 to roughly match adaptive density."""
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        hyb = _find_node(config, "hybrid_retrieval")
+        cc_mod = next(m for m in hyb["modules"] if m["module_type"] == "hybrid_cc")
+        assert cc_mod["test_weight_size"] == 5
+
+
+class TestMixedModeRejection:
+    """The translator must fail loud when fed a NumericRange for a dim that
+    AutoRAG can't sample continuously inside one evaluator run."""
+
+    def test_continuous_top_k_rejected(self) -> None:
+        space = _curated_space()
+        space.top_k = NumericRange(min=3, max=20)
+        with pytest.raises(ValueError, match="requires DiscreteValues for 'top_k'"):
+            generate_autorag_config(space, qa_variant="mcq")
+
+    def test_continuous_hybrid_alpha_rejected(self) -> None:
+        space = _curated_space()
+        space.hybrid_alpha = NumericRange(min=0.0, max=1.0)
+        with pytest.raises(ValueError, match="requires DiscreteValues for 'hybrid_alpha'"):
+            generate_autorag_config(space, qa_variant="mcq")
+
+    def test_continuous_reranker_top_n_rejected(self) -> None:
+        space = _curated_space()
+        space.reranker.top_n = NumericRange(min=3, max=10)
+        with pytest.raises(ValueError, match="requires DiscreteValues for 'reranker.top_n'"):
+            generate_autorag_config(space, qa_variant="mcq")
+
+
+class TestPerStageLLMEmission:
+    """Generator / expander / compressor each draw from their own pool."""
+
+    def test_per_stage_pools_emitted_at_correct_nodes(self) -> None:
+        space = _curated_space()
+        space.llm_models = StageLLMs(
+            generator=["azure/gpt-4o-mini", "azure/o4-mini"],
+            expander=["azure/gpt-4o-mini"],
+            compressor=["azure/gpt-4o-mini"],
+        )
+        space.passage_compressor = ["none", "tree_summarize"]
+        space.query_expansion = ["none", "hyde"]
+        config, _ = generate_autorag_config(space, qa_variant="mcq")
+
+        # Generator node: 2 modules (both generator LLMs).
+        gen_models = {m["model"][0] for m in _find_node(config, "generator")["modules"]}
+        assert gen_models == {"gpt-4o-mini", "o4-mini"}
+
+        # Expander node: 1 hyde module from the expander pool.
+        qe_node = _find_node(config, "query_expansion")
+        hyde_modules = [m for m in qe_node["modules"] if m["module_type"] == "hyde"]
+        assert len(hyde_modules) == 1
+        assert hyde_modules[0]["model"] == ["gpt-4o-mini"]
+
+        # Compressor node: 1 tree_summarize module from the compressor pool.
+        pc_node = _find_node(config, "passage_compressor")
+        tree_modules = [m for m in pc_node["modules"] if m["module_type"] == "tree_summarize"]
+        assert len(tree_modules) == 1
+        assert tree_modules[0]["model"] == ["gpt-4o-mini"]

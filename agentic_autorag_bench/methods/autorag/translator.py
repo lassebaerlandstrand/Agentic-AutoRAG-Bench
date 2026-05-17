@@ -20,12 +20,13 @@ import re
 from pathlib import Path
 
 import yaml
-
-from agentic_autorag.config.models import IndexType, NumericRange, SearchSpace, TrialConfig
-
-
-def _midpoint(r: NumericRange) -> float:
-    return (r.min + r.max) / 2.0
+from agentic_autorag.config.models import (
+    IndexType,
+    SearchSpace,
+    TrialConfig,
+    _dim_midpoint,
+    _dim_min_value,
+)
 
 
 def _walk_nodes(extracted: dict) -> dict[str, dict]:
@@ -177,28 +178,28 @@ def translate_extracted_to_trial_config(
     )
     fields: dict = {
         "chunking_strategy": search_space.chunking.strategies[0],
-        "chunk_token_size": int(search_space.chunking.chunk_token_size.min),
-        "chunk_token_overlap": int(search_space.chunking.chunk_token_overlap.min),
+        "chunk_token_size": int(_dim_min_value(search_space.chunking.chunk_token_size)),
+        "chunk_token_overlap": int(_dim_min_value(search_space.chunking.chunk_token_overlap)),
         "embedding_model": search_space.embedding_models[0],
         "index_type": search_space.index_types[0],
-        "top_k": int(search_space.top_k.min),
-        "hybrid_alpha": round(_midpoint(search_space.hybrid_alpha), 4),
+        "top_k": int(_dim_min_value(search_space.top_k)),
+        "hybrid_alpha": round(_dim_midpoint(search_space.hybrid_alpha), 4),
         "bm25_vector_fusion": search_space.bm25_vector_fusion[0],
         "long_context_reorder": search_space.long_context_reorder[0],
         "passage_compressor": default_passage_compressor,
         "reranker": "none" if "none" in search_space.reranker.models else search_space.reranker.models[0],
-        "reranker_top_n": int(search_space.reranker.top_n.min),
+        "reranker_top_n": int(_dim_min_value(search_space.reranker.top_n)),
         "query_expansion": default_query_expansion,
-        # Per-stage LLMs. Defaults: generator gets the first search-space LLM
-        # (always set); compressor/expander are None when their stage default
-        # is "none", else first LLM. Overridden below from AutoRAG's resolved
-        # picks at each node.
-        "generator_llm": search_space.llm_models[0],
+        # Per-stage LLMs. Defaults: generator gets the first generator-pool
+        # LLM (always set); compressor/expander are None when their stage
+        # default is "none", else the first LLM in that stage's pool.
+        # Overridden below from AutoRAG's resolved picks at each node.
+        "generator_llm": search_space.llm_models.generator[0],
         "compressor_llm": (
-            None if default_passage_compressor == "none" else search_space.llm_models[0]
+            None if default_passage_compressor == "none" else search_space.llm_models.compressor[0]
         ),
         "expander_llm": (
-            None if default_query_expansion == "none" else search_space.llm_models[0]
+            None if default_query_expansion == "none" else search_space.llm_models.expander[0]
         ),
         "temperature": float(search_space.temperature.min),
         "reasoning": False,
@@ -345,8 +346,8 @@ def translate_extracted_to_trial_config(
         # legacy ``extracted_sample.yaml`` files (and some pre-v0.3.x
         # fixtures) omit them.
         if fields["query_expansion"] != "none":
-            chosen_expander = _extract_stage_llm(m, list(search_space.llm_models))
-            fields["expander_llm"] = chosen_expander or search_space.llm_models[0]
+            chosen_expander = _extract_stage_llm(m, list(search_space.llm_models.expander))
+            fields["expander_llm"] = chosen_expander or search_space.llm_models.expander[0]
 
     # ===== Passage compressor =====
     pc_node = nodes.get("passage_compressor")
@@ -372,8 +373,8 @@ def translate_extracted_to_trial_config(
         # Same fallback as expander: when the compressor actually runs,
         # read AutoRAG's pick, else fall back to first LLM in pool.
         if fields["passage_compressor"] != "none":
-            chosen_compressor = _extract_stage_llm(m, list(search_space.llm_models))
-            fields["compressor_llm"] = chosen_compressor or search_space.llm_models[0]
+            chosen_compressor = _extract_stage_llm(m, list(search_space.llm_models.compressor))
+            fields["compressor_llm"] = chosen_compressor or search_space.llm_models.compressor[0]
 
     # ===== Prompt maker =====
     pm_node = nodes.get("prompt_maker")
@@ -400,7 +401,7 @@ def translate_extracted_to_trial_config(
     gen = nodes.get("generator")
     if gen:
         m = _winning_module(gen)
-        chosen_generator = _extract_stage_llm(m, list(search_space.llm_models))
+        chosen_generator = _extract_stage_llm(m, list(search_space.llm_models.generator))
         if chosen_generator is not None:
             fields["generator_llm"] = chosen_generator
         if "temperature" in m:

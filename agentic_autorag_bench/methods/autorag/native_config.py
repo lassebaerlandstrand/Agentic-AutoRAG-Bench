@@ -43,7 +43,12 @@ from __future__ import annotations
 
 import os
 
-from agentic_autorag.config.models import IndexType, NumericRange, SearchSpace
+from agentic_autorag.config.models import (
+    DiscreteValues,
+    IndexType,
+    NumericDim,
+    SearchSpace,
+)
 from agentic_autorag.engine.pipeline import (
     _DEFAULT_REFINE_PROMPT_TMPL,
     _DEFAULT_TREE_SUMMARIZE_PROMPT_TMPL,
@@ -82,11 +87,19 @@ RERANKER_MODULE_MAP: dict[str, str] = {
     "mixedbread-ai/mxbai-rerank-base-v2": "sentence_transformer_reranker",
 }
 
-# Discretization grid sizes for AutoRAG's enumeration. Higher → more faithful
-# to our continuous space, but multiplicatively more pipeline runs per node.
-TOP_K_GRID_N = 5
-RERANKER_TOP_K_GRID_N = 3
-TEMPERATURE_GRID_N = 1  # our search space pins temperature; one value is enough
+# Internal hybrid_cc alpha sweep size — AutoRAG evaluates this many points
+# within ``weight_range`` per call. 21 (the AutoRAG default) gives AutoRAG ~21
+# alpha-tuning evaluations per call while adaptive methods sample one alpha
+# per trial. We drop it to 5 to roughly match adaptive sampling density.
+HYBRID_CC_TEST_WEIGHT_SIZE = 5
+
+# Pinned BM25 tokenizer and CC normalize method. AutoRAG was enumerating these
+# (porter_stemmer/space, mm/tmm) under prior translator versions, giving
+# AutoRAG a silent 2x x 2x = 4x advantage at the hybrid+lexical path the
+# framework has no equivalent knob to match. Pinning to single values restores
+# parity. porter_stemmer + mm are AutoRAG's documented defaults.
+BM25_TOKENIZER_PINNED = "porter_stemmer"
+HYBRID_CC_NORMALIZE_METHOD_PINNED = "mm"
 
 # Default vectordb backing store. AutoRAG ships chroma + qdrant + milvus —
 # chroma is the simplest because it has no service requirements.
@@ -110,20 +123,35 @@ EMBEDDING_BATCH = 256
 EMBEDDING_TORCH_DTYPE = "float16"
 
 
-def _discretize_int(r: NumericRange, n: int) -> list[int]:
-    lo, hi = int(r.min), int(r.max)
-    if lo == hi or n <= 1:
-        return [lo] if lo == hi else [lo, hi]
-    step = (hi - lo) / (n - 1)
-    return sorted({int(round(lo + i * step)) for i in range(n)})
+def _require_discrete_int(dim: NumericDim, name: str) -> list[int]:
+    """Extract the int option set from a DiscreteValues dim, or raise.
+
+    Section-1 AutoRAG baselines must use DiscreteValues for ``top_k``,
+    ``reranker.top_n``, ``chunk_token_size``, and ``chunk_token_overlap``:
+    AutoRAG enumerates lists via ``itertools.product``, so a continuous
+    NumericRange has no fair on-line mapping. Section-2 (continuous Pareto)
+    is framework-only; if it ever tries to translate to AutoRAG, fail loud.
+    """
+    if not isinstance(dim, DiscreteValues):
+        raise ValueError(
+            f"AutoRAG translation requires DiscreteValues for {name!r} "
+            f"(got NumericRange [{dim.min}, {dim.max}]). AutoRAG enumerates "
+            "node-level params via itertools.product over list-valued keys; "
+            "a continuous range cannot be sampled fairly inside one evaluator "
+            "run. Use DiscreteValues in the Section-1 config."
+        )
+    return [int(v) for v in dim.values]
 
 
-def _discretize_float(r: NumericRange, n: int, *, precision: int = 2) -> list[float]:
-    lo, hi = float(r.min), float(r.max)
-    if lo == hi or n <= 1:
-        return [round(lo, precision)] if lo == hi else [round(lo, precision), round(hi, precision)]
-    step = (hi - lo) / (n - 1)
-    return sorted({round(lo + i * step, precision) for i in range(n)})
+def _require_discrete_float(dim: NumericDim, name: str) -> list[float]:
+    """As :func:`_require_discrete_int` but for float dims (e.g. hybrid_alpha)."""
+    if not isinstance(dim, DiscreteValues):
+        raise ValueError(
+            f"AutoRAG translation requires DiscreteValues for {name!r} "
+            f"(got NumericRange [{dim.min}, {dim.max}]). "
+            "Use DiscreteValues in the Section-1 config."
+        )
+    return [float(v) for v in dim.values]
 
 
 def _reranker_module_for(model: str) -> str:
@@ -286,18 +314,19 @@ _COMPRESSOR_PROMPT_TMPL: dict[str, str] = {
 
 def _build_passage_compressor_modules(
     search_space: SearchSpace,
-    generator_modules: list[dict],
+    compressor_llm_modules: list[dict],
     temperatures: list[float],
 ) -> list[dict]:
     """Emit AutoRAG passage_compressor modules.
 
     For every non-"none" compressor type, emits one module per LLM in
-    ``generator_modules`` so AutoRAG's strategy can pick a compressor LLM
-    independently of the generator LLM. The ``prompt`` and ``chat_prompt``
-    kwargs are pinned to the framework's templates so AutoRAG runs against
-    the same wording regardless of the underlying LLM's chat-mode.
-    ``temperature`` is pinned explicitly to prevent reasoning models from
-    falling back to llama_index defaults.
+    ``compressor_llm_modules`` (built from ``ss.llm_models.compressor``) so
+    AutoRAG's strategy can pick a compressor LLM independently of the
+    generator LLM. The ``prompt`` and ``chat_prompt`` kwargs are pinned to
+    the framework's templates so AutoRAG runs against the same wording
+    regardless of the underlying LLM's chat-mode. ``temperature`` is pinned
+    explicitly to prevent reasoning models from falling back to llama_index
+    defaults.
     """
     modules: list[dict] = []
     for compressor in search_space.passage_compressor:
@@ -309,7 +338,7 @@ def _build_passage_compressor_modules(
                 f"Unknown passage_compressor {compressor!r}. "
                 "Add an entry to _PASSAGE_COMPRESSOR_MODULE_MAP."
             )
-        for gen_mod in generator_modules:
+        for gen_mod in compressor_llm_modules:
             compressor_module: dict = {
                 "module_type": _PASSAGE_COMPRESSOR_MODULE_MAP[compressor],
                 "llm": gen_mod["llm"],
@@ -351,6 +380,13 @@ def _build_hybrid_modules(search_space: SearchSpace, weight_lo: float, weight_hi
     ``"alpha"`` → ``hybrid_cc`` with the hybrid_alpha range mapped to
     AutoRAG's ``weight`` (same semantic-weight convention). ``"rrf"`` →
     ``hybrid_rrf`` with ``weight=60`` (rrf_k) pinned.
+
+    ``normalize_method`` is pinned to a single value to match parity with
+    the framework's lexical+fts fusion path (which has no equivalent knob).
+    ``test_weight_size`` is set to :data:`HYBRID_CC_TEST_WEIGHT_SIZE` so
+    AutoRAG samples alpha at roughly the same density adaptive methods do
+    (rather than the AutoRAG default of 21, which would give AutoRAG a
+    free hidden grid search per call).
     """
     modules: list[dict] = []
     for fusion in search_space.bm25_vector_fusion:
@@ -358,12 +394,12 @@ def _build_hybrid_modules(search_space: SearchSpace, weight_lo: float, weight_hi
             modules.append(
                 {
                     "module_type": "hybrid_cc",
-                    "normalize_method": ["mm", "tmm"],
+                    "normalize_method": HYBRID_CC_NORMALIZE_METHOD_PINNED,
                     # AutoRAG's YAML loader re-tuplifies the string form
                     # ``"(a, b)"`` (autorag.utils.util.convert_string_to_tuple_in_dict).
                     # PyYAML can't dump Python tuples, so we emit the string.
                     "weight_range": f"({weight_lo}, {weight_hi})",
-                    "test_weight_size": 21 if weight_lo != weight_hi else 1,
+                    "test_weight_size": HYBRID_CC_TEST_WEIGHT_SIZE if weight_lo != weight_hi else 1,
                 }
             )
         elif fusion == "rrf":
@@ -383,15 +419,16 @@ def _build_hybrid_modules(search_space: SearchSpace, weight_lo: float, weight_hi
 
 def _build_query_expansion_modules(
     query_expansion: list[str],
-    generator_modules: list[dict],
+    expander_llm_modules: list[dict],
     temperatures: list[float],
 ) -> list[dict]:
     """Translate our query-expansion choices to AutoRAG modules.
 
     For each non-"none" strategy, emits one module per LLM in
-    ``generator_modules`` so AutoRAG's strategy can pick the expander LLM
-    independently of the generator. HyDE / multi-query / query_decompose
-    all need ``generator_module_type`` / ``llm`` / ``model`` plus the
+    ``expander_llm_modules`` (built from ``ss.llm_models.expander``) so
+    AutoRAG's strategy can pick the expander LLM independently of the
+    generator. HyDE / multi-query / query_decompose all need
+    ``generator_module_type`` / ``llm`` / ``model`` plus the
     provider-specific auth keys. ``temperature`` is pinned to prevent
     llama_index defaults on reasoning models.
     """
@@ -400,7 +437,7 @@ def _build_query_expansion_modules(
         if qe == "none":
             out.append({"module_type": "pass_query_expansion"})
             continue
-        for gen_mod in generator_modules:
+        for gen_mod in expander_llm_modules:
             gen_block: dict = {
                 "generator_module_type": "llama_index_llm",
                 "llm": gen_mod["llm"],
@@ -450,16 +487,28 @@ def generate_autorag_config(
         raise ValueError(f"qa_variant must be 'mcq' or 'ragas', got {qa_variant!r}")
 
     ss = search_space
-    top_ks = _discretize_int(ss.top_k, TOP_K_GRID_N)
-    reranker_top_ks = _discretize_int(ss.reranker.top_n, RERANKER_TOP_K_GRID_N)
-    temperatures = _discretize_float(ss.temperature, TEMPERATURE_GRID_N)
+    top_ks = _require_discrete_int(ss.top_k, "top_k")
+    reranker_top_ks = _require_discrete_int(ss.reranker.top_n, "reranker.top_n")
+    # Temperature stays a NumericRange (pinned to a single value in every
+    # paper config); we emit AutoRAG with a single point at the lower bound.
+    if ss.temperature.min != ss.temperature.max:
+        raise ValueError(
+            "AutoRAG translation expects temperature to be pinned to a single "
+            f"value (got [{ss.temperature.min}, {ss.temperature.max}]). "
+            "Set min=max in the search space."
+        )
+    temperatures = [round(float(ss.temperature.min), 2)]
 
     # vectordb entries — one per embedding model, named for cross-referencing.
     vectordb_entries, model_to_name = _build_vectordb_entries(list(ss.embedding_models))
 
-    # Build generator modules first so query_expansion can borrow the first
-    # LLM for its expansion calls.
-    generator_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models]
+    # Per-stage LLM modules. Generator gets the (typically larger) generator
+    # pool; expander/compressor get their own cheaper pools — matches the
+    # framework's TrialConfig generator_llm / expander_llm / compressor_llm
+    # split. AutoRAG strategy then enumerates the right pool at each node.
+    generator_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models.generator]
+    expander_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models.expander]
+    compressor_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models.compressor]
 
     # AutoRAG v0.3 ALWAYS requires all three retrieval node_types when a
     # passage_reranker follows: lexical and semantic emit suffixed columns
@@ -474,8 +523,9 @@ def generate_autorag_config(
     # ``hybrid_alpha`` uses the same convention via ``HybridAlphaReranker``
     # (relevance = alpha*vector + (1-alpha)*fts), so the two map 1:1 with no
     # inversion.
-    semantic_lo = round(float(ss.hybrid_alpha.min), 4)
-    semantic_hi = round(float(ss.hybrid_alpha.max), 4)
+    hybrid_alpha_values = _require_discrete_float(ss.hybrid_alpha, "hybrid_alpha")
+    semantic_lo = round(min(hybrid_alpha_values), 4)
+    semantic_hi = round(max(hybrid_alpha_values), 4)
     if IndexType.HYBRID_BM25_VECTOR in ss.index_types:
         weight_lo, weight_hi = semantic_lo, semantic_hi
     else:
@@ -501,7 +551,11 @@ def generate_autorag_config(
             "node_type": "lexical_retrieval",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
             "top_k": top_ks,
-            "modules": [{"module_type": "bm25", "bm25_tokenizer": ["porter_stemmer", "space"]}],
+            # bm25_tokenizer is pinned to a single value (porter_stemmer); the
+            # framework's lexical-side scoring has no equivalent tokenizer
+            # knob, so enumerating it here would give AutoRAG a silent
+            # advantage. See translator audit (project_autorag_translator_audit).
+            "modules": [{"module_type": "bm25", "bm25_tokenizer": BM25_TOKENIZER_PINNED}],
         },
         {
             "node_type": "semantic_retrieval",
@@ -529,12 +583,12 @@ def generate_autorag_config(
             reranker_modules.append({"module_type": _reranker_module_for(model), "model_name": model})
 
     # ===== Query expansion =====
-    # All LLMs in the search space are emitted at the expander node so
-    # AutoRAG's strategy can pick the expander LLM independently of the
-    # generator. Matches the framework's per-stage ``expander_llm`` field.
+    # All LLMs in the *expander* stage's pool are emitted at the expander
+    # node so AutoRAG's strategy picks the expander LLM independently of
+    # the generator. Matches the framework's per-stage ``expander_llm`` field.
     query_expansion_modules = _build_query_expansion_modules(
         list(ss.query_expansion),
-        generator_modules,
+        expander_modules,
         temperatures,
     )
 
@@ -599,7 +653,7 @@ def generate_autorag_config(
                         "retrieval_token_precision",
                     ]
                 },
-                "modules": _build_passage_compressor_modules(ss, generator_modules, temperatures),
+                "modules": _build_passage_compressor_modules(ss, compressor_modules, temperatures),
             }
         )
     post_retrieve_nodes.extend(
@@ -647,7 +701,7 @@ def generate_autorag_config(
         "so AutoRAG's internal ranking signal need only correlate with our final metric)"
     )
 
-    has_bedrock = any(m.startswith("bedrock/") for m in ss.llm_models)
+    has_bedrock = any(m.startswith("bedrock/") for m in ss.llm_models.all_models())
 
     notes = {
         "qa_variant": qa_variant,

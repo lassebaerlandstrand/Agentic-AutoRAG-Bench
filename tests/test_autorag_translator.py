@@ -6,10 +6,12 @@ import yaml
 
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
+    DiscreteValues,
     IndexType,
     NumericRange,
     RerankerSearchSpace,
     SearchSpace,
+    StageLLMs,
 )
 
 from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
@@ -19,19 +21,19 @@ def _curated_space() -> SearchSpace:
     return SearchSpace(
         chunking=ChunkingSearchSpace(
             strategies=["recursive", "fixed"],
-            chunk_token_size=NumericRange(min=256, max=512),
-            chunk_token_overlap=NumericRange(min=0, max=64),
+            chunk_token_size=DiscreteValues(values=[256, 512]),
+            chunk_token_overlap=DiscreteValues(values=[0, 64]),
         ),
         embedding_models=["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-m3"],
         index_types=[IndexType.VECTOR_ONLY, IndexType.HYBRID_BM25_VECTOR],
-        top_k=NumericRange(min=3, max=20),
-        hybrid_alpha=NumericRange(min=0.0, max=1.0),
+        top_k=DiscreteValues(values=[3, 5, 10, 15, 20]),
+        hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
         reranker=RerankerSearchSpace(
             models=["none", "BAAI/bge-reranker-v2-m3"],
-            top_n=NumericRange(min=3, max=10),
+            top_n=DiscreteValues(values=[3, 5, 10]),
         ),
         query_expansion=["none", "hyde", "multi_query"],
-        llm_models=["azure/gpt-4o-mini"],
+        llm_models=StageLLMs.uniform(["azure/gpt-4o-mini"]),
         temperature=NumericRange(min=1.0, max=1.0),
     )
 
@@ -577,7 +579,7 @@ def test_native_config_then_translator_roundtrip_with_per_stage_llms(tmp_path) -
         ],
     }
     space = _curated_space()
-    space.llm_models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+    space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
     space.passage_compressor = ["none", "tree_summarize"]
     space.query_expansion = ["none", "query_decompose"]
     path = _write_extracted_yaml(tmp_path, extracted)
@@ -882,7 +884,7 @@ def test_openailike_legacy_translates_to_azure(tmp_path) -> None:
 
 def _bedrock_space() -> SearchSpace:
     space = _curated_space()
-    space.llm_models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
+    space.llm_models = StageLLMs.uniform(["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"])
     return space
 
 
