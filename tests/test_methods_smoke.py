@@ -14,11 +14,13 @@ import pytest
 
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
+    DiscreteValues,
     IndexType,
     NumericRange,
     ProjectConfig,
     RerankerSearchSpace,
     SearchSpace,
+    StageLLMs,
     TrialConfig,
 )
 
@@ -44,7 +46,7 @@ def _tiny_project() -> ProjectConfig:
                 top_n=NumericRange(min=3, max=10),
             ),
             query_expansion=["none"],
-            llm_models=["ollama/llama3.2"],
+            llm_models=StageLLMs.uniform(["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
         )
     )
@@ -176,7 +178,7 @@ def _multi_embedding_project() -> ProjectConfig:
                 top_n=NumericRange(min=3, max=10),
             ),
             query_expansion=["none"],
-            llm_models=["ollama/llama3.2"],
+            llm_models=StageLLMs.uniform(["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
         ),
         embedding_token_limits={
@@ -237,3 +239,138 @@ async def test_bayesian_with_mixed_embedding_limits_explores_all_embeddings(tmp_
     assert seen_embeddings == set(project.search_space.embedding_models), (
         f"Expected all three embeddings, saw {seen_embeddings}"
     )
+
+
+def _discrete_project() -> ProjectConfig:
+    """SearchSpace with DiscreteValues for all 5 fairness-critical numeric dims.
+
+    Used to exercise the discrete-grid code path in both sample_random and
+    sample_optuna (the helpers ``_sample_int`` / ``_suggest_int`` etc. and
+    the per-trial filters for chunk_overlap < chunk_size and reranker_top_n
+    <= top_k).
+    """
+    return ProjectConfig(
+        search_space=SearchSpace(
+            chunking=ChunkingSearchSpace(
+                strategies=["recursive"],
+                chunk_token_size=DiscreteValues(values=[256, 512]),
+                chunk_token_overlap=DiscreteValues(values=[0, 64]),
+            ),
+            embedding_models=["sentence-transformers/all-MiniLM-L6-v2"],
+            index_types=[IndexType.VECTOR_ONLY],
+            top_k=DiscreteValues(values=[3, 5, 10]),
+            hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+            reranker=RerankerSearchSpace(
+                models=["none", "BAAI/bge-reranker-v2-m3"],
+                top_n=DiscreteValues(values=[3, 5, 10]),
+            ),
+            query_expansion=["none"],
+            llm_models=StageLLMs(
+                generator=["ollama/llama3.2", "ollama/mistral"],
+                expander=["ollama/llama3.2"],
+                compressor=["ollama/mistral"],
+            ),
+            temperature=NumericRange(min=1.0, max=1.0),
+        )
+    )
+
+
+def _is_int_in(value: int, allowed: list[float | int]) -> bool:
+    return value in [int(v) for v in allowed]
+
+
+@pytest.mark.asyncio
+async def test_random_search_with_discrete_values_lands_in_grid() -> None:
+    """Every sampled value for the 5 fairness-critical dims must come from
+    its DiscreteValues option set (no continuous draws when the dim is
+    discrete)."""
+    project = _discrete_project()
+    optimizer = RandomSearch(project=project)
+    evaluator = _make_evaluator([0.5] * 20)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=20), seed=42)
+
+    for h in sr.history:
+        assert _is_int_in(h.config["top_k"], [3, 5, 10])
+        assert _is_int_in(h.config["chunk_token_size"], [256, 512])
+        assert _is_int_in(h.config["chunk_token_overlap"], [0, 64])
+        # reranker_top_n only meaningful when a real reranker is picked.
+        if h.config["reranker"] != "none":
+            assert _is_int_in(h.config["reranker_top_n"], [3, 5, 10])
+            assert h.config["reranker_top_n"] <= h.config["top_k"]
+        # chunk_token_overlap < chunk_token_size invariant.
+        assert h.config["chunk_token_overlap"] < h.config["chunk_token_size"]
+
+
+@pytest.mark.asyncio
+async def test_random_search_with_discrete_values_picks_per_stage_llms() -> None:
+    """generator_llm / expander_llm / compressor_llm draw from their own pools."""
+    project = _discrete_project()
+    # Force query_expansion + passage_compressor to enable expander_llm/compressor_llm.
+    project.search_space.query_expansion = ["hyde"]
+    project.search_space.passage_compressor = ["tree_summarize"]
+    optimizer = RandomSearch(project=project)
+    evaluator = _make_evaluator([0.5] * 10)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=10), seed=42)
+
+    for h in sr.history:
+        assert h.config["generator_llm"] in {"ollama/llama3.2", "ollama/mistral"}
+        assert h.config["expander_llm"] == "ollama/llama3.2"
+        assert h.config["compressor_llm"] == "ollama/mistral"
+
+
+@pytest.mark.asyncio
+async def test_bayesian_with_discrete_values_lands_in_grid(tmp_path: Path) -> None:
+    """Optuna's categorical suggest must produce values in the discrete sets,
+    with snap-back for top_k-incompatible reranker_top_n picks."""
+    project = _discrete_project()
+    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    evaluator = _make_evaluator([0.5] * 12)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=12), seed=42)
+
+    for h in sr.history:
+        assert _is_int_in(h.config["top_k"], [3, 5, 10])
+        assert _is_int_in(h.config["chunk_token_size"], [256, 512])
+        if h.config["reranker"] != "none":
+            assert h.config["reranker_top_n"] <= h.config["top_k"]
+
+
+@pytest.mark.asyncio
+async def test_random_chunk_size_capped_by_embedding_limit_with_discrete_values() -> None:
+    """When embed_cap < some DiscreteValues, the sampler must filter to legal."""
+    project = _discrete_project()
+    # MiniLM caps at 256 tokens. With chunk_token_size=[256, 512], only 256
+    # is legal for this embedder.
+    project.embedding_token_limits["sentence-transformers/all-MiniLM-L6-v2"] = 256
+    optimizer = RandomSearch(project=project)
+    evaluator = _make_evaluator([0.5] * 10)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=10), seed=42)
+
+    for h in sr.history:
+        assert h.config["chunk_token_size"] == 256
+
+
+@pytest.mark.asyncio
+async def test_bayesian_reranker_top_n_lands_on_grid_and_respects_top_k(tmp_path: Path) -> None:
+    """Optuna now uses dynamic int bounds + snap-to-grid for reranker_top_n
+    (not categorical with snap-back). Every sampled value must (a) be in the
+    DiscreteValues grid and (b) be <= top_k. This is the regression test for
+    the migration off categorical snap-back.
+    """
+    project = _discrete_project()
+    # Force the reranker to be active so reranker_top_n is meaningful.
+    project.search_space.reranker.models = ["BAAI/bge-reranker-v2-m3"]
+    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    evaluator = _make_evaluator([0.5] * 15)
+
+    sr = await optimizer.search(evaluator, Budget(max_trials=15), seed=42)
+
+    for h in sr.history:
+        assert _is_int_in(h.config["reranker_top_n"], [3, 5, 10])
+        assert h.config["reranker_top_n"] <= h.config["top_k"], (
+            f"reranker_top_n={h.config['reranker_top_n']} > top_k={h.config['top_k']} — "
+            "dynamic-int-bounds branch should keep reranker_top_n within top_k"
+        )

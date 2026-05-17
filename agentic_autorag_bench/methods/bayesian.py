@@ -22,7 +22,7 @@ from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchR
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-_STUDY_NAME = "agentic_autorag_bench_bayesian"
+_STUDY_NAME = "agentic_autorag_bench_bayesian_v2"
 _DB_NAME = "optuna.db"
 _SAMPLER_PICKLE = "optuna_sampler.pkl"
 
