@@ -274,24 +274,24 @@ def sample_random(
 
     chunking_strategy = rng.choice(ss.chunking.strategies)
 
-    embedding_model = rng.choice(list(ss.embedding_models))
+    embedding_model = rng.choice(list(ss.embedding.models))
 
     chunk_token_size = _sample_chunk_token_size(rng, ss, embedding_model, embedding_token_limits)
     chunk_token_overlap = _sample_chunk_token_overlap(rng, ss, chunk_token_size)
 
-    index_type = rng.choice(list(ss.index_types))
-    top_k = _sample_int(rng, ss.top_k)
+    index_type = rng.choice(list(ss.retrieval.index_types))
+    top_k = _sample_int(rng, ss.retrieval.top_k)
 
     if index_type == IndexType.HYBRID_BM25_VECTOR:
-        bm25_vector_fusion = rng.choice(ss.bm25_vector_fusion)
+        bm25_vector_fusion = rng.choice(ss.retrieval.bm25_vector_fusion)
         # hybrid_alpha only feeds alpha-blend; skip sampling it under rrf.
         if bm25_vector_fusion == "alpha":
-            hybrid_alpha = round(_sample_float(rng, ss.hybrid_alpha), 4)
+            hybrid_alpha = round(_sample_float(rng, ss.retrieval.hybrid_alpha), 4)
         else:
-            hybrid_alpha = round(_dim_midpoint(ss.hybrid_alpha), 4)
+            hybrid_alpha = round(_dim_midpoint(ss.retrieval.hybrid_alpha), 4)
     else:
-        bm25_vector_fusion = ss.bm25_vector_fusion[0]
-        hybrid_alpha = round(_dim_midpoint(ss.hybrid_alpha), 4)
+        bm25_vector_fusion = ss.retrieval.bm25_vector_fusion[0]
+        hybrid_alpha = round(_dim_midpoint(ss.retrieval.hybrid_alpha), 4)
 
     reranker = rng.choice(ss.reranker.models)
     if reranker != "none":
@@ -299,15 +299,15 @@ def sample_random(
     else:
         reranker_top_n = int(_dim_min_value(ss.reranker.top_n))
 
-    query_expansion = rng.choice(ss.query_expansion)
-    long_context_reorder = rng.choice(ss.long_context_reorder)
-    passage_compressor = rng.choice(ss.passage_compressor)
+    query_expansion = rng.choice(ss.query_expansion.strategies)
+    long_context_reorder = rng.choice(ss.retrieval.long_context_reorder)
+    passage_compressor = rng.choice(ss.passage_compressor.strategies)
     # Per-stage LLMs: generator always sampled; compressor/expander only
     # when the stage actually runs (matches TrialConfig's cross-field
     # validator). Each stage draws from its own pool.
-    generator_llm = rng.choice(ss.llm_models.generator)
-    compressor_llm = rng.choice(ss.llm_models.compressor) if passage_compressor != "none" else None
-    expander_llm = rng.choice(ss.llm_models.expander) if query_expansion != "none" else None
+    generator_llm = rng.choice(ss.generator.models)
+    compressor_llm = rng.choice(ss.passage_compressor.models) if passage_compressor != "none" else None
+    expander_llm = rng.choice(ss.query_expansion.models) if query_expansion != "none" else None
     temperature = round(rng.uniform(ss.temperature.min, ss.temperature.max), 4)
     reasoning = rng.choice([False, True]) if ss.is_reasoning_allowed(generator_llm) else False
 
@@ -355,23 +355,23 @@ def sample_optuna(
     ss = search_space
 
     chunking_strategy = trial.suggest_categorical("chunking_strategy", ss.chunking.strategies)
-    embedding_model = trial.suggest_categorical("embedding_model", list(ss.embedding_models))
+    embedding_model = trial.suggest_categorical("embedding_model", list(ss.embedding.models))
 
     chunk_token_size = _suggest_chunk_token_size(trial, ss, embedding_model, embedding_token_limits)
     chunk_token_overlap = _suggest_chunk_token_overlap(trial, ss, chunk_token_size)
 
-    index_type = IndexType(trial.suggest_categorical("index_type", [it.value for it in ss.index_types]))
-    top_k = _suggest_int(trial, "top_k", ss.top_k)
+    index_type = IndexType(trial.suggest_categorical("index_type", [it.value for it in ss.retrieval.index_types]))
+    top_k = _suggest_int(trial, "top_k", ss.retrieval.top_k)
 
     if index_type == IndexType.HYBRID_BM25_VECTOR:
-        bm25_vector_fusion = trial.suggest_categorical("bm25_vector_fusion", ss.bm25_vector_fusion)
+        bm25_vector_fusion = trial.suggest_categorical("bm25_vector_fusion", ss.retrieval.bm25_vector_fusion)
         if bm25_vector_fusion == "alpha":
-            hybrid_alpha = _suggest_float(trial, "hybrid_alpha", ss.hybrid_alpha)
+            hybrid_alpha = _suggest_float(trial, "hybrid_alpha", ss.retrieval.hybrid_alpha)
         else:
-            hybrid_alpha = _dim_midpoint(ss.hybrid_alpha)
+            hybrid_alpha = _dim_midpoint(ss.retrieval.hybrid_alpha)
     else:
-        bm25_vector_fusion = ss.bm25_vector_fusion[0]
-        hybrid_alpha = _dim_midpoint(ss.hybrid_alpha)
+        bm25_vector_fusion = ss.retrieval.bm25_vector_fusion[0]
+        hybrid_alpha = _dim_midpoint(ss.retrieval.hybrid_alpha)
 
     reranker = trial.suggest_categorical("reranker", ss.reranker.models)
     if reranker != "none":
@@ -379,19 +379,19 @@ def sample_optuna(
     else:
         reranker_top_n = int(_dim_min_value(ss.reranker.top_n))
 
-    query_expansion = trial.suggest_categorical("query_expansion", ss.query_expansion)
-    long_context_reorder = trial.suggest_categorical("long_context_reorder", ss.long_context_reorder)
-    passage_compressor = trial.suggest_categorical("passage_compressor", ss.passage_compressor)
+    query_expansion = trial.suggest_categorical("query_expansion", ss.query_expansion.strategies)
+    long_context_reorder = trial.suggest_categorical("long_context_reorder", ss.retrieval.long_context_reorder)
+    passage_compressor = trial.suggest_categorical("passage_compressor", ss.passage_compressor.strategies)
     # Per-stage LLMs: generator always sampled; compressor/expander only
     # when the stage runs (TPE skips dead dimensions on the inactive
     # branches of conditional suggests).
-    generator_llm = trial.suggest_categorical("generator_llm", ss.llm_models.generator)
+    generator_llm = trial.suggest_categorical("generator_llm", ss.generator.models)
     if passage_compressor != "none":
-        compressor_llm = trial.suggest_categorical("compressor_llm", ss.llm_models.compressor)
+        compressor_llm = trial.suggest_categorical("compressor_llm", ss.passage_compressor.models)
     else:
         compressor_llm = None
     if query_expansion != "none":
-        expander_llm = trial.suggest_categorical("expander_llm", ss.llm_models.expander)
+        expander_llm = trial.suggest_categorical("expander_llm", ss.query_expansion.models)
     else:
         expander_llm = None
     temperature = trial.suggest_float("temperature", ss.temperature.min, ss.temperature.max)

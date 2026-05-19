@@ -170,22 +170,20 @@ def translate_extracted_to_trial_config(
     nodes = _walk_nodes(raw)
     vectordb_index = _vectordb_to_embedding(raw)
 
-    default_passage_compressor = (
-        "none" if "none" in search_space.passage_compressor else search_space.passage_compressor[0]
-    )
-    default_query_expansion = (
-        "none" if "none" in search_space.query_expansion else search_space.query_expansion[0]
-    )
+    pc_strategies = search_space.passage_compressor.strategies
+    qe_strategies = search_space.query_expansion.strategies
+    default_passage_compressor = "none" if "none" in pc_strategies else pc_strategies[0]
+    default_query_expansion = "none" if "none" in qe_strategies else qe_strategies[0]
     fields: dict = {
         "chunking_strategy": search_space.chunking.strategies[0],
         "chunk_token_size": int(_dim_min_value(search_space.chunking.chunk_token_size)),
         "chunk_token_overlap": int(_dim_min_value(search_space.chunking.chunk_token_overlap)),
-        "embedding_model": search_space.embedding_models[0],
-        "index_type": search_space.index_types[0],
-        "top_k": int(_dim_min_value(search_space.top_k)),
-        "hybrid_alpha": round(_dim_midpoint(search_space.hybrid_alpha), 4),
-        "bm25_vector_fusion": search_space.bm25_vector_fusion[0],
-        "long_context_reorder": search_space.long_context_reorder[0],
+        "embedding_model": search_space.embedding.models[0],
+        "index_type": search_space.retrieval.index_types[0],
+        "top_k": int(_dim_min_value(search_space.retrieval.top_k)),
+        "hybrid_alpha": round(_dim_midpoint(search_space.retrieval.hybrid_alpha), 4),
+        "bm25_vector_fusion": search_space.retrieval.bm25_vector_fusion[0],
+        "long_context_reorder": search_space.retrieval.long_context_reorder[0],
         "passage_compressor": default_passage_compressor,
         "reranker": "none" if "none" in search_space.reranker.models else search_space.reranker.models[0],
         "reranker_top_n": int(_dim_min_value(search_space.reranker.top_n)),
@@ -194,12 +192,12 @@ def translate_extracted_to_trial_config(
         # LLM (always set); compressor/expander are None when their stage
         # default is "none", else the first LLM in that stage's pool.
         # Overridden below from AutoRAG's resolved picks at each node.
-        "generator_llm": search_space.llm_models.generator[0],
+        "generator_llm": search_space.generator.models[0],
         "compressor_llm": (
-            None if default_passage_compressor == "none" else search_space.llm_models.compressor[0]
+            None if default_passage_compressor == "none" else search_space.passage_compressor.models[0]
         ),
         "expander_llm": (
-            None if default_query_expansion == "none" else search_space.llm_models.expander[0]
+            None if default_query_expansion == "none" else search_space.query_expansion.models[0]
         ),
         "temperature": float(search_space.temperature.min),
         "reasoning": False,
@@ -240,7 +238,7 @@ def translate_extracted_to_trial_config(
         if mtype == "hybrid_rrf":
             # RRF: ``weight`` here is rrf_k (default 60), not the semantic
             # mix — ignore for hybrid_alpha and instead flag the fusion mode.
-            if "rrf" not in search_space.bm25_vector_fusion:
+            if "rrf" not in search_space.retrieval.bm25_vector_fusion:
                 raise ValueError(
                     "AutoRAG resolved a hybrid_rrf module but the search space's "
                     "bm25_vector_fusion does not include 'rrf'. The native_config "
@@ -255,7 +253,7 @@ def translate_extracted_to_trial_config(
             chosen_weight = float(_scalar_or_first(weight)) if weight is not None else None
             if chosen_weight is None or chosen_weight >= 1.0:
                 # Fully semantic — collapse to vector_only when the space supports it.
-                if IndexType.VECTOR_ONLY in search_space.index_types:
+                if IndexType.VECTOR_ONLY in search_space.retrieval.index_types:
                     fields["index_type"] = IndexType.VECTOR_ONLY
                 else:
                     fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
@@ -280,7 +278,7 @@ def translate_extracted_to_trial_config(
     elif lex:
         # Lexical-only — best-effort: treat as hybrid with vector=0.
         m = _winning_module(lex)
-        if IndexType.HYBRID_BM25_VECTOR in search_space.index_types:
+        if IndexType.HYBRID_BM25_VECTOR in search_space.retrieval.index_types:
             fields["index_type"] = IndexType.HYBRID_BM25_VECTOR
             fields["hybrid_alpha"] = 0.0
         tk = _read_top_k(lex, m)
@@ -294,9 +292,9 @@ def translate_extracted_to_trial_config(
         sem_m = _winning_module(sem)
         if _normalize_module_type(sem_m.get("module_type")) == "vectordb":
             vname = sem_m.get("vectordb")
-            if vname and vname in vectordb_index and vectordb_index[vname] in search_space.embedding_models:
+            if vname and vname in vectordb_index and vectordb_index[vname] in search_space.embedding.models:
                 fields["embedding_model"] = vectordb_index[vname]
-            elif "embedding_model" in sem_m and _scalar_or_first(sem_m["embedding_model"]) in search_space.embedding_models:
+            elif "embedding_model" in sem_m and _scalar_or_first(sem_m["embedding_model"]) in search_space.embedding.models:
                 fields["embedding_model"] = _scalar_or_first(sem_m["embedding_model"])
 
     # ===== Reranker =====
@@ -325,19 +323,19 @@ def translate_extracted_to_trial_config(
         if mtype == "pass_query_expansion":
             fields["query_expansion"] = "none"
             fields["expander_llm"] = None
-        elif mtype == "hyde" and "hyde" in search_space.query_expansion:
+        elif mtype == "hyde" and "hyde" in qe_strategies:
             fields["query_expansion"] = "hyde"
-        elif mtype == "multi_query_expansion" and "multi_query" in search_space.query_expansion:
+        elif mtype == "multi_query_expansion" and "multi_query" in qe_strategies:
             fields["query_expansion"] = "multi_query"
         elif mtype == "query_decompose":
-            if "query_decompose" not in search_space.query_expansion:
+            if "query_decompose" not in qe_strategies:
                 raise ValueError(
                     "AutoRAG resolved a query_decompose module, but the search space's "
-                    "query_expansion does not include 'query_decompose'. The native_config "
-                    "must be regenerated against the current search space."
+                    "query_expansion.strategies does not include 'query_decompose'. The "
+                    "native_config must be regenerated against the current search space."
                 )
             fields["query_expansion"] = "query_decompose"
-        elif mtype in search_space.query_expansion:
+        elif mtype in qe_strategies:
             fields["query_expansion"] = mtype
         # When the resolved strategy actually runs an LLM, read which one
         # AutoRAG's strategy picked. None means the strategy was
@@ -346,8 +344,8 @@ def translate_extracted_to_trial_config(
         # legacy ``extracted_sample.yaml`` files (and some pre-v0.3.x
         # fixtures) omit them.
         if fields["query_expansion"] != "none":
-            chosen_expander = _extract_stage_llm(m, list(search_space.llm_models.expander))
-            fields["expander_llm"] = chosen_expander or search_space.llm_models.expander[0]
+            chosen_expander = _extract_stage_llm(m, list(search_space.query_expansion.models))
+            fields["expander_llm"] = chosen_expander or search_space.query_expansion.models[0]
 
     # ===== Passage compressor =====
     pc_node = nodes.get("passage_compressor")
@@ -358,11 +356,12 @@ def translate_extracted_to_trial_config(
             fields["passage_compressor"] = "none"
             fields["compressor_llm"] = None
         elif mtype in {"tree_summarize", "refine"}:
-            if mtype not in search_space.passage_compressor:
+            if mtype not in pc_strategies:
                 raise ValueError(
                     f"AutoRAG resolved a {mtype!r} passage_compressor module, but the "
-                    f"search space's passage_compressor does not include {mtype!r}. "
-                    "The native_config must be regenerated against the current search space."
+                    f"search space's passage_compressor.strategies does not include "
+                    f"{mtype!r}. The native_config must be regenerated against the "
+                    "current search space."
                 )
             fields["passage_compressor"] = mtype
         else:
@@ -373,8 +372,8 @@ def translate_extracted_to_trial_config(
         # Same fallback as expander: when the compressor actually runs,
         # read AutoRAG's pick, else fall back to first LLM in pool.
         if fields["passage_compressor"] != "none":
-            chosen_compressor = _extract_stage_llm(m, list(search_space.llm_models.compressor))
-            fields["compressor_llm"] = chosen_compressor or search_space.llm_models.compressor[0]
+            chosen_compressor = _extract_stage_llm(m, list(search_space.passage_compressor.models))
+            fields["compressor_llm"] = chosen_compressor or search_space.passage_compressor.models[0]
 
     # ===== Prompt maker =====
     pm_node = nodes.get("prompt_maker")
@@ -382,11 +381,12 @@ def translate_extracted_to_trial_config(
         m = _winning_module(pm_node)
         mtype = _normalize_module_type(m.get("module_type"))
         if mtype == "long_context_reorder":
-            if True not in search_space.long_context_reorder:
+            if True not in search_space.retrieval.long_context_reorder:
                 raise ValueError(
                     "AutoRAG resolved a long_context_reorder prompt_maker module, but "
-                    "the search space's long_context_reorder does not include True. "
-                    "The native_config must be regenerated against the current search space."
+                    "the search space's retrieval.long_context_reorder does not include "
+                    "True. The native_config must be regenerated against the current "
+                    "search space."
                 )
             fields["long_context_reorder"] = True
         elif mtype in {"fstring", ""}:
@@ -401,7 +401,7 @@ def translate_extracted_to_trial_config(
     gen = nodes.get("generator")
     if gen:
         m = _winning_module(gen)
-        chosen_generator = _extract_stage_llm(m, list(search_space.llm_models.generator))
+        chosen_generator = _extract_stage_llm(m, list(search_space.generator.models))
         if chosen_generator is not None:
             fields["generator_llm"] = chosen_generator
         if "temperature" in m:

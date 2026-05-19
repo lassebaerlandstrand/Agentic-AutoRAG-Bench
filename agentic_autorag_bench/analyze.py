@@ -190,13 +190,6 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
         optim_usds = [float(r.optimizer_meta.get("optimizer_usd", 0.0)) for r in runs]
         trial_usds = [float(r.optimizer_meta.get("trial_usd_total", 0.0)) for r in runs]
 
-        cost_caveat = ""
-        for r in runs:
-            note = r.optimizer_meta.get("extras", {}).get("cost_caveat")
-            if note:
-                cost_caveat = note
-                break
-
         out[method] = {
             "n_seeds": len(runs),
             "em": bootstrap_ci(em_pool),
@@ -209,16 +202,14 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
             "wall_clock_s_list": wall_clocks,
             "optimizer_usd_list": optim_usds,
             "trial_usd_list": trial_usds,
-            "cost_caveat": cost_caveat,
         }
     return out
 
 
 def write_markdown_table(stats: dict[str, dict], out_path: Path) -> None:
-    """Per-method results as a Markdown pipe-table, plus any cost caveats below."""
+    """Per-method results as a Markdown pipe-table."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rows: list[str] = []
-    caveats: dict[str, str] = {}
     for m in METHOD_ORDER:
         if m not in stats:
             continue
@@ -227,11 +218,8 @@ def write_markdown_table(stats: dict[str, dict], out_path: Path) -> None:
         f1_m, f1_lo, f1_hi = s["f1"]
         j_m, j_lo, j_hi = s["judge"]
         label = m.replace("_", "-")
-        # Star methods that disclose a cost caveat so the row visibly carries a
-        # footnote marker in the table.
-        marker = "*" if s.get("cost_caveat") else ""
         rows.append(
-            f"| {label}{marker} "
+            f"| {label} "
             f"| {em_m:.3f} [{em_lo:.3f}, {em_hi:.3f}] "
             f"| {f1_m:.3f} [{f1_lo:.3f}, {f1_hi:.3f}] "
             f"| {j_m:.3f} [{j_lo:.3f}, {j_hi:.3f}] "
@@ -240,24 +228,16 @@ def write_markdown_table(stats: dict[str, dict], out_path: Path) -> None:
             f"| ${s['trial_usd_mean']:.4f} "
             f"| {s['wall_clock_s_mean']:.0f}s |"
         )
-        if s.get("cost_caveat"):
-            caveats[label] = s["cost_caveat"]
     header = (
         "| Method | EM | Token-F1 | LLM Judge | MRR | Optimizer $ | Trial $ | Wall |\n"
         "|---|---|---|---|---|---|---|---|"
     )
     body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | |"
-    footnote = ""
-    if caveats:
-        footnote = "\n\n**Cost caveats** (*-marked rows):\n\n" + "\n".join(
-            f"- `{label}` — {note}" for label, note in caveats.items()
-        )
     text = (
         "# HotpotQA-distractor held-out scores\n\n"
         "Mean and 95% bootstrap CIs over per-question metrics, pooled across seeds. "
         "Cost columns are mean across seeds.\n\n"
         f"{header}\n{body}\n"
-        f"{footnote}\n"
     )
     out_path.write_text(text, encoding="utf-8")
     logger.info("wrote %s", out_path)
@@ -334,7 +314,6 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
 
     fig, (ax_cost, ax_time) = plt.subplots(1, 2, figsize=(9.5, 4.2))
 
-    caveated: list[str] = []
     for m in methods:
         s = stats[m]
         judge_m, judge_lo, judge_hi = s["judge"]
@@ -350,13 +329,8 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
         cost_err = float(np.std(cost_seeds)) if len(cost_seeds) > 1 else 0.0
         wall_err = float(np.std(wall_seeds)) if len(wall_seeds) > 1 else 0.0
         label = m.replace("_", "-")
-        if s.get("cost_caveat"):
-            label_marked = f"{label}*"
-            caveated.append(label)
-        else:
-            label_marked = label
-        ax_cost.errorbar(cost_m, judge_m, xerr=cost_err, yerr=score_yerr, fmt="o", capsize=3, label=label_marked)
-        ax_time.errorbar(wall_m, judge_m, xerr=wall_err, yerr=score_yerr, fmt="o", capsize=3, label=label_marked)
+        ax_cost.errorbar(cost_m, judge_m, xerr=cost_err, yerr=score_yerr, fmt="o", capsize=3, label=label)
+        ax_time.errorbar(wall_m, judge_m, xerr=wall_err, yerr=score_yerr, fmt="o", capsize=3, label=label)
 
     for ax, xlabel, title in (
         (ax_cost, "Total search cost (USD)", "Score vs. cost"),
@@ -368,12 +342,6 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
         ax.grid(alpha=0.3)
 
     ax_cost.legend(loc="best", frameon=False, fontsize=8)
-    if caveated:
-        fig.text(
-            0.5, 0.02,
-            "* enumeration cost not instrumented — cost-axis value is a lower bound (bench-side re-scoring only)",
-            ha="center", fontsize=7, style="italic",
-        )
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
     plt.close(fig)

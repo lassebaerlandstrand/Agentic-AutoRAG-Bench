@@ -20,7 +20,7 @@ methods:
 seeds: [1]
 
 budget:
-  max_trials: 4
+  max_trials: 10
 
 hotpot:
   split: validation
@@ -29,11 +29,8 @@ hotpot:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 70
-  # Currently azure/o4-mini for the experimentation phase; swap to a
-  # non-OpenAI-family judge for the camera-ready run to break any
-  # in-family bias (proposer + judge sharing model lineage).
+  limit: 300
   judge_model: azure/o4-mini
-  concurrency: 5
+  concurrency: 10
 
 output_root: ./results_paper
