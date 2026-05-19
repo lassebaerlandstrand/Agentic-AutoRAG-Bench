@@ -320,8 +320,8 @@ def _build_passage_compressor_modules(
     """Emit AutoRAG passage_compressor modules.
 
     For every non-"none" compressor type, emits one module per LLM in
-    ``compressor_llm_modules`` (built from ``ss.llm_models.compressor``) so
-    AutoRAG's strategy can pick a compressor LLM independently of the
+    ``compressor_llm_modules`` (built from ``ss.passage_compressor.models``)
+    so AutoRAG's strategy can pick a compressor LLM independently of the
     generator LLM. The ``prompt`` and ``chat_prompt`` kwargs are pinned to
     the framework's templates so AutoRAG runs against the same wording
     regardless of the underlying LLM's chat-mode. ``temperature`` is pinned
@@ -329,7 +329,7 @@ def _build_passage_compressor_modules(
     defaults.
     """
     modules: list[dict] = []
-    for compressor in search_space.passage_compressor:
+    for compressor in search_space.passage_compressor.strategies:
         if compressor == "none":
             modules.append({"module_type": "pass_compressor"})
             continue
@@ -355,14 +355,14 @@ def _build_passage_compressor_modules(
 
 
 def _build_prompt_maker_modules(search_space: SearchSpace, prompt_template: str) -> list[dict]:
-    """Emit prompt_maker modules from ``search_space.long_context_reorder``.
+    """Emit prompt_maker modules from ``search_space.retrieval.long_context_reorder``.
 
     ``False`` → ``fstring`` (substitute only); ``True`` →
     ``long_context_reorder`` (append top-by-score passage to the end before
     substitution).
     """
     modules: list[dict] = []
-    for enabled in search_space.long_context_reorder:
+    for enabled in search_space.retrieval.long_context_reorder:
         if enabled is False:
             modules.append({"module_type": "fstring", "prompt": [prompt_template]})
         elif enabled is True:
@@ -389,7 +389,7 @@ def _build_hybrid_modules(search_space: SearchSpace, weight_lo: float, weight_hi
     free hidden grid search per call).
     """
     modules: list[dict] = []
-    for fusion in search_space.bm25_vector_fusion:
+    for fusion in search_space.retrieval.bm25_vector_fusion:
         if fusion == "alpha":
             modules.append(
                 {
@@ -425,7 +425,7 @@ def _build_query_expansion_modules(
     """Translate our query-expansion choices to AutoRAG modules.
 
     For each non-"none" strategy, emits one module per LLM in
-    ``expander_llm_modules`` (built from ``ss.llm_models.expander``) so
+    ``expander_llm_modules`` (built from ``ss.query_expansion.models``) so
     AutoRAG's strategy can pick the expander LLM independently of the
     generator. HyDE / multi-query / query_decompose all need
     ``generator_module_type`` / ``llm`` / ``model`` plus the
@@ -487,7 +487,7 @@ def generate_autorag_config(
         raise ValueError(f"qa_variant must be 'mcq' or 'ragas', got {qa_variant!r}")
 
     ss = search_space
-    top_ks = _require_discrete_int(ss.top_k, "top_k")
+    top_ks = _require_discrete_int(ss.retrieval.top_k, "retrieval.top_k")
     reranker_top_ks = _require_discrete_int(ss.reranker.top_n, "reranker.top_n")
     # Temperature stays a NumericRange (pinned to a single value in every
     # paper config); we emit AutoRAG with a single point at the lower bound.
@@ -500,15 +500,15 @@ def generate_autorag_config(
     temperatures = [round(float(ss.temperature.min), 2)]
 
     # vectordb entries — one per embedding model, named for cross-referencing.
-    vectordb_entries, model_to_name = _build_vectordb_entries(list(ss.embedding_models))
+    vectordb_entries, model_to_name = _build_vectordb_entries(list(ss.embedding.models))
 
     # Per-stage LLM modules. Generator gets the (typically larger) generator
     # pool; expander/compressor get their own cheaper pools — matches the
     # framework's TrialConfig generator_llm / expander_llm / compressor_llm
     # split. AutoRAG strategy then enumerates the right pool at each node.
-    generator_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models.generator]
-    expander_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models.expander]
-    compressor_modules = [_build_generator_module(llm, temperatures) for llm in ss.llm_models.compressor]
+    generator_modules = [_build_generator_module(llm, temperatures) for llm in ss.generator.models]
+    expander_modules = [_build_generator_module(llm, temperatures) for llm in ss.query_expansion.models]
+    compressor_modules = [_build_generator_module(llm, temperatures) for llm in ss.passage_compressor.models]
 
     # AutoRAG v0.3 ALWAYS requires all three retrieval node_types when a
     # passage_reranker follows: lexical and semantic emit suffixed columns
@@ -523,10 +523,10 @@ def generate_autorag_config(
     # ``hybrid_alpha`` uses the same convention via ``HybridAlphaReranker``
     # (relevance = alpha*vector + (1-alpha)*fts), so the two map 1:1 with no
     # inversion.
-    hybrid_alpha_values = _require_discrete_float(ss.hybrid_alpha, "hybrid_alpha")
+    hybrid_alpha_values = _require_discrete_float(ss.retrieval.hybrid_alpha, "retrieval.hybrid_alpha")
     semantic_lo = round(min(hybrid_alpha_values), 4)
     semantic_hi = round(max(hybrid_alpha_values), 4)
-    if IndexType.HYBRID_BM25_VECTOR in ss.index_types:
+    if IndexType.HYBRID_BM25_VECTOR in ss.retrieval.index_types:
         weight_lo, weight_hi = semantic_lo, semantic_hi
     else:
         # vector_only only — pin hybrid_cc weight=1.0 so the fusion is fully
@@ -587,7 +587,7 @@ def generate_autorag_config(
     # node so AutoRAG's strategy picks the expander LLM independently of
     # the generator. Matches the framework's per-stage ``expander_llm`` field.
     query_expansion_modules = _build_query_expansion_modules(
-        list(ss.query_expansion),
+        list(ss.query_expansion.strategies),
         expander_modules,
         temperatures,
     )
@@ -637,7 +637,7 @@ def generate_autorag_config(
     ]
     # Omit the passage_compressor node entirely when only "none" is
     # enumerated — AutoRAG would otherwise evaluate a no-op module per trial.
-    if any(c != "none" for c in ss.passage_compressor):
+    if any(c != "none" for c in ss.passage_compressor.strategies):
         # AutoRAG's passage_compressor node restricts strategy.metrics to
         # the retrieval-token metric family (validated at
         # autorag/nodes/passagecompressor/run.py:82-89). Using generator
@@ -701,7 +701,7 @@ def generate_autorag_config(
         "so AutoRAG's internal ranking signal need only correlate with our final metric)"
     )
 
-    has_bedrock = any(m.startswith("bedrock/") for m in ss.llm_models.all_models())
+    has_bedrock = any(m.startswith("bedrock/") for m in ss.all_llm_models())
 
     notes = {
         "qa_variant": qa_variant,

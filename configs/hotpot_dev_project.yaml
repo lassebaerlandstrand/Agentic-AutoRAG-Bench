@@ -30,7 +30,6 @@ agent:
   judge_model: "azure/o4-mini"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
-  max_history_trials: 10
   concurrency: 5
 
 examiner:
@@ -39,7 +38,6 @@ examiner:
   probe_selection: true
   composition_batch_size: 4
   composition_temperature: 1.0
-  composition_temperature_numeric: 0.2
   question_type_weights:
     extraction: 0.10
     definitional: 0.05
@@ -91,30 +89,42 @@ search_space:
     strategies: ["recursive"]
     chunk_token_size: { values: [256] }
     chunk_token_overlap: { values: [0] }
-  embedding_models:
-    - "sentence-transformers/all-MiniLM-L6-v2"
-    - "BAAI/bge-large-en-v1.5"
-    - "BAAI/bge-m3"
-  index_types:
-    - "vector_only"
-  # DiscreteValues grids match hotpot_paper_project.yaml shape but with
-  # smaller fan-outs so the dev smoke run finishes in minutes.
-  top_k: { values: [3, 10] }
-  hybrid_alpha: { values: [0.0, 0.5, 1.0] }
+
+  embedding:
+    models:
+      - "sentence-transformers/all-MiniLM-L6-v2"
+      - "BAAI/bge-large-en-v1.5"
+      - "BAAI/bge-m3"
+
+  retrieval:
+    index_types:
+      - "vector_only"
+    # DiscreteValues grids match hotpot_paper_project.yaml shape but with
+    # smaller fan-outs so the dev smoke run finishes in minutes.
+    top_k: { values: [3, 10] }
+    hybrid_alpha: { values: [0.0, 0.5, 1.0] }
+
+  # query_expansion + passage_compressor are both pinned off in the dev run;
+  # ``strategies: ["none"]`` makes the LLM pool unused, so ``models`` can be empty.
+  query_expansion:
+    strategies: ["none"]
+    models: []
+
   reranker:
     models:
       - "none"
     top_n: { values: [3, 5] }
-  query_expansion: ["none"]
-  llm_models:
-    generator:
+
+  passage_compressor:
+    strategies: ["none"]
+    models: []
+
+  generator:
+    models:
       - "azure/gpt-4o-mini"
       - "azure/gpt-5.4-nano"
       - "azure/o4-mini"
-    expander:
-      - "azure/gpt-4o-mini"
-    compressor:
-      - "azure/gpt-4o-mini"
+    reasoning: false
+    reasoning_effort: medium
+
   temperature: { min: 1.0, max: 1.0 }
-  reasoning: false
-  reasoning_effort: medium

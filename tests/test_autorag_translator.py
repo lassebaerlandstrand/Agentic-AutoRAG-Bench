@@ -7,11 +7,15 @@ import yaml
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
     DiscreteValues,
+    EmbeddingSearchSpace,
+    GeneratorSearchSpace,
     IndexType,
     NumericRange,
+    PassageCompressorSearchSpace,
+    QueryExpansionSearchSpace,
     RerankerSearchSpace,
+    RetrievalSearchSpace,
     SearchSpace,
-    StageLLMs,
 )
 
 from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
@@ -24,16 +28,27 @@ def _curated_space() -> SearchSpace:
             chunk_token_size=DiscreteValues(values=[256, 512]),
             chunk_token_overlap=DiscreteValues(values=[0, 64]),
         ),
-        embedding_models=["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-m3"],
-        index_types=[IndexType.VECTOR_ONLY, IndexType.HYBRID_BM25_VECTOR],
-        top_k=DiscreteValues(values=[3, 5, 10, 15, 20]),
-        hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+        embedding=EmbeddingSearchSpace(
+            models=["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-m3"],
+        ),
+        retrieval=RetrievalSearchSpace(
+            index_types=[IndexType.VECTOR_ONLY, IndexType.HYBRID_BM25_VECTOR],
+            top_k=DiscreteValues(values=[3, 5, 10, 15, 20]),
+            hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+        ),
         reranker=RerankerSearchSpace(
             models=["none", "BAAI/bge-reranker-v2-m3"],
             top_n=DiscreteValues(values=[3, 5, 10]),
         ),
-        query_expansion=["none", "hyde", "multi_query"],
-        llm_models=StageLLMs.uniform(["azure/gpt-4o-mini"]),
+        query_expansion=QueryExpansionSearchSpace(
+            strategies=["none", "hyde", "multi_query"],
+            models=["azure/gpt-4o-mini"],
+        ),
+        passage_compressor=PassageCompressorSearchSpace(
+            strategies=["none"],
+            models=[],
+        ),
+        generator=GeneratorSearchSpace(models=["azure/gpt-4o-mini"]),
         temperature=NumericRange(min=1.0, max=1.0),
     )
 
@@ -169,7 +184,7 @@ def test_translates_v03_hybrid_rrf_sets_bm25_vector_fusion_to_rrf(tmp_path) -> N
         ],
     }
     space = _curated_space()
-    space.bm25_vector_fusion = ["alpha", "rrf"]
+    space.retrieval.bm25_vector_fusion = ["alpha", "rrf"]
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, space)
     assert config.index_type == IndexType.HYBRID_BM25_VECTOR
@@ -228,7 +243,7 @@ def test_translator_recognizes_query_decompose(tmp_path) -> None:
         ],
     }
     space = _curated_space()
-    space.query_expansion = ["none", "query_decompose"]
+    space.query_expansion.strategies = ["none", "query_decompose"]
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, space)
     assert config.query_expansion == "query_decompose"
@@ -282,7 +297,8 @@ def test_translator_recognizes_tree_summarize_passage_compressor(tmp_path) -> No
         ],
     }
     space = _curated_space()
-    space.passage_compressor = ["none", "tree_summarize", "refine"]
+    space.passage_compressor.strategies = ["none", "tree_summarize", "refine"]
+    space.passage_compressor.models = ["azure/gpt-4o-mini"]
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, space)
     assert config.passage_compressor == "tree_summarize"
@@ -309,7 +325,7 @@ def test_translator_pass_compressor_maps_to_none(tmp_path) -> None:
         ],
     }
     space = _curated_space()
-    space.passage_compressor = ["none", "tree_summarize"]
+    space.passage_compressor.strategies = ["none", "tree_summarize"]
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, space)
     assert config.passage_compressor == "none"
@@ -366,7 +382,7 @@ def test_translator_recognizes_long_context_reorder(tmp_path) -> None:
         ],
     }
     space = _curated_space()
-    space.long_context_reorder = [False, True]
+    space.retrieval.long_context_reorder = [False, True]
     path = _write_extracted_yaml(tmp_path, extracted)
     config = translate_extracted_to_trial_config(path, space)
     assert config.long_context_reorder is True
@@ -469,10 +485,11 @@ def test_native_config_then_translator_roundtrip_for_pipeline_dimensions(tmp_pat
     from agentic_autorag_bench.methods.autorag.native_config import generate_autorag_config
 
     space = _curated_space()
-    space.bm25_vector_fusion = ["alpha", "rrf"]
-    space.long_context_reorder = [False, True]
-    space.passage_compressor = ["none", "tree_summarize", "refine"]
-    space.query_expansion = ["none", "hyde", "multi_query", "query_decompose"]
+    space.retrieval.bm25_vector_fusion = ["alpha", "rrf"]
+    space.retrieval.long_context_reorder = [False, True]
+    space.passage_compressor.strategies = ["none", "tree_summarize", "refine"]
+    space.passage_compressor.models = ["azure/gpt-4o-mini"]
+    space.query_expansion.strategies = ["none", "hyde", "multi_query", "query_decompose"]
 
     ar_config, _ = generate_autorag_config(space, qa_variant="ragas")
 
@@ -579,9 +596,11 @@ def test_native_config_then_translator_roundtrip_with_per_stage_llms(tmp_path) -
         ],
     }
     space = _curated_space()
-    space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
-    space.passage_compressor = ["none", "tree_summarize"]
-    space.query_expansion = ["none", "query_decompose"]
+    space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+    space.passage_compressor.strategies = ["none", "tree_summarize"]
+    space.passage_compressor.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+    space.query_expansion.strategies = ["none", "query_decompose"]
+    space.query_expansion.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
     path = _write_extracted_yaml(tmp_path, extracted)
     trial = translate_extracted_to_trial_config(path, space)
 
@@ -629,8 +648,9 @@ def test_translator_sets_stage_llm_to_none_when_stage_inactive(tmp_path) -> None
         ],
     }
     space = _curated_space()
-    space.passage_compressor = ["none", "tree_summarize"]
-    space.query_expansion = ["none", "hyde"]
+    space.passage_compressor.strategies = ["none", "tree_summarize"]
+    space.passage_compressor.models = ["azure/gpt-4o-mini"]
+    space.query_expansion.strategies = ["none", "hyde"]
     path = _write_extracted_yaml(tmp_path, extracted)
     trial = translate_extracted_to_trial_config(path, space)
 
@@ -851,8 +871,8 @@ def test_openai_without_azure_base_remains_openai(tmp_path) -> None:
         ]
     }
     path = _write_extracted_yaml(tmp_path, extracted)
-    # The curated space's llm_models only contains azure/gpt-4o-mini, so
-    # openai/gpt-4o-mini falls back to the search-space default.
+    # The curated space's generator pool only contains azure/gpt-4o-mini,
+    # so openai/gpt-4o-mini falls back to the search-space default.
     config = translate_extracted_to_trial_config(path, _curated_space())
     assert config.generator_llm == "azure/gpt-4o-mini"  # search-space default
 
@@ -884,7 +904,8 @@ def test_openailike_legacy_translates_to_azure(tmp_path) -> None:
 
 def _bedrock_space() -> SearchSpace:
     space = _curated_space()
-    space.llm_models = StageLLMs.uniform(["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"])
+    space.generator.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
+    space.query_expansion.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
     return space
 
 

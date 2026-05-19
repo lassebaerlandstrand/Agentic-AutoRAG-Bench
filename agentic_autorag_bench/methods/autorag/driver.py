@@ -104,6 +104,20 @@ def _scrub_env_placeholders(path: Path) -> None:
         logger.info("Scrubbed env-var placeholders in %s", path.name)
 
 
+# AutoRAG materialises ``${AZURE_API_KEY}`` etc. into its per-trial config.yaml
+# and every node's summary.csv ``module_params`` column. We sweep both
+# extensions after the evaluate subprocess so committed artifacts never carry
+# live credentials. Scope is the trial dir only — we don't touch parquet
+# (binary, no env-var expansion path) or the cache dir (symlinked out).
+_SCRUB_GLOBS = ("*.yaml", "*.yml", "*.csv", "*.json")
+
+
+def _scrub_trial_artifacts(trial_dir: Path) -> None:
+    for pattern in _SCRUB_GLOBS:
+        for path in trial_dir.rglob(pattern):
+            _scrub_env_placeholders(path)
+
+
 def _find_latest_trial_dir(project_dir: Path) -> Path | None:
     """AutoRAG writes trial outputs as numbered subdirs under project_dir (0/, 1/, ...).
 
@@ -118,6 +132,59 @@ def _find_latest_trial_dir(project_dir: Path) -> Path | None:
     if not candidates:
         return None
     return max(candidates, key=lambda x: x[0])[1]
+
+
+def _summarize_cost_log(log_path: Path) -> dict:
+    """Sum the per-call log into a USD total + per-model breakdown.
+
+    ``cost_tracker.py`` writes one JSONL line per LLM completion. Pricing
+    comes from ``litellm.cost_per_token``; calls for models LiteLLM doesn't
+    price (e.g. local self-hosted endpoints, exotic Bedrock IDs) contribute
+    zero. Returns a dict with ``total_usd``, ``buckets`` (by model), and
+    ``n_calls`` so the orchestrator's ledger format is mirrored exactly.
+    """
+    import litellm
+
+    buckets: dict[str, dict] = {}
+    total_usd = 0.0
+    total_calls = 0
+    if not log_path.exists():
+        return {"total_usd": 0.0, "buckets": {}, "n_calls": 0}
+
+    with log_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                logger.warning("Skipping malformed cost log line: %s", line[:200])
+                continue
+            model = rec.get("model") or "unknown"
+            prompt_tokens = int(rec.get("prompt_tokens", 0) or 0)
+            completion_tokens = int(rec.get("completion_tokens", 0) or 0)
+            try:
+                in_usd, out_usd = litellm.cost_per_token(
+                    model=model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                )
+                call_usd = float(in_usd or 0.0) + float(out_usd or 0.0)
+            except Exception:
+                logger.debug("No litellm pricing for model=%s", model, exc_info=True)
+                call_usd = 0.0
+            bucket = buckets.setdefault(
+                model, {"usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "n_calls": 0}
+            )
+            bucket["usd"] += call_usd
+            bucket["prompt_tokens"] += prompt_tokens
+            bucket["completion_tokens"] += completion_tokens
+            bucket["n_calls"] += 1
+            total_usd += call_usd
+            total_calls += 1
+
+    return {"total_usd": total_usd, "buckets": buckets, "n_calls": total_calls}
 
 
 def _compute_resources_cache_key(corpus_parquet: Path, embedding_models: list[str]) -> str:
@@ -225,7 +292,7 @@ class AutoRAGOptimizer:
         # is plug-and-play: the first run pays the embedding cost; subsequent
         # runs skip straight to retrieval. Cache invalidates on (corpus,
         # embedder list) changes.
-        cache_key = _compute_resources_cache_key(corpus_parquet, list(orch.config.search_space.embedding_models))
+        cache_key = _compute_resources_cache_key(corpus_parquet, list(orch.config.search_space.embedding.models))
         cache_dir = _setup_resources_cache(autorag_dir, orch.cache_dir, cache_key)
         logger.info("AutoRAG resources cache: %s", cache_dir)
 
@@ -264,7 +331,7 @@ class AutoRAGOptimizer:
                 "AWS_REGION_NAME is unset but the search space contains bedrock/* models. "
                 "AutoRAG's bedrock_converse LLM needs a region (boto3 doesn't read "
                 "AWS_REGION_NAME on its own, so we pass it explicitly via ${AWS_REGION_NAME}). "
-                "Either export AWS_REGION_NAME (e.g. us-east-1) or drop bedrock/* from llm_models."
+                "Either export AWS_REGION_NAME (e.g. us-east-1) or drop bedrock/* from the search-space stage pools."
             )
 
         # Drop rows that Azure's content filter rejects before AutoRAG's
@@ -272,7 +339,7 @@ class AutoRAGOptimizer:
         # whole AutoRAG run, so this is the only place we get to intervene.
         # Probe with the cheapest search-space LLM since Azure's filter
         # applies at the gateway, not per-deployment.
-        prescreen_model = orch.config.search_space.llm_models.generator[0]
+        prescreen_model = orch.config.search_space.generator.models[0]
         dropped = await prescreen_qa_for_content_filter(qa_parquet, model=prescreen_model)
         if dropped:
             notes = dict(notes)
@@ -284,17 +351,31 @@ class AutoRAGOptimizer:
         # resolve_autorag_python already verified the ``autorag`` console
         # script exists alongside the interpreter.
         autorag_bin = Path(autorag_python).parent / "autorag"
+        cost_tracker_script = Path(__file__).parent / "cost_tracker.py"
+        cost_log_path = autorag_dir / "llm_calls.jsonl"
 
         env = dict(os.environ)
+        env["AUTORAG_COST_LOG"] = str(cost_log_path)
 
         # Skip the long subprocess if a previous invocation already produced
         # a trial dir AND its extracted_sample.yaml. Re-extract is cheap.
         existing_trial = _find_latest_trial_dir(autorag_dir)
         if existing_trial is None or not (existing_trial / "summary.csv").exists():
+            # Fresh run: drop any prior cost log so totals reflect only this
+            # invocation. (``--no-clean`` cases that *do* take the skip branch
+            # below intentionally keep the old log so the cost matches the
+            # trial dir we're reusing.)
+            cost_log_path.unlink(missing_ok=True)
             logger.info("Invoking AutoRAG evaluate (%s variant)", self.qa_variant)
+            # Route through cost_tracker.py instead of the bare autorag binary
+            # so every OpenAI / Bedrock call's token usage is logged. RAGAS QA
+            # generation runs in a separate subprocess (qa_ragas.py) that is
+            # NOT wrapped, so exam-creation cost stays out of the meter — fair
+            # across methods that reuse the agentic exam.
             result = subprocess.run(
                 [
-                    str(autorag_bin), "evaluate",
+                    autorag_python, str(cost_tracker_script),
+                    "evaluate",
                     "--config", str(autorag_config_path),
                     "--qa_data_path", str(qa_parquet),
                     "--corpus_data_path", str(corpus_parquet),
@@ -326,6 +407,14 @@ class AutoRAGOptimizer:
         trial_dir = _find_latest_trial_dir(autorag_dir)
         if trial_dir is None:
             raise RuntimeError(f"AutoRAG produced no trial directory under {autorag_dir}")
+
+        # SECURITY: AutoRAG's evaluate subprocess materialises ``${AZURE_API_KEY}``
+        # (and any other env-var placeholders we feed it) into the per-trial
+        # config.yaml and every node's summary.csv ``module_params`` column.
+        # Scrub them back to placeholder form before any downstream step reads
+        # the files or the bench commits them. Idempotent on re-runs, so it's
+        # safe to call on the ``--no-clean`` skip path too.
+        _scrub_trial_artifacts(trial_dir)
         extracted = autorag_dir / "extracted_sample.yaml"
         if not extracted.exists():
             logger.info("Extracting best config from trial %s", trial_dir.name)
@@ -373,27 +462,26 @@ class AutoRAGOptimizer:
         ]
         wall_clock = time.monotonic() - t_start
 
+        # Aggregate the per-call cost log written by cost_tracker.py. Persist
+        # the breakdown alongside the trial dir so reviewers can audit which
+        # models drove the spend.
+        cost_summary = _summarize_cost_log(cost_log_path)
+        (autorag_dir / "cost_breakdown.json").write_text(
+            json.dumps(cost_summary, indent=2), encoding="utf-8"
+        )
+
         return SearchResult(
             method=self.name,
             seed=None,
             deterministic=self.deterministic,
             best_config=trial_dump,
             history=history,
-            # ``optimizer_usd`` is set to 0 deliberately: AutoRAG's enumerate
-            # subprocess makes many internal LLM calls during pipeline
-            # evaluation (one per (config × QA-row) for each generator module)
-            # but does not surface a token-level cost ledger. AutoRAG only
-            # records ``average_output_token`` per module in summary.csv —
-            # prompt tokens, the dominant share of cost, are not captured.
-            # We therefore *cannot* report a comparable optimizer_usd here
-            # without re-tokenising every prompt, which would conflate this
-            # with the real cost we'd see in production. The ``trial_usd_total``
-            # below reflects only the bench-side re-scoring of the winning
-            # config (apples-to-apples with the other rows' final-trial cost).
-            # Reviewers should treat the cost column as a strict lower bound;
-            # the ``cost_caveat`` flag in ``extras`` is consumed by analyze.py
-            # to surface the disclaimer in Table_1.md and efficiency.png.
-            optimizer_usd=0.0,
+            # Sum of every OpenAI / Bedrock LLM call made during AutoRAG's
+            # internal enumeration. Excludes the bench-side rescoring (in
+            # trial_usd_total) and the RAGAS QA-generation subprocess (which
+            # cost_tracker.py never wraps — keeps autorag_ragas comparable to
+            # methods that reuse the agentic exam).
+            optimizer_usd=cost_summary["total_usd"],
             trial_usd_total=rescore.eval_usd,
             wall_clock_s=wall_clock,
             extras={
@@ -401,11 +489,7 @@ class AutoRAGOptimizer:
                 "translation_notes": notes,
                 "extracted_sample_path": str(extracted),
                 "autorag_python": autorag_python,
-                "cost_caveat": (
-                    "AutoRAG's internal enumeration cost is not instrumented; "
-                    "optimizer_usd=0 and trial_usd_total reflects only the "
-                    "bench-side re-scoring of the winning config. The true "
-                    "search cost is higher."
-                ),
+                "cost_breakdown_path": str(autorag_dir / "cost_breakdown.json"),
+                "n_llm_calls": cost_summary["n_calls"],
             },
         )

@@ -48,8 +48,11 @@ METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
 
 # Methods whose per-trial trajectory is meaningful. AutoRAG enumerates per-node
 # and re-scores a single winning config — its history.jsonl carries one entry,
-# so line plots over it would be misleading.
+# so line plots over it would be misleading. On cross-method figures we still
+# surface the AutoRAG variants as dashed horizontal reference lines via
+# ``_autorag_references`` so the reader sees every method on every chart.
 SEQUENTIAL = {"agentic", "random", "bayesian"}
+AUTORAG = {"autorag_mcq", "autorag_ragas"}
 
 # Directory names that live next to method dirs under ``output_root`` but are
 # not method results. ``_seed_dirs`` and ``make_matrix_figures`` skip these.
@@ -107,6 +110,99 @@ def _method_dirs(output_root: Path) -> list[Path]:
         p for p in output_root.iterdir()
         if p.is_dir() and p.name not in _NON_METHOD_DIRS
     )
+
+
+def _read_optimizer_meta(seed_dir: Path) -> dict:
+    """Best-effort ``optimizer_meta.json`` read. Missing file → ``{}``."""
+    path = seed_dir / "optimizer_meta.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _autorag_references(output_root: Path) -> list[tuple[str, float, float]]:
+    """Return ``(method_name, score, total_search_usd)`` for each AutoRAG variant.
+
+    AutoRAG produces one rescored config per run; we surface that as a dashed
+    reference on the cross-method per-trial charts so every method appears on
+    every figure. ``score`` is read from the single ``history.jsonl`` entry
+    (the bench-side rescore on the same evaluator as the sequential methods,
+    so directly comparable). ``total_search_usd`` sums the optimizer-side
+    spend (AutoRAG's internal LLM calls) and the trial-side rescore, which
+    is the "what did this method cost end-to-end" denominator used on the
+    cost-Pareto chart.
+    """
+    refs: list[tuple[str, float, float]] = []
+    for method in METHOD_ORDER:
+        if method not in AUTORAG:
+            continue
+        method_dir = output_root / method
+        if not method_dir.is_dir():
+            continue
+        for sd in _seed_dirs(method_dir):
+            hist = _read_history(sd)
+            if not hist:
+                continue
+            meta = _read_optimizer_meta(sd)
+            score = _entry_score(hist[0])
+            total_usd = float(meta.get("optimizer_usd", 0.0)) + float(meta.get("trial_usd_total", 0.0))
+            refs.append((method, score, total_usd))
+    return refs
+
+
+def _draw_autorag_hlines(ax, output_root: Path) -> bool:
+    """Overlay one dashed horizontal line per AutoRAG variant at its score.
+
+    Returns True iff at least one line was drawn — caller uses that to decide
+    whether to refresh the legend. The line is drawn with the method's
+    canonical color and a dashed style; legend entry reads
+    ``<method> (1-shot, $X.XX)`` so the reader can tell at a glance both
+    "AutoRAG converged here" and "it spent this much to do so".
+    """
+    refs = _autorag_references(output_root)
+    drawn = False
+    for method, score, total_usd in refs:
+        color = METHOD_COLOR.get(method, "#888888")
+        ax.axhline(
+            score,
+            color=color,
+            linestyle="--",
+            alpha=0.75,
+            linewidth=1.6,
+            label=f"{method.replace('_', '-')} (1-shot, ${total_usd:.2f})",
+        )
+        drawn = True
+    return drawn
+
+
+def _benchmark_cost_per_question(benchmark: dict) -> float | None:
+    """Mean LLM cost per question on hold-out, after union-exclusion.
+
+    Sums ``input_tokens × in_price + completion_tokens × out_price`` per row
+    (already computed by LiteLLM and persisted as ``llm_cost_usd``), means
+    across the non-excluded rows. This is the per-query deploy cost of the
+    winning pipeline — the right denominator for a cost–quality Pareto,
+    since search-time cost (covered by ``efficiency.png``) is what the
+    researcher pays once, while cost-per-question is what production pays
+    forever.
+
+    Returns None if no row carries a cost — caller skips that method.
+    """
+    excluded = set(benchmark.get("excluded_question_ids") or [])
+    costs: list[float] = []
+    for r in benchmark.get("per_question", []):
+        if r.get("id") in excluded:
+            continue
+        v = r.get("llm_cost_usd")
+        if v is None:
+            continue
+        costs.append(float(v))
+    if not costs:
+        return None
+    return float(np.mean(costs))
 
 
 def _holdout_judge_mean(benchmark: dict) -> float | None:
@@ -258,10 +354,18 @@ def _seed_score_per_trial(
     ax.set_xlabel("Trial number")
     ax.set_ylabel("Exam score")
     ax.set_ylim(0, 1)
+    # With a single trial (AutoRAG; one-shot rescored config), matplotlib
+    # auto-axis zooms into [0.95, 1.05] which is meaningless. Force a sensible
+    # frame so the dot reads as "trial 1 of 1", and pin the single integer
+    # tick (MaxNLocator decays into decimal labels when xlim is this narrow).
+    if len(trial_nums) == 1:
+        ax.set_xlim(0.5, 1.5)
+        ax.set_xticks([int(trial_nums[0])])
+    else:
+        _integer_xticks(ax)
     ax.set_title(f"{method} / {seed_label}: score per trial")
     ax.grid(alpha=0.3)
     ax.legend(loc="lower right", frameon=False, fontsize=9)
-    _integer_xticks(ax)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
@@ -289,8 +393,13 @@ def _seed_cost_per_trial(
     ax_cum.set_title("Cumulative cost")
     ax_cum.grid(alpha=0.3)
 
-    _integer_xticks(ax_per)
-    _integer_xticks(ax_cum)
+    if len(trial_nums) == 1:
+        for sub in (ax_per, ax_cum):
+            sub.set_xlim(0.5, 1.5)
+            sub.set_xticks([int(trial_nums[0])])
+    else:
+        _integer_xticks(ax_per)
+        _integer_xticks(ax_cum)
 
     fig.suptitle(f"{method} / {seed_label}: trial cost", fontsize=11)
     fig.tight_layout()
@@ -328,7 +437,12 @@ def make_method_figures(method_dir: Path) -> None:
         best = np.maximum.accumulate(scores)
         seed_runs.append((sd.name, trial_nums, scores, best))
 
-    if seed_runs:
+    # Trajectory plots only make sense for sequential methods. AutoRAG's
+    # ``history.jsonl`` carries a single rescored entry, so a "score per
+    # trial" line collapses to one point at x=1 with matplotlib's auto-axis
+    # zooming meaninglessly into [0.945, 1.055]. The cross-method matrix
+    # figures still surface AutoRAG as a dashed reference.
+    if seed_runs and method in SEQUENTIAL:
         _safely(
             f"method score_per_trial: {method_dir}",
             lambda: _method_score_per_trial(
@@ -533,15 +647,21 @@ def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -
         "matrix cost_breakdown.png",
         lambda: _matrix_cost_breakdown(figures_dir / "cost_breakdown.png", stats),
     )
+    _safely(
+        "matrix score_vs_cost.png",
+        lambda: _matrix_score_vs_cost(figures_dir / "score_vs_cost.png", results, stats),
+    )
 
 
 def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
-    """Per-trial score across methods (sequential methods only).
+    """Per-trial score across methods.
 
-    Mean ± std across seeds per method; NaN-padded so an aborted seed does
-    not artificially flatten the mean at the tail. AutoRAG variants are
-    omitted: their per-trial trajectory is a single re-scored config, not a
-    sweep.
+    Sequential methods are drawn as mean ± std (NaN-padded so an aborted seed
+    does not artificially flatten the tail). AutoRAG variants — whose
+    ``history.jsonl`` is one rescored entry, not a sweep — are overlaid as
+    dashed horizontal reference lines at their final score, so the reader can
+    judge "how many trials did the sequential search need to match (or beat)
+    a one-shot AutoRAG run?".
     """
     plt = _import_matplotlib()
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
@@ -572,15 +692,16 @@ def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
             scores = per_seed_scores[0]
             ax.plot(np.arange(1, scores.size + 1), scores, "o-", color=color, label=method)
         has_data = True
+    has_data = _draw_autorag_hlines(ax, output_root) or has_data
     if not has_data:
         plt.close(fig)
         return
     ax.set_xlabel("Trial number")
     ax.set_ylabel("Exam score (per trial)")
     ax.set_ylim(0, 1)
-    ax.set_title("Per-trial exam score across methods (mean ± std across seeds)")
+    ax.set_title("Per-trial exam score across methods (mean ± std; AutoRAG = dashed reference)")
     ax.grid(alpha=0.3)
-    ax.legend(loc="lower right", frameon=False)
+    ax.legend(loc="lower right", frameon=False, fontsize=9)
     _integer_xticks(ax)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
@@ -588,11 +709,12 @@ def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
 
 
 def _matrix_best_so_far(out_path: Path, output_root: Path) -> None:
-    """Best-so-far trajectory across methods (sequential only).
+    """Best-so-far trajectory across methods.
 
-    Replaces the legacy ``figure_trajectory.png`` produced by ``analyze.py``.
-    Same semantics — kept here so the matrix-level layout is a single
-    coherent ``figures/`` directory.
+    Sequential methods get mean ± std across seeds; AutoRAG variants overlay
+    as dashed horizontal lines so the chart answers "when does the sequential
+    search catch up to / overtake a one-shot AutoRAG run?". Replaces the
+    legacy ``figure_trajectory.png`` produced by ``analyze.py``.
     """
     plt = _import_matplotlib()
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
@@ -623,16 +745,92 @@ def _matrix_best_so_far(out_path: Path, output_root: Path) -> None:
             best = per_seed_best[0]
             ax.plot(np.arange(1, best.size + 1), best, "-", color=color, label=method)
         has_data = True
+    has_data = _draw_autorag_hlines(ax, output_root) or has_data
     if not has_data:
         plt.close(fig)
         return
     ax.set_xlabel("Trial number")
     ax.set_ylabel("Best-so-far exam score")
     ax.set_ylim(0, 1)
-    ax.set_title("Best-so-far trajectory across methods (mean ± std across seeds)")
+    ax.set_title("Best-so-far trajectory across methods (mean ± std; AutoRAG = dashed reference)")
     ax.grid(alpha=0.3)
-    ax.legend(loc="lower right", frameon=False)
+    ax.legend(loc="lower right", frameon=False, fontsize=9)
     _integer_xticks(ax)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _matrix_score_vs_cost(out_path: Path, results: list, stats: dict[str, dict]) -> None:
+    """Pipeline cost-quality Pareto: held-out judge vs. per-question LLM cost.
+
+    Each method is one point. X-axis is the *deploy-time* cost of running
+    the winning pipeline on a single question, computed as
+    ``mean(input_tokens × in_price + completion_tokens × out_price)`` over
+    the union-excluded hold-out rows — i.e. the cost a production user
+    pays per query. Y-axis is held-out LLM-judge accuracy with bootstrap
+    95% CIs from ``aggregate_by_method``. This is distinct from
+    ``efficiency.png``, which uses *total search cost* (the one-time bill
+    to find the winner). Both matter; this one is the better Pareto for
+    "should I deploy this?".
+
+    Horizontal error bars are per-seed std on cost (zero for AutoRAG with
+    its single deterministic run). Vertical error bars are the asymmetric
+    bootstrap CI from per-question judge resampling.
+    """
+    plt = _import_matplotlib()
+    methods = [m for m in METHOD_ORDER if m in stats]
+    if not methods:
+        return
+
+    by_method: dict[str, list] = {}
+    for r in results:
+        by_method.setdefault(r.method, []).append(r)
+
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    has_data = False
+    for m in methods:
+        runs = by_method.get(m, [])
+        if not runs:
+            continue
+        cpq_seeds: list[float] = []
+        for r in runs:
+            cpq = _benchmark_cost_per_question(r.benchmark)
+            if cpq is not None:
+                cpq_seeds.append(cpq)
+        if not cpq_seeds:
+            continue
+        x_mean = float(np.mean(cpq_seeds))
+        x_err = float(np.std(cpq_seeds)) if len(cpq_seeds) > 1 else 0.0
+        y_mean, y_lo, y_hi = stats[m]["judge"]
+        y_err = [[y_mean - y_lo], [y_hi - y_mean]]
+        color = METHOD_COLOR.get(m, "#888888")
+        is_autorag = m in AUTORAG
+        ax.errorbar(
+            x_mean, y_mean,
+            xerr=x_err if x_err > 0 else None,
+            yerr=y_err,
+            fmt="*" if is_autorag else "o",
+            color=color,
+            markersize=16 if is_autorag else 9,
+            markeredgecolor="black" if is_autorag else "none",
+            markeredgewidth=0.6,
+            capsize=3,
+            elinewidth=1.0,
+            label=m.replace("_", "-"),
+        )
+        has_data = True
+
+    if not has_data:
+        plt.close(fig)
+        return
+    ax.set_xlabel("Mean LLM cost per question on hold-out (USD)")
+    ax.set_ylabel("Held-out LLM-Judge accuracy")
+    ax.set_ylim(0, 1)
+    ax.set_xscale("log")
+    ax.set_title("Pipeline cost-quality Pareto")
+    ax.grid(alpha=0.3, which="both")
+    ax.legend(loc="lower right", frameon=False, fontsize=9, markerscale=0.6)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
     plt.close(fig)

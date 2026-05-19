@@ -15,12 +15,16 @@ import pytest
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
     DiscreteValues,
+    EmbeddingSearchSpace,
+    GeneratorSearchSpace,
     IndexType,
     NumericRange,
+    PassageCompressorSearchSpace,
     ProjectConfig,
+    QueryExpansionSearchSpace,
     RerankerSearchSpace,
+    RetrievalSearchSpace,
     SearchSpace,
-    StageLLMs,
     TrialConfig,
 )
 
@@ -37,16 +41,19 @@ def _tiny_project() -> ProjectConfig:
                 chunk_token_size=NumericRange(min=256, max=512),
                 chunk_token_overlap=NumericRange(min=0, max=64),
             ),
-            embedding_models=["sentence-transformers/all-MiniLM-L6-v2"],
-            index_types=[IndexType.VECTOR_ONLY],
-            top_k=NumericRange(min=3, max=10),
-            hybrid_alpha=NumericRange(min=0.0, max=1.0),
+            embedding=EmbeddingSearchSpace(models=["sentence-transformers/all-MiniLM-L6-v2"]),
+            retrieval=RetrievalSearchSpace(
+                index_types=[IndexType.VECTOR_ONLY],
+                top_k=NumericRange(min=3, max=10),
+                hybrid_alpha=NumericRange(min=0.0, max=1.0),
+            ),
             reranker=RerankerSearchSpace(
                 models=["none"],
                 top_n=NumericRange(min=3, max=10),
             ),
-            query_expansion=["none"],
-            llm_models=StageLLMs.uniform(["ollama/llama3.2"]),
+            query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
+            passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
+            generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
         )
     )
@@ -165,20 +172,25 @@ def _multi_embedding_project() -> ProjectConfig:
                 chunk_token_size=NumericRange(min=128, max=512),
                 chunk_token_overlap=NumericRange(min=0, max=64),
             ),
-            embedding_models=[
-                "sentence-transformers/all-MiniLM-L6-v2",
-                "BAAI/bge-large-en-v1.5",
-                "BAAI/bge-m3",
-            ],
-            index_types=[IndexType.VECTOR_ONLY],
-            top_k=NumericRange(min=3, max=10),
-            hybrid_alpha=NumericRange(min=0.0, max=1.0),
+            embedding=EmbeddingSearchSpace(
+                models=[
+                    "sentence-transformers/all-MiniLM-L6-v2",
+                    "BAAI/bge-large-en-v1.5",
+                    "BAAI/bge-m3",
+                ],
+            ),
+            retrieval=RetrievalSearchSpace(
+                index_types=[IndexType.VECTOR_ONLY],
+                top_k=NumericRange(min=3, max=10),
+                hybrid_alpha=NumericRange(min=0.0, max=1.0),
+            ),
             reranker=RerankerSearchSpace(
                 models=["none"],
                 top_n=NumericRange(min=3, max=10),
             ),
-            query_expansion=["none"],
-            llm_models=StageLLMs.uniform(["ollama/llama3.2"]),
+            query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
+            passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
+            generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
         ),
         embedding_token_limits={
@@ -236,7 +248,7 @@ async def test_bayesian_with_mixed_embedding_limits_explores_all_embeddings(tmp_
     sr = await optimizer.search(evaluator, Budget(max_trials=15), seed=42)
 
     seen_embeddings = {h.config["embedding_model"] for h in sr.history}
-    assert seen_embeddings == set(project.search_space.embedding_models), (
+    assert seen_embeddings == set(project.search_space.embedding.models), (
         f"Expected all three embeddings, saw {seen_embeddings}"
     )
 
@@ -256,20 +268,19 @@ def _discrete_project() -> ProjectConfig:
                 chunk_token_size=DiscreteValues(values=[256, 512]),
                 chunk_token_overlap=DiscreteValues(values=[0, 64]),
             ),
-            embedding_models=["sentence-transformers/all-MiniLM-L6-v2"],
-            index_types=[IndexType.VECTOR_ONLY],
-            top_k=DiscreteValues(values=[3, 5, 10]),
-            hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+            embedding=EmbeddingSearchSpace(models=["sentence-transformers/all-MiniLM-L6-v2"]),
+            retrieval=RetrievalSearchSpace(
+                index_types=[IndexType.VECTOR_ONLY],
+                top_k=DiscreteValues(values=[3, 5, 10]),
+                hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+            ),
             reranker=RerankerSearchSpace(
                 models=["none", "BAAI/bge-reranker-v2-m3"],
                 top_n=DiscreteValues(values=[3, 5, 10]),
             ),
-            query_expansion=["none"],
-            llm_models=StageLLMs(
-                generator=["ollama/llama3.2", "ollama/mistral"],
-                expander=["ollama/llama3.2"],
-                compressor=["ollama/mistral"],
-            ),
+            query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=["ollama/llama3.2"]),
+            passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=["ollama/mistral"]),
+            generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
             temperature=NumericRange(min=1.0, max=1.0),
         )
     )
@@ -307,8 +318,8 @@ async def test_random_search_with_discrete_values_picks_per_stage_llms() -> None
     """generator_llm / expander_llm / compressor_llm draw from their own pools."""
     project = _discrete_project()
     # Force query_expansion + passage_compressor to enable expander_llm/compressor_llm.
-    project.search_space.query_expansion = ["hyde"]
-    project.search_space.passage_compressor = ["tree_summarize"]
+    project.search_space.query_expansion.strategies = ["hyde"]
+    project.search_space.passage_compressor.strategies = ["tree_summarize"]
     optimizer = RandomSearch(project=project)
     evaluator = _make_evaluator([0.5] * 10)
 

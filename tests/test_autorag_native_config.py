@@ -7,11 +7,15 @@ import pytest
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
     DiscreteValues,
+    EmbeddingSearchSpace,
+    GeneratorSearchSpace,
     IndexType,
     NumericRange,
+    PassageCompressorSearchSpace,
+    QueryExpansionSearchSpace,
     RerankerSearchSpace,
+    RetrievalSearchSpace,
     SearchSpace,
-    StageLLMs,
 )
 
 from agentic_autorag_bench.methods.autorag.native_config import (
@@ -32,19 +36,30 @@ def _curated_space() -> SearchSpace:
             chunk_token_size=DiscreteValues(values=[256, 512]),
             chunk_token_overlap=DiscreteValues(values=[0, 64]),
         ),
-        embedding_models=[
-            "sentence-transformers/all-MiniLM-L6-v2",
-            "BAAI/bge-m3",
-        ],
-        index_types=[IndexType.VECTOR_ONLY, IndexType.HYBRID_BM25_VECTOR],
-        top_k=DiscreteValues(values=[3, 5, 10, 15, 20]),
-        hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+        embedding=EmbeddingSearchSpace(
+            models=[
+                "sentence-transformers/all-MiniLM-L6-v2",
+                "BAAI/bge-m3",
+            ],
+        ),
+        retrieval=RetrievalSearchSpace(
+            index_types=[IndexType.VECTOR_ONLY, IndexType.HYBRID_BM25_VECTOR],
+            top_k=DiscreteValues(values=[3, 5, 10, 15, 20]),
+            hybrid_alpha=DiscreteValues(values=[0.0, 0.5, 1.0]),
+        ),
         reranker=RerankerSearchSpace(
             models=["none", "BAAI/bge-reranker-v2-m3", "cross-encoder/ms-marco-MiniLM-L-6-v2"],
             top_n=DiscreteValues(values=[3, 5, 10]),
         ),
-        query_expansion=["none", "hyde", "multi_query"],
-        llm_models=StageLLMs.uniform(["azure/gpt-4o-mini"]),
+        query_expansion=QueryExpansionSearchSpace(
+            strategies=["none", "hyde", "multi_query"],
+            models=["azure/gpt-4o-mini"],
+        ),
+        passage_compressor=PassageCompressorSearchSpace(
+            strategies=["none"],
+            models=[],
+        ),
+        generator=GeneratorSearchSpace(models=["azure/gpt-4o-mini"]),
         temperature=NumericRange(min=1.0, max=1.0),
     )
 
@@ -164,7 +179,7 @@ class TestGenerateAutoragConfig:
         ``(60, 60)`` so AutoRAG runs a single ``weight=60`` candidate
         matching the framework's ``_rrf_merge`` k=60."""
         space = _curated_space()
-        space.bm25_vector_fusion = ["alpha", "rrf"]
+        space.retrieval.bm25_vector_fusion = ["alpha", "rrf"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         hybrid_node = _find_node(config, "hybrid_retrieval")
         mtypes = {m["module_type"] for m in hybrid_node["modules"]}
@@ -177,7 +192,7 @@ class TestGenerateAutoragConfig:
     def test_hybrid_rrf_only_when_alpha_not_in_search_space(self) -> None:
         """Search space with bm25_vector_fusion=['rrf'] emits hybrid_rrf only."""
         space = _curated_space()
-        space.bm25_vector_fusion = ["rrf"]
+        space.retrieval.bm25_vector_fusion = ["rrf"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         hybrid_node = _find_node(config, "hybrid_retrieval")
         mtypes = [m["module_type"] for m in hybrid_node["modules"]]
@@ -187,7 +202,7 @@ class TestGenerateAutoragConfig:
         """``long_context_reorder: [False, True]`` → prompt_maker carries both
         ``fstring`` (False) and ``long_context_reorder`` (True) modules."""
         space = _curated_space()
-        space.long_context_reorder = [False, True]
+        space.retrieval.long_context_reorder = [False, True]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pm_node = _find_node(config, "prompt_maker")
         mtypes = [m["module_type"] for m in pm_node["modules"]]
@@ -197,7 +212,7 @@ class TestGenerateAutoragConfig:
     def test_long_context_reorder_only_when_fstring_not_in_search_space(self) -> None:
         """``long_context_reorder: [True]`` only emits the reorder module."""
         space = _curated_space()
-        space.long_context_reorder = [True]
+        space.retrieval.long_context_reorder = [True]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pm_node = _find_node(config, "prompt_maker")
         mtypes = [m["module_type"] for m in pm_node["modules"]]
@@ -218,7 +233,8 @@ class TestGenerateAutoragConfig:
         AutoRAG run uses the same wording as the framework regardless of the
         LLM's chat-mode."""
         space = _curated_space()
-        space.passage_compressor = ["none", "tree_summarize", "refine"]
+        space.passage_compressor.strategies = ["none", "tree_summarize", "refine"]
+        space.passage_compressor.models = ["azure/gpt-4o-mini"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pc_node = _find_node(config, "passage_compressor")
         mtypes = [m["module_type"] for m in pc_node["modules"]]
@@ -245,7 +261,7 @@ class TestGenerateAutoragConfig:
         contribution zeroed) so hybrid_retrieval is effectively a pass-through of the
         semantic retriever."""
         space = _curated_space()
-        space.index_types = [IndexType.VECTOR_ONLY]
+        space.retrieval.index_types = [IndexType.VECTOR_ONLY]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         hybrid_mod = next(
             m
@@ -313,7 +329,7 @@ class TestGenerateAutoragConfig:
         (it reads AWS_REGION / AWS_DEFAULT_REGION).
         """
         space = _curated_space()
-        space.llm_models = StageLLMs.uniform(["bedrock/us.meta.llama3-1-8b-instruct-v1:0"])
+        space.generator.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0"]
         config, notes = generate_autorag_config(space, qa_variant="mcq")
         mod = _find_node(config, "generator")["modules"][0]
         assert mod["llm"] == "bedrock_converse"
@@ -330,7 +346,8 @@ class TestGenerateAutoragConfig:
         bedrock_converse, the QE block must carry ``region_name`` so the
         expansion LLM has a working endpoint."""
         space = _curated_space()
-        space.llm_models = StageLLMs.uniform(["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"])
+        space.generator.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
+        space.query_expansion.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         qe_node = _find_node(config, "query_expansion")
         hyde = next(m for m in qe_node["modules"] if m["module_type"] == "hyde")
@@ -399,7 +416,7 @@ class TestGenerateAutoragConfig:
         would otherwise leave a literal ``{question}`` placeholder in the
         example slot."""
         space = _curated_space()
-        space.query_expansion = ["none", "query_decompose"]
+        space.query_expansion.strategies = ["none", "query_decompose"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         qe_node = _find_node(config, "query_expansion")
         mtypes = [m["module_type"] for m in qe_node["modules"]]
@@ -422,8 +439,9 @@ class TestGenerateAutoragConfig:
         ``compressor_llm`` field — AutoRAG can pick the compressor LLM
         independently of the generator LLM."""
         space = _curated_space()
-        space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
-        space.passage_compressor = ["none", "tree_summarize"]
+        space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.passage_compressor.strategies = ["none", "tree_summarize"]
+        space.passage_compressor.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pc_node = _find_node(config, "passage_compressor")
         tree_modules = [m for m in pc_node["modules"] if m["module_type"] == "tree_summarize"]
@@ -438,8 +456,9 @@ class TestGenerateAutoragConfig:
         per (strategy × LLM). Matches the framework's per-stage
         ``expander_llm`` field."""
         space = _curated_space()
-        space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
-        space.query_expansion = ["none", "query_decompose"]
+        space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.query_expansion.strategies = ["none", "query_decompose"]
+        space.query_expansion.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         qe_node = _find_node(config, "query_expansion")
         decompose_modules = [m for m in qe_node["modules"] if m["module_type"] == "query_decompose"]
@@ -452,7 +471,7 @@ class TestGenerateAutoragConfig:
         """prompt_maker strategy.generator_modules now lists all LLMs so the
         prompt-tuning step matches the generator node's enumeration."""
         space = _curated_space()
-        space.llm_models = StageLLMs.uniform(["azure/gpt-4o-mini", "azure/o4-mini"])
+        space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
         pm_node = _find_node(config, "prompt_maker")
         generator_modules = pm_node["strategy"]["generator_modules"]
@@ -544,14 +563,14 @@ class TestMixedModeRejection:
 
     def test_continuous_top_k_rejected(self) -> None:
         space = _curated_space()
-        space.top_k = NumericRange(min=3, max=20)
-        with pytest.raises(ValueError, match="requires DiscreteValues for 'top_k'"):
+        space.retrieval.top_k = NumericRange(min=3, max=20)
+        with pytest.raises(ValueError, match="requires DiscreteValues for 'retrieval.top_k'"):
             generate_autorag_config(space, qa_variant="mcq")
 
     def test_continuous_hybrid_alpha_rejected(self) -> None:
         space = _curated_space()
-        space.hybrid_alpha = NumericRange(min=0.0, max=1.0)
-        with pytest.raises(ValueError, match="requires DiscreteValues for 'hybrid_alpha'"):
+        space.retrieval.hybrid_alpha = NumericRange(min=0.0, max=1.0)
+        with pytest.raises(ValueError, match="requires DiscreteValues for 'retrieval.hybrid_alpha'"):
             generate_autorag_config(space, qa_variant="mcq")
 
     def test_continuous_reranker_top_n_rejected(self) -> None:
@@ -566,13 +585,11 @@ class TestPerStageLLMEmission:
 
     def test_per_stage_pools_emitted_at_correct_nodes(self) -> None:
         space = _curated_space()
-        space.llm_models = StageLLMs(
-            generator=["azure/gpt-4o-mini", "azure/o4-mini"],
-            expander=["azure/gpt-4o-mini"],
-            compressor=["azure/gpt-4o-mini"],
-        )
-        space.passage_compressor = ["none", "tree_summarize"]
-        space.query_expansion = ["none", "hyde"]
+        space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
+        space.query_expansion.strategies = ["none", "hyde"]
+        space.query_expansion.models = ["azure/gpt-4o-mini"]
+        space.passage_compressor.strategies = ["none", "tree_summarize"]
+        space.passage_compressor.models = ["azure/gpt-4o-mini"]
         config, _ = generate_autorag_config(space, qa_variant="mcq")
 
         # Generator node: 2 modules (both generator LLMs).
