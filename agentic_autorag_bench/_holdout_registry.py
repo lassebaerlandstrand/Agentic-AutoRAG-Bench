@@ -28,8 +28,10 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 _RETRIEVAL_KS: tuple[int, ...] = (1, 2, 5, 10)
 
 
-def _retrieval_metrics_for_row(row: dict) -> tuple[dict[int, float], int | None]:
-    """Recompute recall@k and first-gold rank from a per_question row.
+def _retrieval_metrics_for_row(
+    row: dict,
+) -> tuple[dict[int, float], dict[int, float], int | None, int | None]:
+    """Recompute recall@k, joint_recall@k, first-gold rank, and complete rank.
 
     Mirrors ``benchmark_eval.scoring.retrieval_metrics`` but doesn't import it
     to keep this module free of framework engine deps. The ``retrieved_doc_ids``
@@ -39,9 +41,11 @@ def _retrieval_metrics_for_row(row: dict) -> tuple[dict[int, float], int | None]
     supporting = row.get("supporting_doc_ids") or []
     retrieved = row.get("retrieved_doc_ids") or []
     if not supporting:
-        return {k: 0.0 for k in _RETRIEVAL_KS}, None
+        zero = {k: 0.0 for k in _RETRIEVAL_KS}
+        return zero, zero, None, None
 
     gold = set(supporting)
+    n_gold = len(gold)
     seen: set[str] = set()
     dedup: list[str] = []
     for d in retrieved:
@@ -51,13 +55,23 @@ def _retrieval_metrics_for_row(row: dict) -> tuple[dict[int, float], int | None]
         dedup.append(d)
 
     first_rank: int | None = None
+    complete_rank: int | None = None
+    found: set[str] = set()
     for rank, d in enumerate(dedup, start=1):
         if d in gold:
-            first_rank = rank
-            break
+            if first_rank is None:
+                first_rank = rank
+            found.add(d)
+            if len(found) == n_gold:
+                complete_rank = rank
+                break
 
-    recalls = {k: sum(1 for d in dedup[:k] if d in gold) / len(gold) for k in _RETRIEVAL_KS}
-    return recalls, first_rank
+    recalls = {k: sum(1 for d in dedup[:k] if d in gold) / n_gold for k in _RETRIEVAL_KS}
+    joint_recalls = {
+        k: 1.0 if sum(1 for d in dedup[:k] if d in gold) == n_gold else 0.0
+        for k in _RETRIEVAL_KS
+    }
+    return recalls, joint_recalls, first_rank, complete_rank
 
 
 def _collect_filtered_ids(method_files: list[Path]) -> tuple[set[str], dict[str, list[str]]]:
@@ -116,7 +130,12 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
             "recall_at_2": None,
             "recall_at_5": None,
             "recall_at_10": None,
-            "mrr": None,
+            "joint_recall_at_1": None,
+            "joint_recall_at_2": None,
+            "joint_recall_at_5": None,
+            "joint_recall_at_10": None,
+            "mrr_first": None,
+            "mrr_complete": None,
             "avg_retrieval_s": 0.0,
             "avg_generation_s": 0.0,
         })
@@ -140,28 +159,38 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
     supporting_present = any(r.get("supporting_doc_ids") for r in valid)
     if supporting_present:
         recall_sums = {k: 0.0 for k in _RETRIEVAL_KS}
-        mrr_sum = 0.0
+        joint_recall_sums = {k: 0.0 for k in _RETRIEVAL_KS}
+        mrr_first_sum = 0.0
+        mrr_complete_sum = 0.0
         n_with_gold = 0
         for r in valid:
             if not r.get("supporting_doc_ids"):
                 continue
             n_with_gold += 1
-            recalls, rank = _retrieval_metrics_for_row(r)
-            for k in recall_sums:
+            recalls, joint_recalls, first_rank, complete_rank = _retrieval_metrics_for_row(r)
+            for k in _RETRIEVAL_KS:
                 recall_sums[k] += recalls[k]
-            mrr_sum += 1.0 / rank if rank else 0.0
+                joint_recall_sums[k] += joint_recalls[k]
+            mrr_first_sum += 1.0 / first_rank if first_rank else 0.0
+            mrr_complete_sum += 1.0 / complete_rank if complete_rank else 0.0
         if n_with_gold:
-            for k in recall_sums:
+            for k in _RETRIEVAL_KS:
                 out[f"recall_at_{k}"] = recall_sums[k] / n_with_gold
-            out["mrr"] = mrr_sum / n_with_gold
+                out[f"joint_recall_at_{k}"] = joint_recall_sums[k] / n_with_gold
+            out["mrr_first"] = mrr_first_sum / n_with_gold
+            out["mrr_complete"] = mrr_complete_sum / n_with_gold
         else:
             for k in _RETRIEVAL_KS:
                 out[f"recall_at_{k}"] = None
-            out["mrr"] = None
+                out[f"joint_recall_at_{k}"] = None
+            out["mrr_first"] = None
+            out["mrr_complete"] = None
     else:
         for k in _RETRIEVAL_KS:
             out[f"recall_at_{k}"] = None
-        out["mrr"] = None
+            out[f"joint_recall_at_{k}"] = None
+        out["mrr_first"] = None
+        out["mrr_complete"] = None
 
     return out
 

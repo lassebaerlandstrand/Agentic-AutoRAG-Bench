@@ -1,27 +1,20 @@
-# Paper-scale framework project config.
+# Paper-scale framework project config for MuSiQue.
 #
-# Same shape as hotpot_dev_project.yaml but with the discrete search space
-# expanded ~96x (9 → 864 discrete combinations, plus continuous top_k,
-# hybrid_alpha, reranker_top_n). Every added dimension is AutoRAG v0.3.x-
-# compatible (see methods/autorag/native_config.py): no passage_compressor,
-# passage_filter, passage_augmenter, reasoning toggle, or chunking sweep —
-# AutoRAG's translator drops those, so including them in the proposer space
-# would create an asymmetry random / Bayesian / agentic could exploit but
-# AutoRAG can't match.
-#
-# Dev config stays at 3-trial / 9-config minimum for fast smoke runs; this
-# config is what the EMNLP table is generated from.
+# Identical shape to hotpot_paper_project.yaml — same search space, same
+# examiner / agent / parsing blocks — so the EMNLP table compares the same
+# 864-config search across HotpotQA and MuSiQue. Only the corpus path and
+# the shared-cache location change.
 
 meta:
-  project_name: "hotpot-paper"
-  corpus_path: "./benchmark_data/hotpot_val_2000/corpus"
+  project_name: "musique-paper"
+  corpus_path: "./benchmark_data/musique_val_2417/corpus"
   corpus_description: |
     English Wikipedia. Documents are short paragraph snippets (~50–100
     words each), one paragraph per page/entity rather than full articles.
     Content is encyclopedic prose: entity-centric, factoid-dense, neutral
     register. Corpus is pre-segmented at the paragraph boundary upstream
     of any chunker.
-  output_dir: "./results_paper/.shared_cache"
+  output_dir: "./results_paper_musique/.shared_cache"
   max_trials: 10
   cache_max_gb: 20.0
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
@@ -58,7 +51,7 @@ examiner:
     cross_doc_pair: 0.70
   same_doc_pair_cosine_min: 0.4
   same_doc_pair_cosine_max: 0.85
-  pair_embedding_model: "BAAI/bge-m3"
+  pair_embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
   pair_top_k_per_chunk: 5
   doc_split_word_threshold: 120000
   doc_section_word_size: 500
@@ -82,28 +75,17 @@ parsing:
   parser: "docling"
   ocr: false
   table_structure: false
-  near_duplicate_detection_enabled: true
+  near_duplicate_detection_enabled: false
   near_duplicate_threshold: 0.85
 
 search_space:
   chunking:
-    # Frozen across all 5 methods. AutoRAG v0.3's ``chunk`` phase is decoupled
-    # from ``evaluate`` — sweeping chunk_size/overlap there would require
-    # running ``autorag chunk`` per (strategy, size, overlap) tuple. Until
-    # that engineering is in, freezing chunking keeps the comparison honest.
-    # Size=512 fits every embedding's context window; overlap=0 avoids
-    # cross-chunk leakage. Single-value DiscreteValues makes the pin explicit.
+    # Frozen across all 5 methods (matches hotpot_paper_project.yaml).
     strategies: ["recursive"]
     chunk_token_size: { values: [512] }
     chunk_token_overlap: { values: [0] }
 
   embedding:
-    # 6 models, mixed size + family + provenance. Order from "intentionally
-    # weak baseline" to "strong recent release" so the search has signal:
-    # MiniLM is a known floor; bge-large / bge-m3 are widely deployed mid-tier;
-    # e5-large-v2 and mxbai-embed-large-v1 are alternative families (not
-    # BAAI-derivative); arctic-embed-l-v2.0 is a 2025 release. Every entry
-    # is HF-loadable and has a working vectordb mapping in native_config.py.
     models:
       - "sentence-transformers/all-MiniLM-L6-v2"
       - "BAAI/bge-large-en-v1.5"
@@ -116,20 +98,11 @@ search_space:
     index_types:
       - "vector_only"
       - "hybrid_bm25_vector"
-    # DiscreteValues grids for Section-1 fairness: AutoRAG enumerates lists
-    # via itertools.product, so every method draws top_k / hybrid_alpha /
-    # reranker_top_n from the same option set.
     top_k: { values: [3, 10, 20] }
     hybrid_alpha: { values: [0.0, 0.5, 1.0] }
     bm25_vector_fusion: ["alpha", "rrf"]
     long_context_reorder: [false, true]
 
-  # ``strategies`` is the stage gate ("none" → stage off); ``models`` is the
-  # LLM pool consulted when a non-"none" strategy runs. Both stages list a
-  # single cheap utility LLM (Section-1: 10/2/2 split) — the LLM is
-  # *derived* at trial assembly: null when strategy=none, else the lone pool
-  # entry. Mixed strategy + single-pool used to trip the static pinner; the
-  # v3 schema resolves it conditionally instead.
   query_expansion:
     strategies: ["none", "hyde", "multi_query", "query_decompose"]
     models:
@@ -141,10 +114,6 @@ search_space:
       - "azure/gpt-4o-mini"
 
   reranker:
-    # 4 options: none + 3 mapped rerankers from native_config.RERANKER_MODULE_MAP.
-    # Excludes Qwen3-Reranker-0.6B for the same reason the framework config
-    # excludes it (architecture mismatch, sentence-transformers loads a random
-    # score head — outputs noise).
     models:
       - "none"
       - "BAAI/bge-reranker-v2-m3"
@@ -161,8 +130,6 @@ search_space:
       - "bedrock/zai.glm-4.7-flash"
       - "bedrock/qwen.qwen3-32b-v1:0"
       - "bedrock/openai.gpt-oss-20b-1:0"
-    # AutoRAG cannot toggle model-native reasoning; pin to false so the
-    # AutoRAG↔framework comparison stays apples-to-apples.
     reasoning: false
 
   temperature: { min: 1.0, max: 1.0 }

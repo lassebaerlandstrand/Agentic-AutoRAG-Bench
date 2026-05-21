@@ -109,3 +109,38 @@ def test_recall_and_judge_recomputed_after_exclusion(tmp_path: Path) -> None:
     assert a["n_valid"] == 2
     assert a["llm_judge_accuracy"] == 0.5  # 1+0 over 2
     assert a["recall_at_1"] == 1.0  # both valid rows retrieve their gold doc at rank 1
+    # Single-gold degradation: joint_recall == recall, mrr_complete == mrr_first.
+    assert a["joint_recall_at_1"] == 1.0
+    assert a["mrr_first"] == 1.0
+    assert a["mrr_complete"] == 1.0
+
+
+def test_multi_hop_aggregates_separate_first_and_complete(tmp_path: Path) -> None:
+    """Multi-hop questions must produce joint_recall_at_k < recall_at_k when
+    only one of the two gold docs is retrieved, and mrr_complete must reflect
+    the rank of the last-needed gold doc."""
+    rows = [
+        {  # both gold at ranks 1,2 — complete at rank 2.
+            **_row("q1", judge=1),
+            "retrieved_doc_ids": ["d1", "d2", "x"],
+            "supporting_doc_ids": ["d1", "d2"],
+        },
+        {  # only one gold ever retrieved — first=1, complete=None.
+            **_row("q2", judge=0),
+            "retrieved_doc_ids": ["d1", "x", "y"],
+            "supporting_doc_ids": ["d1", "d2"],
+        },
+    ]
+    _write_run(tmp_path, "agentic", "seed_42", rows)
+
+    apply_union_exclusion(tmp_path)
+
+    a = json.loads((tmp_path / "agentic/seed_42/benchmark_results.json").read_text())
+    # Partial recall@2: q1=1.0 + q2=0.5 over 2 → 0.75.
+    assert a["recall_at_2"] == 0.75
+    # Joint recall@2: q1=1 + q2=0 over 2 → 0.5.
+    assert a["joint_recall_at_2"] == 0.5
+    # Both questions hit first gold at rank 1 → mrr_first = 1.0.
+    assert a["mrr_first"] == 1.0
+    # q1 complete at rank 2 (=0.5), q2 never → mrr_complete = 0.25.
+    assert a["mrr_complete"] == 0.25

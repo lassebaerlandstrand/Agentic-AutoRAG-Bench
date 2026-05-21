@@ -40,6 +40,31 @@ CI_ALPHA = 0.05
 # everywhere.
 METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
 
+# Display name per benchmark adapter key. Used in the Markdown table title so
+# the paper-ready file reads with the canonical dataset+variant string, not the
+# snake_case adapter id. Missing entries fall back to the adapter name.
+BENCHMARK_PRETTY_NAMES = {
+    "hotpot_qa": "HotpotQA-distractor",
+}
+
+
+def read_benchmark_pretty_name(results_dir: Path) -> str:
+    """Resolve the benchmark's display name from ``bench_metadata.json``.
+
+    Returns the canonical name when ``run.py`` wrote a sidecar metadata file
+    (every run since multi-benchmark support landed); falls back to ``"Benchmark"``
+    for older trees that predate it.
+    """
+    meta_path = Path(results_dir) / "bench_metadata.json"
+    if not meta_path.exists():
+        return "Benchmark"
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return "Benchmark"
+    name = (meta.get("benchmark") or {}).get("name") or ""
+    return BENCHMARK_PRETTY_NAMES.get(name, name or "Benchmark")
+
 
 def _ordered_methods(stats: dict[str, dict]) -> list[str]:
     return [m for m in METHOD_ORDER if m in stats]
@@ -190,12 +215,21 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
         optim_usds = [float(r.optimizer_meta.get("optimizer_usd", 0.0)) for r in runs]
         trial_usds = [float(r.optimizer_meta.get("trial_usd_total", 0.0)) for r in runs]
 
+        retrieval_fields = (
+            "mrr_first", "mrr_complete",
+            "joint_recall_at_2", "joint_recall_at_5", "joint_recall_at_10",
+        )
+        retrieval_means: dict[str, float] = {}
+        for fname in retrieval_fields:
+            vals = [float(v) for v in (r.benchmark.get(fname) for r in runs) if v is not None]
+            retrieval_means[fname] = float(np.mean(vals)) if vals else 0.0
+
         out[method] = {
             "n_seeds": len(runs),
             "em": bootstrap_ci(em_pool),
             "f1": bootstrap_ci(f1_pool),
             "judge": bootstrap_ci(judge_pool),
-            "mrr": float(np.mean([float(r.benchmark.get("mrr", 0.0)) for r in runs])),
+            **retrieval_means,
             "wall_clock_s_mean": float(np.mean(wall_clocks)) if wall_clocks else 0.0,
             "optimizer_usd_mean": float(np.mean(optim_usds)) if optim_usds else 0.0,
             "trial_usd_mean": float(np.mean(trial_usds)) if trial_usds else 0.0,
@@ -206,7 +240,12 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
     return out
 
 
-def write_markdown_table(stats: dict[str, dict], out_path: Path) -> None:
+def write_markdown_table(
+    stats: dict[str, dict],
+    out_path: Path,
+    *,
+    benchmark_pretty_name: str = "Benchmark",
+) -> None:
     """Per-method results as a Markdown pipe-table."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rows: list[str] = []
@@ -223,18 +262,22 @@ def write_markdown_table(stats: dict[str, dict], out_path: Path) -> None:
             f"| {em_m:.3f} [{em_lo:.3f}, {em_hi:.3f}] "
             f"| {f1_m:.3f} [{f1_lo:.3f}, {f1_hi:.3f}] "
             f"| {j_m:.3f} [{j_lo:.3f}, {j_hi:.3f}] "
-            f"| {s['mrr']:.3f} "
+            f"| {s['joint_recall_at_2']:.3f} "
+            f"| {s['joint_recall_at_5']:.3f} "
+            f"| {s['mrr_complete']:.3f} "
+            f"| {s['mrr_first']:.3f} "
             f"| ${s['optimizer_usd_mean']:.4f} "
             f"| ${s['trial_usd_mean']:.4f} "
             f"| {s['wall_clock_s_mean']:.0f}s |"
         )
     header = (
-        "| Method | EM | Token-F1 | LLM Judge | MRR | Optimizer $ | Trial $ | Wall |\n"
-        "|---|---|---|---|---|---|---|---|"
+        "| Method | EM | Token-F1 | LLM Judge | Joint-R@2 | Joint-R@5 | MRR-complete | MRR-first | "
+        "Optimizer $ | Trial $ | Wall |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|"
     )
-    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | |"
+    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | |"
     text = (
-        "# HotpotQA-distractor held-out scores\n\n"
+        f"# {benchmark_pretty_name} held-out scores\n\n"
         "Mean and 95% bootstrap CIs over per-question metrics, pooled across seeds. "
         "Cost columns are mean across seeds.\n\n"
         f"{header}\n{body}\n"
@@ -414,7 +457,12 @@ def analyze(results_dir: str | Path, output_dir: str | Path) -> None:
     results_dir = Path(results_dir)
     output_dir = Path(output_dir)
     figures_dir = output_dir / "figures"
-    make_matrix_figures(results_dir, figures_dir=figures_dir)
+    benchmark_pretty_name = read_benchmark_pretty_name(results_dir)
+    make_matrix_figures(
+        results_dir,
+        figures_dir=figures_dir,
+        benchmark_pretty_name=benchmark_pretty_name,
+    )
     # Best-so-far trajectory is also emitted by make_matrix_figures as
     # ``best_so_far.png``; keep the legacy name alongside it for any
     # downstream consumer still referencing it. Skipped when hold-out scoring
