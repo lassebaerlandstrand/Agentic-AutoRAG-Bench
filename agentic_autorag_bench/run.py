@@ -1,10 +1,16 @@
 """Matrix orchestrator: iterate over (method × seed), run each, score held-out.
 
-The bench config (``configs/hotpot_paper.yaml``) declares which methods, which
-seeds, what budget, and what held-out scoring settings to use. This module
-loads it, prepares HotpotQA once, sets up a shared framework Orchestrator
-whose ``evaluate_trial`` is the evaluator every sequential method calls, then
-runs each method-seed pair into ``output_root/<method>/seed_<n>/``.
+A bench config (e.g. ``configs/hotpot_paper.yaml``) declares which methods,
+which seeds, what budget, what benchmark to materialise, and what held-out
+scoring settings to use. This module loads it, prepares the benchmark once,
+sets up a shared framework Orchestrator whose ``evaluate_trial`` is the
+evaluator every sequential method calls, then runs each method-seed pair into
+``output_root/<method>/seed_<n>/``.
+
+One bench config = one benchmark. To evaluate multiple benchmarks, run the
+matrix once per benchmark config (each into its own ``output_root``); the
+shared ``Orchestrator`` is built around a single corpus and exam.json, so
+multi-benchmark belongs at the config layer, not inside one run.
 """
 
 from __future__ import annotations
@@ -22,7 +28,7 @@ from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
 
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
-from agentic_autorag_bench.benchmarks.hotpot_qa import HotpotQABenchmark
+from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
 from agentic_autorag_bench.methods.autorag.driver import AutoRAGOptimizer, resolve_autorag_python
 from agentic_autorag_bench.methods.bayesian import BayesianSearch
@@ -75,16 +81,54 @@ def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
     return removed
 
 
+def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
+    """Persist the benchmark + run identity at ``output_root/bench_metadata.json``.
+
+    Downstream readers (``analyze.py``, ``plots.py``) consult this file to
+    surface the right benchmark name in tables and figure titles, so they
+    don't have to re-parse the source YAML config.
+    """
+    output_root.mkdir(parents=True, exist_ok=True)
+    meta = {
+        "benchmark": {
+            "name": bench.benchmark.name,
+            "split": bench.benchmark.split,
+            "sample_size": bench.benchmark.sample_size,
+            "prep_seed": bench.benchmark.prep_seed,
+        },
+        "project_config_path": str(bench.project_config_path),
+        "methods": bench.methods,
+        "seeds": bench.seeds,
+        "max_trials": bench.max_trials,
+    }
+    (output_root / "bench_metadata.json").write_text(
+        json.dumps(meta, indent=2), encoding="utf-8"
+    )
+
+
+@dataclass(frozen=True)
+class BenchmarkSpec:
+    """Which benchmark to materialise, and how.
+
+    ``name`` is the adapter key from the framework's ``ADAPTERS`` registry
+    (``agentic_autorag.benchmarks.__init__.py``) — e.g. ``hotpot_qa``,
+    ``musique``. Dispatch happens inside ``BenchmarkRunner.prepare()``.
+    """
+
+    name: str
+    split: str
+    sample_size: int | None
+    prep_seed: int
+    output_dir: Path
+
+
 @dataclass
 class BenchConfig:
     project_config_path: Path
     methods: list[str]
     seeds: list[int]
     max_trials: int
-    hotpot_split: str
-    hotpot_sample_size: int | None
-    hotpot_prep_seed: int
-    hotpot_output_dir: Path
+    benchmark: BenchmarkSpec
     hold_out_limit: int | None
     hold_out_judge_model: str | None
     hold_out_concurrency: int
@@ -97,7 +141,7 @@ class BenchConfig:
         Path conventions:
         - ``project_config`` is a sibling-yaml reference, so it resolves
           relative to *this* config's directory.
-        - ``hotpot.output_dir`` and ``output_root`` resolve relative to the
+        - ``benchmark.output_dir`` and ``output_root`` resolve relative to the
           *current working directory*, matching the framework's convention
           for ``meta.corpus_path`` in the project YAML. Mixing the two would
           cause the bench to prepare data at one path and the framework to
@@ -109,15 +153,20 @@ class BenchConfig:
         unknown = set(raw["methods"]) - ALL_METHODS
         if unknown:
             raise ValueError(f"Unknown methods in {config_path}: {sorted(unknown)}")
+        b = raw["benchmark"]
+        benchmark = BenchmarkSpec(
+            name=b["name"],
+            split=b["split"],
+            sample_size=b.get("sample_size"),
+            prep_seed=int(b.get("prep_seed", 42)),
+            output_dir=Path(b["output_dir"]).resolve(),
+        )
         return cls(
             project_config_path=project_path,
             methods=list(raw["methods"]),
             seeds=list(raw.get("seeds", [42])),
             max_trials=int(raw["budget"]["max_trials"]),
-            hotpot_split=raw["hotpot"]["split"],
-            hotpot_sample_size=raw["hotpot"].get("sample_size"),
-            hotpot_prep_seed=int(raw["hotpot"].get("prep_seed", 42)),
-            hotpot_output_dir=Path(raw["hotpot"]["output_dir"]).resolve(),
+            benchmark=benchmark,
             hold_out_limit=raw["hold_out"].get("limit"),
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
@@ -230,13 +279,20 @@ async def run_matrix(
                 sorted(removed), bench.output_root,
             )
 
-    benchmark = HotpotQABenchmark(
-        output_dir=bench.hotpot_output_dir,
-        split=bench.hotpot_split,
-        sample_size=bench.hotpot_sample_size,
-        seed=bench.hotpot_prep_seed,
+    benchmark = BenchmarkRunner(
+        name=bench.benchmark.name,
+        output_dir=bench.benchmark.output_dir,
+        split=bench.benchmark.split,
+        sample_size=bench.benchmark.sample_size,
+        seed=bench.benchmark.prep_seed,
     )
     benchmark.prepare()
+
+    # Persist benchmark identity at output_root so analyze/plots can surface
+    # the right name in tables and titles without needing to re-load the
+    # YAML config. Survives ``_clear_output_root_for`` (file, not in the
+    # targets list); rewritten on every run so it tracks the current spec.
+    _write_bench_metadata(bench.output_root, bench)
 
     # Shared orchestrator: provides the evaluator that every sequential method
     # calls per trial. setup() is idempotent — the parsed corpus, exam.json,

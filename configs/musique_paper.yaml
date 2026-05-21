@@ -1,0 +1,37 @@
+# Paper-scale matrix config — score-only EMNLP Table 1 run on MuSiQue.
+# Mirrors hotpot_paper.yaml exactly (same methods, seeds, budget, hold-out
+# settings) so the two benchmarks differ only in dataset.
+#
+# Currently dialled DOWN for iteration: single seed, 3 trials, 300-question
+# hold-out. Bump these for the camera-ready run (see hotpot_paper.yaml for
+# the canonical paper-scale numbers).
+#
+# Run a single method with: -m random  (or any subset present in `methods`).
+
+project_config: ./musique_paper_project.yaml
+
+methods:
+  - random
+  - bayesian
+  - agentic
+  - autorag_mcq    # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
+  - autorag_ragas  # same venv
+
+seeds: [1]
+
+budget:
+  max_trials: 3
+
+benchmark:
+  name: musique
+  split: validation
+  sample_size: 2417
+  prep_seed: 42
+  output_dir: ./benchmark_data/musique_val_2417
+
+hold_out:
+  limit: 300
+  judge_model: azure/o4-mini
+  concurrency: 10
+
+output_root: ./results_paper_musique

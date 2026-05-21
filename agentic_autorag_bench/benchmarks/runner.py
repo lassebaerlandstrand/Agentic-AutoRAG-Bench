@@ -1,9 +1,9 @@
-"""Thin wrapper over the framework's HotpotQA prep + held-out scoring.
+"""Thin wrapper over the framework's benchmark prep + held-out scoring.
 
 The bench runner reuses the framework's ``benchmark-prepare`` (called once per
 matrix run; subsequent runs hit the cache) and ``benchmark-evaluate``
-(per-winning-config). Wrapping both behind a small class keeps the run
-orchestrator readable.
+(per-winning-config). The benchmark name is passed through; the framework's
+``ADAPTERS`` registry dispatches to the right adapter.
 """
 
 from __future__ import annotations
@@ -13,7 +13,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-
 from agentic_autorag.benchmark_eval.runner import run as run_benchmark_evaluate
 from agentic_autorag.benchmarks import prepare as prepare_benchmark
 from agentic_autorag.config.models import TrialConfig
@@ -22,9 +21,10 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 
 
 @dataclass
-class HotpotQABenchmark:
+class BenchmarkRunner:
     """Materialise corpus + qa.json once, then score every winning config against the held-out QA."""
 
+    name: str
     output_dir: Path
     split: str = "validation"
     sample_size: int | None = 2000
@@ -44,12 +44,14 @@ class HotpotQABenchmark:
     def prepare(self) -> None:
         """Idempotent: skip prep when corpus + qa.json already exist."""
         if self.corpus_dir.is_dir() and self.qa_path.is_file():
-            logger.info("HotpotQA corpus already prepared at %s", self.output_dir)
+            logger.info("%s corpus already prepared at %s", self.name, self.output_dir)
             return
-        logger.info("Preparing HotpotQA (split=%s, sample_size=%s) at %s",
-                    self.split, self.sample_size, self.output_dir)
+        logger.info(
+            "Preparing %s (split=%s, sample_size=%s) at %s",
+            self.name, self.split, self.sample_size, self.output_dir,
+        )
         prepare_benchmark(
-            name="hotpot_qa",
+            name=self.name,
             output_dir=self.output_dir,
             split=self.split,
             sample_size=self.sample_size,

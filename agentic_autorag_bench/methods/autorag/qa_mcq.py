@@ -9,8 +9,9 @@ The framework's exam is open-ended QA, not MCQ. Each entry carries:
 We translate this 1:1 to AutoRAG's required schema:
 - ``qid`` (string)
 - ``query`` (string)
-- ``retrieval_gt`` (2D list of doc_id strings — the inner list is a single
-  AND-conjunction; we use one inner list = all supporting docs)
+- ``retrieval_gt`` (2D list of doc_id strings: outer list is conjunctive over
+  supporting facts that must each be matched, inner list is disjunctive over
+  acceptable doc ids for one fact — see ``autorag.evaluation.metric.retrieval``)
 - ``generation_gt`` (list of acceptable answer strings)
 
 Doc-id alignment: AutoRAG matches retrieval_gt against ``corpus.parquet.doc_id``.
@@ -63,13 +64,16 @@ def export_mcq_exam_to_parquet(exam_json: Path, out_path: Path) -> int:
             continue
 
         source_doc_ids_raw = q.get("source_doc_ids") or []
-        # AutoRAG's retrieval_gt is a 2D list: outer = OR (any of these
-        # disjunctions satisfies retrieval), inner = AND (all of these
-        # doc_ids must be retrieved). For multi-hop QA where ALL supporting
-        # docs are needed, one inner list with all the docs is the correct
-        # shape.
+        # AutoRAG's retrieval_gt is a 2D list. The actual ``retrieval_recall``
+        # implementation treats each *outer* element as a required supporting
+        # fact (counted in ``hits`` only if at least one inner doc is in the
+        # prediction) and the *inner* list as acceptable alternatives for that
+        # fact. Multi-hop QA needs all supporting docs found, so we emit one
+        # outer entry per source doc (singleton inner lists). On single-hop
+        # this collapses to ``[[doc]]`` — identical to AutoRAG's own
+        # single-hop QA generator output.
         if source_doc_ids_raw:
-            retrieval_gt = [[_strip_doc_suffix(d) for d in source_doc_ids_raw]]
+            retrieval_gt = [[_strip_doc_suffix(d)] for d in source_doc_ids_raw]
         else:
             retrieval_gt = [[]]
 

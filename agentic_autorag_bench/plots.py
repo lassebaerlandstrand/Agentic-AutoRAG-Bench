@@ -572,7 +572,12 @@ def _method_holdout_metrics(
 # -------------------------------------------------------------------- matrix
 
 
-def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -> None:
+def make_matrix_figures(
+    output_root: Path,
+    *,
+    figures_dir: Path | None = None,
+    benchmark_pretty_name: str | None = None,
+) -> None:
     """Render cross-method figures into ``figures_dir`` (default
     ``output_root/figures/``).
 
@@ -583,6 +588,10 @@ def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -
     ``figures_dir`` is the output override. The in-run hook leaves it None so
     everything stays under ``output_root``; ``analyze.analyze`` passes an
     explicit override when the user wants a separate paper-artifact directory.
+
+    ``benchmark_pretty_name`` titles the Markdown table. When omitted, the
+    name is recovered from ``bench_metadata.json`` at ``output_root`` so the
+    in-run hook doesn't have to plumb it explicitly.
 
     Delegates the bootstrap-CI stats (``aggregate_by_method``) and the
     summary writers (``write_markdown_table``, ``write_holdout_scores_figure``,
@@ -600,6 +609,7 @@ def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -
     from agentic_autorag_bench.analyze import (
         aggregate_by_method,
         load_results,
+        read_benchmark_pretty_name,
         write_efficiency_figure,
         write_holdout_scores_figure,
         write_markdown_table,
@@ -608,6 +618,9 @@ def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -
     if figures_dir is None:
         figures_dir = output_root / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
+
+    if benchmark_pretty_name is None:
+        benchmark_pretty_name = read_benchmark_pretty_name(output_root)
 
     # Trajectory plots only need history.jsonl; render them first so a
     # mid-matrix run with no hold-out scoring yet still gets a useful view.
@@ -633,7 +646,11 @@ def make_matrix_figures(output_root: Path, *, figures_dir: Path | None = None) -
 
     _safely(
         "matrix Table_1.md",
-        lambda: write_markdown_table(stats, figures_dir / "Table_1.md"),
+        lambda: write_markdown_table(
+            stats,
+            figures_dir / "Table_1.md",
+            benchmark_pretty_name=benchmark_pretty_name,
+        ),
     )
     _safely(
         "matrix holdout_metrics.png",

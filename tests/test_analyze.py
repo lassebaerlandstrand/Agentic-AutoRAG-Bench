@@ -49,7 +49,11 @@ def _write_method_dir(root, method: str, seed: int | None, em_scores: list[float
                 "em": float(np.mean(em_scores)),
                 "f1": float(np.mean(em_scores)),
                 "llm_judge_accuracy": float(np.mean([1.0 if v else 0.0 for v in judge_scores])),
-                "mrr": 0.5,
+                "mrr_first": 0.5,
+                "mrr_complete": 0.4,
+                "joint_recall_at_2": 0.6,
+                "joint_recall_at_5": 0.7,
+                "joint_recall_at_10": 0.8,
                 "per_question": [
                     {"em": em, "f1": em, "judge": 1 if jg else 0}
                     for em, jg in zip(em_scores, judge_scores, strict=True)
@@ -156,7 +160,11 @@ def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
             "em": (0.5, 0.45, 0.55),
             "f1": (0.7, 0.65, 0.75),
             "judge": (0.85, 0.80, 0.90),
-            "mrr": 0.92,
+            "mrr_first": 0.92,
+            "mrr_complete": 0.40,
+            "joint_recall_at_2": 0.70,
+            "joint_recall_at_5": 0.85,
+            "joint_recall_at_10": 0.92,
             "wall_clock_s_mean": 1200.0,
             "optimizer_usd_mean": 0.10,
             "trial_usd_mean": 1.50,
@@ -168,6 +176,9 @@ def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
     assert "| Method |" in text
     assert "| agentic |" in text
     assert "[0.450, 0.550]" in text
+    # Headline multi-hop retrieval columns must be present.
+    assert "Joint-R@2" in text
+    assert "MRR-complete" in text
 
 
 def test_write_markdown_table_handles_empty_stats(tmp_path) -> None:

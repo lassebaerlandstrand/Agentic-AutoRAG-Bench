@@ -1,4 +1,6 @@
-# Paper-scale matrix config — eventually generates the EMNLP Table 1.
+# Paper-scale matrix config — score-only EMNLP Table 1 run.
+# (The companion Pareto matrix config will live alongside this one once
+# written; that file flips meta.cost_aware to true in its project YAML.)
 #
 # Currently dialled DOWN for iteration: single seed, 10 trials, 100-question
 # hold-out. Bump these before the camera-ready run:
@@ -20,9 +22,10 @@ methods:
 seeds: [1]
 
 budget:
-  max_trials: 10
+  max_trials: 3
 
-hotpot:
+benchmark:
+  name: hotpot_qa
   split: validation
   sample_size: 2000
   prep_seed: 42
