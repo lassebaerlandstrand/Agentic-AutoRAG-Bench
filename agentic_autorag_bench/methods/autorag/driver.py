@@ -138,10 +138,12 @@ def _summarize_cost_log(log_path: Path) -> dict:
     """Sum the per-call log into a USD total + per-model breakdown.
 
     ``cost_tracker.py`` writes one JSONL line per LLM completion. Pricing
-    comes from ``litellm.cost_per_token``; calls for models LiteLLM doesn't
-    price (e.g. local self-hosted endpoints, exotic Bedrock IDs) contribute
-    zero. Returns a dict with ``total_usd``, ``buckets`` (by model), and
-    ``n_calls`` so the orchestrator's ledger format is mirrored exactly.
+    comes from ``litellm.cost_per_token`` and includes cache discounts when
+    the call recorded ``cache_read_input_tokens`` / ``cache_creation_input_tokens``
+    (OpenAI's implicit cache, Bedrock cachePoint). Calls for models LiteLLM
+    doesn't price (e.g. local self-hosted endpoints, exotic Bedrock IDs)
+    contribute zero. Returns a dict with ``total_usd``, ``buckets`` (by model),
+    and ``n_calls`` so the orchestrator's ledger format is mirrored exactly.
     """
     import litellm
 
@@ -164,22 +166,36 @@ def _summarize_cost_log(log_path: Path) -> dict:
             model = rec.get("model") or "unknown"
             prompt_tokens = int(rec.get("prompt_tokens", 0) or 0)
             completion_tokens = int(rec.get("completion_tokens", 0) or 0)
+            cache_read = int(rec.get("cache_read_input_tokens", 0) or 0)
+            cache_creation = int(rec.get("cache_creation_input_tokens", 0) or 0)
             try:
                 in_usd, out_usd = litellm.cost_per_token(
                     model=model,
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
+                    cache_read_input_tokens=cache_read,
+                    cache_creation_input_tokens=cache_creation,
                 )
                 call_usd = float(in_usd or 0.0) + float(out_usd or 0.0)
             except Exception:
                 logger.debug("No litellm pricing for model=%s", model, exc_info=True)
                 call_usd = 0.0
             bucket = buckets.setdefault(
-                model, {"usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0, "n_calls": 0}
+                model,
+                {
+                    "usd": 0.0,
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                    "n_calls": 0,
+                },
             )
             bucket["usd"] += call_usd
             bucket["prompt_tokens"] += prompt_tokens
             bucket["completion_tokens"] += completion_tokens
+            bucket["cache_read_input_tokens"] += cache_read
+            bucket["cache_creation_input_tokens"] += cache_creation
             bucket["n_calls"] += 1
             total_usd += call_usd
             total_calls += 1

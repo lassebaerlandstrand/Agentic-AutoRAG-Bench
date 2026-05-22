@@ -53,26 +53,18 @@ examiner:
   same_doc_pair_cosine_max: 0.85
   pair_embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
   pair_top_k_per_chunk: 5
-  doc_split_word_threshold: 120000
-  doc_section_word_size: 500
   min_doc_words: 20
-  eligible_section_types:
-    - body
-    - abstract
-    - methods
-    - results
-    - discussion
-    - other
+  excluded_section_types:
+    - references
+    - acknowledgments
+    - author_info
   source_fact_verify_fuzzy_threshold: 0.9
   chunk_relevance_min_overlap_chars: 50
   chunk_relevance_ngram_size: 5
   chunk_relevance_overlap_threshold: 0.5
   chunk_relevance_min_run: 5
-  retrieval_quality_alpha: 0.7
-  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
 
 parsing:
-  parser: "docling"
   ocr: false
   table_structure: false
   near_duplicate_detection_enabled: false

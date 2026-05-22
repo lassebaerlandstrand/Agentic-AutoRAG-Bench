@@ -88,6 +88,85 @@ def test_summarize_unknown_model_contributes_zero(tmp_path: Path) -> None:
     assert summary["total_usd"] == 0.0
 
 
+def test_summarize_accumulates_cache_token_fields(tmp_path: Path) -> None:
+    """Cache token fields flow from log records into the per-model bucket."""
+    log = tmp_path / "calls.jsonl"
+    _write_log(
+        log,
+        [
+            {
+                "source": "openai",
+                "model": "gpt-4o-mini",
+                "prompt_tokens": 5000,
+                "completion_tokens": 100,
+                "cache_read_input_tokens": 3000,
+                "cache_creation_input_tokens": 0,
+            },
+            {
+                "source": "openai",
+                "model": "gpt-4o-mini",
+                "prompt_tokens": 2000,
+                "completion_tokens": 50,
+                "cache_read_input_tokens": 1500,
+                "cache_creation_input_tokens": 0,
+            },
+        ],
+    )
+    summary = _summarize_cost_log(log)
+    bucket = summary["buckets"]["gpt-4o-mini"]
+    assert bucket["cache_read_input_tokens"] == 4500
+    assert bucket["cache_creation_input_tokens"] == 0
+
+
+def test_summarize_legacy_records_without_cache_fields(tmp_path: Path) -> None:
+    """Records written before cache tracking existed must still parse, with cache totals = 0."""
+    log = tmp_path / "calls.jsonl"
+    _write_log(
+        log,
+        [
+            {"model": "gpt-4o-mini", "prompt_tokens": 1000, "completion_tokens": 500},
+        ],
+    )
+    summary = _summarize_cost_log(log)
+    bucket = summary["buckets"]["gpt-4o-mini"]
+    assert bucket["cache_read_input_tokens"] == 0
+    assert bucket["cache_creation_input_tokens"] == 0
+    # And usd remains identical to the pre-cache-tracking behavior since
+    # cost_per_token(..., cache_*=0) is a no-op vs omitting the args.
+    assert bucket["usd"] > 0
+
+
+def test_summarize_cached_call_charges_less_than_uncached(tmp_path: Path) -> None:
+    """Same total prompt tokens, one with cache reads: cached version must cost less.
+
+    This is the regression for the original bug — previously cache fields were
+    dropped and identical token totals produced identical USD regardless of
+    cache usage.
+    """
+    uncached_log = tmp_path / "uncached.jsonl"
+    _write_log(
+        uncached_log,
+        [
+            {"model": "gpt-4o-mini", "prompt_tokens": 10000, "completion_tokens": 100,
+             "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0},
+        ],
+    )
+    cached_log = tmp_path / "cached.jsonl"
+    _write_log(
+        cached_log,
+        [
+            {"model": "gpt-4o-mini", "prompt_tokens": 10000, "completion_tokens": 100,
+             "cache_read_input_tokens": 9000, "cache_creation_input_tokens": 0},
+        ],
+    )
+    uncached = _summarize_cost_log(uncached_log)
+    cached = _summarize_cost_log(cached_log)
+    assert cached["total_usd"] < uncached["total_usd"], (
+        f"cached={cached['total_usd']} should be < uncached={uncached['total_usd']}; "
+        "if equal, litellm.cost_per_token isn't honoring cache_read_input_tokens"
+    )
+
+
 def test_scrub_trial_artifacts_walks_yaml_and_csv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """``_scrub_trial_artifacts`` must rewrite every yaml/csv/json in the tree,
     not just the top-level extracted_sample.yaml the original scrubber covered.
