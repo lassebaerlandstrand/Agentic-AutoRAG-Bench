@@ -2,9 +2,19 @@
 
 Runs as the entry point inside the AutoRAG venv: monkey-patches the OpenAI
 SDK and the boto3 bedrock-runtime client so every chat completion writes one
-JSONL line with ``{model, prompt_tokens, completion_tokens}`` to the file at
+JSONL line with ``{model, prompt_tokens, completion_tokens,
+cache_read_input_tokens, cache_creation_input_tokens}`` to the file at
 ``$AUTORAG_COST_LOG``. Then it invokes ``autorag.cli.cli()`` in-process with
 the remaining argv so the patches stay live for the whole run.
+
+Cache token fields capture the discounted portion of the input bill:
+OpenAI's implicit prompt cache reports ``prompt_tokens_details.cached_tokens``
+even when the caller did not request caching; Bedrock returns
+``cacheReadInputTokens`` / ``cacheWriteInputTokens`` when ``cachePoint`` is
+configured. Capturing these lets the driver pass them to
+``litellm.cost_per_token`` so cached portions are billed at the correct (lower)
+rate — important for fair side-by-side comparison with the optimizer's path,
+which discounts cache reads automatically via ``litellm.completion_cost``.
 
 The driver post-processes the log into USD via ``litellm.cost_per_token``.
 Anything that does not flow through these two SDK surfaces (e.g. local
@@ -51,6 +61,8 @@ def _record_openai(response, source: str) -> None:
     model = getattr(response, "model", None) or "unknown"
     prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
     completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
+    details = getattr(usage, "prompt_tokens_details", None)
+    cache_read = int(getattr(details, "cached_tokens", 0) or 0) if details is not None else 0
     if prompt_tokens == 0 and completion_tokens == 0:
         return
     _write({
@@ -58,6 +70,8 @@ def _record_openai(response, source: str) -> None:
         "model": model,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
+        "cache_read_input_tokens": cache_read,
+        "cache_creation_input_tokens": 0,
     })
 
 
@@ -93,6 +107,8 @@ def _record_bedrock(response: dict, model_id: str) -> None:
         return
     prompt_tokens = int(usage.get("inputTokens", 0) or 0)
     completion_tokens = int(usage.get("outputTokens", 0) or 0)
+    cache_read = int(usage.get("cacheReadInputTokens", 0) or 0)
+    cache_creation = int(usage.get("cacheWriteInputTokens", 0) or 0)
     if prompt_tokens == 0 and completion_tokens == 0:
         return
     _write({
@@ -100,6 +116,8 @@ def _record_bedrock(response: dict, model_id: str) -> None:
         "model": model_id or "unknown",
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
+        "cache_read_input_tokens": cache_read,
+        "cache_creation_input_tokens": cache_creation,
     })
 
 
