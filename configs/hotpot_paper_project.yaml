@@ -46,12 +46,21 @@ examiner:
   probe_selection: true
   composition_batch_size: 4
   composition_temperature: 1.0
+  # HotpotQA is engineered for cross-doc multi-hop, so the overall single-hop
+  # share is small (``seed_mix.single_chunk=0.30`` below). Within each lane
+  # the weights bias toward the harder types: single-hop leans on
+  # ``inference`` / ``numeric_single``, multi-hop leans on ``bridge``. Each
+  # lane sums to 1.0.
   question_type_weights:
-    extraction: 0.10
-    definitional: 0.05
-    bridge: 0.40
-    comparison: 0.25
-    numeric: 0.20
+    single_hop:
+      extraction: 0.20
+      definitional: 0.10
+      numeric_single: 0.30
+      inference: 0.40
+    multi_hop:
+      bridge: 0.45
+      comparison: 0.30
+      numeric: 0.25
   seed_mix:
     single_chunk: 0.30
     same_doc_pair: 0.00
@@ -133,15 +142,14 @@ search_space:
       - "azure/gpt-4o-mini"
 
   reranker:
-    # 4 options: none + 3 mapped rerankers from native_config.RERANKER_MODULE_MAP.
-    # Excludes Qwen3-Reranker-0.6B for the same reason the framework config
-    # excludes it (architecture mismatch, sentence-transformers loads a random
-    # score head — outputs noise).
+    # 3 options: none + 2 mapped rerankers from native_config.RERANKER_MODULE_MAP.
+    # Excludes Qwen3-Reranker-0.6B and mxbai-rerank-base-v2 for the same reason
+    # the framework config excludes them (architecture mismatch — sentence-transformers
+    # loads a random score head, outputs noise).
     models:
       - "none"
       - "BAAI/bge-reranker-v2-m3"
       - "cross-encoder/ms-marco-MiniLM-L-6-v2"
-      - "mixedbread-ai/mxbai-rerank-base-v2"
     top_n: { values: [3, 5, 10] }
 
   generator:
