@@ -84,7 +84,6 @@ RERANKER_MODULE_MAP: dict[str, str] = {
     "cross-encoder/ms-marco-MiniLM-L-6-v2": "sentence_transformer_reranker",
     "Alibaba-NLP/gte-reranker-modernbert-base": "sentence_transformer_reranker",
     "mixedbread-ai/mxbai-rerank-xsmall-v1": "sentence_transformer_reranker",
-    "mixedbread-ai/mxbai-rerank-base-v2": "sentence_transformer_reranker",
 }
 
 # Internal hybrid_cc alpha sweep size — AutoRAG evaluates this many points
