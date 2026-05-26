@@ -1,29 +1,29 @@
-# Paper-scale framework project config for MuSiQue.
+# Paper-scale framework project config for MultiHop-RAG.
 #
-# Identical shape to hotpot_paper_project.yaml — same search space, same
-# examiner / agent / parsing blocks — so the EMNLP table compares the same
-# search across all three benchmarks (HotpotQA, MuSiQue, MultiHop-RAG).
-# Only the corpus path, the shared-cache location, and any corpus-specific
-# examiner weights change.
+# Identical shape to hotpot_paper_project.yaml / musique_paper_project.yaml —
+# same search space, same examiner / agent / parsing blocks — so the EMNLP
+# Table 1 compares the same search across all three benchmarks. Only the
+# corpus path, the shared-cache location, and corpus-specific examiner
+# weights change.
 
 meta:
-  project_name: "musique-paper"
-  corpus_path: "./benchmark_data/musique_val_2417/corpus"
+  project_name: "multihop-rag-paper"
+  corpus_path: "./benchmark_data/multihop_rag_val/corpus"
   corpus_description: |
-    English Wikipedia. Documents are short paragraph snippets (~50–100
-    words each), one paragraph per page/entity rather than full articles.
-    Content is encyclopedic prose: entity-centric, factoid-dense, neutral
-    register. Corpus is pre-segmented at the paragraph boundary upstream
-    of any chunker.
-  output_dir: "./results_paper_musique/.shared_cache"
+    English-language news articles (~600 docs, full-article length) across
+    technology, business, sports, entertainment, and health categories,
+    with publication timestamps. Content is journalistic prose: named
+    entities and quotes, time-anchored events, and topic concentration
+    inside each category. Multi-hop questions cross multiple articles in
+    the same topic cluster.
+  output_dir: "./results_paper_multihop_rag/.shared_cache"
   max_trials: 10
   cache_max_gb: 20.0
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
-  # for post-hoc analysis but is hidden from the agentic optimizer's prompts:
-  # no Pareto block, no polish stance, no knee anchor, no cheapest-in-band
-  # signal. Every method (random / Bayesian / agentic / AutoRAG) optimizes
-  # the same scalar objective so the headline number is apples-to-apples.
-  # A separate Pareto matrix config will set this to true once written.
+  # for post-hoc analysis but is hidden from the agentic optimizer's prompts.
+  # The ``agentic_cost`` bench method overrides this to ``true`` at runtime
+  # so the same project_config drives both ``agentic_score`` and
+  # ``agentic_cost`` runs.
   cost_aware: false
 
 agent:
@@ -38,18 +38,20 @@ examiner:
   exam_size: 100
   pair_overgeneration_factor: 6.0
   probe_selection: true
-  # Neighborhood-builder thresholds. MuSiQue's corpus is Wikipedia paragraph
-  # snippets like HotpotQA — same chunk-floor binding regime (18 chunks ≈
-  # 1.8k words gives the composer enough material for 2-4 hop chains).
-  neighborhood_min_chunks: 18
+  # Neighborhood-builder thresholds. MultiHop-RAG news articles are longer
+  # than HotpotQA paragraphs (full-article length, multiple chunks per doc),
+  # so the word floor binds first — 12 chunks at ~400-500 words/chunk reaches
+  # the 5k-word target with room for both within-article and cross-article
+  # context.
+  neighborhood_min_chunks: 12
   neighborhood_min_words: 5000
-  # Wikipedia paragraphs are single-topic snippets — same-doc siblings
-  # are sparse. Cross-doc cosine neighbors carry the multi-hop signal.
-  # Matches hotpot's mix; deliberately identical so the two Wikipedia-
-  # paragraph benchmarks differ only in QA difficulty.
-  neighborhood_same_doc_weight: 0.0
-  neighborhood_cross_doc_weight: 1.0
-  min_doc_words: 20
+  # News articles support within-article multi-hop (cross-section facts),
+  # but the dataset's primary signal is cross-article reasoning in the same
+  # topic cluster. Weight cross-doc heavier but admit some same-doc share
+  # so the composer can build within-article bridges too.
+  neighborhood_same_doc_weight: 0.2
+  neighborhood_cross_doc_weight: 0.8
+  min_doc_words: 50
   excluded_section_types:
     - references
     - acknowledgments

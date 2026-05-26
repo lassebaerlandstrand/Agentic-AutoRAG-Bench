@@ -15,9 +15,10 @@ project_config: ./hotpot_paper_project.yaml
 methods:
   - random
   - bayesian
-  - agentic
-  - autorag_mcq    # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
-  - autorag_ragas  # same venv
+  - agentic_score   # cost_aware=False (highest-score)
+  - agentic_cost    # cost_aware=True  (Pareto-aware)
+  - autorag_our_exam  # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
+  - autorag_ragas     # same venv
 
 seeds: [1]
 
@@ -32,8 +33,8 @@ benchmark:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 300
+  limit: 100
   judge_model: azure/o4-mini
   concurrency: 10
 
-output_root: ./results_paper
+output_root: ./results_hotpot

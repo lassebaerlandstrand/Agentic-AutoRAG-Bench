@@ -38,13 +38,15 @@ CI_ALPHA = 0.05
 # Stable display order shared by the LaTeX, Markdown, and figure writers so the
 # paper's narrative ("agentic vs. random/bayesian vs. AutoRAG") reads the same
 # everywhere.
-METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
+METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"]
 
 # Display name per benchmark adapter key. Used in the Markdown table title so
 # the paper-ready file reads with the canonical dataset+variant string, not the
 # snake_case adapter id. Missing entries fall back to the adapter name.
 BENCHMARK_PRETTY_NAMES = {
     "hotpot_qa": "HotpotQA-distractor",
+    "musique": "MuSiQue-Ans",
+    "multihop_rag": "MultiHop-RAG",
 }
 
 
@@ -214,6 +216,9 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
         wall_clocks = [float(r.optimizer_meta.get("wall_clock_s", 0.0)) for r in runs]
         optim_usds = [float(r.optimizer_meta.get("optimizer_usd", 0.0)) for r in runs]
         trial_usds = [float(r.optimizer_meta.get("trial_usd_total", 0.0)) for r in runs]
+        prompt_toks = [int(r.optimizer_meta.get("prompt_tokens", 0)) for r in runs]
+        completion_toks = [int(r.optimizer_meta.get("completion_tokens", 0)) for r in runs]
+        embed_toks = [int(r.optimizer_meta.get("embedding_tokens", 0)) for r in runs]
 
         retrieval_fields = (
             "mrr_first", "mrr_complete",
@@ -233,9 +238,15 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
             "wall_clock_s_mean": float(np.mean(wall_clocks)) if wall_clocks else 0.0,
             "optimizer_usd_mean": float(np.mean(optim_usds)) if optim_usds else 0.0,
             "trial_usd_mean": float(np.mean(trial_usds)) if trial_usds else 0.0,
+            "prompt_tokens_mean": float(np.mean(prompt_toks)) if prompt_toks else 0.0,
+            "completion_tokens_mean": float(np.mean(completion_toks)) if completion_toks else 0.0,
+            "embedding_tokens_mean": float(np.mean(embed_toks)) if embed_toks else 0.0,
             "wall_clock_s_list": wall_clocks,
             "optimizer_usd_list": optim_usds,
             "trial_usd_list": trial_usds,
+            "prompt_tokens_list": prompt_toks,
+            "completion_tokens_list": completion_toks,
+            "embedding_tokens_list": embed_toks,
         }
     return out
 
@@ -266,24 +277,38 @@ def write_markdown_table(
             f"| {s['joint_recall_at_5']:.3f} "
             f"| {s['mrr_complete']:.3f} "
             f"| {s['mrr_first']:.3f} "
+            f"| {_fmt_tok(s.get('prompt_tokens_mean', 0.0))} "
+            f"| {_fmt_tok(s.get('completion_tokens_mean', 0.0))} "
+            f"| {_fmt_tok(s.get('embedding_tokens_mean', 0.0))} "
             f"| ${s['optimizer_usd_mean']:.4f} "
             f"| ${s['trial_usd_mean']:.4f} "
-            f"| {s['wall_clock_s_mean']:.0f}s |"
+            f"| {s['wall_clock_s_mean']:.0f}s¹ |"
         )
     header = (
         "| Method | EM | Token-F1 | LLM Judge | Joint-R@2 | Joint-R@5 | MRR-complete | MRR-first | "
-        "Optimizer $ | Trial $ | Wall |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|"
+        "LLM in | LLM out | Embed in | Optimizer $ | Trial $ | Wall |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
     )
-    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | |"
+    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | | | | |"
     text = (
         f"# {benchmark_pretty_name} held-out scores\n\n"
         "Mean and 95% bootstrap CIs over per-question metrics, pooled across seeds. "
-        "Cost columns are mean across seeds.\n\n"
-        f"{header}\n{body}\n"
+        "Token / cost / wall columns are mean across seeds.\n\n"
+        f"{header}\n{body}\n\n"
+        "¹ Wall-clock is reported for context only — rate limits and shared caches "
+        "make it an unfair primary metric. Token counts are the recommended cost proxy.\n"
     )
     out_path.write_text(text, encoding="utf-8")
     logger.info("wrote %s", out_path)
+
+
+def _fmt_tok(n: float) -> str:
+    """Format a token count compactly (e.g. 12.3M / 456k / 789)."""
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.2f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}k"
+    return f"{n:.0f}"
 
 
 def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:

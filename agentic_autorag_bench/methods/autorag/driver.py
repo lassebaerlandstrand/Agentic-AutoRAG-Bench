@@ -18,7 +18,7 @@ from agentic_autorag.orchestrator import Orchestrator
 
 from agentic_autorag_bench.methods.autorag.corpus_export import export_corpus_to_parquet
 from agentic_autorag_bench.methods.autorag.native_config import generate_autorag_config
-from agentic_autorag_bench.methods.autorag.qa_mcq import export_mcq_exam_to_parquet
+from agentic_autorag_bench.methods.autorag.qa_our_exam import export_open_exam_to_parquet
 from agentic_autorag_bench.methods.autorag.qa_prescreen import prescreen_qa_for_content_filter
 from agentic_autorag_bench.methods.autorag.qa_ragas import export_ragas_qa_via_subprocess
 from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
@@ -26,7 +26,7 @@ from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchR
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-QAVariant = Literal["ragas", "mcq"]
+QAVariant = Literal["ragas", "our_exam"]
 
 
 def _find_extracted_sample(project_dir: Path) -> Path | None:
@@ -135,23 +135,29 @@ def _find_latest_trial_dir(project_dir: Path) -> Path | None:
 
 
 def _summarize_cost_log(log_path: Path) -> dict:
-    """Sum the per-call log into a USD total + per-model breakdown.
+    """Sum the per-call log into a USD total + per-model + per-source breakdown.
 
     ``cost_tracker.py`` writes one JSONL line per LLM completion. Pricing
     comes from ``litellm.cost_per_token`` and includes cache discounts when
     the call recorded ``cache_read_input_tokens`` / ``cache_creation_input_tokens``
     (OpenAI's implicit cache, Bedrock cachePoint). Calls for models LiteLLM
     doesn't price (e.g. local self-hosted endpoints, exotic Bedrock IDs)
-    contribute zero. Returns a dict with ``total_usd``, ``buckets`` (by model),
-    and ``n_calls`` so the orchestrator's ledger format is mirrored exactly.
+    contribute zero.
+
+    Returns ``{total_usd, buckets (by model), by_source (by source), n_calls}``.
+    ``by_source`` lets the driver subtract one-time setup spend
+    (``source="qa_ragas"`` — RAGAS QA generation, the autorag_ragas analogue
+    of our exam generation) from the headline tally without losing it from
+    ``cost_breakdown.json``.
     """
     import litellm
 
     buckets: dict[str, dict] = {}
+    by_source: dict[str, dict] = {}
     total_usd = 0.0
     total_calls = 0
     if not log_path.exists():
-        return {"total_usd": 0.0, "buckets": {}, "n_calls": 0}
+        return {"total_usd": 0.0, "buckets": {}, "by_source": {}, "n_calls": 0}
 
     with log_path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -164,6 +170,9 @@ def _summarize_cost_log(log_path: Path) -> dict:
                 logger.warning("Skipping malformed cost log line: %s", line[:200])
                 continue
             model = rec.get("model") or "unknown"
+            # Default to "autorag_eval" so older log lines (pre-source-field)
+            # don't accidentally land in qa_ragas's bucket and get excluded.
+            source = rec.get("source") or "autorag_eval"
             prompt_tokens = int(rec.get("prompt_tokens", 0) or 0)
             completion_tokens = int(rec.get("completion_tokens", 0) or 0)
             cache_read = int(rec.get("cache_read_input_tokens", 0) or 0)
@@ -180,27 +189,29 @@ def _summarize_cost_log(log_path: Path) -> dict:
             except Exception:
                 logger.debug("No litellm pricing for model=%s", model, exc_info=True)
                 call_usd = 0.0
-            bucket = buckets.setdefault(
-                model,
-                {
-                    "usd": 0.0,
-                    "prompt_tokens": 0,
-                    "completion_tokens": 0,
-                    "cache_read_input_tokens": 0,
-                    "cache_creation_input_tokens": 0,
-                    "n_calls": 0,
-                },
-            )
-            bucket["usd"] += call_usd
-            bucket["prompt_tokens"] += prompt_tokens
-            bucket["completion_tokens"] += completion_tokens
-            bucket["cache_read_input_tokens"] += cache_read
-            bucket["cache_creation_input_tokens"] += cache_creation
-            bucket["n_calls"] += 1
+            for target_key, target_map in (("by_model", buckets), ("by_source", by_source)):
+                key = model if target_key == "by_model" else source
+                bucket = target_map.setdefault(
+                    key,
+                    {
+                        "usd": 0.0,
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "cache_read_input_tokens": 0,
+                        "cache_creation_input_tokens": 0,
+                        "n_calls": 0,
+                    },
+                )
+                bucket["usd"] += call_usd
+                bucket["prompt_tokens"] += prompt_tokens
+                bucket["completion_tokens"] += completion_tokens
+                bucket["cache_read_input_tokens"] += cache_read
+                bucket["cache_creation_input_tokens"] += cache_creation
+                bucket["n_calls"] += 1
             total_usd += call_usd
             total_calls += 1
 
-    return {"total_usd": total_usd, "buckets": buckets, "n_calls": total_calls}
+    return {"total_usd": total_usd, "buckets": buckets, "by_source": by_source, "n_calls": total_calls}
 
 
 def _compute_resources_cache_key(corpus_parquet: Path, embedding_models: list[str]) -> str:
@@ -313,16 +324,20 @@ class AutoRAGOptimizer:
         logger.info("AutoRAG resources cache: %s", cache_dir)
 
         qa_parquet = autorag_dir / "qa.parquet"
-        if self.qa_variant == "mcq":
+        # Both the qa_ragas QA-generation subprocess (when qa_variant=='ragas')
+        # and the autorag-eval subprocess append to the same llm_calls.jsonl,
+        # so ``_summarize_cost_log`` ends up reporting a single total for the
+        # whole method run that includes the RAGAS QA generation step.
+        cost_log_path = autorag_dir / "llm_calls.jsonl"
+        if self.qa_variant == "our_exam":
             exam_json = orch.cache_dir / "exam.json"
             if not exam_json.exists():
                 raise RuntimeError(
-                    f"AutoRAG-MCQ requires a cached exam.json at {exam_json}. "
+                    f"autorag_our_exam requires a cached exam.json at {exam_json}. "
                     "Run the agentic baseline first (or any baseline that triggers exam generation)."
                 )
-            n_qa = export_mcq_exam_to_parquet(exam_json, qa_parquet)
-            logger.info("Exported %d MCQ rows to %s", n_qa, qa_parquet.name)
-            shutil.copy2(Path(__file__).parent / "mcq_metric.py", autorag_dir / "mcq_metric.py")
+            n_qa = export_open_exam_to_parquet(exam_json, qa_parquet)
+            logger.info("Exported %d exam rows to %s", n_qa, qa_parquet.name)
         else:
             sample_n = orch.config.examiner.exam_size
             export_ragas_qa_via_subprocess(
@@ -331,6 +346,7 @@ class AutoRAGOptimizer:
                 sample_n=sample_n,
                 llm_model=orch.config.agent.examiner_model,
                 autorag_python=autorag_python,
+                cost_log_path=cost_log_path,
             )
 
         autorag_config_dict, notes = generate_autorag_config(orch.config.search_space, qa_variant=self.qa_variant)
@@ -368,7 +384,6 @@ class AutoRAGOptimizer:
         # script exists alongside the interpreter.
         autorag_bin = Path(autorag_python).parent / "autorag"
         cost_tracker_script = Path(__file__).parent / "cost_tracker.py"
-        cost_log_path = autorag_dir / "llm_calls.jsonl"
 
         env = dict(os.environ)
         env["AUTORAG_COST_LOG"] = str(cost_log_path)
@@ -474,17 +489,32 @@ class AutoRAGOptimizer:
                 score=rescore.score,
                 metrics=rescore.metrics,
                 eval_usd=rescore.eval_usd,
+                prompt_tokens=rescore.prompt_tokens,
+                completion_tokens=rescore.completion_tokens,
+                embedding_tokens=rescore.embedding_tokens,
             )
         ]
         wall_clock = time.monotonic() - t_start
 
-        # Aggregate the per-call cost log written by cost_tracker.py. Persist
-        # the breakdown alongside the trial dir so reviewers can audit which
-        # models drove the spend.
+        # Aggregate the per-call cost log written by cost_tracker.py (eval
+        # subprocess) and qa_ragas.py (when qa_variant=='ragas' — both append
+        # to the same llm_calls.jsonl). Persist the full breakdown alongside
+        # the trial dir for audit.
         cost_summary = _summarize_cost_log(cost_log_path)
         (autorag_dir / "cost_breakdown.json").write_text(
             json.dumps(cost_summary, indent=2), encoding="utf-8"
         )
+        # Per-trial accounting fairness: RAGAS QA-generation is autorag_ragas's
+        # one-time setup spend (its analogue of our exam generation), so the
+        # bench excludes it from the headline tally — same rule that hides
+        # exam-gen costs from the agentic side. Pull totals from non-qa_ragas
+        # sources only; the full picture is still in cost_breakdown.json.
+        bench_visible_sources = {
+            src: bucket for src, bucket in cost_summary["by_source"].items() if src != "qa_ragas"
+        }
+        optimizer_usd = sum(float(b.get("usd", 0.0)) for b in bench_visible_sources.values())
+        optimizer_prompt_tokens = sum(int(b.get("prompt_tokens", 0)) for b in bench_visible_sources.values())
+        optimizer_completion_tokens = sum(int(b.get("completion_tokens", 0)) for b in bench_visible_sources.values())
 
         return SearchResult(
             method=self.name,
@@ -492,14 +522,17 @@ class AutoRAGOptimizer:
             deterministic=self.deterministic,
             best_config=trial_dump,
             history=history,
-            # Sum of every OpenAI / Bedrock LLM call made during AutoRAG's
-            # internal enumeration. Excludes the bench-side rescoring (in
-            # trial_usd_total) and the RAGAS QA-generation subprocess (which
-            # cost_tracker.py never wraps — keeps autorag_ragas comparable to
-            # methods that reuse the agentic exam).
-            optimizer_usd=cost_summary["total_usd"],
+            # AutoRAG's internal enumeration spend, headline-fair: excludes
+            # the bench-side rescoring (in ``trial_usd_total``) AND the RAGAS
+            # QA-generation subprocess (excluded for fairness — see the
+            # ``bench_visible_sources`` filter above). The full picture
+            # (including qa_ragas) is in ``autorag_dir/cost_breakdown.json``.
+            optimizer_usd=optimizer_usd,
             trial_usd_total=rescore.eval_usd,
             wall_clock_s=wall_clock,
+            prompt_tokens=optimizer_prompt_tokens + rescore.prompt_tokens,
+            completion_tokens=optimizer_completion_tokens + rescore.completion_tokens,
+            embedding_tokens=rescore.embedding_tokens,
             extras={
                 "qa_variant": self.qa_variant,
                 "translation_notes": notes,

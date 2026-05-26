@@ -26,10 +26,31 @@ _STUDY_NAME = "agentic_autorag_bench_bayesian_v2"
 _DB_NAME = "optuna.db"
 _SAMPLER_PICKLE = "optuna_sampler.pkl"
 
+# Cap on infeasible ask/tell-PRUNED rounds per budget slot before giving up.
+# Optuna excludes PRUNED trials from TPE's KDE fit (no objective value to
+# place them on the good/bad split), so the surrogate is unchanged. The
+# retry terminates because ``ask()`` advances the sampler's internal RNG,
+# yielding a different draw each call. For narrow infeasibilities (one
+# embed × one chunk-size pairing) this converges in a few attempts; 1000 is
+# paranoid. The canonical alternative is ``TPESampler(constraints_func=…)``
+# for true constraint-aware TPE — overkill for our small infeasible region.
+MAX_RESAMPLE_ATTEMPTS = 1000
+
 
 @dataclass
 class BayesianSearch:
-    """Optuna TPE over the project's SearchSpace, with per-trial sampler persistence."""
+    """Optuna TPE over the project's SearchSpace, with per-trial sampler persistence.
+
+    Each ``budget.max_trials`` slot is guaranteed to evaluate a
+    validation-passing config: an invalid suggestion is reported back to
+    Optuna via ``tell(state=PRUNED)`` (so TPE's surrogate learns to avoid
+    that region) and the slot is re-asked, up to ``MAX_RESAMPLE_ATTEMPTS``
+    times. This keeps the budget comparable to the agentic baseline, whose
+    Proposer is constraint-aware. Per-trial evaluation failures (LLM crash,
+    etc.) still consume their slot. ``extras`` surfaces ``n_validation_rejects``
+    and ``n_pruned`` (sampler-side prunes vs. validator-side rejects) so the
+    paper can report how often TPE proposed infeasible points.
+    """
 
     project: ProjectConfig
     storage_dir: Path
@@ -79,21 +100,39 @@ class BayesianSearch:
 
         t_start = time.monotonic()
         for trial_num in range(1, budget.max_trials + 1):
-            trial = study.ask()
-            try:
-                config = sample_optuna(trial, self.project.search_space, self.project.embedding_token_limits)
-            except optuna.TrialPruned as exc:
-                logger.warning("trial %d pruned during sampling: %s", trial_num, exc)
-                study.tell(trial, state=optuna.trial.TrialState.PRUNED)
-                n_pruned += 1
-                continue
+            trial = None
+            config = None
+            for _ in range(MAX_RESAMPLE_ATTEMPTS):
+                candidate_trial = study.ask()
+                try:
+                    candidate = sample_optuna(
+                        candidate_trial,
+                        self.project.search_space,
+                        self.project.embedding_token_limits,
+                    )
+                except optuna.TrialPruned as exc:
+                    logger.debug("trial %d resample pruned: %s", trial_num, exc)
+                    study.tell(candidate_trial, state=optuna.trial.TrialState.PRUNED)
+                    n_pruned += 1
+                    continue
 
-            violations = self.project.validate_trial(config)
-            if violations:
-                logger.warning("trial %d rejected: %s", trial_num, "; ".join(violations))
-                study.tell(trial, state=optuna.trial.TrialState.PRUNED)
+                violations = self.project.validate_trial(candidate)
+                if not violations:
+                    trial = candidate_trial
+                    config = candidate
+                    break
+                logger.debug("trial %d resample rejected: %s", trial_num, "; ".join(violations))
+                study.tell(candidate_trial, state=optuna.trial.TrialState.PRUNED)
                 n_validation_rejects += 1
-                continue
+
+            if trial is None or config is None:
+                raise RuntimeError(
+                    f"Bayesian search could not find a valid config after "
+                    f"{MAX_RESAMPLE_ATTEMPTS} Optuna ask/tell rounds on trial "
+                    f"{trial_num}; TPE failed to learn the feasible region, "
+                    f"which usually means the search space's feasible volume "
+                    f"is near zero."
+                )
 
             log_trial_banner(logger, trial_num, budget.max_trials, config)
 
@@ -112,6 +151,9 @@ class BayesianSearch:
                     score=result.score,
                     metrics=result.metrics,
                     eval_usd=result.eval_usd,
+                    prompt_tokens=result.prompt_tokens,
+                    completion_tokens=result.completion_tokens,
+                    embedding_tokens=result.embedding_tokens,
                 )
             )
             trial_usd_total += result.eval_usd
@@ -138,6 +180,9 @@ class BayesianSearch:
             optimizer_usd=0.0,
             trial_usd_total=trial_usd_total,
             wall_clock_s=time.monotonic() - t_start,
+            prompt_tokens=sum(h.prompt_tokens for h in history),
+            completion_tokens=sum(h.completion_tokens for h in history),
+            embedding_tokens=sum(h.embedding_tokens for h in history),
             extras={
                 "n_validation_rejects": n_validation_rejects,
                 "n_pruned": n_pruned,

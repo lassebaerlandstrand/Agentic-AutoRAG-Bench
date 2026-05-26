@@ -85,7 +85,7 @@ def test_per_question_judge_returns_nan_when_judge_missing(tmp_path) -> None:
     """Hold-out eval calls the judge for every row; ``judge=None`` means the call
     failed (timeout / parse / content filter). Drop those rows from the
     denominator by emitting NaN rather than falling back to EM."""
-    seed_dir = (tmp_path / "agentic") / "seed_1"
+    seed_dir = (tmp_path / "agentic_score") / "seed_1"
     seed_dir.mkdir(parents=True, exist_ok=True)
     (seed_dir / "benchmark_results.json").write_text(
         json.dumps(
@@ -130,13 +130,13 @@ def test_load_results_round_trip(tmp_path) -> None:
 
 
 def test_aggregate_pools_seeds(tmp_path) -> None:
-    _write_method_dir(tmp_path, "agentic", 1, [1.0] * 10, [True] * 10)
-    _write_method_dir(tmp_path, "agentic", 2, [0.0] * 10, [False] * 10)
+    _write_method_dir(tmp_path, "agentic_score", 1, [1.0] * 10, [True] * 10)
+    _write_method_dir(tmp_path, "agentic_score", 2, [0.0] * 10, [False] * 10)
     results = load_results(tmp_path)
     stats = aggregate_by_method(results)
 
-    assert stats["agentic"]["n_seeds"] == 2
-    em_mean, _em_lo, _em_hi = stats["agentic"]["em"]
+    assert stats["agentic_score"]["n_seeds"] == 2
+    em_mean, _em_lo, _em_hi = stats["agentic_score"]["em"]
     assert abs(em_mean - 0.5) < 0.05  # pooled mean across the two seeds
 
 
@@ -155,7 +155,7 @@ def test_write_efficiency_figure_skips_when_no_methods(tmp_path) -> None:
 
 def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
     stats = {
-        "agentic": {
+        "agentic_score": {
             "n_seeds": 3,
             "em": (0.5, 0.45, 0.55),
             "f1": (0.7, 0.65, 0.75),
@@ -174,7 +174,7 @@ def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
     write_markdown_table(stats, out_path)
     text = out_path.read_text(encoding="utf-8")
     assert "| Method |" in text
-    assert "| agentic |" in text
+    assert "| agentic-score |" in text  # writer hyphenates snake_case for display
     assert "[0.450, 0.550]" in text
     # Headline multi-hop retrieval columns must be present.
     assert "Joint-R@2" in text
@@ -191,10 +191,10 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
     """End-to-end: results tree → matrix figures + Table_1.md under figures/."""
     results_dir = tmp_path / "results"
     output_dir = tmp_path / "artifacts"
-    _write_method_dir(results_dir, "agentic", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
-    _write_method_dir(results_dir, "agentic", 2, [1.0, 1.0, 0.0, 1.0], [True, True, False, True])
+    _write_method_dir(results_dir, "agentic_score", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
+    _write_method_dir(results_dir, "agentic_score", 2, [1.0, 1.0, 0.0, 1.0], [True, True, False, True])
     _write_method_dir(results_dir, "random", 1, [0.0, 0.0, 1.0, 0.0], [False, False, True, False])
-    _write_method_dir(results_dir, "autorag_mcq", None, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
+    _write_method_dir(results_dir, "autorag_our_exam", None, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
 
     analyze(results_dir, output_dir)
 
@@ -204,15 +204,17 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
     for name in (
         "Table_1.md",
         "holdout_metrics.png",
-        "efficiency.png",
         "score_per_trial.png",
         "best_so_far.png",
         "cost_breakdown.png",
+        "token_breakdown.png",
         "figure_trajectory.png",
     ):
         path = figures_dir / name
         assert path.exists(), f"missing {name}"
         assert path.stat().st_size > 0, f"empty {name}"
+    # efficiency moved to appendix
+    assert (figures_dir / "appendix" / "efficiency.png").exists()
 
 
 def test_yaml_round_trip_unrelated_to_pyyaml_warnings(tmp_path) -> None:
