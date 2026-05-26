@@ -27,40 +27,31 @@ meta:
   cost_aware: false
 
 agent:
-  examiner_model: "azure/o4-mini"
-  optimizer_model: "azure/o4-mini"
-  judge_model: "azure/o4-mini"
+  examiner_model: "azure_ai/DeepSeek-V3.2"
+  optimizer_model: "azure_ai/DeepSeek-V3.2"
+  judge_model: "azure_ai/DeepSeek-V3.2"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
   concurrency: 10
 
 examiner:
-  exam_size: 100
-  pair_overgeneration_factor: 6.0
+  exam_size: 50
+  pair_overgeneration_factor: 3.0
   probe_selection: true
-  # Neighborhood-builder thresholds. MultiHop-RAG news articles are longer
-  # than HotpotQA paragraphs (full-article length, multiple chunks per doc),
-  # so the word floor binds first — 12 chunks at ~400-500 words/chunk reaches
-  # the 5k-word target with room for both within-article and cross-article
-  # context.
-  neighborhood_min_chunks: 12
+  # Neighborhood-builder thresholds — unified across all three benchmarks.
+  # ``target_extras = min(extras_for_chunks, extras_for_words)``, so whichever
+  # floor needs fewer extras binds. On paragraph-snippet corpora (hotpot,
+  # musique, median ~94 words/chunk) the 18-chunk floor binds first; on
+  # full-article corpora (multihop news, median ~450 words/chunk) the 5k-word
+  # floor binds first. Same config, corpus-appropriate behavior.
+  neighborhood_min_chunks: 18
   neighborhood_min_words: 5000
-  # News articles support within-article multi-hop (cross-section facts),
-  # but the dataset's primary signal is cross-article reasoning in the same
-  # topic cluster. Weight cross-doc heavier but admit some same-doc share
-  # so the composer can build within-article bridges too.
-  neighborhood_same_doc_weight: 0.2
-  neighborhood_cross_doc_weight: 0.8
-  min_doc_words: 50
-  excluded_section_types:
-    - references
-    - acknowledgments
-    - author_info
-  source_fact_verify_fuzzy_threshold: 0.9
-  chunk_relevance_min_overlap_chars: 50
-  chunk_relevance_ngram_size: 5
-  chunk_relevance_overlap_threshold: 0.5
-  chunk_relevance_min_run: 5
+  # Cross-doc dominant. On paragraph-per-doc corpora same-doc siblings don't
+  # exist, so the weight is moot; on multi-chunk corpora the small same-doc
+  # share is sacrificed for cross-benchmark uniformity.
+  neighborhood_same_doc_weight: 0.3
+  neighborhood_cross_doc_weight: 0.7
+  min_doc_words: 20
 
 parsing:
   ocr: false
@@ -70,46 +61,40 @@ parsing:
 
 search_space:
   chunking:
-    # Frozen across all 6 methods (matches hotpot_paper_project.yaml).
+    # Frozen across all 6 methods. AutoRAG v0.3's ``chunk`` phase is decoupled
+    # from ``evaluate`` — sweeping chunk_size/overlap there would require
+    # running ``autorag chunk`` per (strategy, size, overlap) tuple.
     strategies: ["recursive"]
     chunk_token_size: { values: [512] }
     chunk_token_overlap: { values: [0] }
 
   embedding:
-    # 4 embedders — one per family. Weak → strong: MiniLM floor, bge-m3
-    # mid-tier BAAI, e5-large-v2 alt (Microsoft) family, arctic-embed-l-v2.0
-    # 2025 Snowflake release.
     models:
-      - "sentence-transformers/all-MiniLM-L6-v2"
-      - "BAAI/bge-m3"
       - "intfloat/e5-large-v2"
+      - "mixedbread-ai/mxbai-embed-large-v1"
+      - "Alibaba-NLP/gte-multilingual-base"
+      - "ibm-granite/granite-embedding-small-english-r2"
+      - "BAAI/bge-m3"
+      - "ibm-granite/granite-embedding-english-r2"
       - "Snowflake/snowflake-arctic-embed-l-v2.0"
+      - "Qwen/Qwen3-Embedding-0.6B"
+      - "IEITYuan/Yuan-embedding-2.0-en"
 
   retrieval:
     index_types:
       - "vector_only"
       - "hybrid_bm25_vector"
-    # Coarse 3-value grids: AutoRAG enumerates lists via itertools.product,
-    # so every method draws from the same option set.
     top_k: { values: [3, 10, 20] }
     hybrid_alpha: { values: [0.0, 0.5, 1.0] }
     bm25_vector_fusion: ["alpha", "rrf"]
-    long_context_reorder: [false, true]
+    long_context_reorder: [false]
 
-  # Single cheap utility LLM (gpt-4o-mini) so the QE choice is about
-  # *strategy*, not model. passage_compressor is deliberately omitted —
-  # no multi-hop QA evidence it helps and it adds an extra LLM stage to
-  # the pipeline.
   query_expansion:
-    strategies: ["none", "hyde", "multi_query", "query_decompose"]
+    strategies: ["none", "multi_query", "query_decompose"]
     models:
       - "azure/gpt-4o-mini"
 
   reranker:
-    # 4 options: none + 3 mapped rerankers from native_config.RERANKER_MODULE_MAP.
-    # Excludes Qwen3-Reranker-0.6B and mxbai-rerank-base-v2 (sentence-transformers
-    # loads them with a random score head — outputs noise). top_n only applies
-    # when reranker != none.
     models:
       - "none"
       - "BAAI/bge-reranker-v2-m3"
@@ -118,18 +103,15 @@ search_space:
     top_n: { values: [3, 5, 10] }
 
   generator:
-    # 6 generators, one per family — spans weak (llama-3.1-8b) to strong
-    # (gpt-4o-mini), reasoning-style (o4-mini), OSS (gpt-oss-20b), Mistral,
-    # Qwen. AutoRAG enumeration cost is linear in pool size.
     models:
-      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+      - "bedrock/google.gemma-3-12b-it"
       - "azure/gpt-4o-mini"
-      - "azure/o4-mini"
-      - "bedrock/openai.gpt-oss-20b-1:0"
       - "bedrock/mistral.ministral-3-14b-instruct"
-      - "bedrock/qwen.qwen3-32b-v1:0"
-    # AutoRAG cannot toggle model-native reasoning; pin to false so the
-    # AutoRAG↔framework comparison stays apples-to-apples.
+      - "bedrock/qwen.qwen3-next-80b-a3b"
+      - "azure/gpt-5.4-nano"
+      - "bedrock/openai.gpt-oss-20b-1:0"
+      - "bedrock/openai.gpt-oss-120b-1:0"
+      - "bedrock/nvidia.nemotron-super-3-120b"
     reasoning: false
 
   temperature: { min: 1.0, max: 1.0 }

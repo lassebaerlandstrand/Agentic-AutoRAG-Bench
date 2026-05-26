@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections
 import hashlib
 import json
 import logging
@@ -268,6 +269,75 @@ def _setup_resources_cache(autorag_dir: Path, cache_root: Path, cache_key: str) 
     return cache_dir
 
 
+def _count_autorag_embedding_tokens(
+    corpus_parquet: Path,
+    embedder_models: list[str],
+) -> dict[str, int]:
+    """Tokenize corpus.parquet rows per embedder. Returns ``{model: tokens}``.
+
+    AutoRAG v0.3's ``evaluate`` consumes ``corpus.parquet`` rows as-is — its
+    chunking is a separate ``autorag chunk`` step the bench doesn't invoke
+    (see native_config.py module docstring). One parquet row = one chunk in
+    chroma, which is why ``chroma.count()`` matches the parquet row count.
+    So per-embedder embed cost = sum over rows of tokenize(row.contents),
+    truncated at each embedder's ``max_seq_length`` to match what the
+    embedding API would meter.
+
+    Excludes the 30 exam queries (re-embedded each enumeration step, ~600
+    tokens × embedders ≪ 0.05% of corpus volume) — documented as a known
+    omission in the paper's Experimental Setup section.
+    """
+    import gc
+    import pyarrow.parquet as pq
+    from sentence_transformers import SentenceTransformer
+
+    table = pq.read_table(corpus_parquet, columns=["contents"])
+    docs = [str(d) for d in table.column("contents").to_pylist() if d]
+
+    out: dict[str, int] = {}
+    for model_name in embedder_models:
+        st = SentenceTransformer(model_name)
+        tokenizer = st.tokenizer
+        max_length = int(st.max_seq_length)
+        total = 0
+        for doc in docs:
+            enc = tokenizer(
+                doc,
+                padding=False,
+                truncation=True,
+                max_length=max_length,
+                add_special_tokens=True,
+            )
+            total += len(enc["input_ids"])
+        out[model_name] = total
+        del st
+        gc.collect()
+    return out
+
+
+def _write_autorag_cache_events(
+    out_dir: Path,
+    per_embedder_tokens: dict[str, int],
+    cache_key: str,
+) -> None:
+    """Mirror the framework's cache_events.jsonl schema for AutoRAG runs.
+
+    AutoRAG enumerates all search-space embedders within a single (method,
+    seed), so each embedder is a first-use credit on that one trial.
+    """
+    events_path = out_dir / "cache_events.jsonl"
+    with events_path.open("w", encoding="utf-8") as f:
+        for model_name, tokens in per_embedder_tokens.items():
+            event = {
+                "trial_number": 1,
+                "cache_kind": "embeddings",
+                "cache_key": f"{cache_key}:{model_name}",
+                "tokens_credited": int(tokens),
+                "embedding_model": model_name,
+            }
+            f.write(json.dumps(event) + "\n")
+
+
 @dataclass
 class AutoRAGOptimizer:
     """Marker-Inc AutoRAG baseline (RAGAS-native or MCQ-ablation variant).
@@ -322,6 +392,18 @@ class AutoRAGOptimizer:
         cache_key = _compute_resources_cache_key(corpus_parquet, list(orch.config.search_space.embedding.models))
         cache_dir = _setup_resources_cache(autorag_dir, orch.cache_dir, cache_key)
         logger.info("AutoRAG resources cache: %s", cache_dir)
+        # Probe whether AutoRAG's filter_exist_ids will short-circuit the embed
+        # phase. ``vectordb.yaml`` is the canonical marker; the chroma sqlite
+        # probe is a fallback for caches built before the yaml convention.
+        is_warm_cache = (cache_dir / "vectordb.yaml").exists() or any(cache_dir.glob("chroma/**/*.sqlite3"))
+        if is_warm_cache:
+            logger.info("AutoRAG cache: WARM (corpus already embedded; embed phase will be skipped)")
+        else:
+            logger.info(
+                "AutoRAG cache: COLD (will embed %d-doc corpus for %d embedder(s); "
+                "first invocation typically takes several minutes)",
+                n_corpus, len(orch.config.search_space.embedding.models),
+            )
 
         qa_parquet = autorag_dir / "qa.parquet"
         # Both the qa_ragas QA-generation subprocess (when qa_variant=='ragas')
@@ -397,13 +479,22 @@ class AutoRAGOptimizer:
             # below intentionally keep the old log so the cost matches the
             # trial dir we're reusing.)
             cost_log_path.unlink(missing_ok=True)
-            logger.info("Invoking AutoRAG evaluate (%s variant)", self.qa_variant)
+            logger.info(
+                "Invoking AutoRAG evaluate (%s variant) — streaming subprocess output below as [autorag]",
+                self.qa_variant,
+            )
             # Route through cost_tracker.py instead of the bare autorag binary
             # so every OpenAI / Bedrock call's token usage is logged. RAGAS QA
             # generation runs in a separate subprocess (qa_ragas.py) that is
             # NOT wrapped, so exam-creation cost stays out of the meter — fair
             # across methods that reuse the agentic exam.
-            result = subprocess.run(
+            # PYTHONUNBUFFERED is load-bearing: without it the child block-buffers
+            # stdout/stderr when they're pipes, swallowing tqdm progress for
+            # minutes during the cold-cache embedding phase. Merging stderr into
+            # stdout keeps chronological order and avoids two reader threads.
+            env["PYTHONUNBUFFERED"] = "1"
+            tail: collections.deque[str] = collections.deque(maxlen=200)
+            proc = subprocess.Popen(
                 [
                     autorag_python, str(cost_tracker_script),
                     "evaluate",
@@ -412,26 +503,47 @@ class AutoRAGOptimizer:
                     "--corpus_data_path", str(corpus_parquet),
                     "--project_dir", str(autorag_dir),
                 ],
-                check=False, env=env, capture_output=True, text=True,
+                env=env, text=True, bufsize=1,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             )
-            if result.stdout:
-                logger.info(result.stdout.rstrip())
-            if result.stderr:
-                logger.warning(result.stderr.rstrip())
-            if result.returncode != 0:
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                line = line.rstrip()
+                if line:
+                    logger.info("[autorag] %s", line)
+                    tail.append(line)
+            proc.wait()
+            if proc.returncode != 0:
                 # Common failure paths worth surfacing:
                 #   - Azure ResponsibleAIPolicyViolation (content filter):
                 #     a single offending question kills the whole AutoRAG
                 #     enumeration. Document it; the matrix runner catches
                 #     this exception and the row is omitted from the table.
-                stderr = result.stderr or ""
-                if "ResponsibleAIPolicyViolation" in stderr or "content_filter" in stderr:
+                joined_tail = "\n".join(tail)
+                if "ResponsibleAIPolicyViolation" in joined_tail or "content_filter" in joined_tail:
                     raise RuntimeError(
                         f"AutoRAG evaluate hit Azure content filter "
-                        f"(rc={result.returncode}). Skipping this AutoRAG row; "
+                        f"(rc={proc.returncode}). Skipping this AutoRAG row; "
                         "see translation_notes.json for known limitations."
                     )
-                raise RuntimeError(f"AutoRAG evaluate exited with rc={result.returncode}")
+                raise RuntimeError(f"AutoRAG evaluate exited with rc={proc.returncode}")
+
+        # Tokenize the chunks AutoRAG actually embedded (one corpus.parquet row
+        # = one chroma vector, since AutoRAG's ``evaluate`` does no chunking on
+        # its own). This is the AutoRAG-side analogue of the framework's
+        # first-use embedding-token accounting: each (method, seed) records
+        # the full enumeration cost, even if the on-disk cache was warm this
+        # run — the disk cache is a wall-clock optimisation, not an accounting
+        # one. Excludes the bench's post-hoc rescore pass: that is bench
+        # overhead for comparability, not part of what AutoRAG cost.
+        autorag_embedders = list(orch.config.search_space.embedding.models)
+        per_embedder_tokens = _count_autorag_embedding_tokens(corpus_parquet, autorag_embedders)
+        autorag_embedding_tokens = sum(per_embedder_tokens.values())
+        _write_autorag_cache_events(Path(self.output_dir), per_embedder_tokens, cache_key)
+        logger.info(
+            "AutoRAG embedding tokens: %d (sum across %d embedders)",
+            autorag_embedding_tokens, len(per_embedder_tokens),
+        )
 
         # AutoRAG v0.3 doesn't auto-emit extracted_sample.yaml — the user must
         # call ``autorag extract_best_config`` explicitly with the trial dir.
@@ -491,7 +603,7 @@ class AutoRAGOptimizer:
                 eval_usd=rescore.eval_usd,
                 prompt_tokens=rescore.prompt_tokens,
                 completion_tokens=rescore.completion_tokens,
-                embedding_tokens=rescore.embedding_tokens,
+                embedding_tokens=autorag_embedding_tokens,
             )
         ]
         wall_clock = time.monotonic() - t_start
@@ -512,9 +624,9 @@ class AutoRAGOptimizer:
         bench_visible_sources = {
             src: bucket for src, bucket in cost_summary["by_source"].items() if src != "qa_ragas"
         }
-        optimizer_usd = sum(float(b.get("usd", 0.0)) for b in bench_visible_sources.values())
-        optimizer_prompt_tokens = sum(int(b.get("prompt_tokens", 0)) for b in bench_visible_sources.values())
-        optimizer_completion_tokens = sum(int(b.get("completion_tokens", 0)) for b in bench_visible_sources.values())
+        autorag_eval_usd = sum(float(b.get("usd", 0.0)) for b in bench_visible_sources.values())
+        autorag_eval_prompt_tokens = sum(int(b.get("prompt_tokens", 0)) for b in bench_visible_sources.values())
+        autorag_eval_completion_tokens = sum(int(b.get("completion_tokens", 0)) for b in bench_visible_sources.values())
 
         return SearchResult(
             method=self.name,
@@ -522,17 +634,23 @@ class AutoRAGOptimizer:
             deterministic=self.deterministic,
             best_config=trial_dump,
             history=history,
-            # AutoRAG's internal enumeration spend, headline-fair: excludes
-            # the bench-side rescoring (in ``trial_usd_total``) AND the RAGAS
-            # QA-generation subprocess (excluded for fairness — see the
-            # ``bench_visible_sources`` filter above). The full picture
-            # (including qa_ragas) is in ``autorag_dir/cost_breakdown.json``.
-            optimizer_usd=optimizer_usd,
-            trial_usd_total=rescore.eval_usd,
+            # AutoRAG has no agent or surrogate-model reasoning step — its
+            # enumeration is mechanical bookkeeping with zero LLM spend.
+            # All LLM cost it incurs is *trial evaluation* (per-config RAG
+            # pipeline calls across the grid), which belongs in
+            # ``trial_usd_total`` alongside the bench rescore. Putting it in
+            # ``optimizer_usd`` would mis-label AutoRAG's enumeration cost
+            # as agent reasoning in the cost-breakdown figure.
+            optimizer_usd=0.0,
+            trial_usd_total=autorag_eval_usd + rescore.eval_usd,
             wall_clock_s=wall_clock,
-            prompt_tokens=optimizer_prompt_tokens + rescore.prompt_tokens,
-            completion_tokens=optimizer_completion_tokens + rescore.completion_tokens,
-            embedding_tokens=rescore.embedding_tokens,
+            prompt_tokens=autorag_eval_prompt_tokens + rescore.prompt_tokens,
+            completion_tokens=autorag_eval_completion_tokens + rescore.completion_tokens,
+            # AutoRAG-side enumeration only; bench-side rescore excluded so this
+            # number is the AutoRAG cost, not the bench overhead. Other methods
+            # don't pay a rescore (their per-trial evaluator IS the bench one),
+            # so including it here would asymmetrically inflate AutoRAG.
+            embedding_tokens=autorag_embedding_tokens,
             extras={
                 "qa_variant": self.qa_variant,
                 "translation_notes": notes,

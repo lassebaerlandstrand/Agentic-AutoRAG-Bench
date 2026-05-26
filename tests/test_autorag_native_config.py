@@ -20,7 +20,6 @@ from agentic_autorag.config.models import (
 
 from agentic_autorag_bench.methods.autorag.native_config import (
     FREE_FORM_PROMPT_TEMPLATE,
-    MCQ_PROMPT_TEMPLATE,
     RERANKER_MODULE_MAP,
     generate_autorag_config,
 )
@@ -76,17 +75,17 @@ def _find_node(config: dict, node_type: str) -> dict:
 
 
 class TestGenerateAutoragConfig:
-    def test_our_exam_variant_uses_mcq_prompt_and_rouge_metric(self) -> None:
-        """The our_exam variant uses the MCQ-style prompt template + rouge as the internal AutoRAG metric.
-
-        We pick MCQ-style framing because the framework's open-ended exam has
-        short canonical answers that align well with substring/rouge scoring;
-        and we re-score winners through our framework evaluator anyway.
+    def test_our_exam_variant_uses_free_form_prompt_and_rouge_metric(self) -> None:
+        """``our_exam`` is the framework's open-ended exam, so it must use the
+        open-ended prompt (the MCQ-framed prompt would tell the model to pick
+        from non-existent options, severely biasing the generator). Rouge is
+        the internal AutoRAG metric; the winner is re-scored through our
+        framework evaluator anyway.
         """
         config, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         assert notes["qa_variant"] == "our_exam"
         prompt_node = _find_node(config, "prompt_maker")
-        assert prompt_node["modules"][0]["prompt"][0] == MCQ_PROMPT_TEMPLATE
+        assert prompt_node["modules"][0]["prompt"][0] == FREE_FORM_PROMPT_TEMPLATE
         gen_node = _find_node(config, "generator")
         assert gen_node["strategy"]["metrics"] == ["rouge"]
 
@@ -156,18 +155,28 @@ class TestGenerateAutoragConfig:
                 "BAAI/bge-m3",
             }
 
-    def test_hybrid_weight_range_passes_alpha_through_as_semantic_weight(self) -> None:
+    def test_hybrid_emits_one_module_per_framework_alpha_value(self) -> None:
         """AutoRAG hybrid_cc.weight is the SEMANTIC weight (weight=1.0 → semantic-only),
         matching our hybrid_alpha convention 1:1 — passed through with no inversion.
+
+        To prevent AutoRAG from enumerating intermediate values the framework's
+        search space disallows, we emit one pinned ``hybrid_cc`` module per
+        value in the framework's discrete ``hybrid_alpha`` set (each with
+        ``weight_range=(v, v)`` and ``test_weight_size=1``).
 
         AutoRAG's YAML loader interprets the literal string ``"(a, b)"`` as a
         2-tuple (utils.util.convert_string_to_tuple_in_dict). PyYAML can't
         dump tuples, so we emit the string form directly.
         """
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
+        space = _curated_space()
+        framework_alphas = sorted(round(float(v), 4) for v in space.retrieval.hybrid_alpha.values)
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         hybrid_node = _find_node(config, "hybrid_retrieval")
-        hybrid_mod = next(m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_cc")
-        assert hybrid_mod["weight_range"] == "(0.0, 1.0)"
+        cc_modules = [m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_cc"]
+        assert len(cc_modules) == len(framework_alphas)
+        for mod, v in zip(cc_modules, framework_alphas, strict=True):
+            assert mod["weight_range"] == f"({v}, {v})"
+            assert mod["test_weight_size"] == 1
 
     def test_hybrid_rrf_emitted_when_search_space_includes_rrf(self) -> None:
         """When ``bm25_vector_fusion`` includes ``'rrf'``, the hybrid_retrieval
@@ -545,14 +554,18 @@ class TestParityPins:
         assert isinstance(cc_mod["normalize_method"], str)
         assert cc_mod["normalize_method"] == "mm"
 
-    def test_hybrid_cc_test_weight_size_matches_adaptive_density(self) -> None:
-        """Adaptive methods sample one alpha per trial; AutoRAG's default
-        ``test_weight_size: 21`` gave it 21 alpha-tuning evaluations per call.
-        We drop it to 5 to roughly match adaptive density."""
+    def test_hybrid_cc_test_weight_size_pinned_to_one(self) -> None:
+        """Every emitted ``hybrid_cc`` module pins ``test_weight_size: 1``
+        because the alpha grid is enumerated by one module per framework
+        value (see ``test_hybrid_emits_one_module_per_framework_alpha_value``).
+        Any larger ``test_weight_size`` would let AutoRAG re-sweep alphas the
+        framework's discrete grid disallows.
+        """
         config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         hyb = _find_node(config, "hybrid_retrieval")
-        cc_mod = next(m for m in hyb["modules"] if m["module_type"] == "hybrid_cc")
-        assert cc_mod["test_weight_size"] == 5
+        for mod in hyb["modules"]:
+            if mod["module_type"] == "hybrid_cc":
+                assert mod["test_weight_size"] == 1
 
 
 class TestMixedModeRejection:

@@ -16,7 +16,6 @@ methods:
   - random
   - bayesian
   - agentic_score   # cost_aware=False (highest-score)
-  - agentic_cost    # cost_aware=True  (Pareto-aware)
   - autorag_our_exam  # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
   - autorag_ragas     # same venv
 
@@ -34,7 +33,7 @@ benchmark:
 
 hold_out:
   limit: 100
-  judge_model: azure/o4-mini
+  judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
 output_root: ./results_hotpot
