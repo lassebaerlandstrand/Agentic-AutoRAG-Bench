@@ -24,11 +24,27 @@ class Budget:
 
 @dataclass(frozen=True)
 class TrialResult:
-    """One ``TrialConfig`` evaluated end-to-end by the framework's MCQ exam."""
+    """One ``TrialConfig`` evaluated end-to-end by the framework's open-ended exam.
+
+    ``prompt_tokens`` / ``completion_tokens`` / ``embedding_tokens`` are summed
+    over every cost-ledger bucket touched during this trial (rag_eval, judge,
+    agent_proposal for agentic methods, embedding_build credit on first-use).
+    Stay 0 for adapters that don't surface ledger totals.
+
+    Per-trial accounting deliberately excludes pre-trial setup spend (exam
+    generation, RAGAS QA generation, endpoint verification, probe-phase
+    embedding builds). This is the bench's fairness rule: shared
+    infrastructure cost is not attributed to any method's per-trial total.
+    The framework's run-level ``cost_breakdown.json`` includes everything
+    for audit.
+    """
 
     score: float
     metrics: dict[str, float]
     eval_usd: float
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    embedding_tokens: int = 0
 
     @classmethod
     def from_exam_result(cls, exam_result: Any) -> TrialResult:
@@ -42,6 +58,9 @@ class TrialResult:
                 "mean_f1": float(exam_result.mean_f1),
             },
             eval_usd=float(getattr(exam_result, "total_llm_cost_usd", 0.0)),
+            prompt_tokens=int(getattr(exam_result, "total_prompt_tokens", 0)),
+            completion_tokens=int(getattr(exam_result, "total_completion_tokens", 0)),
+            embedding_tokens=0,
         )
 
 
@@ -54,6 +73,9 @@ class HistoryEntry:
     score: float
     metrics: dict[str, float]
     eval_usd: float
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    embedding_tokens: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -62,6 +84,9 @@ class HistoryEntry:
             "score": self.score,
             "metrics": self.metrics,
             "eval_usd": self.eval_usd,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "embedding_tokens": self.embedding_tokens,
         }
 
 
@@ -72,6 +97,10 @@ class SearchResult:
     ``optimizer_usd`` and ``trial_usd_total`` are reported separately so the
     paper table can show whether a method "wins by spending more on the
     optimizer" (e.g. agentic reasoning) vs. "wins per trial of evaluation".
+
+    Token totals roll up across every trial in ``history`` plus any
+    optimizer-side tokens (e.g. AutoRAG's enumeration LLM calls or the
+    agentic proposer/diagnoser) that don't belong to a specific trial.
     """
 
     method: str
@@ -82,6 +111,9 @@ class SearchResult:
     optimizer_usd: float
     trial_usd_total: float
     wall_clock_s: float
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    embedding_tokens: int = 0
     extras: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -94,6 +126,9 @@ class SearchResult:
             "optimizer_usd": self.optimizer_usd,
             "trial_usd_total": self.trial_usd_total,
             "wall_clock_s": self.wall_clock_s,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "embedding_tokens": self.embedding_tokens,
             "extras": self.extras,
         }
 

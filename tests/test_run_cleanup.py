@@ -91,17 +91,25 @@ def test_all_methods_wiped_when_all_methods_run(tmp_path: Path) -> None:
     cleanup, so every method dir gets reset — matching ``run`` config that
     declared them."""
     root = tmp_path / "results_paper"
-    for method in ("agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"):
+    for method in ("agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"):
         _seed_with_history(root / method / "seed_1")
     (root / "figures").mkdir()
 
     removed = _clear_output_root_for(
         root,
-        ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"],
+        ["agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"],
     )
 
-    assert set(removed) == {"agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas", "figures"}
-    for method in ("agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"):
+    assert set(removed) == {
+        "agentic_score",
+        "agentic_cost",
+        "random",
+        "bayesian",
+        "autorag_our_exam",
+        "autorag_ragas",
+        "figures",
+    }
+    for method in ("agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"):
         assert not (root / method).exists()
 
 

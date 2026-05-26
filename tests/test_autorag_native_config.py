@@ -76,17 +76,15 @@ def _find_node(config: dict, node_type: str) -> dict:
 
 
 class TestGenerateAutoragConfig:
-    def test_mcq_variant_uses_mcq_prompt_and_rouge_metric(self) -> None:
-        """The mcq variant uses the MCQ prompt template + rouge as the internal AutoRAG metric.
+    def test_our_exam_variant_uses_mcq_prompt_and_rouge_metric(self) -> None:
+        """The our_exam variant uses the MCQ-style prompt template + rouge as the internal AutoRAG metric.
 
-        Custom mcq_accuracy was retired because it required runtime-patching of
-        AutoRAG's frozen metric registry. Rouge (token overlap with the gold
-        answer text) is a reasonable monotonic proxy for substring match on
-        short MCQ-style answers, and we re-score winners through our framework
-        evaluator anyway.
+        We pick MCQ-style framing because the framework's open-ended exam has
+        short canonical answers that align well with substring/rouge scoring;
+        and we re-score winners through our framework evaluator anyway.
         """
-        config, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
-        assert notes["qa_variant"] == "mcq"
+        config, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
+        assert notes["qa_variant"] == "our_exam"
         prompt_node = _find_node(config, "prompt_maker")
         assert prompt_node["modules"][0]["prompt"][0] == MCQ_PROMPT_TEMPLATE
         gen_node = _find_node(config, "generator")
@@ -105,7 +103,7 @@ class TestGenerateAutoragConfig:
 
     def test_v03_node_types_present(self) -> None:
         """v0.3 split retrieval into three node_types — verify none use the v0.2 'retrieval' name."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         ntypes = {n["node_type"] for n in _all_nodes(config)}
         # v0.3 uses these node names
         assert "lexical_retrieval" in ntypes
@@ -120,7 +118,7 @@ class TestGenerateAutoragConfig:
 
     def test_top_k_is_at_node_level_not_in_strategy(self) -> None:
         """v0.3 moved top_k from strategy → node level for retrieval/reranker."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         for node_type in {"lexical_retrieval", "semantic_retrieval", "hybrid_retrieval", "passage_reranker"}:
             node = _find_node(config, node_type)
             assert "top_k" in node, f"{node_type} missing top_k at node level"
@@ -128,7 +126,7 @@ class TestGenerateAutoragConfig:
 
     def test_semantic_retrieval_references_vectordb_by_name(self) -> None:
         """v0.3: vectordb is declared top-level, referenced by name from semantic_retrieval."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         vectordb_names = {entry["name"] for entry in config["vectordb"]}
         assert vectordb_names  # at least one vectordb entry
         sem = _find_node(config, "semantic_retrieval")
@@ -137,7 +135,7 @@ class TestGenerateAutoragConfig:
                 assert m["vectordb"] in vectordb_names
 
     def test_one_vectordb_entry_per_embedding_model(self) -> None:
-        config, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         # 2 embedding models in the curated space → 2 named vectordb entries.
         assert len(config["vectordb"]) == 2
         assert notes["embedding_model_to_vectordb_name"] == {
@@ -147,7 +145,7 @@ class TestGenerateAutoragConfig:
 
     def test_huggingface_embedding_models_use_list_of_dict_form(self) -> None:
         """AutoRAG's vectordb expects embedding_model as a list-of-one-dict for HF models."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         for entry in config["vectordb"]:
             em = entry["embedding_model"]
             assert isinstance(em, list) and len(em) == 1
@@ -166,7 +164,7 @@ class TestGenerateAutoragConfig:
         2-tuple (utils.util.convert_string_to_tuple_in_dict). PyYAML can't
         dump tuples, so we emit the string form directly.
         """
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         hybrid_node = _find_node(config, "hybrid_retrieval")
         hybrid_mod = next(m for m in hybrid_node["modules"] if m["module_type"] == "hybrid_cc")
         assert hybrid_mod["weight_range"] == "(0.0, 1.0)"
@@ -180,7 +178,7 @@ class TestGenerateAutoragConfig:
         matching the framework's ``_rrf_merge`` k=60."""
         space = _curated_space()
         space.retrieval.bm25_vector_fusion = ["alpha", "rrf"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         hybrid_node = _find_node(config, "hybrid_retrieval")
         mtypes = {m["module_type"] for m in hybrid_node["modules"]}
         assert "hybrid_cc" in mtypes
@@ -193,7 +191,7 @@ class TestGenerateAutoragConfig:
         """Search space with bm25_vector_fusion=['rrf'] emits hybrid_rrf only."""
         space = _curated_space()
         space.retrieval.bm25_vector_fusion = ["rrf"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         hybrid_node = _find_node(config, "hybrid_retrieval")
         mtypes = [m["module_type"] for m in hybrid_node["modules"]]
         assert mtypes == ["hybrid_rrf"]
@@ -203,7 +201,7 @@ class TestGenerateAutoragConfig:
         ``fstring`` (False) and ``long_context_reorder`` (True) modules."""
         space = _curated_space()
         space.retrieval.long_context_reorder = [False, True]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         pm_node = _find_node(config, "prompt_maker")
         mtypes = [m["module_type"] for m in pm_node["modules"]]
         assert "fstring" in mtypes
@@ -213,7 +211,7 @@ class TestGenerateAutoragConfig:
         """``long_context_reorder: [True]`` only emits the reorder module."""
         space = _curated_space()
         space.retrieval.long_context_reorder = [True]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         pm_node = _find_node(config, "prompt_maker")
         mtypes = [m["module_type"] for m in pm_node["modules"]]
         assert mtypes == ["long_context_reorder"]
@@ -221,7 +219,7 @@ class TestGenerateAutoragConfig:
     def test_passage_compressor_node_omitted_when_all_none(self) -> None:
         """No compression dimensions → no extra passage_compressor node (avoid
         pass-through overhead in baseline runs)."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         node_types = {n["node_type"] for n in _all_nodes(config)}
         assert "passage_compressor" not in node_types
 
@@ -235,7 +233,7 @@ class TestGenerateAutoragConfig:
         space = _curated_space()
         space.passage_compressor.strategies = ["none", "tree_summarize", "refine"]
         space.passage_compressor.models = ["azure/gpt-4o-mini"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         pc_node = _find_node(config, "passage_compressor")
         mtypes = [m["module_type"] for m in pc_node["modules"]]
         assert set(mtypes) == {"pass_compressor", "tree_summarize", "refine"}
@@ -262,7 +260,7 @@ class TestGenerateAutoragConfig:
         semantic retriever."""
         space = _curated_space()
         space.retrieval.index_types = [IndexType.VECTOR_ONLY]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         hybrid_mod = next(
             m
             for n in _all_nodes(config)
@@ -274,13 +272,13 @@ class TestGenerateAutoragConfig:
 
     def test_pass_through_reranker_uses_pass_reranker_v03_name(self) -> None:
         """v0.3 renamed pass_passage_reranker → pass_reranker."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         reranker_node = _find_node(config, "passage_reranker")
         modules = {m.get("model_name", "<pass>"): m["module_type"] for m in reranker_node["modules"]}
         assert modules["<pass>"] == "pass_reranker"
 
     def test_known_rerankers_use_explicit_module_mapping(self) -> None:
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         reranker_node = _find_node(config, "passage_reranker")
         modules = {m.get("model_name", "<pass>"): m["module_type"] for m in reranker_node["modules"]}
         assert modules["BAAI/bge-reranker-v2-m3"] == "flag_embedding_reranker"
@@ -293,7 +291,7 @@ class TestGenerateAutoragConfig:
             top_n=DiscreteValues(values=[3, 5, 10]),
         )
         with pytest.raises(KeyError, match="No AutoRAG reranker module mapping"):
-            generate_autorag_config(space, qa_variant="mcq")
+            generate_autorag_config(space, qa_variant="our_exam")
 
     def test_azure_llm_translates_to_openai_with_v1_base(self) -> None:
         """Azure routes through AutoRAG's ``openai`` provider (not ``openailike``).
@@ -306,7 +304,7 @@ class TestGenerateAutoragConfig:
         The plain ``openai`` provider uses model-name-based chat detection that
         recognises gpt-4o-mini correctly without needing the flag.
         """
-        config, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         gen = _find_node(config, "generator")
         assert len(gen["modules"]) == 1
         mod = gen["modules"][0]
@@ -330,7 +328,7 @@ class TestGenerateAutoragConfig:
         """
         space = _curated_space()
         space.generator.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0"]
-        config, notes = generate_autorag_config(space, qa_variant="mcq")
+        config, notes = generate_autorag_config(space, qa_variant="our_exam")
         mod = _find_node(config, "generator")["modules"][0]
         assert mod["llm"] == "bedrock_converse"
         assert mod["model"] == ["us.meta.llama3-1-8b-instruct-v1:0"]
@@ -348,7 +346,7 @@ class TestGenerateAutoragConfig:
         space = _curated_space()
         space.generator.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
         space.query_expansion.models = ["bedrock/us.meta.llama3-1-8b-instruct-v1:0", "azure/gpt-4o-mini"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         qe_node = _find_node(config, "query_expansion")
         hyde = next(m for m in qe_node["modules"] if m["module_type"] == "hyde")
         assert hyde["llm"] == "bedrock_converse"
@@ -357,7 +355,7 @@ class TestGenerateAutoragConfig:
 
     def test_bedrock_not_in_search_space_omits_bedrock_notes(self) -> None:
         """When no bedrock entries exist, the notes shouldn't claim AWS env vars are required."""
-        _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        _, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         assert notes["bedrock_in_search_space"] is False
         assert notes["bedrock_env_vars_required"] == []
 
@@ -365,7 +363,7 @@ class TestGenerateAutoragConfig:
         """Embedding batch should be GPU-tuned (>= 128 per HF perf docs). The
         previous value (64) underutilised the 4080; bumped to 256 once the
         free-after-ingest patch keeps only one embedder resident at a time."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         for entry in config["vectordb"]:
             assert entry["embedding_batch"] >= 128, (
                 f"vectordb entry {entry['name']} has embedding_batch="
@@ -376,7 +374,7 @@ class TestGenerateAutoragConfig:
         """HF embedders should load in fp16. fp32→fp16 cosine drift is ~1e-6
         per a smoke check (well below the 0.999 threshold in
         test_huggingface_embedding_equivalence_minilm), and we halve VRAM."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         for entry in config["vectordb"]:
             spec = entry["embedding_model"][0]
             assert spec["model_kwargs"]["torch_dtype"] == "float16", (
@@ -384,7 +382,7 @@ class TestGenerateAutoragConfig:
             )
 
     def test_translation_notes_record_excluded_dimensions(self) -> None:
-        _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        _, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         excluded = " ".join(notes["excluded_dimensions"])
         assert "chunking" in excluded  # explicitly noted as a v0.3 exclusion
         assert "passage_compressor" in excluded
@@ -394,13 +392,13 @@ class TestGenerateAutoragConfig:
         assert "hybrid_rrf" not in excluded
 
     def test_discretization_grid_recorded(self) -> None:
-        _, notes = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        _, notes = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         grid = notes["discretization"]
         assert grid["top_k"] == [3, 5, 10, 15, 20]
         assert grid["reranker_top_k"] == [3, 5, 10]
 
     def test_query_expansion_modules_include_pass_hyde_and_multi_query(self) -> None:
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         qe_node = _find_node(config, "query_expansion")
         mtypes = [m["module_type"] for m in qe_node["modules"]]
         assert "pass_query_expansion" in mtypes
@@ -417,7 +415,7 @@ class TestGenerateAutoragConfig:
         example slot."""
         space = _curated_space()
         space.query_expansion.strategies = ["none", "query_decompose"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         qe_node = _find_node(config, "query_expansion")
         mtypes = [m["module_type"] for m in qe_node["modules"]]
         assert "query_decompose" in mtypes
@@ -428,7 +426,7 @@ class TestGenerateAutoragConfig:
 
     def test_query_expansion_strategy_carries_retrieval_modules(self) -> None:
         """v0.3 query_expansion node embeds retrieval_modules in strategy so it can score query rewrites."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         qe_node = _find_node(config, "query_expansion")
         assert "retrieval_modules" in qe_node["strategy"]
         assert qe_node["strategy"]["retrieval_modules"]
@@ -442,7 +440,7 @@ class TestGenerateAutoragConfig:
         space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
         space.passage_compressor.strategies = ["none", "tree_summarize"]
         space.passage_compressor.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         pc_node = _find_node(config, "passage_compressor")
         tree_modules = [m for m in pc_node["modules"] if m["module_type"] == "tree_summarize"]
         assert len(tree_modules) == 2
@@ -459,7 +457,7 @@ class TestGenerateAutoragConfig:
         space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
         space.query_expansion.strategies = ["none", "query_decompose"]
         space.query_expansion.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         qe_node = _find_node(config, "query_expansion")
         decompose_modules = [m for m in qe_node["modules"] if m["module_type"] == "query_decompose"]
         assert len(decompose_modules) == 2
@@ -472,7 +470,7 @@ class TestGenerateAutoragConfig:
         prompt-tuning step matches the generator node's enumeration."""
         space = _curated_space()
         space.generator.models = ["azure/gpt-4o-mini", "azure/o4-mini"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
         pm_node = _find_node(config, "prompt_maker")
         generator_modules = pm_node["strategy"]["generator_modules"]
         assert len(generator_modules) == 2
@@ -498,7 +496,7 @@ class TestDiscreteValuesEnumeration:
     """
 
     def test_node_level_top_k_is_list_valued(self) -> None:
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         for node_type in {"lexical_retrieval", "semantic_retrieval", "hybrid_retrieval"}:
             node = _find_node(config, node_type)
             assert isinstance(node["top_k"], list), (
@@ -508,7 +506,7 @@ class TestDiscreteValuesEnumeration:
             assert node["top_k"] == [3, 5, 10, 15, 20]
 
     def test_passage_reranker_top_k_is_list_valued(self) -> None:
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         reranker_node = _find_node(config, "passage_reranker")
         assert isinstance(reranker_node["top_k"], list)
         assert reranker_node["top_k"] == [3, 5, 10]
@@ -519,7 +517,7 @@ class TestDiscreteValuesEnumeration:
         Setting it to the max gives expansion-candidate scoring a stable
         reference point.
         """
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         qe_node = _find_node(config, "query_expansion")
         assert isinstance(qe_node["strategy"]["top_k"], int)
 
@@ -531,7 +529,7 @@ class TestParityPins:
     """
 
     def test_bm25_tokenizer_pinned_scalar(self) -> None:
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         lex = _find_node(config, "lexical_retrieval")
         bm25_mod = next(m for m in lex["modules"] if m["module_type"] == "bm25")
         assert isinstance(bm25_mod["bm25_tokenizer"], str), (
@@ -541,7 +539,7 @@ class TestParityPins:
         assert bm25_mod["bm25_tokenizer"] == "porter_stemmer"
 
     def test_hybrid_cc_normalize_method_pinned_scalar(self) -> None:
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         hyb = _find_node(config, "hybrid_retrieval")
         cc_mod = next(m for m in hyb["modules"] if m["module_type"] == "hybrid_cc")
         assert isinstance(cc_mod["normalize_method"], str)
@@ -551,7 +549,7 @@ class TestParityPins:
         """Adaptive methods sample one alpha per trial; AutoRAG's default
         ``test_weight_size: 21`` gave it 21 alpha-tuning evaluations per call.
         We drop it to 5 to roughly match adaptive density."""
-        config, _ = generate_autorag_config(_curated_space(), qa_variant="mcq")
+        config, _ = generate_autorag_config(_curated_space(), qa_variant="our_exam")
         hyb = _find_node(config, "hybrid_retrieval")
         cc_mod = next(m for m in hyb["modules"] if m["module_type"] == "hybrid_cc")
         assert cc_mod["test_weight_size"] == 5
@@ -565,19 +563,19 @@ class TestMixedModeRejection:
         space = _curated_space()
         space.retrieval.top_k = NumericRange(min=3, max=20)
         with pytest.raises(ValueError, match="requires DiscreteValues for 'retrieval.top_k'"):
-            generate_autorag_config(space, qa_variant="mcq")
+            generate_autorag_config(space, qa_variant="our_exam")
 
     def test_continuous_hybrid_alpha_rejected(self) -> None:
         space = _curated_space()
         space.retrieval.hybrid_alpha = NumericRange(min=0.0, max=1.0)
         with pytest.raises(ValueError, match="requires DiscreteValues for 'retrieval.hybrid_alpha'"):
-            generate_autorag_config(space, qa_variant="mcq")
+            generate_autorag_config(space, qa_variant="our_exam")
 
     def test_continuous_reranker_top_n_rejected(self) -> None:
         space = _curated_space()
         space.reranker.top_n = NumericRange(min=3, max=10)
         with pytest.raises(ValueError, match="requires DiscreteValues for 'reranker.top_n'"):
-            generate_autorag_config(space, qa_variant="mcq")
+            generate_autorag_config(space, qa_variant="our_exam")
 
 
 class TestPerStageLLMEmission:
@@ -590,7 +588,7 @@ class TestPerStageLLMEmission:
         space.query_expansion.models = ["azure/gpt-4o-mini"]
         space.passage_compressor.strategies = ["none", "tree_summarize"]
         space.passage_compressor.models = ["azure/gpt-4o-mini"]
-        config, _ = generate_autorag_config(space, qa_variant="mcq")
+        config, _ = generate_autorag_config(space, qa_variant="our_exam")
 
         # Generator node: 2 modules (both generator LLMs).
         gen_models = {m["model"][0] for m in _find_node(config, "generator")["modules"]}

@@ -24,6 +24,7 @@ from pathlib import Path
 
 import yaml
 from agentic_autorag.config.models import TrialConfig
+from agentic_autorag.cost_ledger import CostLedger, get_active_ledger, reset_active_ledger, set_active_ledger
 from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
 
@@ -42,9 +43,14 @@ from agentic_autorag_bench.types import Budget, SearchResult, TrialResult
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-STOCHASTIC_METHODS = {"random", "bayesian", "agentic"}
-DETERMINISTIC_METHODS = {"autorag_ragas", "autorag_mcq"}
+STOCHASTIC_METHODS = {"random", "bayesian", "agentic_score", "agentic_cost"}
+DETERMINISTIC_METHODS = {"autorag_ragas", "autorag_our_exam"}
 ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
+# Methods that share the bench's ``shared`` Orchestrator via ``evaluate_trial``.
+# These need the bench to install a per-(method, seed) cost ledger and reset
+# ``shared._seen_emb_fps`` between runs; agentic/autorag instantiate their own
+# Orchestrators so they manage their own ledger lifecycle.
+_SHARED_EVALUATOR_METHODS = {"random", "bayesian"}
 
 
 def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
@@ -112,7 +118,8 @@ class BenchmarkSpec:
 
     ``name`` is the adapter key from the framework's ``ADAPTERS`` registry
     (``agentic_autorag.benchmarks.__init__.py``) — e.g. ``hotpot_qa``,
-    ``musique``. Dispatch happens inside ``BenchmarkRunner.prepare()``.
+    ``musique``, ``multihop_rag``. Dispatch happens inside
+    ``BenchmarkRunner.prepare()``.
     """
 
     name: str
@@ -185,7 +192,7 @@ def _persist_search_result(sr: SearchResult, dest: Path) -> None:
     # also exist on the framework's TrialRecord, so analyze.py reads either
     # equivalently. Don't overwrite the rich version.
     history_path = dest / "history.jsonl"
-    if sr.method != "agentic" or not history_path.exists():
+    if not sr.method.startswith("agentic_") or not history_path.exists():
         history_path.write_text(
             "\n".join(json.dumps(h.to_dict()) for h in sr.history) + ("\n" if sr.history else ""),
             encoding="utf-8",
@@ -200,6 +207,9 @@ def _persist_search_result(sr: SearchResult, dest: Path) -> None:
                 "trial_usd_total": sr.trial_usd_total,
                 "wall_clock_s": sr.wall_clock_s,
                 "n_trials_completed": len(sr.history),
+                "prompt_tokens": sr.prompt_tokens,
+                "completion_tokens": sr.completion_tokens,
+                "embedding_tokens": sr.embedding_tokens,
                 "extras": sr.extras,
             },
             indent=2,
@@ -221,20 +231,130 @@ def _build_optimizer(
         return RandomSearch(project=project)
     if name == "bayesian":
         return BayesianSearch(project=project, storage_dir=output_dir)
-    if name == "agentic":
+    if name in {"agentic_score", "agentic_cost"}:
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
+            cost_aware=(name == "agentic_cost"),
             debug_prompts=debug_prompts,
         )
-    if name in {"autorag_ragas", "autorag_mcq"}:
-        variant = "ragas" if name == "autorag_ragas" else "mcq"
+    if name in {"autorag_ragas", "autorag_our_exam"}:
+        variant = "ragas" if name == "autorag_ragas" else "our_exam"
         return AutoRAGOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             qa_variant=variant,
         )
     raise ValueError(f"Unknown method {name!r}")
+
+
+def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
+    """Wrap ``shared.evaluate_trial`` with per-trial ledger snapshot/delta.
+
+    Used by methods that drive the shared Orchestrator (random / bayesian).
+    Captures the cost-ledger delta over each trial, writes one line to
+    ``method_dir/trial_cost_ledger.jsonl``, flushes any pending cache-event
+    credits the orchestrator queued via ``_credit_embedding_build``, and
+    returns a ``TrialResult`` with token totals filled in from the delta.
+
+    Per-trial accounting excludes pre-trial setup spend (exam generation,
+    endpoint verification, probe-phase embedding builds) because those land
+    in the ledger before this evaluator's first ``snapshot`` call. This is
+    the bench's fairness convention — see ``TrialResult`` for the full rule.
+    """
+    trial_counter = [0]
+
+    async def evaluator(config: TrialConfig) -> TrialResult:
+        trial_counter[0] += 1
+        trial_num = trial_counter[0]
+        ledger = get_active_ledger()
+        before = ledger.snapshot() if ledger is not None else None
+
+        exam_result = await shared.evaluate_trial(config)
+
+        if ledger is not None and before is not None:
+            delta = ledger.delta_since(before)
+            try:
+                with (method_dir / "trial_cost_ledger.jsonl").open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps({"trial_number": trial_num, "buckets": delta}) + "\n")
+            except OSError:
+                logger.warning("Failed to append trial_cost_ledger.jsonl", exc_info=True)
+            shared._flush_pending_cache_events(trial_num)
+            prompt_tokens = sum(int(b["prompt_tokens"]) for b in delta.values())
+            completion_tokens = sum(int(b["completion_tokens"]) for b in delta.values())
+            embedding_tokens = sum(int(b["embedding_input_tokens"]) for b in delta.values())
+        else:
+            prompt_tokens = int(getattr(exam_result, "total_prompt_tokens", 0))
+            completion_tokens = int(getattr(exam_result, "total_completion_tokens", 0))
+            embedding_tokens = 0
+
+        return TrialResult(
+            score=float(exam_result.score),
+            metrics={
+                "answer_accuracy": float(exam_result.answer_accuracy),
+                "mean_retrieval_quality": float(exam_result.mean_retrieval_quality),
+                "mean_em": float(exam_result.mean_em),
+                "mean_f1": float(exam_result.mean_f1),
+            },
+            eval_usd=float(exam_result.total_llm_cost_usd),
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            embedding_tokens=embedding_tokens,
+        )
+
+    return evaluator
+
+
+async def _run_optimizer_with_ledger(
+    optimizer,
+    *,
+    method_name: str,
+    shared: Orchestrator,
+    method_dir: Path,
+    budget: Budget,
+    seed: int | None,
+) -> SearchResult:
+    """Run ``optimizer.search`` with a per-(method, seed) cost-ledger context.
+
+    For methods that drive the shared Orchestrator (``random``, ``bayesian``,
+    plus ``autorag_*`` which uses the shared evaluator for the rescore step):
+    install a fresh ``CostLedger`` so per-trial token deltas can be captured,
+    reset the shared orchestrator's cache-credit bookkeeping
+    (``_seen_emb_fps``, ``_pending_cache_events``) so first-use credits apply
+    per (method, seed), and redirect ``shared.output_dir`` so the per-trial
+    accounting files land in this method dir.
+
+    ``agentic_*`` instantiates its own ``Orchestrator`` and manages the
+    ledger lifecycle internally — bypass the wrapper there.
+    """
+    if method_name.startswith("agentic_"):
+        async def _stub_evaluator(_config: TrialConfig) -> TrialResult:  # pragma: no cover
+            raise RuntimeError(f"{method_name} should not call the bench evaluator")
+        return await optimizer.search(_stub_evaluator, budget, seed=seed)
+
+    original_output_dir = shared.output_dir
+    shared._seen_emb_fps.clear()
+    shared._pending_cache_events.clear()
+    shared.output_dir = method_dir
+    ledger = CostLedger()
+    token = set_active_ledger(ledger)
+    try:
+        evaluator = _make_metered_evaluator(shared, method_dir)
+        sr = await optimizer.search(evaluator, budget, seed=seed)
+    finally:
+        try:
+            # ``bench_ledger.json`` (not ``cost_breakdown.json``) so a future
+            # ``glob('**/cost_breakdown.json')`` does not conflate this
+            # bench-side ledger (rescore-only) with autorag's own per-run
+            # ``autorag_project/cost_breakdown.json`` (enumeration + qa-gen).
+            (method_dir / "bench_ledger.json").write_text(
+                json.dumps(ledger.to_dict(), indent=2), encoding="utf-8"
+            )
+        except OSError:
+            logger.warning("Failed to write bench_ledger.json", exc_info=True)
+        reset_active_ledger(token)
+        shared.output_dir = original_output_dir
+    return sr
 
 
 async def run_matrix(
@@ -304,9 +424,6 @@ async def run_matrix(
     try:
         await shared.setup()
 
-        async def evaluator(config: TrialConfig) -> TrialResult:
-            return TrialResult.from_exam_result(await shared.evaluate_trial(config))
-
         budget = Budget(max_trials=bench.max_trials)
 
         for method_name in bench.methods:
@@ -314,6 +431,7 @@ async def run_matrix(
             for seed in seeds_for_method:
                 seed_label = f"seed_{seed}" if seed is not None else "default"
                 method_dir = bench.output_root / method_name / seed_label
+                method_dir.mkdir(parents=True, exist_ok=True)
                 logger.info("=" * 60)
                 logger.info("RUNNING %s | %s", method_name, seed_label)
                 logger.info("=" * 60)
@@ -326,7 +444,14 @@ async def run_matrix(
                     debug_prompts=debug_prompts,
                 )
                 try:
-                    sr = await optimizer.search(evaluator, budget, seed=seed)
+                    sr = await _run_optimizer_with_ledger(
+                        optimizer,
+                        method_name=method_name,
+                        shared=shared,
+                        method_dir=method_dir,
+                        budget=budget,
+                        seed=seed,
+                    )
                 except Exception:
                     logger.exception("%s seed=%s failed", method_name, seed)
                     continue

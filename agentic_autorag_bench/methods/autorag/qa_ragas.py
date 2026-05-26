@@ -28,9 +28,68 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 # evaluate step's generator LLM.
 _BOOTSTRAP_SCRIPT = textwrap.dedent(
     """
+    import json
     import os
     import sys
+    import threading
     from pathlib import Path
+
+    # Cost-tracking monkey-patch (mirrors cost_tracker.py for the OpenAI SDK).
+    # llama_index.llms.openai.OpenAI delegates to openai.resources.chat.completions,
+    # so this hook captures every QA-generation call made by factoid_query_gen,
+    # make_basic_gen_gt, and make_concise_gen_gt. Writes the same JSONL shape
+    # as cost_tracker._record_openai so the driver can sum it via the existing
+    # _summarize_cost_log path.
+    _COST_LOG_PATH = os.environ.get("AUTORAG_COST_LOG")
+    if _COST_LOG_PATH:
+        _COST_LOG_PATH = Path(_COST_LOG_PATH)
+        _COST_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _COST_LOG_LOCK = threading.Lock()
+
+        def _write_cost(record):
+            line = json.dumps(record, separators=(",", ":")) + "\\n"
+            with _COST_LOG_LOCK, _COST_LOG_PATH.open("a", encoding="utf-8") as f:
+                f.write(line)
+
+        def _record_openai(response, source):
+            usage = getattr(response, "usage", None)
+            if usage is None:
+                return
+            model = getattr(response, "model", None) or "unknown"
+            prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
+            completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
+            details = getattr(usage, "prompt_tokens_details", None)
+            cache_read = int(getattr(details, "cached_tokens", 0) or 0) if details is not None else 0
+            if prompt_tokens == 0 and completion_tokens == 0:
+                return
+            _write_cost({
+                "source": source,
+                "model": model,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "cache_read_input_tokens": cache_read,
+                "cache_creation_input_tokens": 0,
+            })
+
+        from openai.resources.chat.completions import AsyncCompletions, Completions
+
+        _orig_sync = Completions.create
+        _orig_async = AsyncCompletions.create
+
+        def _sync_create(self, *args, **kwargs):
+            response = _orig_sync(self, *args, **kwargs)
+            if not kwargs.get("stream", False):
+                _record_openai(response, source="qa_ragas")
+            return response
+
+        async def _async_create(self, *args, **kwargs):
+            response = await _orig_async(self, *args, **kwargs)
+            if not kwargs.get("stream", False):
+                _record_openai(response, source="qa_ragas")
+            return response
+
+        Completions.create = _sync_create
+        AsyncCompletions.create = _async_create
 
     import pandas as pd
     from autorag.data.qa.query.llama_gen_query import factoid_query_gen
@@ -119,11 +178,16 @@ def export_ragas_qa_via_subprocess(
     sample_n: int,
     llm_model: str,
     autorag_python: str,
+    cost_log_path: Path | None = None,
 ) -> None:
     """Invoke AutoRAG's RAGAS bootstrap inside the AutoRAG venv.
 
     ``llm_model`` is the bench's litellm-style id (``azure/<deployment>`` or
     ``openai/<model>``); the embedded script handles the provider translation.
+
+    When ``cost_log_path`` is provided, every QA-generation LLM call is logged
+    to that JSONL file in the same shape ``cost_tracker.py`` uses, so the
+    driver's ``_summarize_cost_log`` can sum it alongside the eval-step cost.
     """
     if not autorag_python:
         raise RuntimeError("autorag_python is required to run the RAGAS bootstrap")
@@ -132,6 +196,8 @@ def export_ragas_qa_via_subprocess(
     # ``_os.environ`` first, ``AUTORAG_BOOTSTRAP_MODEL`` last so the bench's
     # value wins even if the parent shell happens to export it.
     env = {**_os.environ, "AUTORAG_BOOTSTRAP_MODEL": llm_model}
+    if cost_log_path is not None:
+        env["AUTORAG_COST_LOG"] = str(cost_log_path)
     logger.info("Running AutoRAG RAGAS bootstrap (n=%d, model=%s)", sample_n, llm_model)
     result = subprocess.run(cmd, check=False, capture_output=True, text=True, env=env)
     if result.stdout:

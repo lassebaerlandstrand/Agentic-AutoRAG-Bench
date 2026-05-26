@@ -201,7 +201,7 @@ def test_make_method_figures_ignores_figures_subdir(tmp_path) -> None:
 def test_make_method_figures_handles_ragged_seeds(tmp_path) -> None:
     """One seed shorter than another (e.g. crashed mid-trial) — figure must
     still render and not pad the raw-score mean with synthetic values."""
-    method_dir = tmp_path / "agentic"
+    method_dir = tmp_path / "agentic_score"
     _write_seed(method_dir / "seed_1", [0.3, 0.5, 0.7], [0.1, 0.1, 0.1], schema="agentic")
     _write_seed(method_dir / "seed_2", [0.4, 0.6], [0.1, 0.1], schema="agentic")
     make_method_figures(method_dir)
@@ -212,9 +212,9 @@ def test_make_matrix_figures_assembles_full_matrix(tmp_path) -> None:
     """End-to-end matrix-level write. Covers the same surface as
     test_analyze_emits_all_artifacts but invokes plots.py directly."""
     output_root = tmp_path / "results_paper"
-    _write_seed(output_root / "agentic" / "seed_1", [0.6, 0.7, 0.75], [0.1, 0.1, 0.1])
+    _write_seed(output_root / "agentic_score" / "seed_1", [0.6, 0.7, 0.75], [0.1, 0.1, 0.1])
     _write_seed(output_root / "random" / "seed_1", [0.3, 0.5, 0.6], [0.1, 0.1, 0.1])
-    _write_seed(output_root / "autorag_mcq" / "default", [0.55], [0.1])
+    _write_seed(output_root / "autorag_our_exam" / "default", [0.55], [0.1])
     make_matrix_figures(output_root)
     figs = output_root / "figures"
     for name in (
@@ -222,11 +222,13 @@ def test_make_matrix_figures_assembles_full_matrix(tmp_path) -> None:
         "score_per_trial.png",
         "best_so_far.png",
         "holdout_metrics.png",
-        "efficiency.png",
         "cost_breakdown.png",
+        "token_breakdown.png",
     ):
         assert (figs / name).exists(), name
         assert (figs / name).stat().st_size > 0
+    # efficiency.png moved to appendix subdir — no longer part of the paper body.
+    assert (figs / "appendix" / "efficiency.png").exists()
 
 
 def test_make_matrix_figures_redirect_output_dir(tmp_path) -> None:

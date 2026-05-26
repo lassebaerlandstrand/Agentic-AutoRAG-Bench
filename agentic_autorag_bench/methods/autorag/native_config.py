@@ -479,11 +479,13 @@ def generate_autorag_config(
         Source-of-truth ``SearchSpace``. Every present dimension is mirrored;
         no other dimensions appear in the AutoRAG config.
     qa_variant:
-        ``"mcq"`` registers the ``mcq_accuracy`` metric and the MCQ prompt
-        template. ``"ragas"`` uses ``g_eval`` and the free-form template.
+        ``"our_exam"`` uses the framework's open-ended exam via the MCQ-style
+        prompt template (still cheap rouge as AutoRAG's internal metric).
+        ``"ragas"`` uses ``g_eval`` and the free-form template against a
+        RAGAS-bootstrapped QA set.
     """
-    if qa_variant not in {"mcq", "ragas"}:
-        raise ValueError(f"qa_variant must be 'mcq' or 'ragas', got {qa_variant!r}")
+    if qa_variant not in {"our_exam", "ragas"}:
+        raise ValueError(f"qa_variant must be 'our_exam' or 'ragas', got {qa_variant!r}")
 
     ss = search_space
     top_ks = _require_discrete_int(ss.retrieval.top_k, "retrieval.top_k")
@@ -596,10 +598,7 @@ def generate_autorag_config(
     # held-out evaluator afterwards, so AutoRAG's *internal* metric just needs
     # to be reasonable for ranking. We use ``rouge`` (token overlap with the
     # gold answer) — cheap, deterministic, no LLM judge cost.
-    # ``mcq_accuracy`` (our custom substring-match metric) would require
-    # patching AutoRAG's ``GENERATION_METRIC_FUNC_DICT`` at runtime; we keep
-    # it simple and use built-in metrics only.
-    if qa_variant == "mcq":
+    if qa_variant == "our_exam":
         gen_metrics = ["rouge"]
         prompt_template = MCQ_PROMPT_TEMPLATE
     else:
@@ -695,7 +694,7 @@ def generate_autorag_config(
         "window_replacement variants of prompt_maker",
     ]
     excluded_dimensions.append(
-        "custom ``mcq_accuracy`` metric — replaced by AutoRAG's built-in rouge "
+        "AutoRAG's internal generation metric is ``rouge`` "
         "(winning config is re-scored through our framework's evaluator anyway, "
         "so AutoRAG's internal ranking signal need only correlate with our final metric)"
     )

@@ -23,13 +23,23 @@ class AgenticOptimizer:
     ``SearchResult``; the ``evaluator`` callback is intentionally unused (the
     framework's internal evaluator is the same code path the other methods reach
     through their ``evaluator`` callback, so fairness is preserved).
+
+    ``cost_aware`` chooses between two variants registered as separate bench
+    methods: ``agentic_score`` (``False``, highest-score) and ``agentic_cost``
+    (``True``, Pareto-aware cheapest-best). The flag is propagated by
+    overriding ``meta.cost_aware`` on the loaded project config so the YAML's
+    default is irrelevant.
     """
 
     config_path: str
     output_dir: str
-    name: str = "agentic"
+    cost_aware: bool
     deterministic: bool = False
     debug_prompts: bool = False
+
+    @property
+    def name(self) -> str:
+        return "agentic_cost" if self.cost_aware else "agentic_score"
 
     async def search(
         self,
@@ -56,9 +66,11 @@ class AgenticOptimizer:
         # this out — agentic's cross-seed variance is *not* a controlled-seed
         # signal for non-seed-accepting models, while random/bayesian variance
         # is genuinely re-randomised.
-        # Honour the bench-side budget. The YAML may carry a different value
-        # for developer use; the bench overrides it for the paper run.
+        # Honour the bench-side budget + the per-method cost-aware flag.
+        # Both override the YAML so the same project_config drives both
+        # agentic_score and agentic_cost runs without duplication.
         orch.config.meta.max_trials = budget.max_trials
+        orch.config.meta.cost_aware = self.cost_aware
 
         t_start = time.monotonic()
         await orch.run()
@@ -76,6 +88,9 @@ class AgenticOptimizer:
                     "mean_f1": float(record.mean_f1),
                 },
                 eval_usd=float(record.total_llm_cost_usd),
+                prompt_tokens=int(record.total_prompt_tokens),
+                completion_tokens=int(record.total_completion_tokens),
+                embedding_tokens=int(record.total_embedding_tokens),
             )
             for record in orch.history.records
         ]
@@ -85,12 +100,14 @@ class AgenticOptimizer:
 
         best_entry = max(history, key=lambda h: h.score)
 
-        # Cost ledger is reset between runs but the orchestrator already logged
-        # its own breakdown. We approximate from history (rag_eval = sum of
-        # eval_usd) and read the most recent agent_proposal cost from
-        # cost_breakdown.json if present.
-        optimizer_usd = _read_optimizer_cost_from_ledger_dump(self.output_dir)
-        trial_usd_total = sum(h.eval_usd for h in history)
+        # ``trial_usd_total`` covers the full per-trial eval spend: each
+        # question's RAG generation (``eval_usd`` summed from history) plus
+        # the judge calls that score it. Judge is a benchmark-only cost (not
+        # paid in production) but still part of what a method "spent" while
+        # being benchmarked. Read from cost_breakdown.json alongside the
+        # optimizer-side agent_proposal cost.
+        optimizer_usd, judge_usd = _read_run_costs_from_ledger_dump(self.output_dir)
+        trial_usd_total = sum(h.eval_usd for h in history) + judge_usd
 
         return SearchResult(
             method=self.name,
@@ -101,21 +118,32 @@ class AgenticOptimizer:
             optimizer_usd=optimizer_usd,
             trial_usd_total=trial_usd_total,
             wall_clock_s=time.monotonic() - t_start,
-            extras={"output_dir": self.output_dir},
+            prompt_tokens=sum(h.prompt_tokens for h in history),
+            completion_tokens=sum(h.completion_tokens for h in history),
+            embedding_tokens=sum(h.embedding_tokens for h in history),
+            extras={"output_dir": self.output_dir, "cost_aware": self.cost_aware},
         )
 
 
-def _read_optimizer_cost_from_ledger_dump(output_dir: str) -> float:
-    """Pull ``agent_proposal`` USD from ``cost_breakdown.json`` if the framework wrote one."""
+def _read_run_costs_from_ledger_dump(output_dir: str) -> tuple[float, float]:
+    """Read ``(agent_proposal_usd, judge_usd)`` from ``cost_breakdown.json``.
+
+    Returns ``(0.0, 0.0)`` if the file is missing or unparseable. Caller folds
+    ``agent_proposal`` into ``optimizer_usd`` and ``judge`` into
+    ``trial_usd_total``.
+    """
     import json
     from pathlib import Path
 
     path = Path(output_dir) / "cost_breakdown.json"
     if not path.exists():
-        return 0.0
+        return 0.0, 0.0
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return float(data.get("buckets", {}).get("agent_proposal", {}).get("usd", 0.0))
+        buckets = json.loads(path.read_text(encoding="utf-8")).get("buckets", {})
+        return (
+            float(buckets.get("agent_proposal", {}).get("usd", 0.0)),
+            float(buckets.get("judge", {}).get("usd", 0.0)),
+        )
     except Exception:
         logger.warning("Could not parse cost_breakdown.json at %s", path, exc_info=True)
-        return 0.0
+        return 0.0, 0.0

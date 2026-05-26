@@ -1,6 +1,8 @@
 """Convert the framework's cached open-ended ``exam.json`` into AutoRAG's ``qa.parquet``.
 
-The framework's exam is open-ended QA, not MCQ. Each entry carries:
+Used by the ``autorag_our_exam`` bench method: AutoRAG runs against the same
+open-ended exam our framework generates, enabling an apples-to-apples
+comparison on identical questions. Each exam entry carries:
 - ``question`` (string)
 - ``canonical_answer`` (string)
 - ``answer_variants`` (list of acceptable paraphrases incl. canonical)
@@ -36,14 +38,8 @@ def _strip_doc_suffix(doc_id: str) -> str:
     return doc_id
 
 
-def export_mcq_exam_to_parquet(exam_json: Path, out_path: Path) -> int:
-    """Write each exam question to ``out_path`` as one (qid, query, retrieval_gt, generation_gt) row.
-
-    The function name retains the legacy "mcq" suffix because the bench's
-    method registry uses ``autorag_mcq`` for "AutoRAG running against our
-    framework's exam." The exam itself is now open-ended QA — see module
-    docstring.
-    """
+def export_open_exam_to_parquet(exam_json: Path, out_path: Path) -> int:
+    """Write each exam question to ``out_path`` as one (qid, query, retrieval_gt, generation_gt) row."""
     data = json.loads(exam_json.read_text(encoding="utf-8"))
     # Legacy format wrapped the list under ``{"questions": [...]}``; current
     # framework writes the list directly. Accept both.

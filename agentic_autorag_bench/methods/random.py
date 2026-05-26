@@ -15,16 +15,27 @@ from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchR
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
+# Cap on how many invalid samples one trial may discard before giving up.
+# A search space where 1000 uniform draws can't find a feasible config is
+# either misconfigured or has near-zero feasible volume; either way, raising
+# is more honest than silently emitting an invalid trial.
+MAX_RESAMPLE_ATTEMPTS = 1000
+
 
 @dataclass
 class RandomSearch:
     """Uniformly samples ``TrialConfig`` from the project's ``SearchSpace``.
 
-    Each iteration of the loop occupies one slot of ``budget.max_trials``.
-    Validation rejects and per-trial evaluation failures still consume their
-    slot (``continue`` skips the score-record but does not re-sample): the
-    budget reflects work attempted, not work that succeeded. ``extras``
-    surfaces ``n_validation_rejects`` so the paper can report the count.
+    Each iteration of the loop occupies one slot of ``budget.max_trials`` and
+    is guaranteed to evaluate a validation-passing config: invalid draws (e.g.
+    ``chunk_token_size`` exceeding the sampled embedding's context window when
+    the size grid has no feasible value) are discarded and resampled, up to
+    ``MAX_RESAMPLE_ATTEMPTS`` per trial. This makes the budget comparable to
+    the agentic baseline, whose Proposer is constraint-aware and never spends
+    a trial on an infeasible config. Per-trial evaluation failures (LLM
+    crash, etc.) still consume their slot — those are not a sampler artefact.
+    ``extras`` surfaces ``n_validation_rejects`` so the paper can report how
+    "narrow" the feasible region was.
     """
 
     project: ProjectConfig
@@ -48,12 +59,23 @@ class RandomSearch:
 
         t_start = time.monotonic()
         for trial_num in range(1, budget.max_trials + 1):
-            config = sample_random(rng, self.project.search_space, self.project.embedding_token_limits)
-            violations = self.project.validate_trial(config)
-            if violations:
-                logger.warning("trial %d rejected: %s", trial_num, "; ".join(violations))
+            config = None
+            for _ in range(MAX_RESAMPLE_ATTEMPTS):
+                candidate = sample_random(
+                    rng, self.project.search_space, self.project.embedding_token_limits
+                )
+                violations = self.project.validate_trial(candidate)
+                if not violations:
+                    config = candidate
+                    break
                 n_validation_rejects += 1
-                continue
+                logger.debug("trial %d resample: %s", trial_num, "; ".join(violations))
+            if config is None:
+                raise RuntimeError(
+                    f"Random search could not find a valid config after "
+                    f"{MAX_RESAMPLE_ATTEMPTS} resamples on trial {trial_num}; "
+                    f"the feasible region of the search space is too narrow."
+                )
 
             log_trial_banner(logger, trial_num, budget.max_trials, config)
 
@@ -70,6 +92,9 @@ class RandomSearch:
                     score=result.score,
                     metrics=result.metrics,
                     eval_usd=result.eval_usd,
+                    prompt_tokens=result.prompt_tokens,
+                    completion_tokens=result.completion_tokens,
+                    embedding_tokens=result.embedding_tokens,
                 )
             )
             trial_usd_total += result.eval_usd
@@ -90,5 +115,8 @@ class RandomSearch:
             optimizer_usd=0.0,
             trial_usd_total=trial_usd_total,
             wall_clock_s=time.monotonic() - t_start,
+            prompt_tokens=sum(h.prompt_tokens for h in history),
+            completion_tokens=sum(h.completion_tokens for h in history),
+            embedding_tokens=sum(h.embedding_tokens for h in history),
             extras={"n_validation_rejects": n_validation_rejects},
         )

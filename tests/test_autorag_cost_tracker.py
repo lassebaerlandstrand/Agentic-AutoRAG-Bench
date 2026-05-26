@@ -25,7 +25,7 @@ def _write_log(path: Path, records: list[dict]) -> None:
 
 def test_summarize_missing_log_returns_zero(tmp_path: Path) -> None:
     summary = _summarize_cost_log(tmp_path / "nonexistent.jsonl")
-    assert summary == {"total_usd": 0.0, "buckets": {}, "n_calls": 0}
+    assert summary == {"total_usd": 0.0, "buckets": {}, "by_source": {}, "n_calls": 0}
 
 
 def test_summarize_skips_malformed_lines(tmp_path: Path) -> None:

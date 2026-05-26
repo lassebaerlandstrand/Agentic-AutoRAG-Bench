@@ -36,23 +36,24 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 # Stable color per method so all figures (across all three levels) share one
 # implicit legend.
 METHOD_COLOR = {
-    "agentic": "#1f77b4",
+    "agentic_score": "#1f77b4",
+    "agentic_cost": "#17becf",
     "random": "#ff7f0e",
     "bayesian": "#2ca02c",
-    "autorag_mcq": "#d62728",
+    "autorag_our_exam": "#d62728",
     "autorag_ragas": "#9467bd",
 }
 
 # Stable display order. Mirrors ``analyze.METHOD_ORDER``; the two must agree.
-METHOD_ORDER = ["agentic", "random", "bayesian", "autorag_mcq", "autorag_ragas"]
+METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"]
 
 # Methods whose per-trial trajectory is meaningful. AutoRAG enumerates per-node
 # and re-scores a single winning config — its history.jsonl carries one entry,
 # so line plots over it would be misleading. On cross-method figures we still
 # surface the AutoRAG variants as dashed horizontal reference lines via
 # ``_autorag_references`` so the reader sees every method on every chart.
-SEQUENTIAL = {"agentic", "random", "bayesian"}
-AUTORAG = {"autorag_mcq", "autorag_ragas"}
+SEQUENTIAL = {"agentic_score", "agentic_cost", "random", "bayesian"}
+AUTORAG = {"autorag_our_exam", "autorag_ragas"}
 
 # Directory names that live next to method dirs under ``output_root`` but are
 # not method results. ``_seed_dirs`` and ``make_matrix_figures`` skip these.
@@ -657,16 +658,25 @@ def make_matrix_figures(
         lambda: write_holdout_scores_figure(stats, figures_dir / "holdout_metrics.png"),
     )
     _safely(
-        "matrix efficiency.png",
-        lambda: write_efficiency_figure(stats, figures_dir / "efficiency.png"),
-    )
-    _safely(
         "matrix cost_breakdown.png",
         lambda: _matrix_cost_breakdown(figures_dir / "cost_breakdown.png", stats),
     )
     _safely(
-        "matrix score_vs_cost.png",
-        lambda: _matrix_score_vs_cost(figures_dir / "score_vs_cost.png", results, stats),
+        "matrix token_breakdown.png",
+        lambda: _matrix_token_breakdown(figures_dir / "token_breakdown.png", stats),
+    )
+    # ``efficiency`` and ``score_vs_cost`` are appendix-only — F1+F2+F3+F3b+F4
+    # cover the paper's body. Keep rendering them so the appendix has
+    # something to point at without re-running the matrix.
+    appendix_dir = figures_dir / "appendix"
+    appendix_dir.mkdir(parents=True, exist_ok=True)
+    _safely(
+        "appendix efficiency.png",
+        lambda: write_efficiency_figure(stats, appendix_dir / "efficiency.png"),
+    )
+    _safely(
+        "appendix score_vs_cost.png",
+        lambda: _matrix_score_vs_cost(appendix_dir / "score_vs_cost.png", results, stats),
     )
 
 
@@ -854,29 +864,82 @@ def _matrix_score_vs_cost(out_path: Path, results: list, stats: dict[str, dict])
 
 
 def _matrix_cost_breakdown(out_path: Path, stats: dict[str, dict]) -> None:
-    """Stacked bar: optimizer-side vs trial-side USD per method.
+    """Stacked bar: optimizer reasoning vs trial evaluation USD per method.
 
-    The point of separating the two is to show whether a method "wins by
-    spending more on the optimizer" (e.g. agentic reasoning) vs. "wins per
-    trial of evaluation". Mean across seeds per stack — see Table_1 for the
-    per-seed spread.
+    The plan's third layer (``exam_generation``) is deliberately omitted: under
+    the bench's fairness rule, exam-gen cost is excluded from the bench tally
+    because only ``agentic_*`` and ``autorag_ragas`` create exams. Including
+    it would penalize those two methods for work the other methods don't do.
+    Embedding tokens have no USD here (local execution); they appear on the
+    companion ``token_breakdown.png``.
+
+    Bars annotated with the totals so a $0 stack (e.g. agentic with an
+    unpriced examiner/optimizer model) is still readable.
     """
     plt = _import_matplotlib()
     methods = [m for m in METHOD_ORDER if m in stats]
     if not methods:
         return
-    optim = np.array([stats[m]["optimizer_usd_mean"] for m in methods])
+    reasoning = np.array([stats[m]["optimizer_usd_mean"] for m in methods])
     trial = np.array([stats[m]["trial_usd_mean"] for m in methods])
+    totals = reasoning + trial
     fig, ax = plt.subplots(figsize=(7.0, 3.8))
     x = np.arange(len(methods))
-    ax.bar(x, optim, color="#1f77b4", label="Optimizer-side $")
-    ax.bar(x, trial, bottom=optim, color="#ff7f0e", label="Trial-side $")
+    ax.bar(x, reasoning, color="#1f77b4", label="Optimizer reasoning (agent)")
+    ax.bar(x, trial, bottom=reasoning, color="#ff7f0e", label="Trial evaluation (RAG + judge)")
+    for xi, total in zip(x, totals):
+        ax.text(xi, total, f"${total:.3f}", ha="center", va="bottom", fontsize=8)
     ax.set_xticks(x)
     ax.set_xticklabels([m.replace("_", "-") for m in methods])
     ax.set_ylabel("Mean search cost per seed (USD)")
-    ax.set_title("Search cost by source")
+    ax.set_title("Search cost by source (exam-gen excluded — fairness rule)")
+    if totals.max() > 0:
+        ax.set_ylim(0, totals.max() * 1.15)
     ax.legend(loc="best", frameon=False)
     ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _matrix_token_breakdown(out_path: Path, stats: dict[str, dict]) -> None:
+    """Two-panel stacked bar of LLM and embedding tokens per method.
+
+    Left panel: LLM input vs output tokens (mean per seed). Right panel:
+    embedding input tokens (mean per seed). This is the recommended
+    primary cost-comparability view for the paper — wall-clock varies with
+    rate limits and cache state, USD varies with which provider you bill,
+    but tokens are deterministic and cache-aware (first-use-per-(method,
+    seed) rule from the framework's cost ledger).
+    """
+    plt = _import_matplotlib()
+    methods = [m for m in METHOD_ORDER if m in stats]
+    if not methods:
+        return
+    prompt = np.array([stats[m]["prompt_tokens_mean"] for m in methods])
+    completion = np.array([stats[m]["completion_tokens_mean"] for m in methods])
+    embed = np.array([stats[m]["embedding_tokens_mean"] for m in methods])
+
+    fig, (ax_llm, ax_emb) = plt.subplots(1, 2, figsize=(11.0, 3.8))
+    x = np.arange(len(methods))
+    xticks = [m.replace("_", "-") for m in methods]
+
+    ax_llm.bar(x, prompt, color="#1f77b4", label="LLM input")
+    ax_llm.bar(x, completion, bottom=prompt, color="#ff7f0e", label="LLM output")
+    ax_llm.set_xticks(x)
+    ax_llm.set_xticklabels(xticks, rotation=20, ha="right")
+    ax_llm.set_ylabel("Mean tokens per seed")
+    ax_llm.set_title("LLM tokens (input + output)")
+    ax_llm.legend(loc="best", frameon=False)
+    ax_llm.grid(axis="y", alpha=0.3)
+
+    ax_emb.bar(x, embed, color="#2ca02c", label="Embedding input")
+    ax_emb.set_xticks(x)
+    ax_emb.set_xticklabels(xticks, rotation=20, ha="right")
+    ax_emb.set_ylabel("Mean tokens per seed")
+    ax_emb.set_title("Embedding tokens (cache-aware)")
+    ax_emb.grid(axis="y", alpha=0.3)
+
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
