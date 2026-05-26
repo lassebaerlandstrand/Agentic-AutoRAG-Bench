@@ -35,4 +35,4 @@ hold_out:
   judge_model: azure/o4-mini
   concurrency: 10
 
-output_root: ./results_paper_multihop_rag
+output_root: ./results_multihop_rag

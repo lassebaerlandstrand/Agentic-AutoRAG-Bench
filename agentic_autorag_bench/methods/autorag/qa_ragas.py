@@ -100,6 +100,7 @@ _BOOTSTRAP_SCRIPT = textwrap.dedent(
         make_concise_gen_gt,
     )
     from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai_like import OpenAILike
 
     corpus_path = Path(sys.argv[1])
     out_path = Path(sys.argv[2])
@@ -111,9 +112,13 @@ _BOOTSTRAP_SCRIPT = textwrap.dedent(
             "(e.g. 'azure/gpt-4o-mini'); got " + repr(litellm_model)
         )
 
-    # Translate the bench's litellm id to a llama-index OpenAI instance. This
+    # Translate the bench's litellm id to a llama-index LLM instance. This
     # mirrors native_config._translate_llm: ``azure/<deployment>`` routes
-    # through Azure's OpenAI-compat v1 shim at ``<AZURE_API_BASE>/openai/v1``.
+    # through Azure's OpenAI-compat v1 shim at ``<AZURE_API_BASE>/openai/v1``;
+    # ``azure_ai/<deployment>`` (Azure AI Foundry / MaaS serverless models like
+    # DeepSeek-V3.2) routes through the OpenAI-compat ``/models`` endpoint at
+    # ``AZURE_AI_API_BASE`` using OpenAILike (the deployment names aren't in
+    # llama_index's OpenAI chat-model registry so plain OpenAI rejects them).
     provider, _, model_name = litellm_model.partition("/")
 
     # Azure/OpenAI reasoning models (o1/o3/o4-series) reject any temperature
@@ -140,6 +145,27 @@ _BOOTSTRAP_SCRIPT = textwrap.dedent(
             model=model_name,
             api_base=base.rstrip("/") + "/openai/v1",
             api_key=key,
+            **extra_kwargs,
+        )
+    elif provider == "azure_ai":
+        base = os.environ.get("AZURE_AI_API_BASE")
+        key = os.environ.get("AZURE_AI_API_KEY")
+        if not (base and key):
+            raise SystemExit(
+                "AZURE_AI_API_BASE and AZURE_AI_API_KEY must be set for the QA "
+                "bootstrap when AUTORAG_BOOTSTRAP_MODEL uses the azure_ai/ prefix."
+            )
+        # Azure AI Foundry's MaaS endpoint (``<resource>.services.ai.azure.com/models``)
+        # speaks OpenAI-compatible chat completions: the openai client POSTs to
+        # ``<base>/chat/completions``, and the Foundry deployment accepts the
+        # Bearer auth the SDK sends. OpenAILike (not OpenAI) is required because
+        # plain OpenAI hard-validates ``model`` against its chat-model registry
+        # and would reject ``DeepSeek-V3.2`` / ``mistral-large`` / etc.
+        llm = OpenAILike(
+            model=model_name,
+            api_base=base.rstrip("/"),
+            api_key=key,
+            is_chat_model=True,
             **extra_kwargs,
         )
     elif provider == "openai":

@@ -53,26 +53,29 @@ from agentic_autorag.engine.pipeline import (
     _DEFAULT_REFINE_PROMPT_TMPL,
     _DEFAULT_TREE_SUMMARIZE_PROMPT_TMPL,
 )
+from agentic_autorag.engine.pipeline import _MULTI_QUERY_PROMPT as FRAMEWORK_MULTI_QUERY_PROMPT
+from agentic_autorag.examiner.prompts import NAIVE_RAG_PROMPT, answer_format_hint
 
-MCQ_PROMPT_TEMPLATE = (
-    "Answer the following multiple-choice question by giving the text of the correct option.\n"
-    "\n"
-    "Context:\n"
-    "{retrieved_contents}\n"
-    "\n"
-    "{query}\n"
-    "\n"
-    "Answer with only the text of the correct option, nothing else."
-)
-
+# Mirror the framework's NAIVE_RAG_PROMPT so AutoRAG's internal rouge metric
+# optimises under the same prompt the bench's rescore uses for every method.
+# A diverging prompt would mean AutoRAG enumerates one objective (rouge over
+# its static prompt) then gets scored on another (judge-acc over the
+# framework's prompt with per-question hints), biasing its winner selection.
+#
+# Two substitutions:
+#   - ``{context}`` -> ``{retrieved_contents}``: AutoRAG's fstring module
+#     uses this variable name.
+#   - ``{question}`` -> ``{query}``: same.
+# The per-question ``{answer_format_hint}`` placeholder is replaced at
+# generation time with the framework's neutral fallback. AutoRAG's static
+# config can't inject per-question hints (no per-row prompt substitution),
+# so the fallback is the most-honest reproduction of the framework's prompt
+# inside AutoRAG's constraints. Disclosed in the paper's accounting note.
 FREE_FORM_PROMPT_TEMPLATE = (
-    "Use the following context to answer the question.\n"
-    "\n"
-    "Context:\n"
-    "{retrieved_contents}\n"
-    "\n"
-    "Question: {query}\n"
-    "Answer with only the answer itself: no explanation, no quotes."
+    NAIVE_RAG_PROMPT
+    .replace("{context}", "{retrieved_contents}")
+    .replace("{question}", "{query}")
+    .replace("{answer_format_hint}", answer_format_hint(None, None))
 )
 
 # Explicit reranker mapping. The previous heuristic (substring match) was
@@ -86,8 +89,11 @@ RERANKER_MODULE_MAP: dict[str, str] = {
     "mixedbread-ai/mxbai-rerank-xsmall-v1": "sentence_transformer_reranker",
 }
 
-# Internal hybrid_cc alpha sweep size — AutoRAG evaluates this many points
-# within ``weight_range`` per call. 21 (the AutoRAG default) gives AutoRAG ~21
+# Internal hybrid_cc alpha sweep size — historical knob; superseded by the
+# per-value module enumeration in ``_build_hybrid_modules`` which mirrors the
+# framework's discrete ``hybrid_alpha`` grid exactly. Kept here only because
+# tests still reference the constant. 21 (the AutoRAG default) would give
+# AutoRAG ~21
 # alpha-tuning evaluations per call while adaptive methods sample one alpha
 # per trial. We drop it to 5 to roughly match adaptive sampling density.
 HYBRID_CC_TEST_WEIGHT_SIZE = 5
@@ -373,34 +379,38 @@ def _build_prompt_maker_modules(search_space: SearchSpace, prompt_template: str)
     return modules
 
 
-def _build_hybrid_modules(search_space: SearchSpace, weight_lo: float, weight_hi: float) -> list[dict]:
+def _build_hybrid_modules(search_space: SearchSpace, alpha_values: list[float]) -> list[dict]:
     """Emit one AutoRAG hybrid_retrieval module per enumerated fusion strategy.
 
-    ``"alpha"`` → ``hybrid_cc`` with the hybrid_alpha range mapped to
-    AutoRAG's ``weight`` (same semantic-weight convention). ``"rrf"`` →
-    ``hybrid_rrf`` with ``weight=60`` (rrf_k) pinned.
+    ``"alpha"`` → one ``hybrid_cc`` module per value in ``alpha_values``,
+    pinned to that exact weight (``weight_range=(v, v)``, ``test_weight_size=1``).
+    This forces AutoRAG to enumerate exactly the framework's discrete
+    ``hybrid_alpha`` grid. The previous implementation passed a range plus
+    ``test_weight_size`` (5), which gave AutoRAG access to intermediate
+    values like ``0.25`` that the framework's search space disallows — a
+    silent fairness break.
+
+    ``"rrf"`` → ``hybrid_rrf`` with ``weight=60`` (rrf_k) pinned.
 
     ``normalize_method`` is pinned to a single value to match parity with
     the framework's lexical+fts fusion path (which has no equivalent knob).
-    ``test_weight_size`` is set to :data:`HYBRID_CC_TEST_WEIGHT_SIZE` so
-    AutoRAG samples alpha at roughly the same density adaptive methods do
-    (rather than the AutoRAG default of 21, which would give AutoRAG a
-    free hidden grid search per call).
     """
     modules: list[dict] = []
     for fusion in search_space.retrieval.bm25_vector_fusion:
         if fusion == "alpha":
-            modules.append(
-                {
-                    "module_type": "hybrid_cc",
-                    "normalize_method": HYBRID_CC_NORMALIZE_METHOD_PINNED,
-                    # AutoRAG's YAML loader re-tuplifies the string form
-                    # ``"(a, b)"`` (autorag.utils.util.convert_string_to_tuple_in_dict).
-                    # PyYAML can't dump Python tuples, so we emit the string.
-                    "weight_range": f"({weight_lo}, {weight_hi})",
-                    "test_weight_size": HYBRID_CC_TEST_WEIGHT_SIZE if weight_lo != weight_hi else 1,
-                }
-            )
+            for v in alpha_values:
+                vr = round(float(v), 4)
+                modules.append(
+                    {
+                        "module_type": "hybrid_cc",
+                        "normalize_method": HYBRID_CC_NORMALIZE_METHOD_PINNED,
+                        # AutoRAG's YAML loader re-tuplifies the string form
+                        # ``"(a, b)"`` (autorag.utils.util.convert_string_to_tuple_in_dict).
+                        # PyYAML can't dump Python tuples, so we emit the string.
+                        "weight_range": f"({vr}, {vr})",
+                        "test_weight_size": 1,
+                    }
+                )
         elif fusion == "rrf":
             # AutoRAG's HybridRRF.run_evaluator enumerates ``weight`` (its name
             # for rrf_k) across ``np.linspace(weight_range[0], weight_range[1],
@@ -447,9 +457,27 @@ def _build_query_expansion_modules(
                 if key in gen_mod:
                     gen_block[key] = gen_mod[key]
             if qe == "hyde":
+                # NOTE: AutoRAG's HyDE has an upstream source bug at
+                # nodes/queryexpansion/hyde.py:34 — ``(prompt if not bool(prompt)
+                # else hyde_prompt)`` inverts the falsy check, so passing a
+                # custom ``prompt`` is silently ignored and AutoRAG falls back
+                # to its default. We don't attempt to override it from here;
+                # the framework's HyDE prompt has been aligned to AutoRAG's
+                # exact default (see Agentic-AutoRAG/agentic_autorag/engine/
+                # pipeline.py::_HYDE_PROMPT) so both methods produce
+                # hypothetical documents under the same instruction.
                 out.append({"module_type": "hyde", "max_token": 64, **gen_block})
             elif qe == "multi_query":
-                out.append({"module_type": "multi_query_expansion", **gen_block})
+                # Pass the framework's MultiQuery prompt so AutoRAG uses the
+                # same expansion instruction the framework methods do. AutoRAG
+                # honors the custom ``prompt`` here (no source bug like HyDE)
+                # via ``prompt.format(query=x)`` in
+                # nodes/queryexpansion/multi_query_expansion.py.
+                out.append({
+                    "module_type": "multi_query_expansion",
+                    "prompt": FRAMEWORK_MULTI_QUERY_PROMPT,
+                    **gen_block,
+                })
             elif qe == "query_decompose":
                 # Passing ``prompt: ""`` forces AutoRAG into the
                 # ``bool(prompt) is False`` branch in
@@ -525,14 +553,12 @@ def generate_autorag_config(
     # (relevance = alpha*vector + (1-alpha)*fts), so the two map 1:1 with no
     # inversion.
     hybrid_alpha_values = _require_discrete_float(ss.retrieval.hybrid_alpha, "retrieval.hybrid_alpha")
-    semantic_lo = round(min(hybrid_alpha_values), 4)
-    semantic_hi = round(max(hybrid_alpha_values), 4)
     if IndexType.HYBRID_BM25_VECTOR in ss.retrieval.index_types:
-        weight_lo, weight_hi = semantic_lo, semantic_hi
+        hybrid_weights = sorted(round(float(v), 4) for v in hybrid_alpha_values)
     else:
         # vector_only only — pin hybrid_cc weight=1.0 so the fusion is fully
         # semantic and acts as a pass-through of the semantic retriever.
-        weight_lo, weight_hi = 1.0, 1.0
+        hybrid_weights = [1.0]
 
     # ``top_k`` is a node-level parameter in AutoRAG. ``Node.from_dict``
     # (autorag/schema/node.py:50) routes every non-strategy/non-modules key
@@ -571,7 +597,7 @@ def generate_autorag_config(
             "node_type": "hybrid_retrieval",
             "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
             "top_k": top_ks,
-            "modules": _build_hybrid_modules(ss, weight_lo, weight_hi),
+            "modules": _build_hybrid_modules(ss, hybrid_weights),
         },
     ]
 
@@ -598,12 +624,26 @@ def generate_autorag_config(
     # held-out evaluator afterwards, so AutoRAG's *internal* metric just needs
     # to be reasonable for ranking. We use ``rouge`` (token overlap with the
     # gold answer) — cheap, deterministic, no LLM judge cost.
+    # Both variants use the open-ended prompt template. ``our_exam`` is the
+    # framework's open-ended exam (despite the legacy variable name once
+    # implying multi-choice), so the prompt must not reference non-existent
+    # "options" — a MCQ-framed prompt against an open-ended exam makes the
+    # generator answer as if it were selecting from choices, severely biasing
+    # AutoRAG's score downward.
+    #
+    # Generator metric is rouge (token overlap with the gold answer). For
+    # factoid-extraction tasks like HotpotQA the gold answers are short
+    # canonical strings, and rouge correlates with judge accuracy as well or
+    # better than sem_score — semantic-similarity metrics can rank
+    # wrong-but-similar answers (e.g. "1996" vs gold "1995", or near-miss
+    # surnames) high because they embed near the gold. The bench's
+    # downstream judge-based rescore is the final scoring authority for
+    # cross-method comparison.
     if qa_variant == "our_exam":
         gen_metrics = ["rouge"]
-        prompt_template = MCQ_PROMPT_TEMPLATE
     else:
         gen_metrics = ["rouge", "bleu"]
-        prompt_template = FREE_FORM_PROMPT_TEMPLATE
+    prompt_template = FREE_FORM_PROMPT_TEMPLATE
 
     # ===== Assemble node_lines =====
     pre_retrieve_nodes = [
@@ -623,7 +663,18 @@ def generate_autorag_config(
     post_retrieve_nodes: list[dict] = [
         {
             "node_type": "passage_reranker",
-            "strategy": {"metrics": ["retrieval_f1", "retrieval_recall", "retrieval_precision"]},
+            # Order-sensitive metrics for the rerank node: NDCG, MAP, MRR.
+            # Set metrics (retrieval_f1 / recall / precision) would tie all
+            # rerankers because reranking only re-orders the input set —
+            # set membership is identical across rerankers, so the metric
+            # produces identical scores and AutoRAG's ``is_best`` selection
+            # collapses to first-row-wins (pass_reranker). NDCG/MAP/MRR
+            # reward putting gold docs earlier, distinguishing rerankers as
+            # they're designed to be. This matches AutoRAG's published
+            # rerank-node convention (retrieve nodes use set metrics, rerank
+            # nodes use order-sensitive ones — autorag/evaluation/metric/
+            # retrieval.py ships all three).
+            "strategy": {"metrics": ["retrieval_ndcg", "retrieval_map", "retrieval_mrr"]},
             # See top_k comment on retrieve_nodes above — same enumeration
             # rule applies: list-valued node-level top_k is swept by AutoRAG
             # via make_combinations. Pinning to ``reranker_top_ks[-1]`` (a
