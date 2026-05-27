@@ -1,33 +1,31 @@
-# Paper-scale framework project config — HotpotQA distractor, expanded space.
+# Pareto-experiment framework project config — UniDoc-Bench (healthcare PDFs).
 #
-# The active bench matrix is { agentic_score, agentic_cost, random, bayesian }.
-# The original Marker-Inc AutoRAG baseline was decoupled on 2026-05-27 (see
-# agentic_autorag_bench/_deprecated/README.md). With AutoRAG gone, the search
-# space is no longer restricted to its lowest common denominator — chunking
-# is sweepable, top_k / hybrid_alpha / reranker_top_n can be continuous,
-# query_expansion gains HyDE, and the generator pool is broad. Bench's
-# random + Bayesian samplers already dispatch on DiscreteValues vs
-# NumericRange, so the same project config powers all four methods.
+# Derived from hotpot_paper_project.yaml. The search space + agent block + most
+# of the examiner block are kept VERBATIM so the cost-aware optimizer searches
+# the same space it does on HotpotQA; only the corpus (real-world PDFs + page
+# images parsed by Docling), its description, the parser settings, the
+# neighborhood weights, and cost_aware differ. Driven by the bench's `pareto`
+# command (agentic_cost only); there is no held-out QA — trials are scored on
+# the optimizer's own self-generated exam.
 
 meta:
-  project_name: "hotpot-paper"
-  corpus_path: "./benchmark_data/hotpot_val_2000/corpus"
+  project_name: "unidoc-pareto"
+  corpus_path: "./benchmark_data/unidoc_healthcare/corpus"
   corpus_description: |
-    English Wikipedia. Documents are short paragraph snippets (~50–100
-    words each), one paragraph per page/entity rather than full articles.
-    Content is encyclopedic prose: entity-centric, factoid-dense, neutral
-    register.
-  output_dir: "./results_hotpot/.shared_cache"
+    Real-world enterprise healthcare documents from UniDoc-Bench: insurance
+    forms, claims and explanation-of-benefits statements, clinical notes, and
+    similar PDFs, plus some scanned page images. Multi-page layouts with
+    tables, figures, and mixed formatting; image pages are read via OCR.
+    Dense, domain-specific prose rather than short encyclopedic snippets.
+  output_dir: "./results_unidoc/.shared_cache"
   max_trials: 40
   cache_max_gb: 40.0
-  # Score-only mode for the paper's headline Table 1. Cost is still recorded
-  # for post-hoc analysis but is hidden from the agentic optimizer's prompts:
-  # no Pareto block, no polish stance, no knee anchor, no cheapest-in-band
-  # signal. Every method (random / Bayesian / agentic_score / agentic_cost)
-  # optimizes the same scalar objective so the headline number is
-  # apples-to-apples. The agentic_cost variant flips cost_aware=True at the
-  # orchestrator level for the Pareto matrix (see methods/agentic.py).
-  cost_aware: false
+  # Pareto experiment: flip cost_aware on so the agentic optimizer's prompts
+  # carry the Pareto block / knee anchor / cheapest-in-band signals. The
+  # `agentic_cost` bench method also forces this at the orchestrator level
+  # (methods/agentic.py), so it is set here only for clarity when running the
+  # project config directly.
+  cost_aware: true
 
 # Map short generator names below to the LiteLLM deployment the framework
 # should call. Two value shapes are supported: ``alias: "provider/deploy"``
@@ -46,26 +44,24 @@ agent:
   concurrency: 8
 
 examiner:
-  exam_size: 100
-  pair_overgeneration_factor: 1.7
+  exam_size: 30   # TEST RUN — restore to 100 for the real experiment
+  pair_overgeneration_factor: 1.5
   probe_selection: true
-  # Neighborhood-builder thresholds. The composer sees a neighborhood per
-  # call (anchor + same-doc siblings + cosine-similar cross-doc chunks).
-  # HotpotQA paragraphs are ~50-100 words each so the 18-chunk floor binds
-  # first (~1.8k words), giving the composer enough raw material for
-  # 3-hop chains.
   neighborhood_min_chunks: 18
   neighborhood_min_words: 5000
-  # HotpotQA paragraphs are single-topic snippets, so same-document siblings
-  # are sparse — cross-doc cosine neighbors carry essentially all the
-  # multi-hop signal. Weights are normalized internally.
-  neighborhood_same_doc_weight: 0.0
-  neighborhood_cross_doc_weight: 1.0
+  # UniDoc PDFs are long, structured, multi-section documents, so same-document
+  # siblings carry most of the answerable signal; cross-doc cosine neighbors are
+  # down-weighted relative to HotpotQA (which used 0.0 / 1.0 for standalone
+  # paragraph snippets). Weights are normalized internally.
+  neighborhood_same_doc_weight: 0.8
+  neighborhood_cross_doc_weight: 0.2
   min_doc_words: 20
 
 parsing:
-  ocr: false
-  table_structure: false
+  # UniDoc is real PDFs + scanned page images, so OCR and table-structure
+  # extraction are on (HotpotQA's pre-extracted markdown had both off).
+  ocr: true
+  table_structure: true
   near_duplicate_detection_enabled: true
   near_duplicate_threshold: 0.85
 
@@ -124,11 +120,10 @@ search_space:
       - "mixedbread-ai/mxbai-rerank-xsmall-v1"
     top_n: { min: 3, max: 10 }
 
-  # Wide generator pool, copied verbatim from the framework's
-  # ../Agentic-AutoRAG/configs/hotpot_qa.yaml. Some entries are aspirational
-  # (preview deployments, new Bedrock models); trials on an unreachable model
-  # will throw, consume their budget slot, and be marked failed. Accepted
-  # tradeoff — keeps the matrix maximally expressive.
+  # Wide generator pool, copied verbatim from hotpot_paper_project.yaml. Some
+  # entries are aspirational (preview deployments, new Bedrock models); trials
+  # on an unreachable model will throw, consume their budget slot, and be
+  # marked failed. Accepted tradeoff — keeps the matrix maximally expressive.
   generator:
     models:
       - "bedrock/global.amazon.nova-2-lite-v1:0"

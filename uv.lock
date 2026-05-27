@@ -102,6 +102,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "agentic-autorag" },
+    { name = "huggingface-hub" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "optuna" },
@@ -122,6 +123,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "agentic-autorag", editable = "../Agentic-AutoRAG" },
+    { name = "huggingface-hub", specifier = ">=0.20" },
     { name = "matplotlib", specifier = ">=3.10" },
     { name = "numpy" },
     { name = "optuna", specifier = ">=3.6,<5.0" },

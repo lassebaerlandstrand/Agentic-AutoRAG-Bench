@@ -17,6 +17,7 @@ dependencies = [
     "typer>=0.9",
     "numpy",
     "matplotlib>=3.10",
+    "huggingface-hub>=0.20",
 ]
 
 [project.scripts]

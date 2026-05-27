@@ -141,22 +141,27 @@ class MethodResult:
     @staticmethod
     def _row_judge(rows: list[dict]) -> np.ndarray:
         # Schema (BenchmarkResult.per_question -> QAResult): ``judge: int | None``
-        # where 1=correct, 0=incorrect, None=parse/timeout failure. The hold-out
-        # evaluator (FreeFormEvaluator) calls the judge for *every* row when
-        # judge_model is set — unlike the framework's trial-time evaluator which
-        # only calls the judge on EM=0 — so judge=None here means the judge call
-        # failed (timeout, parse error, content filter), not "EM already
-        # decided". Drop those rows from the denominator: return NaN so callers
-        # using np.nanmean treat them as missing rather than biased.
+        # where 1=correct, 0=wrong, -1=NO_ANSWER (the model abstained /
+        # "insufficient context"), None=judge call failed (timeout / parse
+        # error). The hold-out evaluator calls the judge for *every* row when
+        # judge_model is set.
+        #
+        # Abstention (-1) counts as INCORRECT (0.0), matching the optimizer's
+        # trial-time accuracy (examiner: correct / valid, abstention in the
+        # denominator but not the numerator) — so hold-out scores the same
+        # objective the search optimized. Dropping abstentions instead would
+        # inflate any config that games the judge by refusing to answer hard
+        # questions. Only None (a measurement failure, surfaced separately as
+        # n_judge_invalid) is dropped via NaN so np.nanmean skips it.
         out: list[float] = []
         for r in rows:
             v = r.get("judge")
-            if v == 1:
-                out.append(1.0)
-            elif v == 0:
-                out.append(0.0)
-            else:
+            if v is None:
                 out.append(np.nan)
+            elif v == 1:
+                out.append(1.0)
+            else:  # 0 (wrong) or -1 (abstention)
+                out.append(0.0)
         return np.array(out)
 
     def per_run_means(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

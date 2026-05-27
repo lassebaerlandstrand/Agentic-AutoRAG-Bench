@@ -117,6 +117,33 @@ def replay_holdout(
 
 
 @app.command()
+def pareto(
+    config: str = typer.Option(..., "--config", "-c", help="Path to a pareto YAML (e.g. configs/unidoc_pareto.yaml)"),
+    figure_only: bool = typer.Option(
+        False,
+        "--figure-only",
+        help="Skip the search; just re-render figures/pareto.png from an existing "
+             "results_*/agentic_cost/seed_N/ (history.jsonl + frontier.json). Useful "
+             "for tweaking the figure without re-running the optimizer.",
+    ),
+    resume: bool = typer.Option(
+        False,
+        "--resume",
+        help="Resume an interrupted agentic_cost search from its last completed trial.",
+    ),
+) -> None:
+    """Run agentic_cost's search on the UniDoc corpus and render a Syftr-style
+    cost-vs-accuracy Pareto figure of its trials.
+
+    Scores trials on the optimizer's own self-generated exam (no held-out QA).
+    Downloads the UniDoc corpus on first run if it isn't present yet.
+    """
+    from agentic_autorag_bench.pareto import pareto_cli
+
+    pareto_cli(config, figure_only=figure_only, resume=resume)
+
+
+@app.command()
 def analyze(
     results_dir: str = typer.Option("results_paper/", "--results-dir", help="Where the matrix run wrote outputs"),
     output: str = typer.Option(

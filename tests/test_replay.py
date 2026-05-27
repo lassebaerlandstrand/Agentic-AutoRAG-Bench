@@ -244,6 +244,48 @@ def test_aggregate_uses_mean_sd_across_replays() -> None:
     assert stats["agentic_score"]["n_runs_per_seed"] == [3]
 
 
+def test_aggregate_counts_abstention_as_incorrect() -> None:
+    """judge=-1 (NO_ANSWER / abstention) counts as wrong, not dropped.
+
+    A config that abstains on hard questions must not get its judge score
+    inflated by removing those questions from the denominator. 1 correct of
+    4 judged = 0.25, regardless of how many of the wrong ones were
+    abstentions vs. flat-wrong.
+    """
+    def _bm(judges: list[int]) -> dict:
+        return {
+            "per_question": [
+                {"id": f"q{i}", "em": 0.0, "f1": 0.0, "judge": j}
+                for i, j in enumerate(judges)
+            ],
+            "excluded_question_ids": [],
+        }
+    result = MethodResult(
+        method="bayesian", seed=1,
+        benchmarks=[_bm([1, -1, -1, 0])],
+        optimizer_meta={}, history=[],
+    )
+    _em, _f1, judge_runs = result.per_run_means()
+    assert abs(judge_runs[0] - 0.25) < 1e-9
+    stats = aggregate_by_method([result])
+    assert abs(stats["bayesian"]["judge"][0] - 0.25) < 1e-9
+
+
+def test_row_judge_drops_only_none_not_abstention() -> None:
+    """None (judge call failed) is dropped via NaN; -1 (abstention) is 0.0."""
+    rows = [
+        {"id": "q1", "judge": 1},
+        {"id": "q2", "judge": -1},
+        {"id": "q3", "judge": 0},
+        {"id": "q4", "judge": None},
+    ]
+    arr = MethodResult._row_judge(rows)
+    assert arr[0] == 1.0
+    assert arr[1] == 0.0  # abstention → wrong, not dropped
+    assert arr[2] == 0.0
+    assert np.isnan(arr[3])  # only judge-call failure is dropped
+
+
 def test_aggregate_falls_back_to_zero_width_for_n_1() -> None:
     """N=1 (no replays yet) yields lo=hi=mean so the chart draws a flat bar."""
     bm = {
