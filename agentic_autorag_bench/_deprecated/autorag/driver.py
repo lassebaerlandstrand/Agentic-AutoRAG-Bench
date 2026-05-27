@@ -17,12 +17,12 @@ from typing import Literal
 import yaml
 from agentic_autorag.orchestrator import Orchestrator
 
-from agentic_autorag_bench.methods.autorag.corpus_export import export_corpus_to_parquet
-from agentic_autorag_bench.methods.autorag.native_config import generate_autorag_config
-from agentic_autorag_bench.methods.autorag.qa_our_exam import export_open_exam_to_parquet
-from agentic_autorag_bench.methods.autorag.qa_prescreen import prescreen_qa_for_content_filter
-from agentic_autorag_bench.methods.autorag.qa_ragas import export_ragas_qa_via_subprocess
-from agentic_autorag_bench.methods.autorag.translator import translate_extracted_to_trial_config
+from .corpus_export import export_corpus_to_parquet
+from .native_config import generate_autorag_config
+from .qa_our_exam import export_open_exam_to_parquet
+from .qa_prescreen import prescreen_qa_for_content_filter
+from .qa_ragas import export_ragas_qa_via_subprocess
+from .translator import translate_extracted_to_trial_config
 from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult, TrialResult
 
 logger = logging.getLogger("agentic_autorag_bench.run")
@@ -36,9 +36,10 @@ def _find_extracted_sample(project_dir: Path) -> Path | None:
     return None
 
 
-# Convention: scripts/setup_autorag_venv.sh creates .autorag-venv at the bench
-# repo root. This driver lives at agentic_autorag_bench/methods/autorag/, so
-# the bench root is three parents up from this file's directory.
+# Convention: scripts/_deprecated/setup_autorag_venv.sh creates .autorag-venv
+# at the bench repo root. This driver lives at
+# agentic_autorag_bench/_deprecated/autorag/, so the bench root is three
+# parents up from this file's directory.
 _BENCH_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_AUTORAG_VENV_PYTHON = _BENCH_ROOT / ".autorag-venv" / "bin" / "python"
 

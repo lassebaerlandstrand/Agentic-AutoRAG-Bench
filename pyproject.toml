@@ -41,6 +41,12 @@ markers = [
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+# Frozen baseline code (Marker-Inc AutoRAG) kept on disk for resurrection
+# but exempt from style checks. See agentic_autorag_bench/_deprecated/README.md.
+extend-exclude = [
+    "agentic_autorag_bench/_deprecated",
+    "scripts/_deprecated",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "SIM"]

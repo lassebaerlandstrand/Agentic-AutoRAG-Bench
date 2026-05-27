@@ -18,7 +18,7 @@ matrix-level summary without re-running the matrix.
 Figure file names are stable across all three levels (``score_per_trial.png``,
 ``best_so_far.png``, ``holdout_metrics.png``, ``efficiency.png``,
 ``cost_breakdown.png``, ``cost_per_trial.png``) so a reader can navigate
-``results_paper/`` → ``results_paper/<method>/`` → ``results_paper/<method>/<seed>/``
+``<output_root>/`` → ``<output_root>/<method>/`` → ``<output_root>/<method>/<seed>/``
 and recognise the same view zoomed at each level.
 """
 
@@ -33,8 +33,9 @@ import numpy as np
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-# Stable color per method so all figures (across all three levels) share one
-# implicit legend.
+# Stable color per BASE method so all figures (across all three levels) share
+# one implicit legend. ``@k`` checkpoint variants inherit their parent's color
+# via ``_color_for``; the legend disambiguates them by name.
 METHOD_COLOR = {
     "agentic_score": "#1f77b4",
     "agentic_cost": "#17becf",
@@ -44,20 +45,80 @@ METHOD_COLOR = {
     "autorag_ragas": "#9467bd",
 }
 
-# Stable display order. Mirrors ``analyze.METHOD_ORDER``; the two must agree.
-METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"]
+# Stable display order for BASE methods. Mirrors ``analyze.METHOD_ORDER``;
+# the two must agree. ``@k`` checkpoint variants (e.g. ``agentic_score@10``)
+# are interleaved at render time by ``_discover_method_names`` so they
+# appear immediately after their parent base method, in ascending k order.
+METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian"]
 
-# Methods whose per-trial trajectory is meaningful. AutoRAG enumerates per-node
-# and re-scores a single winning config — its history.jsonl carries one entry,
-# so line plots over it would be misleading. On cross-method figures we still
-# surface the AutoRAG variants as dashed horizontal reference lines via
-# ``_autorag_references`` so the reader sees every method on every chart.
+# Methods whose per-trial trajectory is meaningful. ``@k`` checkpoint
+# variants inherit sequential-ness from their parent (they're a strict
+# prefix of the parent's history) via ``_is_sequential``. AutoRAG (frozen)
+# enumerates per-node and re-scores a single winning config — its
+# history.jsonl carries one entry, so line plots over it would be
+# misleading. On cross-method figures the AutoRAG variants still surface
+# as dashed horizontal reference lines via ``_autorag_references`` so the
+# reader sees every method on every chart.
 SEQUENTIAL = {"agentic_score", "agentic_cost", "random", "bayesian"}
 AUTORAG = {"autorag_our_exam", "autorag_ragas"}
 
 # Directory names that live next to method dirs under ``output_root`` but are
 # not method results. ``_seed_dirs`` and ``make_matrix_figures`` skip these.
-_NON_METHOD_DIRS = {"figures", ".shared_cache"}
+_NON_METHOD_DIRS = {"figures", ".shared_cache", "_figures_staging", "_figures_previous"}
+
+
+def _is_sequential(method: str) -> bool:
+    """Whether ``method`` has a per-trial trajectory worth plotting.
+
+    Treats ``<base>@<k>`` as sequential iff ``<base>`` is sequential.
+    """
+    return method in SEQUENTIAL or method.split("@", 1)[0] in SEQUENTIAL
+
+
+def _color_for(method: str) -> str:
+    """Color for ``method``. ``@k`` variants inherit the base method's color."""
+    if method in METHOD_COLOR:
+        return METHOD_COLOR[method]
+    base = method.split("@", 1)[0]
+    return METHOD_COLOR.get(base, "#888888")
+
+
+def _order_methods(method_names) -> list[str]:
+    """Sort an iterable of method names by ``METHOD_ORDER`` (base first, then
+    each base's ``@k`` variants by ascending k). Names not in ``METHOD_ORDER``
+    and not ``<base>@<k>`` of one come last, alphabetically."""
+    names = set(method_names)
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for base in METHOD_ORDER:
+        if base in names:
+            ordered.append(base)
+            seen.add(base)
+        prefix = f"{base}@"
+        ks: list[tuple[int, str]] = []
+        for n in names:
+            if n.startswith(prefix):
+                suffix = n[len(prefix):]
+                if suffix.isdigit():
+                    ks.append((int(suffix), n))
+        for _, n in sorted(ks):
+            ordered.append(n)
+            seen.add(n)
+    for n in sorted(names - seen):
+        ordered.append(n)
+    return ordered
+
+
+def _discover_method_names(output_root: Path) -> list[str]:
+    """All method dir names under ``output_root``, ordered per
+    ``_order_methods``. Empty if ``output_root`` doesn't exist."""
+    if not output_root.exists():
+        return []
+    on_disk = {
+        d.name for d in output_root.iterdir()
+        if d.is_dir() and d.name not in _NON_METHOD_DIRS
+    }
+    return _order_methods(on_disk)
 
 
 # ---------------------------------------------------------------- I/O helpers
@@ -307,7 +368,7 @@ def make_seed_figures(seed_dir: Path) -> None:
 
     method = seed_dir.parent.name
     seed_label = seed_dir.name
-    color = METHOD_COLOR.get(method, "#1f77b4")
+    color = _color_for(method)
 
     trial_nums = np.array([int(e["trial_number"]) for e in history])
     scores = np.array([_entry_score(e) for e in history])
@@ -426,7 +487,7 @@ def make_method_figures(method_dir: Path) -> None:
     figures_dir.mkdir(parents=True, exist_ok=True)
 
     method = method_dir.name
-    color = METHOD_COLOR.get(method, "#1f77b4")
+    color = _color_for(method)
 
     seed_runs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]] = []
     for sd in seed_dirs:
@@ -443,7 +504,7 @@ def make_method_figures(method_dir: Path) -> None:
     # trial" line collapses to one point at x=1 with matplotlib's auto-axis
     # zooming meaninglessly into [0.945, 1.055]. The cross-method matrix
     # figures still surface AutoRAG as a dashed reference.
-    if seed_runs and method in SEQUENTIAL:
+    if seed_runs and _is_sequential(method):
         _safely(
             f"method score_per_trial: {method_dir}",
             lambda: _method_score_per_trial(
@@ -591,7 +652,7 @@ def make_matrix_figures(
     explicit override when the user wants a separate paper-artifact directory.
 
     ``benchmark_pretty_name`` titles the Markdown table. When omitted, the
-    name is recovered from ``bench_metadata.json`` at ``output_root`` so the
+    name is recovered from ``run_metadata.json`` at ``output_root`` so the
     in-run hook doesn't have to plumb it explicitly.
 
     Delegates the bootstrap-CI stats (``aggregate_by_method``) and the
@@ -693,8 +754,8 @@ def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
     plt = _import_matplotlib()
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
     has_data = False
-    for method in METHOD_ORDER:
-        if method not in SEQUENTIAL:
+    for method in _discover_method_names(output_root):
+        if not _is_sequential(method):
             continue
         method_dir = output_root / method
         if not method_dir.is_dir():
@@ -706,7 +767,7 @@ def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
                 per_seed_scores.append(np.array([_entry_score(e) for e in hist]))
         if not per_seed_scores:
             continue
-        color = METHOD_COLOR.get(method)
+        color = _color_for(method)
         if len(per_seed_scores) >= 2:
             padded = _pad_nan(per_seed_scores)
             with np.errstate(invalid="ignore"):
@@ -746,8 +807,8 @@ def _matrix_best_so_far(out_path: Path, output_root: Path) -> None:
     plt = _import_matplotlib()
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
     has_data = False
-    for method in METHOD_ORDER:
-        if method not in SEQUENTIAL:
+    for method in _discover_method_names(output_root):
+        if not _is_sequential(method):
             continue
         method_dir = output_root / method
         if not method_dir.is_dir():
@@ -760,7 +821,7 @@ def _matrix_best_so_far(out_path: Path, output_root: Path) -> None:
                 per_seed_best.append(np.maximum.accumulate(scores))
         if not per_seed_best:
             continue
-        color = METHOD_COLOR.get(method)
+        color = _color_for(method)
         if len(per_seed_best) >= 2:
             padded = _pad_edge(per_seed_best)
             mean = padded.mean(axis=0)
@@ -806,7 +867,7 @@ def _matrix_score_vs_cost(out_path: Path, results: list, stats: dict[str, dict])
     bootstrap CI from per-question judge resampling.
     """
     plt = _import_matplotlib()
-    methods = [m for m in METHOD_ORDER if m in stats]
+    methods = _order_methods(stats.keys())
     if not methods:
         return
 
@@ -831,7 +892,7 @@ def _matrix_score_vs_cost(out_path: Path, results: list, stats: dict[str, dict])
         x_err = float(np.std(cpq_seeds)) if len(cpq_seeds) > 1 else 0.0
         y_mean, y_lo, y_hi = stats[m]["judge"]
         y_err = [[y_mean - y_lo], [y_hi - y_mean]]
-        color = METHOD_COLOR.get(m, "#888888")
+        color = _color_for(m)
         is_autorag = m in AUTORAG
         ax.errorbar(
             x_mean, y_mean,
@@ -868,16 +929,15 @@ def _matrix_cost_breakdown(out_path: Path, stats: dict[str, dict]) -> None:
 
     The plan's third layer (``exam_generation``) is deliberately omitted: under
     the bench's fairness rule, exam-gen cost is excluded from the bench tally
-    because only ``agentic_*`` and ``autorag_ragas`` create exams. Including
-    it would penalize those two methods for work the other methods don't do.
-    Embedding tokens have no USD here (local execution); they appear on the
-    companion ``token_breakdown.png``.
+    because only ``agentic_*`` creates an exam. Including it would penalize
+    that method for work the others don't do. Embedding tokens have no USD
+    here (local execution); they appear on the companion ``token_breakdown.png``.
 
     Bars annotated with the totals so a $0 stack (e.g. agentic with an
     unpriced examiner/optimizer model) is still readable.
     """
     plt = _import_matplotlib()
-    methods = [m for m in METHOD_ORDER if m in stats]
+    methods = _order_methods(stats.keys())
     if not methods:
         return
     reasoning = np.array([stats[m]["optimizer_usd_mean"] for m in methods])
@@ -913,7 +973,7 @@ def _matrix_token_breakdown(out_path: Path, stats: dict[str, dict]) -> None:
     seed) rule from the framework's cost ledger).
     """
     plt = _import_matplotlib()
-    methods = [m for m in METHOD_ORDER if m in stats]
+    methods = _order_methods(stats.keys())
     if not methods:
         return
     prompt = np.array([stats[m]["prompt_tokens_mean"] for m in methods])
