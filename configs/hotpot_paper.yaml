@@ -40,7 +40,7 @@ benchmark:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 500
+  limit: 300
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 

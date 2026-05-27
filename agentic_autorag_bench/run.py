@@ -439,17 +439,19 @@ def _build_optimizer(
     bench: BenchConfig,
     output_dir: Path,
     debug_prompts: bool = False,
+    resume: bool = False,
 ):
     if name == "random":
-        return RandomSearch(project=project)
+        return RandomSearch(project=project, storage_dir=output_dir, resume=resume)
     if name == "bayesian":
-        return BayesianSearch(project=project, storage_dir=output_dir)
+        return BayesianSearch(project=project, storage_dir=output_dir, resume=resume)
     if name in {"agentic_score", "agentic_cost"}:
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
             debug_prompts=debug_prompts,
+            resume=resume,
         )
     raise ValueError(f"Unknown method {name!r}")
 
@@ -527,6 +529,49 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
     return evaluator
 
 
+def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> None:
+    """Mark every embedding fingerprint already paid for by this (method,
+    seed)'s prior trials as seen on the shared orchestrator.
+
+    Used on ``--resume`` for shared-evaluator methods (random / bayesian).
+    Without this, the first post-resume encounter of an embedder that the
+    prior run already credited to ``embedding_build`` would charge it a
+    second time, breaking the bench's "first use per (method, seed) only"
+    accounting rule. We walk this method's own ``history.jsonl`` (the
+    canonical record of completed trials' configs) and re-derive each
+    config's ``emb_fp`` via the exact code path the live evaluator uses,
+    so the seeded set matches whatever the un-interrupted run would have
+    accumulated up to the same trial.
+    """
+    history_path = method_dir / "history.jsonl"
+    if not history_path.exists():
+        return
+    corpus_hash = shared._corpus_cache_key()
+    n_seeded = 0
+    for line in history_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            data = json.loads(line)
+            trial_config = TrialConfig(**data["config"])
+            emb_fp = trial_config.to_structural().embeddings_fingerprint(corpus_hash)
+        except Exception:
+            logger.warning(
+                "Could not re-derive emb_fp for a history line in %s; first "
+                "post-resume encounter of that embedder may be charged again.",
+                history_path, exc_info=True,
+            )
+            continue
+        shared._seen_emb_fps.add(emb_fp)
+        n_seeded += 1
+    if n_seeded:
+        logger.info(
+            "Seeded %d embedding fingerprint(s) into shared._seen_emb_fps from %s",
+            n_seeded, history_path,
+        )
+
+
 async def _run_optimizer_with_ledger(
     optimizer,
     *,
@@ -535,6 +580,7 @@ async def _run_optimizer_with_ledger(
     method_dir: Path,
     budget: Budget,
     seed: int | None,
+    resume: bool = False,
 ) -> SearchResult:
     """Run ``optimizer.search`` with a per-(method, seed) cost-ledger context.
 
@@ -548,6 +594,11 @@ async def _run_optimizer_with_ledger(
 
     ``agentic_*`` instantiates its own ``Orchestrator`` and manages the
     ledger lifecycle internally — bypass the wrapper there.
+
+    On ``resume``: ``_seen_emb_fps`` is repopulated from the prior trials'
+    configs (read straight from this method's ``history.jsonl``) so the
+    first post-resume encounter of an embedder we already paid for does
+    not double-charge the ``embedding_build`` bucket.
     """
     if method_name.startswith("agentic_"):
         async def _stub_evaluator(_config: TrialConfig) -> TrialResult:  # pragma: no cover
@@ -557,6 +608,8 @@ async def _run_optimizer_with_ledger(
     original_output_dir = shared.output_dir
     shared._seen_emb_fps.clear()
     shared._pending_cache_events.clear()
+    if resume:
+        _seed_seen_emb_fps_from_history(shared, method_dir)
     shared.output_dir = method_dir
     ledger = CostLedger()
     token = set_active_ledger(ledger)
@@ -579,18 +632,35 @@ async def _run_optimizer_with_ledger(
     return sr
 
 
+_RESUME_STATE_FILES = ("history.jsonl", "optuna.db", "rng_state.pkl")
+
+
+def _has_prior_trial_state(method_dir: Path) -> bool:
+    """A (method, seed) dir is resume-able if any of its per-trial state
+    artifacts already exist. Empty dirs (e.g. created on this run by the
+    main loop's ``method_dir.mkdir``) are treated as fresh starts so
+    ``--resume`` is a no-op for methods that haven't started yet.
+    """
+    return any((method_dir / name).exists() for name in _RESUME_STATE_FILES)
+
+
 async def run_matrix(
     config_path: str | Path,
     *,
     methods_override: list[str] | None = None,
     debug_prompts: bool = False,
     clean: bool = True,
+    resume: bool = False,
 ) -> None:
     # litellm.drop_params=True so provider-specific params (seed, temperature
     # on gpt-5) are silently dropped instead of erroring. The framework's
     # ``agentic-autorag optimize`` CLI calls this; the bench has its own entry
     # point and must call it explicitly to inherit identical LLM semantics.
     configure_litellm_runtime()
+    if clean and resume:
+        # CLI parses this case too, but keep the guard here so library
+        # callers can't accidentally request both.
+        raise ValueError("clean=True and resume=True are mutually exclusive")
     bench = BenchConfig.load(config_path)
     if methods_override is not None:
         unknown = set(methods_override) - ALL_METHODS
@@ -649,12 +719,22 @@ async def run_matrix(
                 logger.info("RUNNING %s | %s", method_name, seed_label)
                 logger.info("=" * 60)
 
+                # ``method_dir.mkdir(exist_ok=True)`` above just created the
+                # dir if it didn't exist; the partial-state check has to
+                # look for actual artifact files, not just dir existence.
+                resume_this_method = resume and _has_prior_trial_state(method_dir)
+                if resume and not resume_this_method:
+                    logger.info(
+                        "--resume passed but %s has no prior trial state; "
+                        "starting from trial 1", method_dir,
+                    )
                 optimizer = _build_optimizer(
                     method_name,
                     project=shared.config,
                     bench=bench,
                     output_dir=method_dir,
                     debug_prompts=debug_prompts,
+                    resume=resume_this_method,
                 )
                 try:
                     sr = await _run_optimizer_with_ledger(
@@ -664,6 +744,7 @@ async def run_matrix(
                         method_dir=method_dir,
                         budget=budget,
                         seed=seed,
+                        resume=resume_this_method,
                     )
                 except Exception:
                     logger.exception("%s seed=%s failed", method_name, seed)
@@ -742,6 +823,7 @@ def run_cli(
     methods: list[str] | None = None,
     debug_prompts: bool = False,
     clean: bool = True,
+    resume: bool = False,
 ) -> None:
     """Sync wrapper for the Typer CLI."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
@@ -757,4 +839,5 @@ def run_cli(
         methods_override=methods,
         debug_prompts=debug_prompts,
         clean=clean,
+        resume=resume,
     ))

@@ -36,6 +36,7 @@ class AgenticOptimizer:
     cost_aware: bool
     deterministic: bool = False
     debug_prompts: bool = False
+    resume: bool = False
 
     @property
     def name(self) -> str:
@@ -56,6 +57,7 @@ class AgenticOptimizer:
             output_dir_override=self.output_dir,
             seed=seed,
             debug_prompts=self.debug_prompts,
+            resume=self.resume,
         )
         orch.evaluator.quiet_per_question = True
         # NB: the framework enables ``litellm.drop_params=True`` so reasoning

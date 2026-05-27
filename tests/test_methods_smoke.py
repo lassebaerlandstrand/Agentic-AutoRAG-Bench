@@ -342,3 +342,166 @@ async def test_bayesian_reranker_top_n_lands_on_grid_and_respects_top_k(tmp_path
             f"reranker_top_n={h.config['reranker_top_n']} > top_k={h.config['top_k']} — "
             "dynamic-int-bounds branch should keep reranker_top_n within top_k"
         )
+
+
+@pytest.mark.asyncio
+async def test_random_resume_continues_from_last_trial(tmp_path: Path) -> None:
+    """Half a run with storage on disk; restart with ``resume=True`` and the
+    loop picks up at trial K+1 with full history merged."""
+    project = _tiny_project()
+
+    # First leg: 2 trials of a 4-trial budget; interrupt after 2 by capping
+    # the evaluator's available scores.
+    interrupting_evaluator = _make_evaluator([0.1, 0.2])
+    optimizer_a = RandomSearch(project=project, storage_dir=tmp_path)
+
+    # Use a smaller budget so the search returns cleanly after 2 trials.
+    sr_a = await optimizer_a.search(interrupting_evaluator, Budget(max_trials=2), seed=42)
+    assert len(sr_a.history) == 2
+    assert (tmp_path / "history.jsonl").exists()
+    assert (tmp_path / "rng_state.pkl").exists()
+    assert (tmp_path / "wall_clock.json").exists()
+
+    # Second leg: resume up to 4 trials. The fresh evaluator is "trial 3+ only".
+    resumed_evaluator = _make_evaluator([0.3, 0.4])
+    optimizer_b = RandomSearch(project=project, storage_dir=tmp_path, resume=True)
+    sr_b = await optimizer_b.search(resumed_evaluator, Budget(max_trials=4), seed=42)
+
+    # History is the merge: trials 1-2 from leg A, trials 3-4 from leg B.
+    assert len(sr_b.history) == 4
+    scores = [h.score for h in sr_b.history]
+    assert scores == [0.1, 0.2, 0.3, 0.4], scores
+    # trial_usd_total accumulates across legs.
+    assert sr_b.trial_usd_total == pytest.approx(4 * 0.001)
+    # Wall clock accumulates across legs.
+    assert sr_b.wall_clock_s > 0
+
+
+@pytest.mark.asyncio
+async def test_random_resume_same_rng_point_on_in_flight_interrupt(tmp_path: Path) -> None:
+    """The RNG state is saved AFTER a trial completes, so an interrupted trial
+    is fully discarded — restart re-draws the same config from the same RNG
+    point as the original would have."""
+    project = _tiny_project()
+
+    # Run all 5 trials in one shot to capture the "ground truth" history.
+    truth_optimizer = RandomSearch(project=project, storage_dir=tmp_path / "truth")
+    truth_history = (await truth_optimizer.search(_make_evaluator([0.5] * 5), Budget(max_trials=5), seed=99)).history
+
+    # Now simulate an interrupted+resumed run: 3 trials, then 2 more.
+    partial_dir = tmp_path / "partial"
+    part_a = await RandomSearch(project=project, storage_dir=partial_dir).search(
+        _make_evaluator([0.5] * 3), Budget(max_trials=3), seed=99,
+    )
+    assert len(part_a.history) == 3
+
+    part_b = await RandomSearch(project=project, storage_dir=partial_dir, resume=True).search(
+        _make_evaluator([0.5] * 2), Budget(max_trials=5), seed=99,
+    )
+    assert len(part_b.history) == 5
+
+    # Trial-by-trial configs from the interrupted+resumed run must equal those
+    # from the un-interrupted ground-truth — that's the resume contract.
+    assert [h.config for h in part_b.history] == [h.config for h in truth_history]
+
+
+@pytest.mark.asyncio
+async def test_bayesian_resume_continues_from_last_trial(tmp_path: Path) -> None:
+    project = _tiny_project()
+
+    sr_a = await BayesianSearch(project=project, storage_dir=tmp_path).search(
+        _make_evaluator([0.1, 0.2]), Budget(max_trials=2), seed=42,
+    )
+    assert len(sr_a.history) == 2
+    assert (tmp_path / "history.jsonl").exists()
+    assert (tmp_path / "optuna.db").exists()
+
+    sr_b = await BayesianSearch(project=project, storage_dir=tmp_path, resume=True).search(
+        _make_evaluator([0.3, 0.4]), Budget(max_trials=4), seed=42,
+    )
+    assert len(sr_b.history) == 4
+    scores = [h.score for h in sr_b.history]
+    assert scores == [0.1, 0.2, 0.3, 0.4], scores
+    assert sr_b.trial_usd_total == pytest.approx(4 * 0.001)
+
+
+@pytest.mark.asyncio
+async def test_bayesian_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path) -> None:
+    """Wiping a non-empty storage dir is the bench-level ``--clean`` flag's
+    job (``_clear_output_root_for``). The optimizer must NOT silently
+    delete prior optuna.db / history.jsonl when constructed with
+    ``resume=False`` — that would destroy user data on a partial-state
+    restart where the user explicitly chose ``--no-clean``.
+    """
+    project = _tiny_project()
+
+    await BayesianSearch(project=project, storage_dir=tmp_path).search(
+        _make_evaluator([0.1, 0.2]), Budget(max_trials=2), seed=42,
+    )
+    assert (tmp_path / "history.jsonl").exists()
+    assert (tmp_path / "optuna.db").exists()
+
+    # Construct a fresh BayesianSearch (resume=False) and confirm prior
+    # files are still on disk. We don't run search again — that would
+    # exercise the buggy ``--no-clean`` semantic (loop runs from 1, sqlite
+    # still has prior trials), which is out of scope for this test.
+    BayesianSearch(project=project, storage_dir=tmp_path)
+    assert (tmp_path / "history.jsonl").exists()
+    assert (tmp_path / "optuna.db").exists()
+
+
+@pytest.mark.asyncio
+async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) -> None:
+    """A run started with a pre-resume version of the bench writes
+    ``optuna.db`` + ``trial_cost_ledger.jsonl`` per trial but NOT
+    ``history.jsonl`` (that was end-of-method-only). On ``--resume``, we
+    reconstruct the missing history.jsonl from those two files so the
+    user's prior work isn't lost."""
+    project = _tiny_project()
+
+    # Run 2 trials normally to populate optuna.db + history.jsonl.
+    await BayesianSearch(project=project, storage_dir=tmp_path).search(
+        _make_evaluator([0.4, 0.5]), Budget(max_trials=2), seed=42,
+    )
+
+    # Simulate the pre-resume layout: history.jsonl was never written.
+    # ``trial_cost_ledger.jsonl`` would also not have been written by the
+    # bare optimizer (it's written by the bench's _make_metered_evaluator
+    # wrapper); synthesize a minimal one so the reconstruction can sum
+    # eval_usd. Wall-clock file likewise didn't exist pre-resume.
+    history_path = tmp_path / "history.jsonl"
+    history_path.unlink()
+    (tmp_path / "wall_clock.json").unlink()
+    bucket = {
+        "rag_eval": {
+            "usd": 0.001, "prompt_tokens": 100, "completion_tokens": 10,
+            "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+            "embedding_input_tokens": 0, "n_calls": 1,
+        }
+    }
+    import json as _json
+    (tmp_path / "trial_cost_ledger.jsonl").write_text(
+        _json.dumps({"trial_number": 1, "buckets": bucket}) + "\n"
+        + _json.dumps({"trial_number": 2, "buckets": bucket}) + "\n",
+        encoding="utf-8",
+    )
+    assert (tmp_path / "optuna.db").exists()
+    assert not history_path.exists()
+
+    # Resume: self-heal kicks in, reconstructs history.jsonl, continues to 4.
+    sr = await BayesianSearch(project=project, storage_dir=tmp_path, resume=True).search(
+        _make_evaluator([0.6, 0.7]), Budget(max_trials=4), seed=42,
+    )
+    assert len(sr.history) == 4
+    # First two scores came from optuna.db's stored values.
+    assert sr.history[0].score == 0.4
+    assert sr.history[1].score == 0.5
+    # New trials run as normal.
+    assert sr.history[2].score == 0.6
+    assert sr.history[3].score == 0.7
+    # Reconstructed configs are non-empty (sample_optuna replay worked).
+    assert sr.history[0].config["embedding_model"] == "sentence-transformers/all-MiniLM-L6-v2"
+    # Cost from the synthesized ledger flows through.
+    assert sr.history[0].eval_usd == pytest.approx(0.001)
+    # The self-heal also persisted history.jsonl on disk.
+    assert history_path.exists()

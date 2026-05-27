@@ -43,11 +43,11 @@ agent:
   judge_model: "azure_ai/DeepSeek-V3.2"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
-  concurrency: 10
+  concurrency: 8
 
 examiner:
   exam_size: 100
-  pair_overgeneration_factor: 1.5
+  pair_overgeneration_factor: 1.7
   probe_selection: true
   # Neighborhood-builder thresholds. The composer sees a neighborhood per
   # call (anchor + same-doc siblings + cosine-similar cross-doc chunks).
@@ -156,7 +156,7 @@ search_space:
       - "bedrock/google.gemma-3-27b-it"
       - "bedrock/moonshotai.kimi-k2.5"
       - "bedrock/zai.glm-4.7-flash"
-      - "bedrock/zai.glm-4.7"
+      # - "bedrock/zai.glm-4.7"
       - "bedrock/us.meta.llama4-scout-17b-instruct-v1:0"
       - "bedrock/us.amazon.nova-lite-v1:0"
       - "bedrock/minimax.minimax-m2"
