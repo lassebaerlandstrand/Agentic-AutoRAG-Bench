@@ -15,8 +15,6 @@ methods:
   - bayesian
   - agentic_score   # cost_aware=False (highest-score)
   - agentic_cost    # cost_aware=True  (Pareto-aware)
-  - autorag_our_exam  # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
-  - autorag_ragas     # same venv
 
 seeds: [1]
 

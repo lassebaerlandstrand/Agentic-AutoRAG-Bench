@@ -38,7 +38,33 @@ CI_ALPHA = 0.05
 # Stable display order shared by the LaTeX, Markdown, and figure writers so the
 # paper's narrative ("agentic vs. random/bayesian vs. AutoRAG") reads the same
 # everywhere.
-METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian", "autorag_our_exam", "autorag_ragas"]
+METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian"]
+
+
+def _order_methods_for_analyze(method_names) -> list[str]:
+    """Mirrors ``plots._order_methods``: keeps base methods in declared order
+    and groups each base's ``@k`` checkpoint variants immediately after it,
+    sorted by ascending k. Names outside this scheme come last alphabetically."""
+    names = set(method_names)
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for base in METHOD_ORDER:
+        if base in names:
+            ordered.append(base)
+            seen.add(base)
+        prefix = f"{base}@"
+        ks: list[tuple[int, str]] = []
+        for n in names:
+            if n.startswith(prefix):
+                suffix = n[len(prefix):]
+                if suffix.isdigit():
+                    ks.append((int(suffix), n))
+        for _, n in sorted(ks):
+            ordered.append(n)
+            seen.add(n)
+    for n in sorted(names - seen):
+        ordered.append(n)
+    return ordered
 
 # Display name per benchmark adapter key. Used in the Markdown table title so
 # the paper-ready file reads with the canonical dataset+variant string, not the
@@ -53,9 +79,8 @@ BENCHMARK_PRETTY_NAMES = {
 def read_benchmark_pretty_name(results_dir: Path) -> str:
     """Resolve the benchmark's display name from ``bench_metadata.json``.
 
-    Returns the canonical name when ``run.py`` wrote a sidecar metadata file
-    (every run since multi-benchmark support landed); falls back to ``"Benchmark"``
-    for older trees that predate it.
+    Returns the canonical name when ``run.py`` wrote the sidecar metadata
+    file; falls back to ``"Benchmark"`` for trees that lack it.
     """
     meta_path = Path(results_dir) / "bench_metadata.json"
     if not meta_path.exists():
@@ -69,7 +94,7 @@ def read_benchmark_pretty_name(results_dir: Path) -> str:
 
 
 def _ordered_methods(stats: dict[str, dict]) -> list[str]:
-    return [m for m in METHOD_ORDER if m in stats]
+    return _order_methods_for_analyze(stats.keys())
 
 
 @dataclass
@@ -260,9 +285,7 @@ def write_markdown_table(
     """Per-method results as a Markdown pipe-table."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rows: list[str] = []
-    for m in METHOD_ORDER:
-        if m not in stats:
-            continue
+    for m in _order_methods_for_analyze(stats.keys()):
         s = stats[m]
         em_m, em_lo, em_hi = s["em"]
         f1_m, f1_lo, f1_hi = s["f1"]

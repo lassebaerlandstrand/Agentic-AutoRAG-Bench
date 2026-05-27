@@ -1,4 +1,13 @@
-# Paper-scale framework project config.
+# Paper-scale framework project config — HotpotQA distractor, expanded space.
+#
+# The active bench matrix is { agentic_score, agentic_cost, random, bayesian }.
+# The original Marker-Inc AutoRAG baseline was decoupled on 2026-05-27 (see
+# agentic_autorag_bench/_deprecated/README.md). With AutoRAG gone, the search
+# space is no longer restricted to its lowest common denominator — chunking
+# is sweepable, top_k / hybrid_alpha / reranker_top_n can be continuous,
+# query_expansion gains HyDE, and the generator pool is broad. Bench's
+# random + Bayesian samplers already dispatch on DiscreteValues vs
+# NumericRange, so the same project config powers all four methods.
 
 meta:
   project_name: "hotpot-paper"
@@ -9,15 +18,24 @@ meta:
     Content is encyclopedic prose: entity-centric, factoid-dense, neutral
     register.
   output_dir: "./results_hotpot/.shared_cache"
-  max_trials: 20
-  cache_max_gb: 20.0
+  max_trials: 40
+  cache_max_gb: 40.0
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
   # for post-hoc analysis but is hidden from the agentic optimizer's prompts:
   # no Pareto block, no polish stance, no knee anchor, no cheapest-in-band
-  # signal. Every method (random / Bayesian / agentic / AutoRAG) optimizes
-  # the same scalar objective so the headline number is apples-to-apples.
-  # A separate Pareto matrix config will set this to true once written.
+  # signal. Every method (random / Bayesian / agentic_score / agentic_cost)
+  # optimizes the same scalar objective so the headline number is
+  # apples-to-apples. The agentic_cost variant flips cost_aware=True at the
+  # orchestrator level for the Pareto matrix (see methods/agentic.py).
   cost_aware: false
+
+# Map short generator names below to the LiteLLM deployment the framework
+# should call. Two value shapes are supported: ``alias: "provider/deploy"``
+# (simple), or an extended dict ``{model, api_base, api_key, api_version}``.
+# Edit only the deployment names on the right to match your Azure tenant.
+model_aliases:
+  azure/gpt-5-nano: azure/gpt-5-nano-1
+  azure/gpt-5-mini: azure/gpt-5-mini-1
 
 agent:
   examiner_model: "azure_ai/DeepSeek-V3.2"
@@ -28,16 +46,15 @@ agent:
   concurrency: 10
 
 examiner:
-  exam_size: 80
-  pair_overgeneration_factor: 1.6
+  exam_size: 100
+  pair_overgeneration_factor: 1.5
   probe_selection: true
   # Neighborhood-builder thresholds. The composer sees a neighborhood per
-  # call (anchor + same-doc siblings + cosine-similar cross-doc chunks). The
-  # neighborhood grows until chunks >= min_chunks OR words >= min_words.
-  # HotpotQA paragraphs are ~50-100 words each, so the 20-chunk floor binds
-  # first (~2.0k words) and gives the composer enough raw material for
+  # call (anchor + same-doc siblings + cosine-similar cross-doc chunks).
+  # HotpotQA paragraphs are ~50-100 words each so the 18-chunk floor binds
+  # first (~1.8k words), giving the composer enough raw material for
   # 3-hop chains.
-  neighborhood_min_chunks: 20
+  neighborhood_min_chunks: 18
   neighborhood_min_words: 5000
   # HotpotQA paragraphs are single-topic snippets, so same-document siblings
   # are sparse — cross-doc cosine neighbors carry essentially all the
@@ -53,35 +70,49 @@ parsing:
   near_duplicate_threshold: 0.85
 
 search_space:
+  # Chunking enters the chunks-fingerprint cache key, so both numeric dims
+  # are DiscreteValues — a continuous range would blow up the on-disk
+  # chunking cache (one entry per unique integer pair). Strategy is a small
+  # categorical; ``recursive`` and ``fixed`` are the two AutoRAG-historical
+  # baselines and both survive the schema cleanup.
   chunking:
-    # Frozen across all 6 methods. AutoRAG v0.3's ``chunk`` phase is decoupled
-    # from ``evaluate`` — sweeping chunk_size/overlap there would require
-    # running ``autorag chunk`` per (strategy, size, overlap) tuple.
-    strategies: ["recursive"]
-    chunk_token_size: { values: [512] }
-    chunk_token_overlap: { values: [0] }
+    strategies: ["recursive", "fixed"]
+    chunk_token_size: { values: [128, 256, 384, 512] }
+    chunk_token_overlap: { values: [0, 32, 48, 64] }
 
+  # 14 embedders spanning the MTEB-retrieval quality spectrum. Each unique
+  # embedder pays a one-time corpus-embed cost on first use (shared across
+  # methods and seeds via the corpus-keyed cache under .shared_cache/).
   embedding:
     models:
-      - "IEITYuan/Yuan-embedding-2.0-en"                    # top         (MTEB retrieval 0.707)
-      - "Qwen/Qwen3-Embedding-0.6B"                         # strong-mid  (0.618)
-      - "ibm-granite/granite-embedding-english-r2"          # mid         (0.564)
-      - "intfloat/e5-large-v2"                              # mid-low     (0.493)
-      - "BAAI/bge-small-en-v1.5"                            # weak        (small variant of bge-large)
-      - "sentence-transformers/all-MiniLM-L6-v2"            # weak        (0.430, max_tokens=256 -> chunks truncate at chunk=512)
-      - "sentence-transformers/paraphrase-MiniLM-L6-v2"     # floor       (paraphrase-tuned, not retrieval-tuned)
+      - "IEITYuan/Yuan-embedding-2.0-en"
+      - "Qwen/Qwen3-Embedding-0.6B"
+      - "ibm-granite/granite-embedding-english-r2"
+      - "ibm-granite/granite-embedding-small-english-r2"
+      - "intfloat/e5-large-v2"
+      - "intfloat/multilingual-e5-large-instruct"
+      - "BAAI/bge-large-en-v1.5"
+      - "BAAI/bge-small-en-v1.5"
+      - "BAAI/bge-m3"
+      - "Snowflake/snowflake-arctic-embed-l-v2.0"
+      - "mixedbread-ai/mxbai-embed-large-v1"
+      - "google/embeddinggemma-300m"
+      - "Alibaba-NLP/gte-multilingual-base"
+      - "sentence-transformers/all-MiniLM-L6-v2"
 
+  # top_k and hybrid_alpha are runtime-only (not in any cache key), so
+  # continuous ranges are safe and let Bayesian's TPE learn gradients.
+  # bm25_vector_fusion gates whether hybrid_alpha is actually consulted;
+  # the sampler skips it under rrf and uses the midpoint for serialization.
   retrieval:
-    index_types:
-      - "vector_only"
-      - "hybrid_bm25_vector"
-    top_k: { values: [3, 5, 10, 20] }
-    hybrid_alpha: { values: [0.0, 0.5, 1.0] }
+    index_types: ["vector_only", "hybrid_bm25_vector"]
+    top_k: { min: 3, max: 20 }
+    hybrid_alpha: { min: 0.0, max: 1.0 }
     bm25_vector_fusion: ["alpha", "rrf"]
-    long_context_reorder: [false]
+    long_context_reorder: [false, true]
 
   query_expansion:
-    strategies: ["none", "multi_query", "query_decompose"]
+    strategies: ["none", "hyde", "multi_query", "query_decompose"]
     models:
       - "azure/gpt-4o-mini"
 
@@ -91,17 +122,62 @@ search_space:
       - "BAAI/bge-reranker-v2-m3"
       - "cross-encoder/ms-marco-MiniLM-L-6-v2"
       - "Alibaba-NLP/gte-reranker-modernbert-base"
-    top_n: { values: [3, 5, 10] }
+      - "mixedbread-ai/mxbai-rerank-xsmall-v1"
+    top_n: { min: 3, max: 10 }
 
+  # Wide generator pool, copied verbatim from the framework's
+  # ../Agentic-AutoRAG/configs/hotpot_qa.yaml. Some entries are aspirational
+  # (preview deployments, new Bedrock models); trials on an unreachable model
+  # will throw, consume their budget slot, and be marked failed. Accepted
+  # tradeoff — keeps the matrix maximally expressive.
   generator:
     models:
-      - "bedrock/openai.gpt-oss-20b-1:0"                              # top         (screen 82.5%/40Q, bench 0.75, fast 271 tok/s)
-      - "vertex_ai/gemini-2.5-flash-lite"                             # runner-up   (screen 62.5%/40Q, stable, fast 253 tok/s)
-      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"                  # mid         (screen 65%/40Q, bench 0.58)
-      - "azure/gpt-4o-mini"                                           # mid         (screen 75%)
-      - "bedrock/mistral.ministral-3-14b-instruct"                    # mid-low     (Mistral, MMLU 0.693 / GPQA 0.572)
-      - "bedrock/us.amazon.nova-lite-v1:0"                            # weak        (screen 55%, MMLU 0.590 / GPQA 0.433)
-      - "bedrock/google.gemma-3-4b-it"                                # floor       (screen 45%, MMLU 0.417 / GPQA 0.291)
-    reasoning: false
+      - "bedrock/global.amazon.nova-2-lite-v1:0"
+      - "bedrock/openai.gpt-oss-20b-1:0"
+      - "bedrock/openai.gpt-oss-120b-1:0"
+      - "bedrock/qwen.qwen3-32b-v1:0"
+      - "bedrock/minimax.minimax-m2.1"
+      - "bedrock/minimax.minimax-m2.5"
+      - "bedrock/nvidia.nemotron-nano-3-30b"
+      - "bedrock/nvidia.nemotron-nano-12b-v2"
+      - "bedrock/nvidia.nemotron-super-3-120b"
+      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"
+      - "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0"
+      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+      - "bedrock/us.amazon.nova-micro-v1:0"
+      - "bedrock/mistral.magistral-small-2509"
+      - "bedrock/mistral.ministral-3-14b-instruct"
+      - "bedrock/mistral.ministral-3-8b-instruct"
+      - "bedrock/mistral.ministral-3-3b-instruct"
+      - "bedrock/mistral.mistral-large-3-675b-instruct"
+      - "bedrock/mistral.mistral-7b-instruct-v0:2"
+      - "bedrock/mistral.mixtral-8x7b-instruct-v0:1"
+      - "bedrock/qwen.qwen3-next-80b-a3b"
+      - "bedrock/google.gemma-3-4b-it"
+      - "bedrock/google.gemma-3-12b-it"
+      - "bedrock/google.gemma-3-27b-it"
+      - "bedrock/moonshotai.kimi-k2.5"
+      - "bedrock/zai.glm-4.7-flash"
+      - "bedrock/zai.glm-4.7"
+      - "bedrock/us.meta.llama4-scout-17b-instruct-v1:0"
+      - "bedrock/us.amazon.nova-lite-v1:0"
+      - "bedrock/minimax.minimax-m2"
+      - "azure/gpt-4o"
+      - "azure/gpt-4o-mini"
+      - "azure/o4-mini"
+      - "azure/gpt-5-mini"
+      - "azure/gpt-5-nano"
+      - "azure/gpt-5.4-mini"
+      - "azure/gpt-5.4-nano"
+      - "vertex_ai/gemini-3-flash-preview"
+      - "vertex_ai/gemini-3.1-flash-lite-preview"
+      - "vertex_ai/gemini-2.5-flash-lite"
+      - "vertex_ai/gemini-2.5-flash"
+    # Per-trial reasoning toggle. The sampler will pick reasoning=True only
+    # for trials whose generator supports it (via LiteLLM's
+    # supports_reasoning); other trials get reasoning=False without
+    # consuming a category slot.
+    reasoning: true
+    reasoning_effort: medium
 
   temperature: { min: 1.0, max: 1.0 }

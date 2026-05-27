@@ -19,7 +19,7 @@ import asyncio
 import json
 import logging
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -31,7 +31,6 @@ from agentic_autorag.orchestrator import Orchestrator
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
-from agentic_autorag_bench.methods.autorag.driver import AutoRAGOptimizer, resolve_autorag_python
 from agentic_autorag_bench.methods.bayesian import BayesianSearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.plots import (
@@ -39,41 +38,51 @@ from agentic_autorag_bench.plots import (
     make_method_figures,
     make_seed_figures,
 )
-from agentic_autorag_bench.types import Budget, SearchResult, TrialResult
+from agentic_autorag_bench.types import Budget, HistoryEntry, SearchResult, TrialResult
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
 STOCHASTIC_METHODS = {"random", "bayesian", "agentic_score", "agentic_cost"}
-DETERMINISTIC_METHODS = {"autorag_ragas", "autorag_our_exam"}
+# Kept (empty) so deterministic methods can be reintroduced without rewiring
+# the dispatch loop in ``run_matrix``. AutoRAG variants used to live here
+# before being moved to agentic_autorag_bench/_deprecated/autorag/.
+DETERMINISTIC_METHODS: set[str] = set()
 ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
 # Methods that share the bench's ``shared`` Orchestrator via ``evaluate_trial``.
 # These need the bench to install a per-(method, seed) cost ledger and reset
-# ``shared._seen_emb_fps`` between runs; agentic/autorag instantiate their own
-# Orchestrators so they manage their own ledger lifecycle.
+# ``shared._seen_emb_fps`` between runs; agentic instantiates its own
+# Orchestrator so it manages its own ledger lifecycle.
 _SHARED_EVALUATOR_METHODS = {"random", "bayesian"}
 
 
 def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
-    """Wipe per-run artifacts for the methods about to be run, plus the
-    cross-method ``figures/`` dir.
+    """Wipe per-run artifacts for the methods about to be re-run.
 
-    Scoped on purpose: partial runs (e.g. ``-m agentic``) should compose
-    with previous results for the other methods, so only the method dirs
-    we're about to overwrite get reset. ``figures/`` is always wiped
-    because ``make_matrix_figures`` regenerates it at the end of the run
-    from whatever combination of methods now lives in the tree (new
-    agentic + old random + old bayesian, say).
+    Scoped on purpose: partial runs (e.g. ``-m agentic_score``) should
+    compose with previous results for the other methods, so only the
+    method dirs we're about to overwrite get reset. Checkpoint variants
+    (``<method>@<k>/``) are wiped alongside their parent method, since
+    they're produced from the parent's history and must stay in sync.
 
-    ``.shared_cache/`` and any user files (notes, scratch dirs) are
-    untouched: they're not in the wipe set. Backups remain the user's
-    responsibility — the bench is last-run-wins for the targeted methods,
-    not for the whole tree.
+    ``figures/`` is deliberately NOT wiped here: matrix figures are
+    rendered to a staging dir and atomically swapped at end-of-run by
+    ``_swap_in_staged_figures``. That keeps the previous run's
+    cross-method figures readable for the entire duration of a new run.
+
+    ``.shared_cache/``, ``bench_metadata.json``, and any user files
+    (notes, scratch dirs) are untouched: they're not in the wipe set.
 
     Returns the names that were removed, for logging.
     """
     if not output_root.exists():
         return []
-    targets = [*methods, "figures"]
+    method_prefixes = tuple(f"{m}@" for m in methods)
+    checkpoint_dirs = [
+        child.name
+        for child in output_root.iterdir()
+        if child.is_dir() and child.name.startswith(method_prefixes)
+    ]
+    targets = [*methods, *checkpoint_dirs]
     removed: list[str] = []
     for name in targets:
         child = output_root / name
@@ -87,12 +96,16 @@ def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
     return removed
 
 
+_FIGURES_STAGING_NAME = "_figures_staging"
+
+
 def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
     """Persist the benchmark + run identity at ``output_root/bench_metadata.json``.
 
     Downstream readers (``analyze.py``, ``plots.py``) consult this file to
     surface the right benchmark name in tables and figure titles, so they
-    don't have to re-parse the source YAML config.
+    don't have to re-parse the source YAML config. Rewritten on every run
+    so it tracks the current spec.
     """
     output_root.mkdir(parents=True, exist_ok=True)
     meta = {
@@ -106,10 +119,40 @@ def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
         "methods": bench.methods,
         "seeds": bench.seeds,
         "max_trials": bench.max_trials,
+        "checkpoints": bench.checkpoints,
     }
     (output_root / "bench_metadata.json").write_text(
         json.dumps(meta, indent=2), encoding="utf-8"
     )
+
+
+def _swap_in_staged_figures(output_root: Path) -> None:
+    """Atomically replace ``output_root/figures/`` with the freshly rendered
+    contents of ``output_root/_figures_staging/``.
+
+    The staging dance keeps the previous run's matrix figures visible at
+    their normal path for the entire duration of the new run — only the
+    final swap touches ``figures/``. If matrix rendering fails mid-run,
+    the staging dir is left in place for inspection and the old
+    ``figures/`` is undisturbed.
+
+    POSIX guarantees atomicity on each rename; the brief window between
+    the two renames is the smallest achievable without backup-copy
+    overhead. The intermediate ``_figures_previous/`` directory is removed
+    once the new figures are in place.
+    """
+    staging = output_root / _FIGURES_STAGING_NAME
+    if not staging.is_dir():
+        return
+    final = output_root / "figures"
+    backup = output_root / "_figures_previous"
+    if final.exists():
+        if backup.exists():
+            shutil.rmtree(backup)
+        final.rename(backup)
+    staging.rename(final)
+    if backup.exists():
+        shutil.rmtree(backup, ignore_errors=True)
 
 
 @dataclass(frozen=True)
@@ -140,6 +183,15 @@ class BenchConfig:
     hold_out_judge_model: str | None
     hold_out_concurrency: int
     output_root: Path
+    # Per-method early-stopping checkpoints. After a method's full
+    # max_trials-budget search finishes, the orchestrator additionally
+    # evaluates the best config seen in ``history[:k]`` on the held-out QA
+    # for each declared k < max_trials, writing ``<method>@<k>/seed_<n>/``
+    # alongside the bare ``<method>/seed_<n>/`` directory. Lets the paper
+    # show "ours at trial k vs. baseline at trial max_trials" without
+    # running extra search trials. Unset methods get [] (no extra
+    # checkpoints — only the natural full-budget directory).
+    checkpoints: dict[str, list[int]] = field(default_factory=dict)
 
     @classmethod
     def load(cls, config_path: str | Path) -> BenchConfig:
@@ -160,6 +212,19 @@ class BenchConfig:
         unknown = set(raw["methods"]) - ALL_METHODS
         if unknown:
             raise ValueError(f"Unknown methods in {config_path}: {sorted(unknown)}")
+        max_trials = int(raw["budget"]["max_trials"])
+        raw_checkpoints = raw.get("checkpoints") or {}
+        unknown_methods = set(raw_checkpoints) - ALL_METHODS
+        if unknown_methods:
+            raise ValueError(
+                f"Unknown methods in checkpoints block of {config_path}: "
+                f"{sorted(unknown_methods)}"
+            )
+        checkpoints: dict[str, list[int]] = {}
+        for method, ks in raw_checkpoints.items():
+            cleaned = sorted({int(k) for k in ks if 0 < int(k) < max_trials})
+            if cleaned:
+                checkpoints[method] = cleaned
         b = raw["benchmark"]
         benchmark = BenchmarkSpec(
             name=b["name"],
@@ -172,12 +237,13 @@ class BenchConfig:
             project_config_path=project_path,
             methods=list(raw["methods"]),
             seeds=list(raw.get("seeds", [42])),
-            max_trials=int(raw["budget"]["max_trials"]),
+            max_trials=max_trials,
             benchmark=benchmark,
             hold_out_limit=raw["hold_out"].get("limit"),
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
             output_root=Path(raw["output_root"]).resolve(),
+            checkpoints=checkpoints,
         )
 
 
@@ -219,6 +285,82 @@ def _persist_search_result(sr: SearchResult, dest: Path) -> None:
     )
 
 
+async def _evaluate_checkpoints(
+    sr: SearchResult,
+    *,
+    method_name: str,
+    seed: int | None,
+    bench: BenchConfig,
+    benchmark: BenchmarkRunner,
+) -> None:
+    """For each declared checkpoint k < max_trials, write a sibling @k result
+    directory using the best config from ``history[:k]``.
+
+    Lets the paper compare ``method@10`` vs. ``method@20`` vs. ``method@40``
+    on the same held-out QA without paying for additional search trials —
+    the head of the existing trajectory is exactly what an early-stopped
+    run would have produced. The reduced ``SearchResult`` written into each
+    ``<method>@<k>/seed_<n>/`` reports cumulative-cost-at-k (trial side
+    summed exactly from the slice; optimizer side prorated by trial count
+    since we can't reconstruct it from history alone). A fresh held-out
+    eval runs per checkpoint — the framework's judge caches per
+    ``(config_hash, question_id)`` so identical configs across checkpoints
+    pay nothing extra.
+    """
+    ckpts = bench.checkpoints.get(method_name, [])
+    if not ckpts:
+        return
+    total = len(sr.history)
+    for k in ckpts:
+        if k >= total:
+            continue
+        sliced: list[HistoryEntry] = sr.history[:k]
+        if not sliced:
+            continue
+        best = max(sliced, key=lambda h: h.score)
+
+        ck_method = f"{method_name}@{k}"
+        seed_label = f"seed_{seed}" if seed is not None else "default"
+        ck_dir = bench.output_root / ck_method / seed_label
+
+        fraction = k / total
+        sr_at_k = SearchResult(
+            method=ck_method,
+            seed=sr.seed,
+            deterministic=sr.deterministic,
+            best_config=best.config,
+            history=sliced,
+            optimizer_usd=sr.optimizer_usd * fraction,
+            trial_usd_total=sum(h.eval_usd for h in sliced),
+            wall_clock_s=sr.wall_clock_s * fraction,
+            prompt_tokens=sum(h.prompt_tokens for h in sliced),
+            completion_tokens=sum(h.completion_tokens for h in sliced),
+            embedding_tokens=sum(h.embedding_tokens for h in sliced),
+            extras={
+                **dict(sr.extras),
+                "checkpoint_at": k,
+                "parent_method": method_name,
+                "parent_max_trials": total,
+            },
+        )
+        _persist_search_result(sr_at_k, ck_dir)
+
+        trial_config = TrialConfig(**best.config)
+        await benchmark.evaluate(
+            project_config_path=str(bench.project_config_path),
+            trial_config=trial_config,
+            output_path=ck_dir / "benchmark_results.json",
+            judge_model=bench.hold_out_judge_model,
+            limit=bench.hold_out_limit,
+            concurrency=bench.hold_out_concurrency,
+        )
+        make_seed_figures(ck_dir)
+        logger.info(
+            "  checkpoint %s seed=%s @%d done | best_score=%.3f | trial_usd=$%.4f",
+            method_name, seed, k, best.score, sr_at_k.trial_usd_total,
+        )
+
+
 def _build_optimizer(
     name: str,
     *,
@@ -237,13 +379,6 @@ def _build_optimizer(
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
             debug_prompts=debug_prompts,
-        )
-    if name in {"autorag_ragas", "autorag_our_exam"}:
-        variant = "ragas" if name == "autorag_ragas" else "our_exam"
-        return AutoRAGOptimizer(
-            config_path=str(bench.project_config_path),
-            output_dir=str(output_dir),
-            qa_variant=variant,
         )
     raise ValueError(f"Unknown method {name!r}")
 
@@ -382,20 +517,13 @@ async def run_matrix(
             )
         bench.methods = [m for m in bench.methods if m in set(methods_override)]
 
-    # Fail-fast if an AutoRAG method survived the -m filter but the venv set
-    # up by scripts/setup_autorag_venv.sh isn't resolvable. Without this, a
-    # 5-method run would spend hours on agentic/random/bayesian before the
-    # AutoRAG rows discover the missing interpreter at search() time.
-    if any(m.startswith("autorag") for m in bench.methods):
-        resolve_autorag_python()
-
     if clean:
         removed = _clear_output_root_for(bench.output_root, bench.methods)
         if removed:
             logger.info(
-                "Cleared %s under %s before run; other entries (including "
-                "method dirs not in this run) preserved. Pass --no-clean "
-                "to keep them.",
+                "Cleared %s under %s before run; figures/, .shared_cache/, "
+                "and method dirs not in this run are preserved. Pass "
+                "--no-clean to resume a partial run within a method.",
                 sorted(removed), bench.output_root,
             )
 
@@ -409,9 +537,7 @@ async def run_matrix(
     benchmark.prepare()
 
     # Persist benchmark identity at output_root so analyze/plots can surface
-    # the right name in tables and titles without needing to re-load the
-    # YAML config. Survives ``_clear_output_root_for`` (file, not in the
-    # targets list); rewritten on every run so it tracks the current spec.
+    # the right name in tables and figure titles without re-loading the YAML.
     _write_bench_metadata(bench.output_root, bench)
 
     # Shared orchestrator: provides the evaluator that every sequential method
@@ -482,10 +608,28 @@ async def run_matrix(
                 # its hold-out so the user can inspect a run mid-matrix.
                 make_seed_figures(method_dir)
 
+                # Synthesize @k early-stopping checkpoints from the same
+                # trajectory. Each writes its own sibling directory + held-out
+                # results + figures, so the cross-method matrix figures will
+                # surface them automatically.
+                await _evaluate_checkpoints(
+                    sr,
+                    method_name=method_name,
+                    seed=seed,
+                    bench=bench,
+                    benchmark=benchmark,
+                )
+
             # Per-method figures: aggregate every seed for this method now that
             # the inner loop has closed. Cross-method matrix figures wait for
-            # the outer loop.
+            # the outer loop. Checkpoint variants get the same treatment.
             make_method_figures(bench.output_root / method_name)
+            for k in bench.checkpoints.get(method_name, []):
+                if k >= bench.max_trials:
+                    continue
+                ck_dir = bench.output_root / f"{method_name}@{k}"
+                if ck_dir.is_dir():
+                    make_method_figures(ck_dir)
     finally:
         await shared.cleanup()
 
@@ -496,8 +640,13 @@ async def run_matrix(
 
     # Matrix figures see the union-exclusion-adjusted hold-out scores; calling
     # before apply_union_exclusion would bake stale per-question denominators
-    # into the table.
-    make_matrix_figures(bench.output_root)
+    # into the table. Rendered into a staging dir first; the previous run's
+    # figures/ stays readable until the swap at the very end.
+    staging_dir = bench.output_root / _FIGURES_STAGING_NAME
+    if staging_dir.exists():
+        shutil.rmtree(staging_dir)
+    make_matrix_figures(bench.output_root, figures_dir=staging_dir)
+    _swap_in_staged_figures(bench.output_root)
 
 
 def run_cli(

@@ -1,28 +1,36 @@
-# Paper-scale matrix config — score-only EMNLP Table 1 run.
-# (The companion Pareto matrix config will live alongside this one once
-# written; that file flips meta.cost_aware to true in its project YAML.)
+# Paper-scale matrix config — HotpotQA score-only EMNLP Table 1 run.
+# (A Pareto matrix config can live alongside this once written; it would
+# flip ``meta.cost_aware`` to true in the project YAML and drop
+# ``agentic_score`` in favour of ``agentic_cost``.)
 #
-# Currently dialled DOWN for iteration: single seed, 10 trials, 100-question
-# hold-out. Bump these before the camera-ready run:
-#   seeds: [1, 2, 3]      # so bootstrap CIs narrow enough to distinguish methods
-#   max_trials: 25        # trials/space ratio ≈ 0.03 over 864 discrete configs
-#   hold_out.limit: 500   # tighter CIs on the held-out HotpotQA-gold scoring
-#
-# Run a single method with: -m random  (or any subset present in `methods`).
+# Default iteration knobs assume the wide search space defined in
+# ``hotpot_paper_project.yaml`` (14 embedders × ~43 generators × continuous
+# top_k/hybrid_alpha × ...). Dial down inline overrides for dev runs.
 
 project_config: ./hotpot_paper_project.yaml
 
 methods:
   - agentic_score   # cost_aware=False (highest-score)
-  - autorag_our_exam  # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
+  - agentic_cost    # cost_aware=True (Pareto-aware)
   - random
   - bayesian
-  - autorag_ragas     # same venv
 
-seeds: [1]
+seeds: [1, 2, 3]
 
 budget:
-  max_trials: 20
+  max_trials: 40
+
+# Per-method early-stopping checkpoints: after a method's full
+# ``max_trials``-budget search finishes, also evaluate the best config seen
+# in ``history[:k]`` on the held-out QA. Writes a sibling
+# ``<method>@<k>/seed_<n>/`` directory per checkpoint. Lets the paper show
+# "ours at trial k" vs. "baseline at trial max_trials" without paying for
+# extra search trials. Random/Bayesian are not checkpointed (saves held-out
+# judge cost — the headline question is "how does ours catch up to
+# Bayesian/random when given fewer trials", not the inverse).
+checkpoints:
+  agentic_score: [10, 20]
+  agentic_cost:  [10, 20]
 
 benchmark:
   name: hotpot_qa

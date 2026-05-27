@@ -34,12 +34,14 @@ def run(
     clean: bool = typer.Option(
         True,
         "--clean/--no-clean",
-        help="Reset the per-method dirs about to be run (and the cross-method "
-             "figures/ dir) so their contents reflect the current run only. "
-             "Method dirs not in this run, .shared_cache/, and any user "
-             "files at output_root are preserved — running -m agentic does "
-             "not touch the random/ or bayesian/ dirs from a previous run. "
-             "Pass --no-clean to resume a partial run within a method.",
+        help="Reset the per-method dirs about to be run (and any matching "
+             "@k checkpoint dirs) so their contents reflect the current run "
+             "only. ``figures/`` is NOT wiped — matrix figures are staged "
+             "and atomically swapped at end-of-run so the previous figures "
+             "stay readable throughout. Method dirs not in this run, "
+             "``.shared_cache/``, and user files at output_root are also "
+             "preserved. Pass --no-clean to resume a partial run within a "
+             "method.",
     ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""

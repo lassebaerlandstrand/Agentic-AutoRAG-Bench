@@ -1,9 +1,8 @@
 """Fast smoke: every sequential method runs to completion under a mocked evaluator.
 
 Catches Optimizer-protocol drift (signature, return shape) without paying real
-LLM cost. The agentic and AutoRAG methods are exercised separately — they
-require a real Orchestrator and a subprocess respectively, neither of which is
-fast enough for the default test path.
+LLM cost. The agentic method is exercised separately — it requires a real
+Orchestrator, which is not fast enough for the default test path.
 """
 
 from __future__ import annotations
