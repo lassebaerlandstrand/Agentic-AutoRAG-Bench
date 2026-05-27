@@ -16,13 +16,13 @@ per-100-calls).
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 
+from agentic_autorag_bench._figstyle import apply_paper_style, display_label
 from agentic_autorag_bench.plots import _import_matplotlib, _read_history
 
 logger = logging.getLogger("agentic_autorag_bench.run")
@@ -204,38 +204,29 @@ def _join_clause(head: str, rest: list[str]) -> str:
 
 
 def _describe_config(config: dict) -> str:
-    """One-line Syftr-style description of a trial config for the figure legend."""
-    head = f"{_short_model(config.get('generator_llm', ''))} RAG"
+    """One-line description of a trial config for the figure legend.
+
+    Includes ``top_k`` (retrieval depth) and ``top_n`` (reranker depth) since
+    they're the levers the cost-aware optimizer most often trades against cost.
+    """
+    head = _short_model(config.get("generator_llm", ""))
     rest: list[str] = []
     if (ck := _CHUNKING_LABELS.get(config.get("chunking_strategy"))) is not None:
         rest.append(ck)
     if (idx := _INDEX_LABELS.get(config.get("index_type"))) is not None:
-        rest.append(idx)
+        top_k = config.get("top_k")
+        rest.append(f"{idx} (top_k={top_k})" if top_k is not None else idx)
     if (qe := _QUERY_EXPANSION_LABELS.get(config.get("query_expansion"))) is not None:
         rest.append(qe)
     reranker = config.get("reranker")
     if reranker and reranker != "none":
-        rest.append(f"{_short_model(reranker)} reranking")
+        top_n = config.get("reranker_top_n")
+        label = f"{_short_model(reranker)} reranking"
+        rest.append(f"{label} (top_n={top_n})" if top_n is not None else label)
     return _join_clause(head, rest)
 
 
 # ------------------------------------------------------------------- figure
-
-
-def _read_frontier_meta(seed_dir: Path) -> dict:
-    """Knee / recommended / max-score trial numbers from frontier.json (best-effort)."""
-    path = seed_dir / "frontier.json"
-    if not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return {
-        "knee": data.get("knee_trial"),
-        "recommended": data.get("recommended_trial"),
-        "max_score": data.get("max_score_trial"),
-    }
 
 
 @dataclass
@@ -268,25 +259,25 @@ def _load_trial_points(seed_dir: Path) -> list[_TrialPoint]:
 
 
 def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> None:
-    """Render the Syftr-style cost-vs-exam-accuracy Pareto figure.
+    """Render the cost-vs-exam-accuracy Pareto figure.
 
     Gray cloud of every trial; the optimizer's Pareto-optimal trials drawn as
     colored, numbered markers connected along the frontier and described in a
-    side legend; trial 1 marked as a baseline; knee and recommended trials
-    flagged. No-op (no file) when there is nothing plottable.
+    side legend. No-op (no file) when there is nothing plottable.
     """
     points = _load_trial_points(seed_dir)
     if not points:
         logger.warning("No plottable trials under %s; skipping pareto figure", seed_dir)
         return
 
-    meta = _read_frontier_meta(seed_dir)
-    knee_tn, rec_tn = meta.get("knee"), meta.get("recommended")
-
     frontier = sorted((p for p in points if p.is_pareto), key=lambda p: p.cost_per_query)
 
+    apply_paper_style()
     plt = _import_matplotlib()
-    fig, ax = plt.subplots(figsize=(13.0, 5.5))
+    # Narrow plotting axes (in line with the other scatter figures) so the
+    # narrow cost range isn't stretched across the page; the config legend
+    # sits to the right and the tight bbox grows the canvas to fit it.
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
 
     # Cloud of all trials.
     ax.scatter(
@@ -295,7 +286,7 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
         s=42, c="#d9d9d9", edgecolors="none", alpha=0.7, zorder=1, label="All trials",
     )
 
-    # Frontier staircase (sorted by cost ascending).
+    # Frontier line (sorted by cost ascending).
     if len(frontier) >= 2:
         ax.plot(
             [p.cost_per_query for p in frontier],
@@ -303,42 +294,19 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
             color="#7f7f7f", lw=1.1, zorder=2, label="Pareto frontier",
         )
 
-    # Baseline = the optimizer's first trial (echoes Syftr's baseline square).
-    baseline = next((p for p in points if p.trial_number == 1), None)
-    if baseline is not None:
-        ax.scatter(
-            baseline.cost_per_query, baseline.score * 100,
-            marker="s", s=120, facecolors="none", edgecolors="black", linewidths=1.2,
-            zorder=5, label=f"Baseline: {_describe_config(baseline.config)}",
-        )
-
     # Colored, numbered frontier points + side-legend descriptions.
     cmap_name = _FRONTIER_COLORMAP if len(frontier) <= 10 else _FRONTIER_COLORMAP_LARGE
     cmap = plt.get_cmap(cmap_name)
     for i, p in enumerate(frontier, start=1):
-        color = cmap((i - 1) % cmap.N)
-        tags = []
-        if rec_tn is not None and p.trial_number == rec_tn:
-            tags.append("recommended")
-        if knee_tn is not None and p.trial_number == knee_tn:
-            tags.append("knee")
-        suffix = f" [{', '.join(tags)}]" if tags else ""
         ax.scatter(
             p.cost_per_query, p.score * 100,
-            s=110, color=color, edgecolors="black", linewidths=0.6, zorder=4,
-            label=f"{i}. {_describe_config(p.config)}{suffix}",
+            s=110, color=cmap((i - 1) % cmap.N), edgecolors="black", linewidths=0.6, zorder=4,
+            label=f"{i}. {_describe_config(p.config)}",
         )
         ax.annotate(
             str(i), (p.cost_per_query, p.score * 100),
-            textcoords="offset points", xytext=(6, 5), fontsize=9, fontweight="bold", zorder=6,
+            textcoords="offset points", xytext=(6, 5), fontweight="bold", zorder=6,
         )
-        # Emphasise knee (diamond) / recommended (star) on top of the colored dot.
-        if rec_tn is not None and p.trial_number == rec_tn:
-            ax.scatter(p.cost_per_query, p.score * 100, s=320, marker="*",
-                       facecolors="none", edgecolors="black", linewidths=1.0, zorder=7)
-        if knee_tn is not None and p.trial_number == knee_tn:
-            ax.scatter(p.cost_per_query, p.score * 100, s=260, marker="D",
-                       facecolors="none", edgecolors="black", linewidths=1.0, zorder=7)
 
     ax.set_xscale("log")
     ax.set_xlabel("Cost per query (USD)")
@@ -346,7 +314,7 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     ax.set_ylim(0, 100)
     ax.grid(alpha=0.3, which="both")
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — agentic_cost cost-vs-accuracy Pareto (self-generated exam)")
+    ax.set_title(f"UniDoc{title_domain} — {display_label('agentic_cost')} cost vs. accuracy (self-generated exam)")
 
     ax.legend(
         loc="upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, fontsize=8,
