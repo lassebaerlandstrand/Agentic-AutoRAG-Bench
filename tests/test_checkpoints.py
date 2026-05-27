@@ -241,7 +241,89 @@ async def test_cumulative_cost_reflects_only_sliced_trials(tmp_path: Path) -> No
     meta5 = json.loads(
         (run_root / "agentic_score@5" / "seed_0" / "optimizer_meta.json").read_text()
     )
-    # 5 trials × $0.10/trial = $0.50 — exact match
+    # With no ledger present, the legacy fallback fires: trial_usd_total is
+    # ``sum(h.eval_usd for h in sliced)`` (5 × $0.10 = $0.50) and optimizer_usd
+    # is prorated 5/40 × $2.0 = $0.25.
     assert meta5["trial_usd_total"] == pytest.approx(0.5)
-    # Prorated optimizer cost: 5/40 * 2.0 = 0.25
     assert meta5["optimizer_usd"] == pytest.approx(0.25)
+
+
+async def test_checkpoint_costs_come_from_trial_cost_ledger(tmp_path: Path) -> None:
+    """When ``trial_cost_ledger.jsonl`` is present in the parent's seed dir,
+    @k optimizer_usd and trial_usd_total are reconstructed from the per-trial
+    bucket deltas instead of prorating/history-summing.
+
+    - ``optimizer_usd`` = sum of ``agent_proposal.usd`` over trials < k
+      (initial-propose + analyze-and-propose × (k-1), exactly what a real
+      @k early-stop would have paid; trial k's bucket holds the propose-for-
+      (k+1) call that wouldn't have fired).
+    - ``trial_usd_total`` = sum of ``rag_eval.usd + judge.usd`` over trials
+      ≤ k. Picks up per-trial judge spend that ``record.total_llm_cost_usd``
+      omits.
+    """
+    bench = _bench(tmp_path, {"agentic_score": [3]})
+    sr = _search_result(n_trials=10, peak_at=1)
+
+    parent_seed_dir = bench.output_root / "agentic_score" / "seed_0"
+    parent_seed_dir.mkdir(parents=True, exist_ok=True)
+    ledger_entries = [
+        {"trial_number": 1, "buckets": {
+            "agent_proposal": {"usd": 0.05, "prompt_tokens": 0, "completion_tokens": 0,
+                               "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                               "embedding_input_tokens": 0, "n_calls": 0},
+            "rag_eval": {"usd": 0.20, "prompt_tokens": 0, "completion_tokens": 0,
+                         "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                         "embedding_input_tokens": 0, "n_calls": 0},
+            "judge": {"usd": 0.01, "prompt_tokens": 0, "completion_tokens": 0,
+                      "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                      "embedding_input_tokens": 0, "n_calls": 0},
+        }},
+        {"trial_number": 2, "buckets": {
+            "agent_proposal": {"usd": 0.03, "prompt_tokens": 0, "completion_tokens": 0,
+                               "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                               "embedding_input_tokens": 0, "n_calls": 0},
+            "rag_eval": {"usd": 0.21, "prompt_tokens": 0, "completion_tokens": 0,
+                         "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                         "embedding_input_tokens": 0, "n_calls": 0},
+            "judge": {"usd": 0.02, "prompt_tokens": 0, "completion_tokens": 0,
+                      "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                      "embedding_input_tokens": 0, "n_calls": 0},
+        }},
+        {"trial_number": 3, "buckets": {
+            "agent_proposal": {"usd": 0.04, "prompt_tokens": 0, "completion_tokens": 0,
+                               "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                               "embedding_input_tokens": 0, "n_calls": 0},
+            "rag_eval": {"usd": 0.22, "prompt_tokens": 0, "completion_tokens": 0,
+                         "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                         "embedding_input_tokens": 0, "n_calls": 0},
+            "judge": {"usd": 0.03, "prompt_tokens": 0, "completion_tokens": 0,
+                      "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
+                      "embedding_input_tokens": 0, "n_calls": 0},
+        }},
+    ]
+    (parent_seed_dir / "trial_cost_ledger.jsonl").write_text(
+        "\n".join(json.dumps(e) for e in ledger_entries) + "\n",
+        encoding="utf-8",
+    )
+
+    benchmark = BenchmarkRunner(
+        name="hotpot_qa",
+        output_dir=tmp_path / "bench_data",
+        split="validation",
+        sample_size=10,
+        seed=42,
+    )
+    benchmark.evaluate = AsyncMock(return_value={})
+
+    await _evaluate_checkpoints(
+        sr, method_name="agentic_score", seed=0, bench=bench, benchmark=benchmark,
+    )
+
+    meta3 = json.loads(
+        (bench.output_root / "agentic_score@3" / "seed_0" / "optimizer_meta.json").read_text()
+    )
+    # optimizer_usd = agent_proposal over trials 1..2 = 0.05 + 0.03 = 0.08
+    assert meta3["optimizer_usd"] == pytest.approx(0.08)
+    # trial_usd_total = (rag_eval + judge) over trials 1..3
+    #                 = (0.20+0.01) + (0.21+0.02) + (0.22+0.03) = 0.69
+    assert meta3["trial_usd_total"] == pytest.approx(0.69)

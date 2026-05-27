@@ -10,7 +10,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from agentic_autorag.config.models import (
     ChunkingSearchSpace,
     DiscreteValues,
