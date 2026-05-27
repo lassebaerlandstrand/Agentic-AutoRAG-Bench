@@ -40,14 +40,36 @@ def run(
              "and atomically swapped at end-of-run so the previous figures "
              "stay readable throughout. Method dirs not in this run, "
              "``.shared_cache/``, and user files at output_root are also "
-             "preserved. Pass --no-clean to resume a partial run within a "
-             "method.",
+             "preserved. Pass --no-clean to keep prior files in place "
+             "without resuming trial state (use --resume for that).",
+    ),
+    resume: bool = typer.Option(
+        False,
+        "--resume",
+        help="Resume each selected method from its last successfully completed "
+             "trial. Per-(method, seed) directories with prior trial state on "
+             "disk continue from trial K+1; empty dirs start fresh. A trial "
+             "interrupted mid-evaluation is discarded and re-attempted. "
+             "Implies --no-clean (mutually exclusive with --clean). Typical "
+             "use after a Ctrl+C: `--methods bayesian --resume`.",
     ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
+    if resume and clean:
+        raise typer.BadParameter(
+            "--resume and --clean are mutually exclusive: --resume needs the "
+            "prior method dirs intact to continue from. Pass `--no-clean` "
+            "explicitly together with --resume, or drop --resume to start fresh."
+        )
     from agentic_autorag_bench.run import run_cli
 
-    run_cli(config, methods=methods or None, debug_prompts=debug_prompts, clean=clean)
+    run_cli(
+        config,
+        methods=methods or None,
+        debug_prompts=debug_prompts,
+        clean=clean,
+        resume=resume,
+    )
 
 
 @app.command()
