@@ -3,10 +3,17 @@
 Walks ``search_space`` in the YAML, plus ``agent.*_model`` and
 ``query_expansion.models``, and probes each model end-to-end:
 
-- LLMs: one ``litellm.completion`` call with ``Say 'hello'`` (max_tokens=8).
-- Embedders: load via ``sentence_transformers.SentenceTransformer`` and encode
-  one short string. Truncates a chunk-sized 600-token probe to surface the
-  ``max_seq_length`` mismatch that would silently bias retrieval scoring.
+- LLMs: delegated to the framework's ``verify_llm_endpoints`` so aliases
+  (e.g. ``azure/gpt-5-nano`` → ``azure/gpt-5-nano-1``) are resolved and the
+  reasoning-token budget (max_tokens=16, "reachability proof" fragments)
+  matches what the real run does. Cache is bypassed: this script writes to
+  a tempdir and forces a fresh ping for every model, every invocation.
+  Intended as a manual pre-run sweep — NOT a substitute for the
+  framework's normal 30-day-cached verification.
+- Embedders: load via ``sentence_transformers.SentenceTransformer`` and
+  encode one short string. Warns when ``max_seq_length`` is below
+  ``max(chunk_token_size.values)`` — the actual upper bound of the sweep,
+  not the minimum — to surface the classic MiniLM (max=256) gotcha.
 - Rerankers: load via ``sentence_transformers.CrossEncoder`` (works for
   bge-reranker-v2-m3 even though native_config routes it through
   ``flag_embedding_reranker`` — CrossEncoder is FlagEmbedding's fallback).
@@ -22,14 +29,17 @@ failure mid-batch doesn't hide successes that already ran.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import gc
-import os
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
+from agentic_autorag.litellm_runtime import install_model_aliases
+from agentic_autorag.optimizer.verify_models import verify_llm_endpoints
 from dotenv import load_dotenv
 
 
@@ -78,40 +88,31 @@ def _free_torch_memory() -> None:
         pass
 
 
-def _probe_llm(model: str, timeout: float = 30.0) -> Result:
-    """Send the cheapest possible chat completion that still works on
-    reasoning-capable models. ``max_tokens=128`` because gpt-oss / nemotron /
-    o-series spend tokens on hidden reasoning before emitting visible output;
-    at max_tokens=8 they truncate to empty content. 128 is enough headroom
-    for a "say hello" without bloating cost.
+async def _verify_llms(models: list[str]) -> list[Result]:
+    """Delegate to the framework's ``verify_llm_endpoints`` with caching
+    bypassed.
 
-    Reasoning-capable models (o-series, gpt-5-*) reject any ``temperature``
-    override on Azure, but ``drop_params=True`` (set below) strips the
-    unsupported arg silently.
+    Routing ``cache_path`` at a TemporaryDirectory means the framework's
+    real cache at ``~/.cache/agentic-autorag/llm_verification.json`` is
+    never read from nor written to. ``force=True`` additionally instructs
+    the verifier to ignore even the tempdir cache, so every model is
+    pinged fresh on every preflight invocation.
     """
-    import litellm
-
-    litellm.suppress_debug_info = True
-    litellm.drop_params = True
-
     t0 = time.perf_counter()
-    try:
-        kwargs: dict = {
-            "model": model,
-            "messages": [{"role": "user", "content": "Say 'hello'."}],
-            "max_tokens": 128,
-            "temperature": 1.0,
-            "timeout": timeout,
-        }
-        resp = litellm.completion(**kwargs)
-        text = (resp.choices[0].message.content or "").strip()
-        dt = time.perf_counter() - t0
-        if not text:
-            return Result(model, False, "empty response", dt)
-        return Result(model, True, f"reply={text[:40]!r}", dt)
-    except Exception as e:  # noqa: BLE001 — preflight wants the message, not the type
-        dt = time.perf_counter() - t0
-        return Result(model, False, f"{type(e).__name__}: {str(e)[:200]}", dt)
+    with tempfile.TemporaryDirectory() as td:
+        cache_path = Path(td) / "preflight_cache.json"
+        verification = await verify_llm_endpoints(
+            models, cache_path=cache_path, force=True
+        )
+    dt = time.perf_counter() - t0
+    # Per-model wall time isn't surfaced by the framework verifier (calls run
+    # concurrently); spread the batch wall-clock evenly across results so the
+    # summary's "seconds" column stays meaningful.
+    per_model = dt / max(len(verification), 1)
+    return [
+        Result(name=r.model, ok=r.ok, detail=(r.error or "ok"), seconds=per_model)
+        for r in verification
+    ]
 
 
 def _probe_embedder(model: str, chunk_size_tokens: int = 512) -> Result:
@@ -204,28 +205,43 @@ def main() -> int:
         print(f"WARN: env file {args.env} not found; relying on shell environment")
 
     cfg = _load_config(args.config)
-    chunk_size = int(
+
+    # Aliases must be installed before LLM verification — the framework's
+    # ``verify_llm_endpoints._ping`` calls ``resolve_model`` internally, which
+    # only works once ``install_model_aliases`` has populated the alias table.
+    aliases = cfg.get("model_aliases") or {}
+    if aliases:
+        install_model_aliases(aliases)
+        print(f"Installed {len(aliases)} model alias(es) from config")
+
+    # Probe embedders at the LARGEST chunk size in the sweep so an embedder
+    # whose ``max_seq_length`` would silently truncate at the upper end
+    # (MiniLM at 256 vs. a 512-token chunk) gets flagged. ``values[0]`` would
+    # only catch the case where every chunk size in the sweep exceeds the
+    # embedder's max, which is the lenient version of the same check.
+    chunk_sizes = (
         cfg.get("search_space", {})
         .get("chunking", {})
         .get("chunk_token_size", {})
-        .get("values", [512])[0]
+        .get("values", [512])
     )
+    chunk_size = int(max(chunk_sizes)) if chunk_sizes else 512
 
     buckets: list[Bucket] = []
 
     if "llms" not in args.skip:
         llms = _collect_llms(cfg)
-        b = Bucket(label="LLMs (litellm.completion: \"Say 'hello'\", max_tokens=128)")
-        for m in llms:
-            print(f"  probing LLM: {m} ...", flush=True)
-            b.results.append(_probe_llm(m))
+        print(f"  verifying {len(llms)} LLM(s) via framework verifier (cache bypassed) ...", flush=True)
+        results = asyncio.run(_verify_llms(llms))
+        b = Bucket(
+            label="LLMs (framework verify_llm_endpoints; aliases applied, cache bypassed)",
+            results=results,
+        )
         buckets.append(b)
 
     if "embedders" not in args.skip:
         embedders = list(cfg.get("search_space", {}).get("embedding", {}).get("models", []) or [])
-        b = Bucket(
-            label=f"Embedders (SentenceTransformer.encode; chunk_size={chunk_size} for truncation check)"
-        )
+        b = Bucket(label=f"Embedders (SentenceTransformer.encode; chunk_size={chunk_size} for truncation check)")
         for m in embedders:
             print(f"  probing embedder: {m} ...", flush=True)
             b.results.append(_probe_embedder(m, chunk_size_tokens=chunk_size))
