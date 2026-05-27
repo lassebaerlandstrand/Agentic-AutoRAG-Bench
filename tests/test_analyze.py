@@ -175,7 +175,9 @@ def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
     text = out_path.read_text(encoding="utf-8")
     assert "| Method |" in text
     assert "| agentic-score |" in text  # writer hyphenates snake_case for display
-    assert "[0.450, 0.550]" in text
+    # New format: ``mean ± SD`` across replays. The (0.5, 0.45, 0.55) triple
+    # in the stats dict reads as mean=0.5, SD=0.05.
+    assert "0.500 ± 0.050" in text
     # Headline multi-hop retrieval columns must be present.
     assert "Joint-R@2" in text
     assert "MRR-complete" in text
