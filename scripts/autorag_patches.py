@@ -24,6 +24,13 @@ Patches applied:
   (``bedrock_converse``) rather than replacing ``bedrock`` so the deprecated
   path keeps working for anyone with a pinned older config.
 
+- ``autorag.generator_models["vertex"]`` — register Google Vertex AI's
+  llama_index integration so generator entries prefixed ``vertex_ai/`` in the
+  bench config can be exercised by the AutoRAG baseline. AutoRAG 0.3 has no
+  built-in Vertex provider; native_config.py translates ``vertex_ai/<model>``
+  to ``(vertex, <model>)`` and passes ``project`` / ``location`` via env-var
+  substitution.
+
 - ``autorag.nodes.semanticretrieval.vectordb.vectordb_ingest_huggingface`` —
   release each SentenceTransformer's VRAM after its corpus ingest. Upstream
   AutoRAG loops through every vectordb in ``Evaluator.start_trial`` and
@@ -87,6 +94,16 @@ def _patch_register_bedrock_converse() -> None:
             return self.complete(prompt, formatted=formatted, **kwargs)
 
     autorag.generator_models["bedrock_converse"] = AutoRAGBedrockConverse
+
+
+def _patch_register_vertex() -> None:
+    try:
+        import autorag
+        from llama_index.llms.vertex import Vertex
+    except ImportError:
+        return  # AutoRAG or llama-index-llms-vertex not installed.
+
+    autorag.generator_models["vertex"] = Vertex
 
 
 def _patch_free_embedder_after_ingest() -> None:
@@ -254,5 +271,6 @@ def _patch_content_filter_row_tolerance() -> None:
 
 _patch_chroma_add_embedding()
 _patch_register_bedrock_converse()
+_patch_register_vertex()
 _patch_free_embedder_after_ingest()
 _patch_content_filter_row_tolerance()

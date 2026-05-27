@@ -32,7 +32,7 @@ benchmark:
 
 hold_out:
   limit: 300
-  judge_model: azure/o4-mini
+  judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
 output_root: ./results_multihop_rag

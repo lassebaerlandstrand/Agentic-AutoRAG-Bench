@@ -105,11 +105,7 @@ class BayesianSearch:
             for _ in range(MAX_RESAMPLE_ATTEMPTS):
                 candidate_trial = study.ask()
                 try:
-                    candidate = sample_optuna(
-                        candidate_trial,
-                        self.project.search_space,
-                        self.project.embedding_token_limits,
-                    )
+                    candidate = sample_optuna(candidate_trial, self.project.search_space)
                 except optuna.TrialPruned as exc:
                     logger.debug("trial %d resample pruned: %s", trial_num, exc)
                     study.tell(candidate_trial, state=optuna.trial.TrialState.PRUNED)

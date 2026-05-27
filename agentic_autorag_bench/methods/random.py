@@ -61,9 +61,7 @@ class RandomSearch:
         for trial_num in range(1, budget.max_trials + 1):
             config = None
             for _ in range(MAX_RESAMPLE_ATTEMPTS):
-                candidate = sample_random(
-                    rng, self.project.search_space, self.project.embedding_token_limits
-                )
+                candidate = sample_random(rng, self.project.search_space)
                 violations = self.project.validate_trial(candidate)
                 if not violations:
                     config = candidate

@@ -156,15 +156,7 @@ async def test_bayesian_rejects_when_budget_missing(tmp_path: Path) -> None:
 
 
 def _multi_embedding_project() -> ProjectConfig:
-    """Search space with heterogeneous embedding token limits.
-
-    Regression coverage for the Optuna ``CategoricalDistribution`` static-domain
-    constraint: a previous implementation filtered the embedding list against
-    the sampled ``chunk_token_size`` and crashed on trial 2 with
-    ``CategoricalDistribution does not support dynamic value space``. Three
-    models with different limits and a chunk range that straddles them is the
-    minimum case that exercises this.
-    """
+    """Search space with three embedders so the sampler must explore them all."""
     return ProjectConfig(
         search_space=SearchSpace(
             chunking=ChunkingSearchSpace(
@@ -193,17 +185,12 @@ def _multi_embedding_project() -> ProjectConfig:
             generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
         ),
-        embedding_token_limits={
-            "sentence-transformers/all-MiniLM-L6-v2": 256,
-            "BAAI/bge-large-en-v1.5": 512,
-            "BAAI/bge-m3": 8192,
-        },
     )
 
 
 @pytest.mark.asyncio
-async def test_bayesian_with_mixed_embedding_limits_runs_all_trials(tmp_path: Path) -> None:
-    """All 8 trials must complete — none pruned by the previous dynamic-domain crash."""
+async def test_bayesian_with_multiple_embeddings_runs_all_trials(tmp_path: Path) -> None:
+    """All 8 trials complete with a multi-embedder search space."""
     project = _multi_embedding_project()
     optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.3, 0.4, 0.5, 0.6, 0.7, 0.55, 0.45, 0.35])
@@ -211,17 +198,10 @@ async def test_bayesian_with_mixed_embedding_limits_runs_all_trials(tmp_path: Pa
     sr = await optimizer.search(evaluator, Budget(max_trials=8), seed=42)
 
     assert len(sr.history) == 8
-    for entry in sr.history:
-        embedding = entry.config["embedding_model"]
-        chunk_size = entry.config["chunk_token_size"]
-        limit = project.embedding_token_limits[embedding]
-        assert chunk_size <= limit, (
-            f"trial {entry.trial_number}: {embedding} (limit {limit}) got chunk_size={chunk_size}"
-        )
 
 
 @pytest.mark.asyncio
-async def test_random_with_mixed_embedding_limits_respects_per_embedding_chunk_bound() -> None:
+async def test_random_with_multiple_embeddings_runs_all_trials() -> None:
     project = _multi_embedding_project()
     optimizer = RandomSearch(project=project)
     evaluator = _make_evaluator([0.5] * 20)
@@ -229,11 +209,6 @@ async def test_random_with_mixed_embedding_limits_respects_per_embedding_chunk_b
     sr = await optimizer.search(evaluator, Budget(max_trials=20), seed=42)
 
     assert len(sr.history) == 20
-    for entry in sr.history:
-        embedding = entry.config["embedding_model"]
-        chunk_size = entry.config["chunk_token_size"]
-        limit = project.embedding_token_limits[embedding]
-        assert chunk_size <= limit
 
 
 @pytest.mark.asyncio
@@ -346,22 +321,6 @@ async def test_bayesian_with_discrete_values_lands_in_grid(tmp_path: Path) -> No
         assert _is_int_in(h.config["chunk_token_size"], [256, 512])
         if h.config["reranker"] != "none":
             assert h.config["reranker_top_n"] <= h.config["top_k"]
-
-
-@pytest.mark.asyncio
-async def test_random_chunk_size_capped_by_embedding_limit_with_discrete_values() -> None:
-    """When embed_cap < some DiscreteValues, the sampler must filter to legal."""
-    project = _discrete_project()
-    # MiniLM caps at 256 tokens. With chunk_token_size=[256, 512], only 256
-    # is legal for this embedder.
-    project.embedding_token_limits["sentence-transformers/all-MiniLM-L6-v2"] = 256
-    optimizer = RandomSearch(project=project)
-    evaluator = _make_evaluator([0.5] * 10)
-
-    sr = await optimizer.search(evaluator, Budget(max_trials=10), seed=42)
-
-    for h in sr.history:
-        assert h.config["chunk_token_size"] == 256
 
 
 @pytest.mark.asyncio
