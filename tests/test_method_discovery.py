@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from agentic_autorag_bench._figstyle import METHOD_COLOR
+from agentic_autorag_bench._figstyle import color_for as _color_for
 from agentic_autorag_bench.plots import (
-    METHOD_COLOR,
-    _color_for,
     _discover_method_names,
     _is_sequential,
     _order_methods,

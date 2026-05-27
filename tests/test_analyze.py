@@ -174,13 +174,15 @@ def test_write_markdown_table_emits_pipe_table(tmp_path) -> None:
     write_markdown_table(stats, out_path)
     text = out_path.read_text(encoding="utf-8")
     assert "| Method |" in text
-    assert "| agentic-score |" in text  # writer hyphenates snake_case for display
+    assert "| Agentic (Ours) |" in text  # paper-facing display label
     # New format: ``mean ± SD`` across replays. The (0.5, 0.45, 0.55) triple
     # in the stats dict reads as mean=0.5, SD=0.05.
     assert "0.500 ± 0.050" in text
     # Headline multi-hop retrieval columns must be present.
     assert "Joint-R@2" in text
     assert "MRR-complete" in text
+    # Search $ = optimizer + trial ($0.10 + $1.50).
+    assert "$1.6000" in text
 
 
 def test_write_markdown_table_handles_empty_stats(tmp_path) -> None:
@@ -196,13 +198,12 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
     _write_method_dir(results_dir, "agentic_score", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
     _write_method_dir(results_dir, "agentic_score", 2, [1.0, 1.0, 0.0, 1.0], [True, True, False, True])
     _write_method_dir(results_dir, "random", 1, [0.0, 0.0, 1.0, 0.0], [False, False, True, False])
-    _write_method_dir(results_dir, "autorag_our_exam", None, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
+    _write_method_dir(results_dir, "bayesian", 1, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
 
     analyze(results_dir, output_dir)
 
     figures_dir = output_dir / "figures"
-    # Canonical names emitted by plots.make_matrix_figures plus the legacy
-    # figure_trajectory.png that analyze.analyze keeps writing for compat.
+    # Canonical names emitted by plots.make_matrix_figures.
     for name in (
         "Table_1.md",
         "holdout_metrics.png",
@@ -210,13 +211,15 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
         "best_so_far.png",
         "cost_breakdown.png",
         "token_breakdown.png",
-        "figure_trajectory.png",
+        "cost_and_embeddings.png",
     ):
         path = figures_dir / name
         assert path.exists(), f"missing {name}"
         assert path.stat().st_size > 0, f"empty {name}"
     # efficiency moved to appendix
     assert (figures_dir / "appendix" / "efficiency.png").exists()
+    # The legacy figure_trajectory.png was removed (superseded by best_so_far.png).
+    assert not (figures_dir / "figure_trajectory.png").exists()
 
 
 def test_yaml_round_trip_unrelated_to_pyyaml_warnings(tmp_path) -> None:
