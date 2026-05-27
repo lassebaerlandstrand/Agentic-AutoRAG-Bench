@@ -16,7 +16,7 @@ meta:
     entities and quotes, time-anchored events, and topic concentration
     inside each category. Multi-hop questions cross multiple articles in
     the same topic cluster.
-  output_dir: "./results_paper_multihop_rag/.shared_cache"
+  output_dir: "./results_multihop_rag/.shared_cache"
   max_trials: 10
   cache_max_gb: 20.0
   # Score-only mode for the paper's headline Table 1. Cost is still recorded

@@ -196,10 +196,12 @@ def _translate_llm(litellm_model: str) -> tuple[str, str]:
         return "openai", suffix
     if provider == "bedrock":
         return "bedrock_converse", suffix
+    if provider == "vertex_ai":
+        return "vertex", suffix
     raise ValueError(
         f"Provider {provider!r} not supported in AutoRAG baseline. "
-        "Supported: azure (via openai+v1-compat base), openai, bedrock (via bedrock_converse). "
-        "Extend _translate_llm in native_config.py if you add another."
+        "Supported: azure (via openai+v1-compat base), openai, bedrock (via bedrock_converse), "
+        "vertex_ai (via vertex). Extend _translate_llm in native_config.py if you add another."
     )
 
 
@@ -208,6 +210,7 @@ def _build_generator_module(litellm_model: str, temperatures: list[float]) -> di
     autorag_llm, autorag_model = _translate_llm(litellm_model)
     is_azure = litellm_model.startswith("azure/")
     is_bedrock = litellm_model.startswith("bedrock/")
+    is_vertex = litellm_model.startswith("vertex_ai/")
     module: dict = {
         "module_type": "llama_index_llm",
         "llm": autorag_llm,
@@ -229,6 +232,14 @@ def _build_generator_module(litellm_model: str, temperatures: list[float]) -> di
         # uses, so we plumb it explicitly. AutoRAG substitutes ``${VAR}`` at
         # YAML load.
         module["region_name"] = "${AWS_REGION_NAME}"
+    if is_vertex:
+        # ``Vertex.__init__`` calls ``vertexai.init(project=, location=)``;
+        # passing None falls back to ADC defaults that may not match the
+        # litellm-convention ``VERTEXAI_*`` env vars used elsewhere in the
+        # bench, so plumb them explicitly. GCP auth itself comes from
+        # ``GOOGLE_APPLICATION_CREDENTIALS`` via google.auth.default().
+        module["project"] = "${VERTEXAI_PROJECT}"
+        module["location"] = "${VERTEXAI_LOCATION}"
     return module
 
 

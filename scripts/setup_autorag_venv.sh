@@ -39,6 +39,9 @@ echo "  torch — required by the paper's HF embedders & rerankers)"
 echo "installing llama-index-llms-bedrock-converse (modern Bedrock API for newer models)"
 "$VENV_PIP" install --quiet "llama-index-llms-bedrock-converse>=0.4"
 
+echo "installing llama-index-llms-vertex (Google Vertex AI provider for Gemini models)"
+"$VENV_PIP" install --quiet "llama-index-llms-vertex"
+
 echo "verifying autorag CLI"
 # AutoRAG installs an entry-point ``autorag`` script next to python — ``python
 # -m autorag`` doesn't work because the package has no __main__.

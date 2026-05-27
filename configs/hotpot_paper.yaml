@@ -13,16 +13,16 @@
 project_config: ./hotpot_paper_project.yaml
 
 methods:
-  - random
-  - bayesian
   - agentic_score   # cost_aware=False (highest-score)
   - autorag_our_exam  # requires .autorag-venv (run scripts/setup_autorag_venv.sh)
+  - random
+  - bayesian
   - autorag_ragas     # same venv
 
 seeds: [1]
 
 budget:
-  max_trials: 3
+  max_trials: 20
 
 benchmark:
   name: hotpot_qa
@@ -32,7 +32,7 @@ benchmark:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 100
+  limit: 500
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
