@@ -44,8 +44,8 @@ agent:
   concurrency: 8
 
 examiner:
-  exam_size: 30   # TEST RUN — restore to 100 for the real experiment
-  pair_overgeneration_factor: 1.5
+  exam_size: 100
+  pair_overgeneration_factor: 1.7
   probe_selection: true
   neighborhood_min_chunks: 18
   neighborhood_min_words: 5000
@@ -126,7 +126,7 @@ search_space:
   # marked failed. Accepted tradeoff — keeps the matrix maximally expressive.
   generator:
     models:
-      - "bedrock/global.amazon.nova-2-lite-v1:0"
+      # - "bedrock/global.amazon.nova-2-lite-v1:0"
       - "bedrock/openai.gpt-oss-20b-1:0"
       - "bedrock/openai.gpt-oss-120b-1:0"
       - "bedrock/qwen.qwen3-32b-v1:0"

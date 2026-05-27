@@ -131,6 +131,13 @@ def pareto(
         "--resume",
         help="Resume an interrupted agentic_cost search from its last completed trial.",
     ),
+    debug_prompts: bool = typer.Option(
+        True,
+        "--debug-prompts/--no-debug-prompts",
+        help="Log every proposer/diagnoser prompt + response to the run's run.log. "
+             "Defaults to ON because proposer-side bugs aren't reproducible from per-trial "
+             "JSON alone; pass --no-debug-prompts to silence.",
+    ),
 ) -> None:
     """Run agentic_cost's search on the UniDoc corpus and render a Syftr-style
     cost-vs-accuracy Pareto figure of its trials.
@@ -140,7 +147,7 @@ def pareto(
     """
     from agentic_autorag_bench.pareto import pareto_cli
 
-    pareto_cli(config, figure_only=figure_only, resume=resume)
+    pareto_cli(config, figure_only=figure_only, resume=resume, debug_prompts=debug_prompts)
 
 
 @app.command()
