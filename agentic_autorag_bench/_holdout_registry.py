@@ -165,8 +165,12 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
     out["n_judge_invalid"] = (
         sum(1 for r in valid if r.get("judge") is None) if judge_enabled else 0
     )
+    # judge ∈ {1, 0, -1}: 1=correct, 0=wrong, -1=NO_ANSWER (abstention).
+    # Accuracy is correct / judged; abstention counts as incorrect (same as
+    # the optimizer's trial-time objective), so count judge==1 rather than
+    # summing the raw verdicts (which would subtract for every -1).
     out["llm_judge_accuracy"] = (
-        sum(int(r["judge"]) for r in judged) / len(judged)
+        sum(1 for r in judged if r["judge"] == 1) / len(judged)
         if judge_enabled and judged
         else None
     )

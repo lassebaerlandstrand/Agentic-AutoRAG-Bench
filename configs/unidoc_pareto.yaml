@@ -1,0 +1,23 @@
+# Entry config for the `pareto` command: run agentic_cost's search on the
+# UniDoc (healthcare) PDF corpus and render a Syftr-style cost-vs-accuracy
+# Pareto figure of its trials. No held-out QA — trials are scored on the
+# optimizer's own self-generated exam.
+#
+#   uv run agentic-autorag-bench pareto --config configs/unidoc_pareto.yaml
+
+project_config: ./unidoc_pareto_project.yaml
+
+seed: 1
+
+budget:
+  max_trials: 3   # TEST RUN — restore to 40 for the real experiment
+
+# Corpus is downloaded on first run if meta.corpus_path (in the project config)
+# is empty. PDFs + a few first-page images, to exercise Docling on more file
+# types. ~230 PDFs matches the prior UniDoc download default.
+corpus:
+  domain: healthcare
+  max_pdfs: 230
+  max_images: 20
+
+output_root: ./results_unidoc
