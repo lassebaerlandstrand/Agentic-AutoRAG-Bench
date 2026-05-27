@@ -11,11 +11,11 @@ project_config: ./hotpot_paper_project.yaml
 
 methods:
   - agentic_score   # cost_aware=False (highest-score)
-  - agentic_cost    # cost_aware=True (Pareto-aware)
   - random
   - bayesian
+  - agentic_cost    # cost_aware=True (Pareto-aware)
 
-seeds: [1, 2, 3]
+seeds: [1]
 
 budget:
   max_trials: 40

@@ -285,6 +285,67 @@ def _persist_search_result(sr: SearchResult, dest: Path) -> None:
     )
 
 
+def _read_trial_cost_ledger(method_dir: Path) -> list[dict]:
+    """Parse ``method_dir/trial_cost_ledger.jsonl`` into per-trial bucket dicts.
+
+    The ledger is written for every method (framework's
+    ``_finalize_trial_accounting`` for agentic_*, bench's
+    ``_make_metered_evaluator`` for random/bayesian). Each line has
+    ``{"trial_number": int, "buckets": {bucket_name: {usd, prompt_tokens,
+    completion_tokens, embedding_input_tokens, n_calls, ...}}}`` and may
+    include a ``"status"`` field (agentic writes ``"failed"`` for trials
+    whose evaluation errored — the spend is real and stays in the sum).
+    """
+    path = method_dir / "trial_cost_ledger.jsonl"
+    if not path.exists():
+        return []
+    entries: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            entries.append(json.loads(line))
+    return entries
+
+
+def _checkpoint_costs(ledger: list[dict], k: int) -> tuple[float, float]:
+    """Return ``(optimizer_usd, trial_usd_total)`` for an @k early-stopping run.
+
+    Reads per-trial cost deltas captured during the parent's full-budget run
+    and reconstructs what an actual early-stop-at-k run would have paid:
+
+    - ``optimizer_usd``: ``agent_proposal`` summed over trials ``1..(k-1)``.
+      Trial 1's bucket bundles ``propose_initial`` plus the
+      ``analyze_and_propose`` call that produced trial 2's config; each
+      subsequent trial K's bucket holds only the ``analyze_and_propose``
+      call that produced trial K+1's config (see
+      ``Orchestrator._run_with_ledger``). Summing over ``1..(k-1)`` yields
+      exactly ``propose_initial + analyze_and_propose × (k-1)``, which is
+      what an actual @k run pays — it stops the loop before the
+      ``analyze_and_propose`` at the end of trial k fires.
+    - ``trial_usd_total``: ``rag_eval + judge`` summed over trials ``1..k``.
+      Includes the per-trial judge spend that
+      ``ExamResult.total_llm_cost_usd`` (RAG-only) systematically omits.
+
+    Returns ``(0.0, 0.0)`` for an empty ledger — caller falls back to the
+    prorated/history-sum path so checkpointing still works on legacy result
+    trees written before the ledger was added.
+    """
+    if not ledger:
+        return 0.0, 0.0
+    proposer_usd = sum(
+        float(e.get("buckets", {}).get("agent_proposal", {}).get("usd", 0.0))
+        for e in ledger
+        if int(e.get("trial_number", 0)) < k
+    )
+    trial_usd = sum(
+        float(e.get("buckets", {}).get("rag_eval", {}).get("usd", 0.0))
+        + float(e.get("buckets", {}).get("judge", {}).get("usd", 0.0))
+        for e in ledger
+        if int(e.get("trial_number", 0)) <= k
+    )
+    return proposer_usd, trial_usd
+
+
 async def _evaluate_checkpoints(
     sr: SearchResult,
     *,
@@ -300,16 +361,20 @@ async def _evaluate_checkpoints(
     on the same held-out QA without paying for additional search trials —
     the head of the existing trajectory is exactly what an early-stopped
     run would have produced. The reduced ``SearchResult`` written into each
-    ``<method>@<k>/seed_<n>/`` reports cumulative-cost-at-k (trial side
-    summed exactly from the slice; optimizer side prorated by trial count
-    since we can't reconstruct it from history alone). A fresh held-out
-    eval runs per checkpoint — the framework's judge caches per
-    ``(config_hash, question_id)`` so identical configs across checkpoints
-    pay nothing extra.
+    ``<method>@<k>/seed_<n>/`` reports cumulative-cost-at-k using the
+    parent's ``trial_cost_ledger.jsonl`` (see ``_checkpoint_costs`` for the
+    bucket-attribution rule). ``wall_clock_s`` stays prorated by trial count
+    because per-trial wall time isn't recorded in the bench's per-trial JSONL.
+    A fresh held-out eval runs per checkpoint — the framework's judge caches
+    per ``(config_hash, question_id)`` so identical configs across
+    checkpoints pay nothing extra.
     """
     ckpts = bench.checkpoints.get(method_name, [])
     if not ckpts:
         return
+    seed_label = f"seed_{seed}" if seed is not None else "default"
+    parent_dir = bench.output_root / method_name / seed_label
+    ledger = _read_trial_cost_ledger(parent_dir)
     total = len(sr.history)
     for k in ckpts:
         if k >= total:
@@ -320,9 +385,15 @@ async def _evaluate_checkpoints(
         best = max(sliced, key=lambda h: h.score)
 
         ck_method = f"{method_name}@{k}"
-        seed_label = f"seed_{seed}" if seed is not None else "default"
         ck_dir = bench.output_root / ck_method / seed_label
 
+        proposer_usd, trial_usd = _checkpoint_costs(ledger, k)
+        # Fallback when the ledger is missing (legacy result trees): prorate
+        # optimizer_usd, sum history's RAG-only eval_usd. Same behaviour the
+        # old prorated path had — losing only the judge contribution.
+        if not ledger:
+            proposer_usd = sr.optimizer_usd * (k / total)
+            trial_usd = sum(h.eval_usd for h in sliced)
         fraction = k / total
         sr_at_k = SearchResult(
             method=ck_method,
@@ -330,8 +401,8 @@ async def _evaluate_checkpoints(
             deterministic=sr.deterministic,
             best_config=best.config,
             history=sliced,
-            optimizer_usd=sr.optimizer_usd * fraction,
-            trial_usd_total=sum(h.eval_usd for h in sliced),
+            optimizer_usd=proposer_usd,
+            trial_usd_total=trial_usd,
             wall_clock_s=sr.wall_clock_s * fraction,
             prompt_tokens=sum(h.prompt_tokens for h in sliced),
             completion_tokens=sum(h.completion_tokens for h in sliced),
@@ -396,6 +467,19 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
     endpoint verification, probe-phase embedding builds) because those land
     in the ledger before this evaluator's first ``snapshot`` call. This is
     the bench's fairness convention — see ``TrialResult`` for the full rule.
+
+    ``eval_usd`` sums every USD bucket in the ledger delta (RAG generation,
+    judge, query expansion, any other trial-phase LLM call) rather than
+    using ``ExamResult.total_llm_cost_usd``, which is documented RAG-only
+    and would silently omit the judge from random/bayesian's reported
+    ``trial_usd_total``. The agentic adapter folds judge in by reading
+    ``cost_breakdown.json``; this keeps the bench-side methods symmetric.
+
+    ``_current_phase`` is promoted to ``"trial"`` so any
+    ``_credit_embedding_build`` event fired by ``evaluate_trial`` is tagged
+    with the trial number in ``cache_events.jsonl`` — the shared
+    Orchestrator stays at ``"setup"`` otherwise because random/bayesian
+    never call the framework's per-trial phase-setting path.
     """
     trial_counter = [0]
 
@@ -405,6 +489,7 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
         ledger = get_active_ledger()
         before = ledger.snapshot() if ledger is not None else None
 
+        shared._current_phase = "trial"
         exam_result = await shared.evaluate_trial(config)
 
         if ledger is not None and before is not None:
@@ -415,10 +500,12 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
             except OSError:
                 logger.warning("Failed to append trial_cost_ledger.jsonl", exc_info=True)
             shared._flush_pending_cache_events(trial_num)
+            eval_usd = sum(float(b["usd"]) for b in delta.values())
             prompt_tokens = sum(int(b["prompt_tokens"]) for b in delta.values())
             completion_tokens = sum(int(b["completion_tokens"]) for b in delta.values())
             embedding_tokens = sum(int(b["embedding_input_tokens"]) for b in delta.values())
         else:
+            eval_usd = float(exam_result.total_llm_cost_usd)
             prompt_tokens = int(getattr(exam_result, "total_prompt_tokens", 0))
             completion_tokens = int(getattr(exam_result, "total_completion_tokens", 0))
             embedding_tokens = 0
@@ -431,7 +518,7 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
                 "mean_em": float(exam_result.mean_em),
                 "mean_f1": float(exam_result.mean_f1),
             },
-            eval_usd=float(exam_result.total_llm_cost_usd),
+            eval_usd=eval_usd,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             embedding_tokens=embedding_tokens,
