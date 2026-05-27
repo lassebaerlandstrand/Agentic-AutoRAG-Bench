@@ -856,15 +856,15 @@ def _matrix_score_vs_cost(out_path: Path, results: list, stats: dict[str, dict])
     the winning pipeline on a single question, computed as
     ``mean(input_tokens × in_price + completion_tokens × out_price)`` over
     the union-excluded hold-out rows — i.e. the cost a production user
-    pays per query. Y-axis is held-out LLM-judge accuracy with bootstrap
-    95% CIs from ``aggregate_by_method``. This is distinct from
-    ``efficiency.png``, which uses *total search cost* (the one-time bill
-    to find the winner). Both matter; this one is the better Pareto for
-    "should I deploy this?".
+    pays per query. Y-axis is held-out LLM-judge accuracy with ± SD
+    across hold-out replays from ``aggregate_by_method``. This is
+    distinct from ``efficiency.png``, which uses *total search cost*
+    (the one-time bill to find the winner). Both matter; this one is
+    the better Pareto for "should I deploy this?".
 
     Horizontal error bars are per-seed std on cost (zero for AutoRAG with
-    its single deterministic run). Vertical error bars are the asymmetric
-    bootstrap CI from per-question judge resampling.
+    its single deterministic run). Vertical error bars are ± SD across
+    hold-out replays (zero when only the end-of-search eval exists).
     """
     plt = _import_matplotlib()
     methods = _order_methods(stats.keys())

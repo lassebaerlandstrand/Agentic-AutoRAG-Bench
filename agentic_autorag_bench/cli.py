@@ -72,6 +72,50 @@ def run(
     )
 
 
+@app.command("replay-holdout")
+def replay_holdout(
+    config: str = typer.Option(..., "--config", "-c", help="Path to paper-mode YAML (same one passed to `run`)"),
+    n_runs: int = typer.Option(
+        3,
+        "--n-runs",
+        help="Target number of hold-out evals per (method, seed). The "
+             "end-of-search benchmark_results.json counts as run 1; this "
+             "command tops up to n_runs by writing run_002.json, "
+             "run_003.json, ... under holdout_replays/. Default 3.",
+    ),
+    methods: list[str] = typer.Option(
+        None,
+        "--methods", "-m",
+        help="Subset of base methods to top up. Matches both bare method "
+             "dirs and @k checkpoint variants (e.g. --methods agentic_score "
+             "covers agentic_score, agentic_score@10, agentic_score@20).",
+    ),
+    include_checkpoints: bool = typer.Option(
+        True,
+        "--include-checkpoints/--no-include-checkpoints",
+        help="Replay the @k checkpoint dirs alongside the main method dirs. "
+             "Default ON so the headline figure has consistent N across all "
+             "bars. Pass --no-include-checkpoints to skip them (e.g. when "
+             "iterating on the main bars to save eval cost).",
+    ),
+) -> None:
+    """Top up each (method, seed) dir to N hold-out evals so the matrix
+    figure shows mean ± SD across replays.
+
+    Idempotent: re-running picks up only the missing run indices. After
+    every eval, re-applies the cross-method content-filter union and
+    re-renders matrix figures + Table_1.md.
+    """
+    from agentic_autorag_bench.replay import replay_holdout_cli
+
+    replay_holdout_cli(
+        config,
+        n_runs=n_runs,
+        methods=methods or None,
+        include_checkpoints=include_checkpoints,
+    )
+
+
 @app.command()
 def analyze(
     results_dir: str = typer.Option("results_paper/", "--results-dir", help="Where the matrix run wrote outputs"),

@@ -74,19 +74,34 @@ def _retrieval_metrics_for_row(
     return recalls, joint_recalls, first_rank, complete_rank
 
 
+def _run_key(f: Path) -> str:
+    """Human-readable ``method/seed_N`` or ``method/seed_N/run_NNN`` key.
+
+    For the primary ``benchmark_results.json`` (parent is the seed dir),
+    returns ``{method}/{seed}``. For replay files under
+    ``holdout_replays/run_NNN.json`` (parent is ``holdout_replays``, then
+    seed dir, then method dir), returns ``{method}/{seed}/{run_basename}``
+    so the registry surfaces which specific replay observed a filter row.
+    """
+    if f.parent.name == "holdout_replays":
+        return f"{f.parent.parent.parent.name}/{f.parent.parent.name}/{f.stem}"
+    return f"{f.parent.parent.name}/{f.parent.name}"
+
+
 def _collect_filtered_ids(method_files: list[Path]) -> tuple[set[str], dict[str, list[str]]]:
     """Scan every per_question for CONTENT_FILTER rows.
 
     Returns ``(union_ids, by_run)`` where ``by_run`` keys are "method/seed_dir"
     strings derived from the file path, so the registry can attribute each id
-    to the run(s) that observed it.
+    to the run(s) that observed it. Replay files report a richer
+    ``method/seed/run_NNN`` key so the source replay is identifiable.
     """
     union: set[str] = set()
     by_run: dict[str, list[str]] = {}
     for f in method_files:
         data = json.loads(f.read_text(encoding="utf-8"))
         per_q = data.get("per_question", [])
-        run_key = f"{f.parent.parent.name}/{f.parent.name}"
+        run_key = _run_key(f)
         ids = sorted(
             r["id"] for r in per_q if r.get("error") == CONTENT_FILTER_SENTINEL
         )
@@ -205,6 +220,13 @@ def apply_union_exclusion(output_root: Path) -> dict:
     output_root = Path(output_root)
     method_files = sorted(output_root.glob("*/seed_*/benchmark_results.json"))
     method_files += sorted(output_root.glob("*/default/benchmark_results.json"))
+    # Hold-out replays from ``replay-holdout``: same shape as the primary
+    # benchmark_results.json, just numbered. Include them in the union scan
+    # so a content-filter row observed in any replay propagates to every
+    # method's denominator, and rewrite each replay file with the same
+    # union-adjusted aggregates as the primary.
+    method_files += sorted(output_root.glob("*/seed_*/holdout_replays/run_*.json"))
+    method_files += sorted(output_root.glob("*/default/holdout_replays/run_*.json"))
     if not method_files:
         logger.info("No benchmark_results.json files found under %s — skipping union exclusion", output_root)
         return {"excluded_ids": [], "by_run": {}}

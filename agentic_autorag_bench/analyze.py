@@ -2,17 +2,22 @@
 
 Reads ``<results_dir>/<method>/seed_<n>/{benchmark_results.json,
 optimizer_meta.json, history.jsonl}`` for every (method, seed) the matrix
-produced.
+produced, plus any ``holdout_replays/run_NNN.json`` files written by
+``replay-holdout`` (each is a full re-evaluation of the same best config
+against the same hold-out QA).
 
 The ``run`` command auto-emits every matrix figure as the matrix runs; this
 module's ``analyze`` entry point is the re-render path — point it at a
 committed ``results_dir`` and it rewrites every figure under
 ``<output_dir>/figures/`` without re-running the matrix.
 
-Statistical method (``bootstrap_ci``, ``aggregate_by_method``): nonparametric
-bootstrap (1000 boots) on the held-out per-question EM/F1/Judge scores,
-paired across methods that share the same test questions. Reported as
-``mean [lo, hi]``.
+Statistical method (``mean_sd``, ``aggregate_by_method``): for each
+(method, seed), the per-run EM / F1 / Judge mean is computed from each
+hold-out eval; the matrix figures then plot ``mean ± SD`` across those
+N runs (typically N=3 after ``replay-holdout``). When N=1 the SD is
+zero so error bars vanish — graceful degradation for dirs that haven't
+been replayed yet. ``bootstrap_ci`` is kept available for plots that
+still need per-question-row resampling (none currently).
 
 The figure writers (``write_markdown_table``, ``write_holdout_scores_figure``,
 ``write_efficiency_figure``, ``write_trajectory_figure``) are also called by
@@ -101,32 +106,40 @@ def _ordered_methods(stats: dict[str, dict]) -> list[str]:
 class MethodResult:
     method: str
     seed: int | None
-    benchmark: dict
+    benchmarks: list[dict]  # run 1 first, then replays in numbered order
     optimizer_meta: dict
     history: list[dict]
 
-    def _scoring_rows(self) -> list[dict]:
-        """Per-question rows used for bootstrap, with the union-exclusion
+    @property
+    def benchmark(self) -> dict:
+        """The primary (run 1) hold-out result. Kept for back-compat with
+        callers that need a single benchmark dict — cost-per-question on
+        the score-vs-cost Pareto, retrieval-metric reads, etc."""
+        return self.benchmarks[0]
+
+    @staticmethod
+    def _scoring_rows_for(benchmark: dict) -> list[dict]:
+        """Per-question rows used for aggregation, with the union-exclusion
         applied. ``excluded_question_ids`` is populated by the post-matrix
         union pass — any id in that list is dropped from every method so all
-        rows bootstrap over the same denominator. Falls back to "all rows"
+        rows aggregate over the same denominator. Falls back to "all rows"
         when the registry is absent (older results dir)."""
-        excluded = set(self.benchmark.get("excluded_question_ids") or [])
+        excluded = set(benchmark.get("excluded_question_ids") or [])
         return [
-            r for r in self.benchmark.get("per_question", [])
+            r for r in benchmark.get("per_question", [])
             if r.get("id") not in excluded
         ]
 
-    @property
-    def per_question_em(self) -> np.ndarray:
-        return np.array([float(r.get("em", 0.0)) for r in self._scoring_rows()])
+    @staticmethod
+    def _row_em(rows: list[dict]) -> np.ndarray:
+        return np.array([float(r.get("em", 0.0)) for r in rows])
 
-    @property
-    def per_question_f1(self) -> np.ndarray:
-        return np.array([float(r.get("f1", 0.0)) for r in self._scoring_rows()])
+    @staticmethod
+    def _row_f1(rows: list[dict]) -> np.ndarray:
+        return np.array([float(r.get("f1", 0.0)) for r in rows])
 
-    @property
-    def per_question_judge(self) -> np.ndarray:
+    @staticmethod
+    def _row_judge(rows: list[dict]) -> np.ndarray:
         # Schema (BenchmarkResult.per_question -> QAResult): ``judge: int | None``
         # where 1=correct, 0=incorrect, None=parse/timeout failure. The hold-out
         # evaluator (FreeFormEvaluator) calls the judge for *every* row when
@@ -135,8 +148,8 @@ class MethodResult:
         # failed (timeout, parse error, content filter), not "EM already
         # decided". Drop those rows from the denominator: return NaN so callers
         # using np.nanmean treat them as missing rather than biased.
-        out = []
-        for r in self._scoring_rows():
+        out: list[float] = []
+        for r in rows:
             v = r.get("judge")
             if v == 1:
                 out.append(1.0)
@@ -145,6 +158,53 @@ class MethodResult:
             else:
                 out.append(np.nan)
         return np.array(out)
+
+    def per_run_means(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return (em_per_run, f1_per_run, judge_per_run) with one mean per
+        hold-out eval. Length equals ``len(self.benchmarks)``.
+
+        Each entry is the mean across union-excluded per-question rows for
+        that run. Judge means use ``np.nanmean`` to skip judge-failed rows
+        (see ``_row_judge``); a run with zero valid judge rows reports NaN.
+        """
+        em_means: list[float] = []
+        f1_means: list[float] = []
+        judge_means: list[float] = []
+        for bm in self.benchmarks:
+            rows = self._scoring_rows_for(bm)
+            em_arr = self._row_em(rows)
+            f1_arr = self._row_f1(rows)
+            jg_arr = self._row_judge(rows)
+            em_means.append(float(em_arr.mean()) if em_arr.size else 0.0)
+            f1_means.append(float(f1_arr.mean()) if f1_arr.size else 0.0)
+            if jg_arr.size and not np.all(np.isnan(jg_arr)):
+                judge_means.append(float(np.nanmean(jg_arr)))
+            else:
+                judge_means.append(float("nan"))
+        return np.array(em_means), np.array(f1_means), np.array(judge_means)
+
+    # Pooled per-question accessors — kept so plots.py and tests that
+    # used them on a single-run MethodResult still work. Concatenates
+    # across replays, which is what bootstrap-on-pooled-rows callers
+    # would have asked for anyway.
+
+    @property
+    def per_question_em(self) -> np.ndarray:
+        return np.concatenate([
+            self._row_em(self._scoring_rows_for(bm)) for bm in self.benchmarks
+        ]) if self.benchmarks else np.array([])
+
+    @property
+    def per_question_f1(self) -> np.ndarray:
+        return np.concatenate([
+            self._row_f1(self._scoring_rows_for(bm)) for bm in self.benchmarks
+        ]) if self.benchmarks else np.array([])
+
+    @property
+    def per_question_judge(self) -> np.ndarray:
+        return np.concatenate([
+            self._row_judge(self._scoring_rows_for(bm)) for bm in self.benchmarks
+        ]) if self.benchmarks else np.array([])
 
 
 _NON_METHOD_DIRS = {"figures", ".shared_cache"}
@@ -170,7 +230,11 @@ def load_results(results_dir: Path) -> list[MethodResult]:
             if not bench_path.exists():
                 logger.warning("Skipping %s/%s: no benchmark_results.json", method_dir.name, seed_dir.name)
                 continue
-            benchmark = json.loads(bench_path.read_text(encoding="utf-8"))
+            benchmarks: list[dict] = [json.loads(bench_path.read_text(encoding="utf-8"))]
+            replays_dir = seed_dir / "holdout_replays"
+            if replays_dir.is_dir():
+                for rp in sorted(replays_dir.glob("run_*.json")):
+                    benchmarks.append(json.loads(rp.read_text(encoding="utf-8")))
             optimizer_meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
             history = []
             if history_path.exists():
@@ -178,16 +242,16 @@ def load_results(results_dir: Path) -> list[MethodResult]:
                     line = line.strip()
                     if line:
                         history.append(json.loads(line))
-            seed: int | None
-            if seed_dir.name.startswith("seed_"):
-                seed = int(seed_dir.name.removeprefix("seed_"))
-            else:
-                seed = None
+            seed: int | None = (
+                int(seed_dir.name.removeprefix("seed_"))
+                if seed_dir.name.startswith("seed_")
+                else None
+            )
             out.append(
                 MethodResult(
                     method=method_dir.name,
                     seed=seed,
-                    benchmark=benchmark,
+                    benchmarks=benchmarks,
                     optimizer_meta=optimizer_meta,
                     history=history,
                 )
@@ -197,6 +261,10 @@ def load_results(results_dir: Path) -> list[MethodResult]:
 
 def bootstrap_ci(values: np.ndarray, n_boot: int = N_BOOTSTRAP, alpha: float = CI_ALPHA) -> tuple[float, float, float]:
     """Return (mean, lo, hi) for ``values`` under the empirical bootstrap.
+
+    Retained for callers that still want per-question-row resampling on a
+    single eval. The matrix figures use ``mean_sd`` over per-run means
+    instead, since hold-out replays now provide that signal directly.
 
     NaN entries are dropped before resampling — ``per_question_judge`` uses NaN
     to flag rows where the judge call itself failed (timeout / parse error),
@@ -214,19 +282,53 @@ def bootstrap_ci(values: np.ndarray, n_boot: int = N_BOOTSTRAP, alpha: float = C
     return float(clean.mean()), lo, hi
 
 
+def mean_sd(values: np.ndarray) -> tuple[float, float, float]:
+    """Return ``(mean, mean-sd, mean+sd)`` over ``values``.
+
+    Reports sample standard deviation (``ddof=1``) so a 3-replay matrix
+    answers "how spread are these 3 reps?" rather than the asymptotic
+    population SD. With N<2 the SD is undefined; this returns
+    ``(mean, mean, mean)`` so the chart writers' asymmetric ``yerr``
+    plumbing produces a zero-height error bar instead of erroring out.
+
+    The triple shape matches ``bootstrap_ci`` so call sites that
+    destructure ``(mean, lo, hi)`` keep working unchanged.
+
+    NaN entries are dropped before stats — judge-failed rows propagate as
+    NaN through ``per_run_means`` for a run where every judge call timed
+    out, and shouldn't poison the cross-run aggregate.
+    """
+    if values.size == 0:
+        return 0.0, 0.0, 0.0
+    clean = values[~np.isnan(values)] if values.dtype.kind == "f" else values
+    if clean.size == 0:
+        return 0.0, 0.0, 0.0
+    mean = float(clean.mean())
+    if clean.size < 2:
+        return mean, mean, mean
+    sd = float(np.std(clean, ddof=1))
+    return mean, mean - sd, mean + sd
+
+
 def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
-    """Pool per-question scores across seeds, then bootstrap.
+    """Aggregate held-out scores per method as ``mean ± SD across runs``.
 
-    For a method with K seeds × N questions, treats all K*N scores as the
-    sample. Reports mean = average across seeds and questions, CI via bootstrap.
+    For each (method, seed) we compute one EM / F1 / Judge mean per
+    hold-out eval (``MethodResult.per_run_means``). Across seeds we
+    concatenate those per-run means and report ``mean_sd`` over the
+    union — so a 1-seed × 3-replay matrix yields N=3 per metric, a
+    2-seed × 3-replay matrix yields N=6, etc.
 
-    Caveat: pooled bootstrap treats per-question rows as i.i.d., which
-    slightly underestimates variance when K>1 seeds share the same RAG
-    pipeline (within-seed correlation). A cluster bootstrap over seed-means
-    would be tighter; we pool because for K=3 seeds the cluster bootstrap is
-    very high-variance. Cross-method comparisons should use a paired test
-    (paired bootstrap of per-question differences) rather than reading
-    overlapping CIs as "no significant difference".
+    Sample SD (ddof=1) is used; the matrix figures' captions advertise
+    this so reviewers can sanity-check the math.
+
+    Search-side stats (wall_clock_s, optimizer_usd, trial_usd_total,
+    token totals) are unchanged — they're per-seed scalars taken from
+    ``optimizer_meta.json`` and unaffected by hold-out replays.
+
+    Retrieval metrics are read from the primary benchmark dict; they're
+    deterministic given the same config (the retrieval index doesn't
+    re-rank between hold-out evals).
     """
     by_method: dict[str, list[MethodResult]] = {}
     for r in results:
@@ -234,9 +336,18 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
 
     out: dict[str, dict] = {}
     for method, runs in by_method.items():
-        em_pool = np.concatenate([r.per_question_em for r in runs]) if runs else np.array([])
-        f1_pool = np.concatenate([r.per_question_f1 for r in runs]) if runs else np.array([])
-        judge_pool = np.concatenate([r.per_question_judge for r in runs]) if runs else np.array([])
+        em_chunks: list[np.ndarray] = []
+        f1_chunks: list[np.ndarray] = []
+        judge_chunks: list[np.ndarray] = []
+        for r in runs:
+            em_run, f1_run, judge_run = r.per_run_means()
+            em_chunks.append(em_run)
+            f1_chunks.append(f1_run)
+            judge_chunks.append(judge_run)
+        em_runs = np.concatenate(em_chunks) if em_chunks else np.array([])
+        f1_runs = np.concatenate(f1_chunks) if f1_chunks else np.array([])
+        judge_runs = np.concatenate(judge_chunks) if judge_chunks else np.array([])
+        n_runs_per_seed = [len(r.benchmarks) for r in runs]
 
         wall_clocks = [float(r.optimizer_meta.get("wall_clock_s", 0.0)) for r in runs]
         optim_usds = [float(r.optimizer_meta.get("optimizer_usd", 0.0)) for r in runs]
@@ -256,9 +367,11 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
 
         out[method] = {
             "n_seeds": len(runs),
-            "em": bootstrap_ci(em_pool),
-            "f1": bootstrap_ci(f1_pool),
-            "judge": bootstrap_ci(judge_pool),
+            "n_runs_per_seed": n_runs_per_seed,
+            "n_runs_total": int(sum(n_runs_per_seed)),
+            "em": mean_sd(em_runs),
+            "f1": mean_sd(f1_runs),
+            "judge": mean_sd(judge_runs),
             **retrieval_means,
             "wall_clock_s_mean": float(np.mean(wall_clocks)) if wall_clocks else 0.0,
             "optimizer_usd_mean": float(np.mean(optim_usds)) if optim_usds else 0.0,
@@ -282,7 +395,13 @@ def write_markdown_table(
     *,
     benchmark_pretty_name: str = "Benchmark",
 ) -> None:
-    """Per-method results as a Markdown pipe-table."""
+    """Per-method results as a Markdown pipe-table.
+
+    EM / F1 / Judge columns are formatted as ``mean ± SD`` across the
+    hold-out replays for that method (typically N=3 after
+    ``replay-holdout``). ``N`` is reported alongside so a method that
+    hasn't been replayed yet (N=1, SD=0) is visually obvious.
+    """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rows: list[str] = []
     for m in _order_methods_for_analyze(stats.keys()):
@@ -290,12 +409,17 @@ def write_markdown_table(
         em_m, em_lo, em_hi = s["em"]
         f1_m, f1_lo, f1_hi = s["f1"]
         j_m, j_lo, j_hi = s["judge"]
+        em_sd = em_hi - em_m
+        f1_sd = f1_hi - f1_m
+        j_sd = j_hi - j_m
+        n_runs = s.get("n_runs_total", s.get("n_seeds", 1))
         label = m.replace("_", "-")
         rows.append(
             f"| {label} "
-            f"| {em_m:.3f} [{em_lo:.3f}, {em_hi:.3f}] "
-            f"| {f1_m:.3f} [{f1_lo:.3f}, {f1_hi:.3f}] "
-            f"| {j_m:.3f} [{j_lo:.3f}, {j_hi:.3f}] "
+            f"| {em_m:.3f} ± {em_sd:.3f} "
+            f"| {f1_m:.3f} ± {f1_sd:.3f} "
+            f"| {j_m:.3f} ± {j_sd:.3f} "
+            f"| {n_runs} "
             f"| {s['joint_recall_at_2']:.3f} "
             f"| {s['joint_recall_at_5']:.3f} "
             f"| {s['mrr_complete']:.3f} "
@@ -308,15 +432,18 @@ def write_markdown_table(
             f"| {s['wall_clock_s_mean']:.0f}s¹ |"
         )
     header = (
-        "| Method | EM | Token-F1 | LLM Judge | Joint-R@2 | Joint-R@5 | MRR-complete | MRR-first | "
+        "| Method | EM | Token-F1 | LLM Judge | N | Joint-R@2 | Joint-R@5 | MRR-complete | MRR-first | "
         "LLM in | LLM out | Embed in | Optimizer $ | Trial $ | Wall |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
     )
-    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | | | | |"
+    body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | | | | | |"
     text = (
         f"# {benchmark_pretty_name} held-out scores\n\n"
-        "Mean and 95% bootstrap CIs over per-question metrics, pooled across seeds. "
-        "Token / cost / wall columns are mean across seeds.\n\n"
+        "EM / F1 / Judge columns: mean ± sample SD (ddof=1) across N hold-out "
+        "replays per method. N=1 means the method has only its end-of-search "
+        "eval; run `replay-holdout` to bring it to N=3. Token / cost / wall "
+        "columns are mean across seeds (search-side, unaffected by hold-out "
+        "replays).\n\n"
         f"{header}\n{body}\n\n"
         "¹ Wall-clock is reported for context only — rate limits and shared caches "
         "make it an unfair primary metric. Token counts are the recommended cost proxy.\n"
@@ -337,9 +464,11 @@ def _fmt_tok(n: float) -> str:
 def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
     """Grouped bars of held-out EM, Token-F1, and LLM-Judge accuracy per method.
 
-    Error bars use the bootstrap 95% CI from ``aggregate_by_method``. This is the
-    primary "which method scores best?" view — the LaTeX table carries the same
-    numbers but the grouping makes cross-method comparison readable at a glance.
+    Error bars are ``± sample SD`` across N hold-out replays per method
+    (run ``replay-holdout`` to populate N>=2 replays; until then N=1 and
+    the bars have zero-height whiskers). This is the primary "which method
+    scores best?" view — the LaTeX table carries the same numbers but
+    the grouping makes cross-method comparison readable at a glance.
     """
     import matplotlib
 
@@ -373,7 +502,15 @@ def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([m.replace("_", "-") for m in methods])
     ax.set_ylabel("Score (held-out)")
-    ax.set_title("Held-out evaluation scores (mean, 95% bootstrap CI)")
+    # Per-method N can differ when one method has been replayed and another
+    # hasn't — show the range so the title doesn't lie about a fixed sample
+    # size. The Markdown table reports N per row for the exact number.
+    n_values = sorted({stats[m].get("n_runs_total", 1) for m in methods})
+    if len(n_values) == 1:
+        n_label = f"N={n_values[0]}"
+    else:
+        n_label = f"N={n_values[0]}-{n_values[-1]} (varies per method; see table)"
+    ax.set_title(f"Held-out evaluation scores (mean ± SD across {n_label} hold-out replays)")
     ax.set_ylim(0, 1)
     ax.legend(loc="best", frameon=False)
     ax.grid(axis="y", alpha=0.3)
@@ -386,7 +523,8 @@ def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
 def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
     """Score-vs-cost and score-vs-wallclock scatter (1x2 panel).
 
-    Each method is one point; vertical bars are the held-out Judge CI, horizontal
+    Each method is one point; vertical bars are ± SD of held-out Judge
+    across hold-out replays (or zero if only N=1 eval exists), horizontal
     bars are the per-seed std of the corresponding axis (or zero for the
     deterministic AutoRAG variants, which have a single run).
 
