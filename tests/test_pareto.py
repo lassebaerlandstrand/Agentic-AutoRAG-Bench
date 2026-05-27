@@ -12,7 +12,6 @@ from agentic_autorag_bench.pareto import (
     _describe_config,
     _ensure_corpus,
     _load_trial_points,
-    _read_frontier_meta,
     _short_model,
     make_pareto_figure,
 )
@@ -69,14 +68,18 @@ def test_describe_config_full_pipeline() -> None:
             "generator_llm": "bedrock/moonshotai.kimi-k2.5",
             "chunking_strategy": "recursive",
             "index_type": "hybrid_bm25_vector",
+            "top_k": 20,
             "query_expansion": "hyde",
             "reranker": "BAAI/bge-reranker-v2-m3",
+            "reranker_top_n": 5,
         }
     )
+    # No "RAG" filler; top_k attaches to retrieval, top_n to the reranker.
     assert desc == (
-        "kimi-k2.5 RAG with Recursive Splitting, Hybrid Retrieval, HyDE, "
-        "and bge-reranker-v2-m3 reranking"
+        "kimi-k2.5 with Recursive Splitting, Hybrid Retrieval (top_k=20), HyDE, "
+        "and bge-reranker-v2-m3 reranking (top_n=5)"
     )
+    assert "RAG" not in desc
 
 
 def test_describe_config_omits_none_expansion_and_reranker() -> None:
@@ -90,7 +93,24 @@ def test_describe_config_omits_none_expansion_and_reranker() -> None:
         }
     )
     # "none" query_expansion and reranker drop out; two clauses join with "and".
-    assert desc == "gpt-4o-mini RAG with Token Splitting and Dense Retrieval"
+    # No top_k/reranker_top_n keys here -> no parenthetical suffixes.
+    assert desc == "gpt-4o-mini with Token Splitting and Dense Retrieval"
+
+
+def test_describe_config_top_n_only_when_reranker_present() -> None:
+    desc = _describe_config(
+        {
+            "generator_llm": "azure/gpt-4o",
+            "chunking_strategy": "recursive",
+            "index_type": "vector_only",
+            "top_k": 12,
+            "query_expansion": "none",
+            "reranker": "none",
+            "reranker_top_n": 7,  # ignored because reranker is "none"
+        }
+    )
+    assert "Dense Retrieval (top_k=12)" in desc
+    assert "top_n" not in desc
 
 
 def test_describe_config_query_expansion_labels() -> None:
@@ -137,20 +157,6 @@ def test_frontier_subset_sorted_by_cost(tmp_path) -> None:
     points = _load_trial_points(seed_dir)
     frontier = sorted((p for p in points if p.is_pareto), key=lambda p: p.cost_per_query)
     assert [p.trial_number for p in frontier] == [2, 4, 1]  # by ascending cost
-
-
-def test_read_frontier_meta(tmp_path) -> None:
-    seed_dir = tmp_path / "agentic_cost" / "seed_1"
-    seed_dir.mkdir(parents=True)
-    (seed_dir / "frontier.json").write_text(
-        json.dumps({"knee_trial": 4, "recommended_trial": 1, "max_score_trial": 1, "frontier": []})
-    )
-    meta = _read_frontier_meta(seed_dir)
-    assert meta == {"knee": 4, "recommended": 1, "max_score": 1}
-
-
-def test_read_frontier_meta_missing_file(tmp_path) -> None:
-    assert _read_frontier_meta(tmp_path) == {}
 
 
 # ------------------------------------------------------------------- figure
