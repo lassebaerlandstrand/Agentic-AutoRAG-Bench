@@ -45,7 +45,7 @@ agent:
 
 examiner:
   exam_size: 100
-  pair_overgeneration_factor: 1.7
+  initial_question_multiplier: 1.7
   probe_selection: true
   neighborhood_min_chunks: 18
   neighborhood_min_words: 5000

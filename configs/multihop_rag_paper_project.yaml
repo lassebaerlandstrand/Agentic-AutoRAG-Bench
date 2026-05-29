@@ -36,7 +36,7 @@ agent:
 
 examiner:
   exam_size: 50
-  pair_overgeneration_factor: 3.0
+  initial_question_multiplier: 3.0
   probe_selection: true
   # Neighborhood-builder thresholds — unified across all three benchmarks.
   # ``target_extras = min(extras_for_chunks, extras_for_words)``, so whichever

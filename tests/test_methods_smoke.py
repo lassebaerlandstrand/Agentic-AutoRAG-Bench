@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from agentic_autorag.config.models import (
+    AgentConfig,
     ChunkingSearchSpace,
     DiscreteValues,
     EmbeddingSearchSpace,
@@ -53,7 +54,12 @@ def _tiny_project() -> ProjectConfig:
             passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
             generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
-        )
+        ),
+        agent=AgentConfig(
+            optimizer_model="ollama/llama3.2",
+            examiner_model="ollama/llama3.2",
+            judge_model="ollama/llama3.2",
+        ),
     )
 
 
@@ -183,6 +189,11 @@ def _multi_embedding_project() -> ProjectConfig:
             generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
             temperature=NumericRange(min=0.0, max=1.0),
         ),
+        agent=AgentConfig(
+            optimizer_model="ollama/llama3.2",
+            examiner_model="ollama/llama3.2",
+            judge_model="ollama/llama3.2",
+        ),
     )
 
 
@@ -255,7 +266,12 @@ def _discrete_project() -> ProjectConfig:
             passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=["ollama/mistral"]),
             generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
             temperature=NumericRange(min=1.0, max=1.0),
-        )
+        ),
+        agent=AgentConfig(
+            optimizer_model="ollama/llama3.2",
+            examiner_model="ollama/llama3.2",
+            judge_model="ollama/llama3.2",
+        ),
     )
 
 

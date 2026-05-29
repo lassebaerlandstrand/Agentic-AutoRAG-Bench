@@ -35,7 +35,6 @@ class AgenticOptimizer:
     output_dir: str
     cost_aware: bool
     deterministic: bool = False
-    debug_prompts: bool = False
     resume: bool = False
 
     @property
@@ -56,8 +55,8 @@ class AgenticOptimizer:
             self.config_path,
             output_dir_override=self.output_dir,
             seed=seed,
-            debug_prompts=self.debug_prompts,
             resume=self.resume,
+            skip_final_report=True,
         )
         orch.evaluator.quiet_per_question = True
         # NB: the framework enables ``litellm.drop_params=True`` so reasoning

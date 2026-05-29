@@ -106,7 +106,7 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
 
 
 async def run_pareto(
-    config_path: str | Path, *, figure_only: bool = False, resume: bool = False, debug_prompts: bool = True
+    config_path: str | Path, *, figure_only: bool = False, resume: bool = False
 ) -> None:
     """Run (or skip) the agentic_cost search, then render the Pareto figure."""
     from agentic_autorag.litellm_runtime import configure_litellm_runtime
@@ -131,7 +131,6 @@ async def run_pareto(
             config_path=str(cfg.project_config_path),
             output_dir=str(seed_dir),
             cost_aware=True,
-            debug_prompts=debug_prompts,
             resume=resume,
         )
         sr = await optimizer.search(_stub_evaluator, Budget(max_trials=cfg.max_trials), seed=cfg.seed)
@@ -147,9 +146,7 @@ async def run_pareto(
     logger.info("Wrote %s", figures_dir / "pareto.png")
 
 
-def pareto_cli(
-    config_path: str, *, figure_only: bool = False, resume: bool = False, debug_prompts: bool = True
-) -> None:
+def pareto_cli(config_path: str, *, figure_only: bool = False, resume: bool = False) -> None:
     """Sync wrapper for the Typer CLI."""
     import asyncio
 
@@ -157,7 +154,7 @@ def pareto_cli(
     for noisy in ("LiteLLM", "litellm", "sentence_transformers", "httpx"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     logging.getLogger("agentic_autorag_bench.run").setLevel(logging.INFO)
-    asyncio.run(run_pareto(config_path, figure_only=figure_only, resume=resume, debug_prompts=debug_prompts))
+    asyncio.run(run_pareto(config_path, figure_only=figure_only, resume=resume))
 
 
 # ------------------------------------------------------------- config labels
