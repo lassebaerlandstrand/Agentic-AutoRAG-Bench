@@ -714,9 +714,9 @@ def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
         plt.close(fig)
         return
     ax.set_xlabel("Trial number")
-    ax.set_ylabel("Exam score (per trial)")
+    ax.set_ylabel("Self-generated exam score (per trial)")
     ax.set_ylim(0, 1)
-    ax.set_title("Per-trial exam score across methods")
+    ax.set_title("Per-trial self-generated exam score across methods")
     ax.grid(alpha=0.3)
     ax.legend(loc="lower right", frameon=False)
     _integer_xticks(ax)
