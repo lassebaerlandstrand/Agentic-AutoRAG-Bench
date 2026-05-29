@@ -438,7 +438,6 @@ def _build_optimizer(
     project,
     bench: BenchConfig,
     output_dir: Path,
-    debug_prompts: bool = False,
     resume: bool = False,
 ):
     if name == "random":
@@ -450,7 +449,6 @@ def _build_optimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
-            debug_prompts=debug_prompts,
             resume=resume,
         )
     raise ValueError(f"Unknown method {name!r}")
@@ -648,7 +646,6 @@ async def run_matrix(
     config_path: str | Path,
     *,
     methods_override: list[str] | None = None,
-    debug_prompts: bool = False,
     clean: bool = True,
     resume: bool = False,
 ) -> None:
@@ -733,7 +730,6 @@ async def run_matrix(
                     project=shared.config,
                     bench=bench,
                     output_dir=method_dir,
-                    debug_prompts=debug_prompts,
                     resume=resume_this_method,
                 )
                 try:
@@ -821,7 +817,6 @@ def run_cli(
     config_path: str,
     *,
     methods: list[str] | None = None,
-    debug_prompts: bool = False,
     clean: bool = True,
     resume: bool = False,
 ) -> None:
@@ -837,7 +832,6 @@ def run_cli(
     asyncio.run(run_matrix(
         config_path,
         methods_override=methods,
-        debug_prompts=debug_prompts,
         clean=clean,
         resume=resume,
     ))

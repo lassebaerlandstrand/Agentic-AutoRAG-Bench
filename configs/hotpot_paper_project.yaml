@@ -47,7 +47,7 @@ agent:
 
 examiner:
   exam_size: 100
-  pair_overgeneration_factor: 1.7
+  initial_question_multiplier: 1.7
   probe_selection: true
   # Neighborhood-builder thresholds. The composer sees a neighborhood per
   # call (anchor + same-doc siblings + cosine-similar cross-doc chunks).

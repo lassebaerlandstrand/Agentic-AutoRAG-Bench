@@ -24,13 +24,6 @@ def run(
         "-m",
         help="Subset of methods to run (must be present in the config; repeat flag for multiple).",
     ),
-    debug_prompts: bool = typer.Option(
-        True,
-        "--debug-prompts/--no-debug-prompts",
-        help="For the agentic method, log every proposer prompt + response to run.log. "
-             "Defaults to ON because proposer-side bugs aren't reproducible from per-trial "
-             "JSON alone; pass --no-debug-prompts to silence.",
-    ),
     clean: bool = typer.Option(
         True,
         "--clean/--no-clean",
@@ -66,7 +59,6 @@ def run(
     run_cli(
         config,
         methods=methods or None,
-        debug_prompts=debug_prompts,
         clean=clean,
         resume=resume,
     )
@@ -131,13 +123,6 @@ def pareto(
         "--resume",
         help="Resume an interrupted agentic_cost search from its last completed trial.",
     ),
-    debug_prompts: bool = typer.Option(
-        True,
-        "--debug-prompts/--no-debug-prompts",
-        help="Log every proposer/diagnoser prompt + response to the run's run.log. "
-             "Defaults to ON because proposer-side bugs aren't reproducible from per-trial "
-             "JSON alone; pass --no-debug-prompts to silence.",
-    ),
 ) -> None:
     """Run agentic_cost's search on the UniDoc corpus and render a Syftr-style
     cost-vs-accuracy Pareto figure of its trials.
@@ -147,7 +132,7 @@ def pareto(
     """
     from agentic_autorag_bench.pareto import pareto_cli
 
-    pareto_cli(config, figure_only=figure_only, resume=resume, debug_prompts=debug_prompts)
+    pareto_cli(config, figure_only=figure_only, resume=resume)
 
 
 @app.command()
