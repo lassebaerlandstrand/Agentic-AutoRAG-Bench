@@ -137,7 +137,7 @@ class RandomSearch:
             entry = HistoryEntry(
                 trial_number=trial_num,
                 config=config.to_prompt_dump(include_graph=self.project.uses_graph()),
-                score=result.score,
+                answer_accuracy=result.answer_accuracy,
                 metrics=result.metrics,
                 eval_usd=result.eval_usd,
                 prompt_tokens=result.prompt_tokens,
@@ -157,14 +157,16 @@ class RandomSearch:
                     json.dumps({"wall_clock_s": cumulative}), encoding="utf-8"
                 )
 
-            best = max(h.score for h in history)
-            logger.info("random trial %d done | score=%.3f | best so far=%.3f", trial_num, result.score, best)
+            best = max(h.answer_accuracy for h in history)
+            logger.info(
+                "random trial %d done | accuracy=%.3f | best so far=%.3f", trial_num, result.answer_accuracy, best
+            )
             logger.info("")
 
         if not history:
             raise RuntimeError("Random search produced no successful trials")
 
-        best_entry = max(history, key=lambda h: h.score)
+        best_entry = max(history, key=lambda h: h.answer_accuracy)
         total_wall = prior_wall_s + (time.monotonic() - t_start)
         return SearchResult(
             method=self.name,

@@ -36,7 +36,7 @@ def _trial(n: int, cost: float, score: float, pareto: bool, **config) -> dict:
     base_config.update(config)
     return {
         "trial_number": n,
-        "score": score,
+        "answer_accuracy": score,
         "mean_llm_cost_per_query_usd": cost,
         "is_pareto_optimal": pareto,
         "config": base_config,
@@ -133,14 +133,15 @@ def test_load_trial_points_filters_and_parses(tmp_path) -> None:
             _trial(1, 0.0010, 0.50, pareto=False),
             _trial(2, 0.0020, 0.80, pareto=True),
             _trial(3, 0.0, 0.40, pareto=False),  # cost 0 -> dropped (log axis)
-            {"trial_number": 4, "score": None, "mean_llm_cost_per_query_usd": 0.001},  # no score -> dropped
+            # no accuracy -> dropped
+            {"trial_number": 4, "answer_accuracy": None, "mean_llm_cost_per_query_usd": 0.001},
         ],
     )
     points = _load_trial_points(seed_dir)
     assert [p.trial_number for p in points] == [1, 2]
     assert points[1].is_pareto is True
     assert points[1].cost_per_query == 0.0020
-    assert points[0].score == 0.50
+    assert points[0].answer_accuracy == 0.50
 
 
 def test_frontier_subset_sorted_by_cost(tmp_path) -> None:

@@ -3,10 +3,10 @@
 A single ``agentic_cost`` search on the UniDoc (healthcare) PDF corpus, scored
 on the optimizer's own self-generated exam — no held-out QA. The optimizer
 already writes everything the figure needs: each ``history.jsonl`` row carries
-``score``, ``mean_llm_cost_per_query_usd``, and ``is_pareto_optimal`` (the flag
-is recomputed over all trials after every trial and the whole file rewritten,
+``answer_accuracy``, ``mean_llm_cost_per_query_usd``, and ``is_pareto_optimal`` (the
+flag is recomputed over all trials after every trial and the whole file rewritten,
 so the final file reflects the final frontier), and ``frontier.json`` carries
-the knee / recommended / max-score trial numbers.
+the knee / recommended / max-accuracy trial numbers.
 
 ``make_pareto_figure`` renders a Syftr-style scatter: a gray cloud of every
 trial with the optimizer's Pareto frontier highlighted, numbered, and described
@@ -136,8 +136,8 @@ async def run_pareto(
         sr = await optimizer.search(_stub_evaluator, Budget(max_trials=cfg.max_trials), seed=cfg.seed)
         _persist_search_result(sr, seed_dir)
         logger.info(
-            "agentic_cost pareto run done | trials=%d | best_score=%.3f",
-            len(sr.history), max((h.score for h in sr.history), default=0.0),
+            "agentic_cost pareto run done | trials=%d | best_accuracy=%.3f",
+            len(sr.history), max((h.answer_accuracy for h in sr.history), default=0.0),
         )
 
     figures_dir = cfg.output_root / "figures"
@@ -230,24 +230,24 @@ def _describe_config(config: dict) -> str:
 class _TrialPoint:
     trial_number: int
     cost_per_query: float
-    score: float
+    answer_accuracy: float
     is_pareto: bool
     config: dict
 
 
 def _load_trial_points(seed_dir: Path) -> list[_TrialPoint]:
-    """Trials with a usable (cost>0, score) pair, from the rich agentic history."""
+    """Trials with a usable (cost>0, accuracy) pair, from the rich agentic history."""
     points: list[_TrialPoint] = []
     for row in _read_history(seed_dir):
         cost = row.get("mean_llm_cost_per_query_usd")
-        score = row.get("score")
+        score = row.get("answer_accuracy")
         if cost is None or score is None or float(cost) <= 0.0:
             continue
         points.append(
             _TrialPoint(
                 trial_number=int(row.get("trial_number", 0)),
                 cost_per_query=float(cost),
-                score=float(score),
+                answer_accuracy=float(score),
                 is_pareto=bool(row.get("is_pareto_optimal", False)),
                 config=row.get("config") or {},
             )
@@ -279,7 +279,7 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     # Cloud of all trials.
     ax.scatter(
         [p.cost_per_query for p in points],
-        [p.score * 100 for p in points],
+        [p.answer_accuracy * 100 for p in points],
         s=42, c="#d9d9d9", edgecolors="none", alpha=0.7, zorder=1, label="All trials",
     )
 
@@ -287,7 +287,7 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     if len(frontier) >= 2:
         ax.plot(
             [p.cost_per_query for p in frontier],
-            [p.score * 100 for p in frontier],
+            [p.answer_accuracy * 100 for p in frontier],
             color="#7f7f7f", lw=1.1, zorder=2, label="Pareto frontier",
         )
 
@@ -296,12 +296,12 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     cmap = plt.get_cmap(cmap_name)
     for i, p in enumerate(frontier, start=1):
         ax.scatter(
-            p.cost_per_query, p.score * 100,
+            p.cost_per_query, p.answer_accuracy * 100,
             s=110, color=cmap((i - 1) % cmap.N), edgecolors="black", linewidths=0.6, zorder=4,
             label=f"{i}. {_describe_config(p.config)}",
         )
         ax.annotate(
-            str(i), (p.cost_per_query, p.score * 100),
+            str(i), (p.cost_per_query, p.answer_accuracy * 100),
             textcoords="offset points", xytext=(6, 5), fontweight="bold", zorder=6,
         )
 

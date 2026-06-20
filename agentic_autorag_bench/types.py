@@ -39,7 +39,7 @@ class TrialResult:
     for audit.
     """
 
-    score: float
+    answer_accuracy: float
     metrics: dict[str, float]
     eval_usd: float
     prompt_tokens: int = 0
@@ -50,7 +50,7 @@ class TrialResult:
     def from_exam_result(cls, exam_result: Any) -> TrialResult:
         """Build a ``TrialResult`` from the framework's ``ExamResult``."""
         return cls(
-            score=float(exam_result.score),
+            answer_accuracy=float(exam_result.answer_accuracy),
             metrics={
                 "answer_accuracy": float(exam_result.answer_accuracy),
                 "mean_retrieval_quality": float(exam_result.mean_retrieval_quality),
@@ -70,7 +70,7 @@ class HistoryEntry:
 
     trial_number: int
     config: dict
-    score: float
+    answer_accuracy: float
     metrics: dict[str, float]
     eval_usd: float
     prompt_tokens: int = 0
@@ -81,7 +81,7 @@ class HistoryEntry:
         return {
             "trial_number": self.trial_number,
             "config": self.config,
-            "score": self.score,
+            "answer_accuracy": self.answer_accuracy,
             "metrics": self.metrics,
             "eval_usd": self.eval_usd,
             "prompt_tokens": self.prompt_tokens,

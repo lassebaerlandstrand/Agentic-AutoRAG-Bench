@@ -71,7 +71,7 @@ def _make_evaluator(scores: list[float]):
         score = scores[counter["i"] % len(scores)]
         counter["i"] += 1
         return TrialResult(
-            score=score,
+            answer_accuracy=score,
             metrics={"answer_accuracy": score, "mean_em": score, "mean_f1": score, "mean_retrieval_quality": score},
             eval_usd=0.001,
         )
@@ -91,7 +91,7 @@ async def test_random_search_runs_to_completion() -> None:
     assert sr.seed == 42
     assert sr.deterministic is False
     assert len(sr.history) == 3
-    assert max(h.score for h in sr.history) == 0.7
+    assert max(h.answer_accuracy for h in sr.history) == 0.7
     assert sr.best_config["chunking_strategy"] == "recursive"
     assert sr.trial_usd_total == pytest.approx(3 * 0.001)
 
@@ -134,7 +134,7 @@ async def test_bayesian_search_runs_to_completion(tmp_path: Path) -> None:
 
     assert sr.method == "bayesian"
     assert len(sr.history) == 3
-    assert max(h.score for h in sr.history) == 0.7
+    assert max(h.answer_accuracy for h in sr.history) == 0.7
     assert (tmp_path / "optuna.db").exists()
     assert (tmp_path / "optuna_sampler.pkl").exists()
 
@@ -385,7 +385,7 @@ async def test_random_resume_continues_from_last_trial(tmp_path: Path) -> None:
 
     # History is the merge: trials 1-2 from leg A, trials 3-4 from leg B.
     assert len(sr_b.history) == 4
-    scores = [h.score for h in sr_b.history]
+    scores = [h.answer_accuracy for h in sr_b.history]
     assert scores == [0.1, 0.2, 0.3, 0.4], scores
     # trial_usd_total accumulates across legs.
     assert sr_b.trial_usd_total == pytest.approx(4 * 0.001)
@@ -436,7 +436,7 @@ async def test_bayesian_resume_continues_from_last_trial(tmp_path: Path) -> None
         _make_evaluator([0.3, 0.4]), Budget(max_trials=4), seed=42,
     )
     assert len(sr_b.history) == 4
-    scores = [h.score for h in sr_b.history]
+    scores = [h.answer_accuracy for h in sr_b.history]
     assert scores == [0.1, 0.2, 0.3, 0.4], scores
     assert sr_b.trial_usd_total == pytest.approx(4 * 0.001)
 
@@ -510,11 +510,11 @@ async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) 
     )
     assert len(sr.history) == 4
     # First two scores came from optuna.db's stored values.
-    assert sr.history[0].score == 0.4
-    assert sr.history[1].score == 0.5
+    assert sr.history[0].answer_accuracy == 0.4
+    assert sr.history[1].answer_accuracy == 0.5
     # New trials run as normal.
-    assert sr.history[2].score == 0.6
-    assert sr.history[3].score == 0.7
+    assert sr.history[2].answer_accuracy == 0.6
+    assert sr.history[3].answer_accuracy == 0.7
     # Reconstructed configs are non-empty (sample_optuna replay worked).
     assert sr.history[0].config["embedding_model"] == "sentence-transformers/all-MiniLM-L6-v2"
     # Cost from the synthesized ledger flows through.
