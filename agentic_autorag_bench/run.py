@@ -382,7 +382,7 @@ async def _evaluate_checkpoints(
         sliced: list[HistoryEntry] = sr.history[:k]
         if not sliced:
             continue
-        best = max(sliced, key=lambda h: h.score)
+        best = max(sliced, key=lambda h: h.answer_accuracy)
 
         ck_method = f"{method_name}@{k}"
         ck_dir = bench.output_root / ck_method / seed_label
@@ -427,8 +427,8 @@ async def _evaluate_checkpoints(
         )
         make_seed_figures(ck_dir)
         logger.info(
-            "  checkpoint %s seed=%s @%d done | best_score=%.3f | trial_usd=$%.4f",
-            method_name, seed, k, best.score, sr_at_k.trial_usd_total,
+            "  checkpoint %s seed=%s @%d done | best_accuracy=%.3f | trial_usd=$%.4f",
+            method_name, seed, k, best.answer_accuracy, sr_at_k.trial_usd_total,
         )
 
 
@@ -511,7 +511,7 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
             embedding_tokens = 0
 
         return TrialResult(
-            score=float(exam_result.score),
+            answer_accuracy=float(exam_result.answer_accuracy),
             metrics={
                 "answer_accuracy": float(exam_result.answer_accuracy),
                 "mean_retrieval_quality": float(exam_result.mean_retrieval_quality),
@@ -748,9 +748,9 @@ async def run_matrix(
 
                 _persist_search_result(sr, method_dir)
                 logger.info(
-                    "%s seed=%s done | best_score=%.3f | trials=%d | wall=%.1fs | trial_usd=$%.4f | optim_usd=$%.4f",
+                    "%s seed=%s done | best_accuracy=%.3f | trials=%d | wall=%.1fs | trial_usd=$%.4f | optim_usd=$%.4f",
                     method_name, seed,
-                    max((h.score for h in sr.history), default=0.0),
+                    max((h.answer_accuracy for h in sr.history), default=0.0),
                     len(sr.history),
                     sr.wall_clock_s,
                     sr.trial_usd_total,

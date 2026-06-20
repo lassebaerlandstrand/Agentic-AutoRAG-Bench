@@ -81,7 +81,7 @@ class AgenticOptimizer:
             HistoryEntry(
                 trial_number=record.trial_number,
                 config=record.config.to_prompt_dump(include_graph=include_graph),
-                score=float(record.score),
+                answer_accuracy=float(record.answer_accuracy),
                 metrics={
                     "answer_accuracy": float(record.answer_accuracy),
                     "mean_retrieval_quality": float(record.mean_retrieval_quality),
@@ -99,7 +99,7 @@ class AgenticOptimizer:
         if not history:
             raise RuntimeError("Agentic run produced no successful trials")
 
-        best_entry = max(history, key=lambda h: h.score)
+        best_entry = max(history, key=lambda h: h.answer_accuracy)
 
         # ``trial_usd_total`` covers the full per-trial eval spend: each
         # question's RAG generation (``eval_usd`` summed from history) plus

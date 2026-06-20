@@ -110,7 +110,7 @@ def _discover_method_names(output_root: Path) -> list[str]:
 
 
 def _entry_score(e: dict) -> float:
-    return float(e.get("score", 0.0))
+    return float(e.get("answer_accuracy", 0.0))
 
 
 def _entry_eval_usd(e: dict) -> float:

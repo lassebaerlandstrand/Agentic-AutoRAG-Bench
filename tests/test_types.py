@@ -15,7 +15,6 @@ def test_budget_defaults_unbounded() -> None:
 
 def test_trial_result_from_exam_result() -> None:
     exam = SimpleNamespace(
-        score=0.75,
         answer_accuracy=0.80,
         mean_retrieval_quality=0.62,
         mean_em=0.70,
@@ -23,7 +22,7 @@ def test_trial_result_from_exam_result() -> None:
         total_llm_cost_usd=0.0123,
     )
     tr = TrialResult.from_exam_result(exam)
-    assert tr.score == 0.75
+    assert tr.answer_accuracy == 0.80
     assert tr.metrics["answer_accuracy"] == 0.80
     assert tr.metrics["mean_em"] == 0.70
     assert tr.eval_usd == 0.0123
@@ -31,7 +30,6 @@ def test_trial_result_from_exam_result() -> None:
 
 def test_trial_result_handles_missing_cost() -> None:
     exam = SimpleNamespace(
-        score=0.5,
         answer_accuracy=0.5,
         mean_retrieval_quality=0.5,
         mean_em=0.5,
@@ -48,8 +46,8 @@ def test_search_result_serializes_round_trip() -> None:
         deterministic=False,
         best_config={"top_k": 5},
         history=[
-            HistoryEntry(trial_number=1, config={"top_k": 3}, score=0.4, metrics={"em": 0.3}, eval_usd=0.01),
-            HistoryEntry(trial_number=2, config={"top_k": 5}, score=0.6, metrics={"em": 0.5}, eval_usd=0.01),
+            HistoryEntry(trial_number=1, config={"top_k": 3}, answer_accuracy=0.4, metrics={"em": 0.3}, eval_usd=0.01),
+            HistoryEntry(trial_number=2, config={"top_k": 5}, answer_accuracy=0.6, metrics={"em": 0.5}, eval_usd=0.01),
         ],
         optimizer_usd=0.0,
         trial_usd_total=0.02,
@@ -59,5 +57,5 @@ def test_search_result_serializes_round_trip() -> None:
     assert d["method"] == "random"
     assert d["seed"] == 1
     assert len(d["history"]) == 2
-    assert d["history"][0]["score"] == 0.4
+    assert d["history"][0]["answer_accuracy"] == 0.4
     assert d["trial_usd_total"] == 0.02

@@ -203,11 +203,11 @@ class BayesianSearch:
                 study.tell(trial, state=optuna.trial.TrialState.FAIL)
                 continue
 
-            study.tell(trial, result.score)
+            study.tell(trial, result.answer_accuracy)
             entry = HistoryEntry(
                 trial_number=trial_num,
                 config=config.to_prompt_dump(include_graph=self.project.uses_graph()),
-                score=result.score,
+                answer_accuracy=result.answer_accuracy,
                 metrics=result.metrics,
                 eval_usd=result.eval_usd,
                 prompt_tokens=result.prompt_tokens,
@@ -227,14 +227,16 @@ class BayesianSearch:
                 json.dumps({"wall_clock_s": cumulative}), encoding="utf-8"
             )
 
-            best = max(h.score for h in history)
-            logger.info("bayesian trial %d done | score=%.3f | best so far=%.3f", trial_num, result.score, best)
+            best = max(h.answer_accuracy for h in history)
+            logger.info(
+                "bayesian trial %d done | accuracy=%.3f | best so far=%.3f", trial_num, result.answer_accuracy, best
+            )
             logger.info("")
 
         if not history:
             raise RuntimeError("Bayesian search produced no successful trials")
 
-        best_entry = max(history, key=lambda h: h.score)
+        best_entry = max(history, key=lambda h: h.answer_accuracy)
         total_wall = prior_wall_s + (time.monotonic() - t_start)
         return SearchResult(
             method=self.name,
@@ -343,7 +345,7 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
             HistoryEntry(
                 trial_number=bench_idx,
                 config=cfg.to_prompt_dump(include_graph=include_graph),
-                score=score,
+                answer_accuracy=score,
                 metrics={
                     "answer_accuracy": score,
                     "mean_em": 0.0,

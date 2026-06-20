@@ -46,7 +46,7 @@ def _write_seed(
         entry: dict = {
             "trial_number": i,
             "config": {"chunk_token_size": 256},
-            "score": s,
+            "answer_accuracy": s,
             "metrics": {},
         }
         if schema == "bench":

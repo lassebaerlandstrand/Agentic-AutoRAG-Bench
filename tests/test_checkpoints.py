@@ -81,7 +81,7 @@ def _search_result(n_trials: int, peak_at: int) -> SearchResult:
         HistoryEntry(
             trial_number=i + 1,
             config=dict(base),
-            score=0.5 + (0.10 if i + 1 == peak_at else 0.0) + 0.001 * i,
+            answer_accuracy=0.5 + (0.10 if i + 1 == peak_at else 0.0) + 0.001 * i,
             metrics={"answer_accuracy": 0.5},
             eval_usd=0.10,
             prompt_tokens=100,
@@ -141,7 +141,7 @@ async def test_writes_checkpoint_dirs_with_correct_best(tmp_path: Path) -> None:
     sr20 = json.loads((ck20 / "search_result.json").read_text())
     assert sr20["method"] == "agentic_score@20"
     assert len(sr20["history"]) == 20
-    best20 = max(sr20["history"], key=lambda h: h["score"])
+    best20 = max(sr20["history"], key=lambda h: h["answer_accuracy"])
     assert best20["trial_number"] == 15
 
     # Held-out evaluator was invoked once per checkpoint, each with
