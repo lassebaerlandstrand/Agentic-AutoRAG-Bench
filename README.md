@@ -158,5 +158,14 @@ original setup steps, and the wiring needed to re-enable.
 
 ## Framework dependency
 
-Path dep on `../Agentic-AutoRAG` during development; switched to a git
-submodule pinned at `v0.1.0-emnlp2026` before paper submission.
+Editable path dep on `../Agentic-AutoRAG` (see `[tool.uv.sources]`). The
+optimizer keeps evolving on `main` after the paper benchmarks run, so
+reproducibility rests on provenance, not a frozen checkout: every run stamps the
+optimizer's package version and git commit into `<output_root>/bench_metadata.json`
+(`run._optimizer_provenance`), so each results directory self-documents the exact
+code that produced it.
+
+Once, right before the final benchmark runs, tag the optimizer at the commit you
+run — a venue-neutral name, e.g. `git -C ../Agentic-AutoRAG tag v0.1.0-paper` —
+so the stamped `describe` resolves to that tag. Bump the suffix (`v0.1.1-paper`)
+if you re-run for a resubmission.

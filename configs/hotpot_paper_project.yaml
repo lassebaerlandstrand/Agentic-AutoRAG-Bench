@@ -124,11 +124,12 @@ search_space:
       - "mixedbread-ai/mxbai-rerank-xsmall-v1"
     top_n: { min: 3, max: 10 }
 
-  # Wide generator pool, copied verbatim from the framework's
-  # ../Agentic-AutoRAG/configs/hotpot_qa.yaml. Some entries are aspirational
-  # (preview deployments, new Bedrock models); trials on an unreachable model
-  # will throw, consume their budget slot, and be marked failed. Accepted
-  # tradeoff — keeps the matrix maximally expressive.
+  # Wide generator pool — this config is the canonical, self-contained source
+  # for the paper benchmark (the optimizer's own configs/ holds only local
+  # scratch). Some entries are aspirational (preview deployments, new Bedrock
+  # models); trials on an unreachable model will throw, consume their budget
+  # slot, and be marked failed. Accepted tradeoff — keeps the matrix maximally
+  # expressive.
   generator:
     models:
       - "bedrock/global.amazon.nova-2-lite-v1:0"

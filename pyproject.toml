@@ -53,6 +53,11 @@ extend-exclude = [
 select = ["E", "F", "I", "W", "UP", "B", "SIM"]
 extend-ignore = ["D102", "D103"]
 
+[tool.ruff.lint.flake8-bugbear]
+# typer declares CLI params via Option/Argument calls in argument defaults —
+# the idiomatic pattern, not a B008 mutable-default-argument bug.
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["agentic_autorag_bench"]
 
