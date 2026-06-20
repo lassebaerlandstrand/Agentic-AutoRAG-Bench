@@ -16,10 +16,13 @@ multi-benchmark belongs at the config layer, not inside one run.
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import json
 import logging
 import shutil
+import subprocess
 from dataclasses import dataclass, field
+from importlib import metadata
 from pathlib import Path
 
 import yaml
@@ -99,6 +102,43 @@ def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
 _FIGURES_STAGING_NAME = "_figures_staging"
 
 
+def _git(repo_root: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repo_root), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+
+def _optimizer_provenance() -> dict[str, str | bool | None]:
+    """Capture which ``agentic-autorag`` build produced this run.
+
+    The optimizer keeps evolving on ``main`` after the paper benchmarks run, so
+    every bench run records the optimizer's package version and — for the usual
+    editable path install — its git commit, letting a results directory
+    self-document the exact code that produced it. Falls back to version-only
+    when the package isn't a git checkout (e.g. installed from a wheel).
+    """
+    provenance: dict[str, str | bool | None] = {
+        "version": metadata.version("agentic-autorag"),
+        "commit": None,
+        "describe": None,
+        "dirty": None,
+    }
+    spec = importlib.util.find_spec("agentic_autorag")
+    if spec is None or spec.origin is None:
+        return provenance
+    repo_root = Path(spec.origin).parent.parent
+    try:
+        provenance["commit"] = _git(repo_root, "rev-parse", "HEAD")
+        provenance["describe"] = _git(repo_root, "describe", "--tags", "--always", "--dirty")
+        provenance["dirty"] = bool(_git(repo_root, "status", "--porcelain"))
+    except (subprocess.SubprocessError, OSError):
+        pass
+    return provenance
+
+
 def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
     """Persist the benchmark + run identity at ``output_root/bench_metadata.json``.
 
@@ -120,6 +160,7 @@ def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
         "seeds": bench.seeds,
         "max_trials": bench.max_trials,
         "checkpoints": bench.checkpoints,
+        "agentic_autorag": _optimizer_provenance(),
     }
     (output_root / "bench_metadata.json").write_text(
         json.dumps(meta, indent=2), encoding="utf-8"
