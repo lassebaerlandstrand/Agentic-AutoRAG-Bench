@@ -148,7 +148,9 @@ async def replay_holdout(
     if not targets:
         logger.info(
             "No replay targets under %s (methods_filter=%s, include_checkpoints=%s)",
-            bench.output_root, methods_filter, include_checkpoints,
+            bench.output_root,
+            methods_filter,
+            include_checkpoints,
         )
         return
 
@@ -161,13 +163,16 @@ async def replay_holdout(
         else:
             logger.info(
                 "%s already has %d runs; nothing to do",
-                seed_dir.relative_to(bench.output_root), len(existing),
+                seed_dir.relative_to(bench.output_root),
+                len(existing),
             )
 
     total_evals = sum(len(missing) for _, missing in plan)
     logger.info(
         "Replay plan: %d eval(s) across %d (method, seed) dir(s); target n_runs=%d",
-        total_evals, len(plan), n_runs,
+        total_evals,
+        len(plan),
+        n_runs,
     )
 
     for seed_dir, missing in plan:
@@ -184,8 +189,8 @@ async def replay_holdout(
                 # missing here, the dir was rejected by _discover_targets;
                 # we should never reach this branch.
                 logger.warning(
-                    "Refusing to write run_001 from replay loop; %s should already "
-                    "have benchmark_results.json", seed_dir,
+                    "Refusing to write run_001 from replay loop; %s should already have benchmark_results.json",
+                    seed_dir,
                 )
                 continue
             out_path = replays_dir / f"run_{run_idx:03d}.json"
@@ -222,9 +227,11 @@ def replay_holdout_cli(
         logging.getLogger(noisy).setLevel(logging.WARNING)
     run_logger = logging.getLogger("agentic_autorag_bench.run")
     run_logger.setLevel(logging.INFO)
-    asyncio.run(replay_holdout(
-        config_path,
-        n_runs=n_runs,
-        methods=methods,
-        include_checkpoints=include_checkpoints,
-    ))
+    asyncio.run(
+        replay_holdout(
+            config_path,
+            n_runs=n_runs,
+            methods=methods,
+            include_checkpoints=include_checkpoints,
+        )
+    )

@@ -67,10 +67,7 @@ def _retrieval_metrics_for_row(
                 break
 
     recalls = {k: sum(1 for d in dedup[:k] if d in gold) / n_gold for k in _RETRIEVAL_KS}
-    joint_recalls = {
-        k: 1.0 if sum(1 for d in dedup[:k] if d in gold) == n_gold else 0.0
-        for k in _RETRIEVAL_KS
-    }
+    joint_recalls = {k: 1.0 if sum(1 for d in dedup[:k] if d in gold) == n_gold else 0.0 for k in _RETRIEVAL_KS}
     return recalls, joint_recalls, first_rank, complete_rank
 
 
@@ -102,9 +99,7 @@ def _collect_filtered_ids(method_files: list[Path]) -> tuple[set[str], dict[str,
         data = json.loads(f.read_text(encoding="utf-8"))
         per_q = data.get("per_question", [])
         run_key = _run_key(f)
-        ids = sorted(
-            r["id"] for r in per_q if r.get("error") == CONTENT_FILTER_SENTINEL
-        )
+        ids = sorted(r["id"] for r in per_q if r.get("error") == CONTENT_FILTER_SENTINEL)
         if ids:
             by_run[run_key] = ids
             union.update(ids)
@@ -122,11 +117,7 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
     """
     per_q: list[dict] = data.get("per_question", [])
     error_sentinels = {"CONTENT_FILTER", "PERMANENT_LLM_ERROR", "TRANSIENT_LLM_ERROR"}
-    valid = [
-        r for r in per_q
-        if r.get("id") not in excluded
-        and r.get("error") not in error_sentinels
-    ]
+    valid = [r for r in per_q if r.get("id") not in excluded and r.get("error") not in error_sentinels]
     n_valid = len(valid)
     judge_enabled = data.get("judge_model") is not None
 
@@ -136,24 +127,26 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
     out["n_valid"] = n_valid
 
     if not n_valid:
-        out.update({
-            "em": 0.0,
-            "f1": 0.0,
-            "llm_judge_accuracy": None,
-            "n_judge_invalid": 0,
-            "recall_at_1": None,
-            "recall_at_2": None,
-            "recall_at_5": None,
-            "recall_at_10": None,
-            "joint_recall_at_1": None,
-            "joint_recall_at_2": None,
-            "joint_recall_at_5": None,
-            "joint_recall_at_10": None,
-            "mrr_first": None,
-            "mrr_complete": None,
-            "avg_retrieval_s": 0.0,
-            "avg_generation_s": 0.0,
-        })
+        out.update(
+            {
+                "em": 0.0,
+                "f1": 0.0,
+                "llm_judge_accuracy": None,
+                "n_judge_invalid": 0,
+                "recall_at_1": None,
+                "recall_at_2": None,
+                "recall_at_5": None,
+                "recall_at_10": None,
+                "joint_recall_at_1": None,
+                "joint_recall_at_2": None,
+                "joint_recall_at_5": None,
+                "joint_recall_at_10": None,
+                "mrr_first": None,
+                "mrr_complete": None,
+                "avg_retrieval_s": 0.0,
+                "avg_generation_s": 0.0,
+            }
+        )
         return out
 
     out["em"] = sum(float(r.get("em", 0.0)) for r in valid) / n_valid
@@ -162,17 +155,13 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
     out["avg_generation_s"] = sum(float(r.get("generation_s", 0.0)) for r in valid) / n_valid
 
     judged = [r for r in valid if r.get("judge") is not None]
-    out["n_judge_invalid"] = (
-        sum(1 for r in valid if r.get("judge") is None) if judge_enabled else 0
-    )
+    out["n_judge_invalid"] = sum(1 for r in valid if r.get("judge") is None) if judge_enabled else 0
     # judge ∈ {1, 0, -1}: 1=correct, 0=wrong, -1=NO_ANSWER (abstention).
     # Accuracy is correct / judged; abstention counts as incorrect (same as
     # the optimizer's trial-time objective), so count judge==1 rather than
     # summing the raw verdicts (which would subtract for every -1).
     out["llm_judge_accuracy"] = (
-        sum(1 for r in judged if r["judge"] == 1) / len(judged)
-        if judge_enabled and judged
-        else None
+        sum(1 for r in judged if r["judge"] == 1) / len(judged) if judge_enabled and judged else None
     )
 
     supporting_present = any(r.get("supporting_doc_ids") for r in valid)
@@ -238,9 +227,10 @@ def apply_union_exclusion(output_root: Path) -> dict:
     union, by_run = _collect_filtered_ids(method_files)
     if union:
         logger.info(
-            "Union-excluding %d content-filtered question(s) across %d hold-out run(s); "
-            "contributing runs: %s",
-            len(union), len(method_files), sorted(by_run.keys()),
+            "Union-excluding %d content-filtered question(s) across %d hold-out run(s); contributing runs: %s",
+            len(union),
+            len(method_files),
+            sorted(by_run.keys()),
         )
     else:
         logger.info(
@@ -262,7 +252,5 @@ def apply_union_exclusion(output_root: Path) -> dict:
         "by_run": by_run,
         "n_runs_scanned": len(method_files),
     }
-    (output_root / "filtered_questions.json").write_text(
-        json.dumps(registry, indent=2), encoding="utf-8"
-    )
+    (output_root / "filtered_questions.json").write_text(json.dumps(registry, indent=2), encoding="utf-8")
     return registry

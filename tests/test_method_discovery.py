@@ -88,8 +88,13 @@ def test_discover_method_names_skips_non_method_dirs(tmp_path: Path) -> None:
     method dirs but must NOT be treated as methods."""
     root = tmp_path / "results"
     for name in (
-        "agentic_score", "agentic_score@10", "random",
-        "figures", ".shared_cache", "_figures_staging", "_figures_previous",
+        "agentic_score",
+        "agentic_score@10",
+        "random",
+        "figures",
+        ".shared_cache",
+        "_figures_staging",
+        "_figures_previous",
     ):
         (root / name).mkdir(parents=True)
 

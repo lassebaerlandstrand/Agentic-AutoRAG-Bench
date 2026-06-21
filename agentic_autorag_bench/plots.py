@@ -30,6 +30,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench._figstyle import (
     apply_paper_style,
@@ -83,7 +84,7 @@ def _order_methods(method_names) -> list[str]:
         ks: list[tuple[int, str]] = []
         for n in names:
             if n.startswith(prefix):
-                suffix = n[len(prefix):]
+                suffix = n[len(prefix) :]
                 if suffix.isdigit():
                     ks.append((int(suffix), n))
         for _, n in sorted(ks):
@@ -99,10 +100,7 @@ def _discover_method_names(output_root: Path) -> list[str]:
     ``_order_methods``. Empty if ``output_root`` doesn't exist."""
     if not output_root.exists():
         return []
-    on_disk = {
-        d.name for d in output_root.iterdir()
-        if d.is_dir() and d.name not in _NON_METHOD_DIRS
-    }
+    on_disk = {d.name for d in output_root.iterdir() if d.is_dir() and d.name not in _NON_METHOD_DIRS}
     return _order_methods(on_disk)
 
 
@@ -126,7 +124,7 @@ def _entry_eval_usd(e: dict) -> float:
 
 
 def _read_history(seed_dir: Path) -> list[dict]:
-    path = seed_dir / "history.jsonl"
+    path = RunLayout(base=seed_dir).history
     if not path.exists():
         return []
     out: list[dict] = []
@@ -146,17 +144,11 @@ def _read_benchmark(seed_dir: Path) -> dict | None:
 
 
 def _seed_dirs(method_dir: Path) -> list[Path]:
-    return sorted(
-        p for p in method_dir.iterdir()
-        if p.is_dir() and p.name not in _NON_METHOD_DIRS
-    )
+    return sorted(p for p in method_dir.iterdir() if p.is_dir() and p.name not in _NON_METHOD_DIRS)
 
 
 def _method_dirs(output_root: Path) -> list[Path]:
-    return sorted(
-        p for p in output_root.iterdir()
-        if p.is_dir() and p.name not in _NON_METHOD_DIRS
-    )
+    return sorted(p for p in output_root.iterdir() if p.is_dir() and p.name not in _NON_METHOD_DIRS)
 
 
 def _benchmark_cost_per_question(benchmark: dict) -> float | None:
@@ -232,15 +224,16 @@ def _pad_nan(curves: list[np.ndarray]) -> np.ndarray:
     """
     max_len = max(len(c) for c in curves)
     return np.array(
-        [np.pad(c.astype(float), (0, max_len - len(c)), mode="constant", constant_values=np.nan)
-         for c in curves]
+        [np.pad(c.astype(float), (0, max_len - len(c)), mode="constant", constant_values=np.nan) for c in curves]
     )
 
 
 def _import_matplotlib():
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+
     return plt
 
 
@@ -252,6 +245,7 @@ def _integer_xticks(ax) -> None:
     which is meaningless for a trial-index axis.
     """
     from matplotlib.ticker import MaxNLocator
+
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
@@ -298,14 +292,23 @@ def make_seed_figures(seed_dir: Path) -> None:
         f"seed score_per_trial: {seed_dir}",
         lambda: _seed_score_per_trial(
             figures_dir / "score_per_trial.png",
-            trial_nums, scores, benchmark, method, seed_label, color,
+            trial_nums,
+            scores,
+            benchmark,
+            method,
+            seed_label,
+            color,
         ),
     )
     _safely(
         f"seed cost_per_trial: {seed_dir}",
         lambda: _seed_cost_per_trial(
             figures_dir / "cost_per_trial.png",
-            trial_nums, eval_usds, method, seed_label, color,
+            trial_nums,
+            eval_usds,
+            method,
+            seed_label,
+            color,
         ),
     )
 
@@ -329,7 +332,10 @@ def _seed_score_per_trial(
         judge = _holdout_judge_mean(benchmark)
         if judge is not None:
             ax.axhline(
-                judge, color="firebrick", linestyle=":", alpha=0.7,
+                judge,
+                color="firebrick",
+                linestyle=":",
+                alpha=0.7,
                 label=f"Hold-out judge = {judge:.2f}",
             )
     ax.set_xlabel("Trial number")
@@ -424,13 +430,19 @@ def make_method_figures(method_dir: Path) -> None:
         _safely(
             f"method score_per_trial: {method_dir}",
             lambda: _method_score_per_trial(
-                figures_dir / "score_per_trial.png", method, color, seed_runs,
+                figures_dir / "score_per_trial.png",
+                method,
+                color,
+                seed_runs,
             ),
         )
         _safely(
             f"method best_so_far: {method_dir}",
             lambda: _method_best_so_far(
-                figures_dir / "best_so_far.png", method, color, seed_runs,
+                figures_dir / "best_so_far.png",
+                method,
+                color,
+                seed_runs,
             ),
         )
 
@@ -444,7 +456,9 @@ def make_method_figures(method_dir: Path) -> None:
         _safely(
             f"method holdout_metrics: {method_dir}",
             lambda: _method_holdout_metrics(
-                figures_dir / "holdout_metrics.png", method, seed_metrics,
+                figures_dir / "holdout_metrics.png",
+                method,
+                seed_metrics,
             ),
         )
 
@@ -465,8 +479,12 @@ def _method_score_per_trial(
             std = np.nanstd(padded, axis=0)
         x = np.arange(1, padded.shape[1] + 1)
         ax.fill_between(
-            x, mean - std, mean + std,
-            alpha=0.15, color=color, label="mean ± std",
+            x,
+            mean - std,
+            mean + std,
+            alpha=0.15,
+            color=color,
+            label="mean ± std",
         )
         ax.plot(x, mean, "-", color=color, alpha=0.9)
     for name, trial_nums, scores, _ in seed_runs:
@@ -498,8 +516,12 @@ def _method_best_so_far(
         std = padded.std(axis=0)
         x = np.arange(1, padded.shape[1] + 1)
         ax.fill_between(
-            x, mean - std, mean + std,
-            alpha=0.15, color=color, label="mean ± std",
+            x,
+            mean - std,
+            mean + std,
+            alpha=0.15,
+            color=color,
+            label="mean ± std",
         )
         ax.plot(x, mean, "-", color=color, alpha=0.9)
     for name, trial_nums, _, best in seed_runs:
@@ -615,8 +637,8 @@ def make_matrix_figures(
     results = load_results(output_root)
     if not results:
         logger.info(
-            "make_matrix_figures: no hold-out results yet under %s; "
-            "wrote trajectory plots only", output_root,
+            "make_matrix_figures: no hold-out results yet under %s; wrote trajectory plots only",
+            output_root,
         )
         return
     stats = aggregate_by_method(results)
@@ -667,10 +689,7 @@ def _base_sequential_methods(output_root: Path) -> list[str]:
     strict prefix of its parent's curve, so plotting it would just redraw a
     truncated copy of the same line.
     """
-    return [
-        m for m in _discover_method_names(output_root)
-        if _is_sequential(m) and "@" not in m
-    ]
+    return [m for m in _discover_method_names(output_root) if _is_sequential(m) and "@" not in m]
 
 
 def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
@@ -706,8 +725,12 @@ def _matrix_score_per_trial(out_path: Path, output_root: Path) -> None:
         else:
             scores = per_seed_scores[0]
             ax.plot(
-                np.arange(1, scores.size + 1), scores, "o-", color=color,
-                markersize=4, label=display_label(method),
+                np.arange(1, scores.size + 1),
+                scores,
+                "o-",
+                color=color,
+                markersize=4,
+                label=display_label(method),
             )
         has_data = True
     if not has_data:
@@ -818,7 +841,8 @@ def _matrix_score_vs_cost(out_path: Path, results: list, stats: dict[str, dict])
         y_mean, y_lo, y_hi = stats[m]["judge"]
         y_err = [[y_mean - y_lo], [y_hi - y_mean]]
         ax.errorbar(
-            x_mean, y_mean,
+            x_mean,
+            y_mean,
             xerr=x_err if x_err > 0 else None,
             yerr=y_err,
             fmt="o",

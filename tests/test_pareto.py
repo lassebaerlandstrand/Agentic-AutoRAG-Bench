@@ -6,6 +6,7 @@ import json
 from unittest.mock import patch
 
 import yaml
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.pareto import (
     ParetoConfig,
@@ -18,10 +19,9 @@ from agentic_autorag_bench.pareto import (
 
 
 def _write_history(seed_dir, rows: list[dict]) -> None:
-    seed_dir.mkdir(parents=True, exist_ok=True)
-    (seed_dir / "history.jsonl").write_text(
-        "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8"
-    )
+    history_path = RunLayout(base=seed_dir).history
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    history_path.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
 
 
 def _trial(n: int, cost: float, score: float, pareto: bool, **config) -> dict:
@@ -116,8 +116,13 @@ def test_describe_config_top_n_only_when_reranker_present() -> None:
 def test_describe_config_query_expansion_labels() -> None:
     for raw, label in [("multi_query", "Multi-Query"), ("query_decompose", "Query Decompose")]:
         desc = _describe_config(
-            {"generator_llm": "azure/gpt-4o", "chunking_strategy": "recursive",
-             "index_type": "vector_only", "query_expansion": raw, "reranker": "none"}
+            {
+                "generator_llm": "azure/gpt-4o",
+                "chunking_strategy": "recursive",
+                "index_type": "vector_only",
+                "query_expansion": raw,
+                "reranker": "none",
+            }
         )
         assert label in desc
 
@@ -175,9 +180,6 @@ def test_make_pareto_figure_emits_png(tmp_path) -> None:
             _trial(5, 0.0040, 0.55, pareto=False),
         ],
     )
-    (seed_dir / "frontier.json").write_text(
-        json.dumps({"knee_trial": 3, "recommended_trial": 4, "max_score_trial": 4, "frontier": []})
-    )
     out = tmp_path / "figures" / "pareto.png"
     make_pareto_figure(seed_dir, out, domain="healthcare")
     assert out.exists()
@@ -188,15 +190,16 @@ def test_make_pareto_figure_single_trial_no_frontier(tmp_path) -> None:
     seed_dir = tmp_path / "agentic_cost" / "seed_1"
     _write_history(seed_dir, [_trial(1, 0.0015, 0.50, pareto=False)])
     out = tmp_path / "figures" / "pareto.png"
-    make_pareto_figure(seed_dir, out)  # no frontier, no frontier.json -> must not crash
+    make_pareto_figure(seed_dir, out)  # single trial, no frontier -> must not crash
     assert out.exists()
     assert out.stat().st_size > 0
 
 
 def test_make_pareto_figure_empty_history_writes_nothing(tmp_path) -> None:
     seed_dir = tmp_path / "agentic_cost" / "seed_1"
-    seed_dir.mkdir(parents=True)
-    (seed_dir / "history.jsonl").write_text("")
+    history_path = RunLayout(base=seed_dir).history
+    history_path.parent.mkdir(parents=True)
+    history_path.write_text("")
     out = tmp_path / "figures" / "pareto.png"
     make_pareto_figure(seed_dir, out)
     assert not out.exists()

@@ -22,7 +22,8 @@ def log_trial_banner(
     parts = {"gen": config.generator_llm, "comp": config.compressor_llm, "exp": config.expander_llm}
     active = [v for v in parts.values() if v is not None]
     llm_str = (
-        active[0] if active and all(v == active[0] for v in active)
+        active[0]
+        if active and all(v == active[0] for v in active)
         else "|".join(f"{k}:{v if v is not None else 'null'}" for k, v in parts.items())
     )
     logger.info(

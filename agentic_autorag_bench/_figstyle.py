@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 # variants inherit their base method's color via ``color_for``.
 METHOD_COLOR: dict[str, str] = {
     "agentic_score": "#1f77b4",  # blue
-    "agentic_cost": "#17becf",   # cyan
-    "random": "#ff7f0e",         # orange
-    "bayesian": "#2ca02c",       # green
+    "agentic_cost": "#17becf",  # cyan
+    "random": "#ff7f0e",  # orange
+    "bayesian": "#2ca02c",  # green
 }
 _FALLBACK_COLOR = "#888888"
 
@@ -69,28 +69,28 @@ def apply_paper_style() -> None:
     """Nudge matplotlib rcParams toward paper-legible defaults. Idempotent."""
     import matplotlib as mpl
 
-    mpl.rcParams.update({
-        "font.size": 11,
-        "axes.titlesize": 12,
-        # A touch more gap than matplotlib's default 6.0 so plain in-axes
-        # titles breathe. Figures with an outside legend set their own (larger)
-        # pad via ``legend_outside`` and are unaffected.
-        "axes.titlepad": 12,
-        "axes.labelsize": 11,
-        "xtick.labelsize": 10,
-        "ytick.labelsize": 10,
-        "legend.fontsize": 9,
-        "figure.dpi": 150,
-        "savefig.bbox": "tight",
-        # Slightly larger than matplotlib's default 0.1 so the tight crop
-        # leaves a little margin around the figure (notably above the title).
-        "savefig.pad_inches": 0.15,
-    })
+    mpl.rcParams.update(
+        {
+            "font.size": 11,
+            "axes.titlesize": 12,
+            # A touch more gap than matplotlib's default 6.0 so plain in-axes
+            # titles breathe. Figures with an outside legend set their own (larger)
+            # pad via ``legend_outside`` and are unaffected.
+            "axes.titlepad": 12,
+            "axes.labelsize": 11,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "legend.fontsize": 9,
+            "figure.dpi": 150,
+            "savefig.bbox": "tight",
+            # Slightly larger than matplotlib's default 0.1 so the tight crop
+            # leaves a little margin around the figure (notably above the title).
+            "savefig.pad_inches": 0.15,
+        }
+    )
 
 
-def fig_width_for(
-    n_groups: int, *, base: float = 6.0, per_group: float = 1.1, cap: float = 16.0
-) -> float:
+def fig_width_for(n_groups: int, *, base: float = 6.0, per_group: float = 1.1, cap: float = 16.0) -> float:
     """Figure width that grows with the number of x-axis groups so labels and
     bars don't crowd. Capped so the figure stays printable."""
     return min(cap, base + per_group * max(0, n_groups - 3))
@@ -101,7 +101,9 @@ def style_method_xticks(ax: Axes, methods: list[str]) -> None:
     collide. Assumes ticks are already at ``range(len(methods))``."""
     ax.set_xticks(range(len(methods)))
     ax.set_xticklabels(
-        [display_label(m) for m in methods], rotation=25, ha="right",
+        [display_label(m) for m in methods],
+        rotation=25,
+        ha="right",
     )
 
 

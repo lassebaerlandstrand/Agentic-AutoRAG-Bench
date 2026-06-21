@@ -35,6 +35,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench._figstyle import (
     add_bar_value_labels,
@@ -71,7 +72,7 @@ def _order_methods_for_analyze(method_names) -> list[str]:
         ks: list[tuple[int, str]] = []
         for n in names:
             if n.startswith(prefix):
-                suffix = n[len(prefix):]
+                suffix = n[len(prefix) :]
                 if suffix.isdigit():
                     ks.append((int(suffix), n))
         for _, n in sorted(ks):
@@ -80,6 +81,7 @@ def _order_methods_for_analyze(method_names) -> list[str]:
     for n in sorted(names - seen):
         ordered.append(n)
     return ordered
+
 
 # Display name per benchmark adapter key. Used in the Markdown table title so
 # the paper-ready file reads with the canonical dataset+variant string, not the
@@ -135,10 +137,7 @@ class MethodResult:
         rows aggregate over the same denominator. Falls back to "all rows"
         when the registry is absent (older results dir)."""
         excluded = set(benchmark.get("excluded_question_ids") or [])
-        return [
-            r for r in benchmark.get("per_question", [])
-            if r.get("id") not in excluded
-        ]
+        return [r for r in benchmark.get("per_question", []) if r.get("id") not in excluded]
 
     @staticmethod
     def _row_em(rows: list[dict]) -> np.ndarray:
@@ -205,21 +204,27 @@ class MethodResult:
 
     @property
     def per_question_em(self) -> np.ndarray:
-        return np.concatenate([
-            self._row_em(self._scoring_rows_for(bm)) for bm in self.benchmarks
-        ]) if self.benchmarks else np.array([])
+        return (
+            np.concatenate([self._row_em(self._scoring_rows_for(bm)) for bm in self.benchmarks])
+            if self.benchmarks
+            else np.array([])
+        )
 
     @property
     def per_question_f1(self) -> np.ndarray:
-        return np.concatenate([
-            self._row_f1(self._scoring_rows_for(bm)) for bm in self.benchmarks
-        ]) if self.benchmarks else np.array([])
+        return (
+            np.concatenate([self._row_f1(self._scoring_rows_for(bm)) for bm in self.benchmarks])
+            if self.benchmarks
+            else np.array([])
+        )
 
     @property
     def per_question_judge(self) -> np.ndarray:
-        return np.concatenate([
-            self._row_judge(self._scoring_rows_for(bm)) for bm in self.benchmarks
-        ]) if self.benchmarks else np.array([])
+        return (
+            np.concatenate([self._row_judge(self._scoring_rows_for(bm)) for bm in self.benchmarks])
+            if self.benchmarks
+            else np.array([])
+        )
 
 
 _NON_METHOD_DIRS = {"figures", ".shared_cache"}
@@ -227,21 +232,15 @@ _NON_METHOD_DIRS = {"figures", ".shared_cache"}
 
 def load_results(results_dir: Path) -> list[MethodResult]:
     out: list[MethodResult] = []
-    method_dirs = sorted(
-        p for p in results_dir.iterdir()
-        if p.is_dir() and p.name not in _NON_METHOD_DIRS
-    )
+    method_dirs = sorted(p for p in results_dir.iterdir() if p.is_dir() and p.name not in _NON_METHOD_DIRS)
     for method_dir in method_dirs:
         # The per-method ``figures/`` subdir is co-located with seed dirs in
         # the auto-run layout; exclude it from the seed scan.
-        seed_dirs = sorted(
-            p for p in method_dir.iterdir()
-            if p.is_dir() and p.name not in _NON_METHOD_DIRS
-        )
+        seed_dirs = sorted(p for p in method_dir.iterdir() if p.is_dir() and p.name not in _NON_METHOD_DIRS)
         for seed_dir in seed_dirs:
             bench_path = seed_dir / "benchmark_results.json"
             meta_path = seed_dir / "optimizer_meta.json"
-            history_path = seed_dir / "history.jsonl"
+            history_path = RunLayout(base=seed_dir).history
             if not bench_path.exists():
                 logger.warning("Skipping %s/%s: no benchmark_results.json", method_dir.name, seed_dir.name)
                 continue
@@ -257,11 +256,7 @@ def load_results(results_dir: Path) -> list[MethodResult]:
                     line = line.strip()
                     if line:
                         history.append(json.loads(line))
-            seed: int | None = (
-                int(seed_dir.name.removeprefix("seed_"))
-                if seed_dir.name.startswith("seed_")
-                else None
-            )
+            seed: int | None = int(seed_dir.name.removeprefix("seed_")) if seed_dir.name.startswith("seed_") else None
             out.append(
                 MethodResult(
                     method=method_dir.name,
@@ -372,8 +367,11 @@ def aggregate_by_method(results: list[MethodResult]) -> dict[str, dict]:
         embed_toks = [int(r.optimizer_meta.get("embedding_tokens", 0)) for r in runs]
 
         retrieval_fields = (
-            "mrr_first", "mrr_complete",
-            "joint_recall_at_2", "joint_recall_at_5", "joint_recall_at_10",
+            "mrr_first",
+            "mrr_complete",
+            "joint_recall_at_2",
+            "joint_recall_at_5",
+            "joint_recall_at_10",
         )
         retrieval_means: dict[str, float] = {}
         for fname in retrieval_fields:
@@ -562,9 +560,7 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
         judge_m, judge_lo, judge_hi = s["judge"]
         score_yerr = [[judge_m - judge_lo], [judge_hi - judge_m]]
         # Total search cost = optimizer-side + trial-side per seed.
-        cost_seeds = [
-            o + t for o, t in zip(s["optimizer_usd_list"], s["trial_usd_list"], strict=True)
-        ]
+        cost_seeds = [o + t for o, t in zip(s["optimizer_usd_list"], s["trial_usd_list"], strict=True)]
         wall_seeds = s["wall_clock_s_list"]
         cost_m = float(np.mean(cost_seeds)) if cost_seeds else 0.0
         wall_m = float(np.mean(wall_seeds)) if wall_seeds else 0.0

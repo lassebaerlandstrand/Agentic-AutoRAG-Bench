@@ -28,23 +28,23 @@ def run(
         True,
         "--clean/--no-clean",
         help="Reset the per-method dirs about to be run (and any matching "
-             "@k checkpoint dirs) so their contents reflect the current run "
-             "only. ``figures/`` is NOT wiped — matrix figures are staged "
-             "and atomically swapped at end-of-run so the previous figures "
-             "stay readable throughout. Method dirs not in this run, "
-             "``.shared_cache/``, and user files at output_root are also "
-             "preserved. Pass --no-clean to keep prior files in place "
-             "without resuming trial state (use --resume for that).",
+        "@k checkpoint dirs) so their contents reflect the current run "
+        "only. ``figures/`` is NOT wiped — matrix figures are staged "
+        "and atomically swapped at end-of-run so the previous figures "
+        "stay readable throughout. Method dirs not in this run, "
+        "``.shared_cache/``, and user files at output_root are also "
+        "preserved. Pass --no-clean to keep prior files in place "
+        "without resuming trial state (use --resume for that).",
     ),
     resume: bool = typer.Option(
         False,
         "--resume",
         help="Resume each selected method from its last successfully completed "
-             "trial. Per-(method, seed) directories with prior trial state on "
-             "disk continue from trial K+1; empty dirs start fresh. A trial "
-             "interrupted mid-evaluation is discarded and re-attempted. "
-             "Implies --no-clean (mutually exclusive with --clean). Typical "
-             "use after a Ctrl+C: `--methods bayesian --resume`.",
+        "trial. Per-(method, seed) directories with prior trial state on "
+        "disk continue from trial K+1; empty dirs start fresh. A trial "
+        "interrupted mid-evaluation is discarded and re-attempted. "
+        "Implies --no-clean (mutually exclusive with --clean). Typical "
+        "use after a Ctrl+C: `--methods bayesian --resume`.",
     ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
@@ -71,24 +71,25 @@ def replay_holdout(
         3,
         "--n-runs",
         help="Target number of hold-out evals per (method, seed). The "
-             "end-of-search benchmark_results.json counts as run 1; this "
-             "command tops up to n_runs by writing run_002.json, "
-             "run_003.json, ... under holdout_replays/. Default 3.",
+        "end-of-search benchmark_results.json counts as run 1; this "
+        "command tops up to n_runs by writing run_002.json, "
+        "run_003.json, ... under holdout_replays/. Default 3.",
     ),
     methods: list[str] = typer.Option(
         None,
-        "--methods", "-m",
+        "--methods",
+        "-m",
         help="Subset of base methods to top up. Matches both bare method "
-             "dirs and @k checkpoint variants (e.g. --methods agentic_score "
-             "covers agentic_score, agentic_score@10, agentic_score@20).",
+        "dirs and @k checkpoint variants (e.g. --methods agentic_score "
+        "covers agentic_score, agentic_score@10, agentic_score@20).",
     ),
     include_checkpoints: bool = typer.Option(
         True,
         "--include-checkpoints/--no-include-checkpoints",
         help="Replay the @k checkpoint dirs alongside the main method dirs. "
-             "Default ON so the headline figure has consistent N across all "
-             "bars. Pass --no-include-checkpoints to skip them (e.g. when "
-             "iterating on the main bars to save eval cost).",
+        "Default ON so the headline figure has consistent N across all "
+        "bars. Pass --no-include-checkpoints to skip them (e.g. when "
+        "iterating on the main bars to save eval cost).",
     ),
 ) -> None:
     """Top up each (method, seed) dir to N hold-out evals so the matrix
@@ -115,8 +116,8 @@ def pareto(
         False,
         "--figure-only",
         help="Skip the search; just re-render figures/pareto.png from an existing "
-             "results_*/agentic_cost/seed_N/ (history.jsonl + frontier.json). Useful "
-             "for tweaking the figure without re-running the optimizer.",
+        "results_*/agentic_cost/seed_N/ (details/history.jsonl). Useful "
+        "for tweaking the figure without re-running the optimizer.",
     ),
     resume: bool = typer.Option(
         False,
@@ -140,10 +141,11 @@ def analyze(
     results_dir: str = typer.Option("results_paper/", "--results-dir", help="Where the matrix run wrote outputs"),
     output: str = typer.Option(
         "",
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Where to write the figures/ subtree. Empty (default) means write "
-             "alongside the run data, i.e. <results-dir>/figures/. Pass an "
-             "explicit path to re-render figures into a separate directory.",
+        "alongside the run data, i.e. <results-dir>/figures/. Pass an "
+        "explicit path to re-render figures into a separate directory.",
     ),
 ) -> None:
     """Re-render matrix-level figures + Table_1.md from a committed results tree.

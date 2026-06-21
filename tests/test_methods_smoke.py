@@ -26,6 +26,7 @@ from agentic_autorag.config.models import (
     SearchSpace,
     TrialConfig,
 )
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.methods.bayesian import BayesianSearch
 from agentic_autorag_bench.methods.random import RandomSearch
@@ -374,7 +375,7 @@ async def test_random_resume_continues_from_last_trial(tmp_path: Path) -> None:
     # Use a smaller budget so the search returns cleanly after 2 trials.
     sr_a = await optimizer_a.search(interrupting_evaluator, Budget(max_trials=2), seed=42)
     assert len(sr_a.history) == 2
-    assert (tmp_path / "history.jsonl").exists()
+    assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "rng_state.pkl").exists()
     assert (tmp_path / "wall_clock.json").exists()
 
@@ -407,12 +408,16 @@ async def test_random_resume_same_rng_point_on_in_flight_interrupt(tmp_path: Pat
     # Now simulate an interrupted+resumed run: 3 trials, then 2 more.
     partial_dir = tmp_path / "partial"
     part_a = await RandomSearch(project=project, storage_dir=partial_dir).search(
-        _make_evaluator([0.5] * 3), Budget(max_trials=3), seed=99,
+        _make_evaluator([0.5] * 3),
+        Budget(max_trials=3),
+        seed=99,
     )
     assert len(part_a.history) == 3
 
     part_b = await RandomSearch(project=project, storage_dir=partial_dir, resume=True).search(
-        _make_evaluator([0.5] * 2), Budget(max_trials=5), seed=99,
+        _make_evaluator([0.5] * 2),
+        Budget(max_trials=5),
+        seed=99,
     )
     assert len(part_b.history) == 5
 
@@ -426,14 +431,18 @@ async def test_bayesian_resume_continues_from_last_trial(tmp_path: Path) -> None
     project = _tiny_project()
 
     sr_a = await BayesianSearch(project=project, storage_dir=tmp_path).search(
-        _make_evaluator([0.1, 0.2]), Budget(max_trials=2), seed=42,
+        _make_evaluator([0.1, 0.2]),
+        Budget(max_trials=2),
+        seed=42,
     )
     assert len(sr_a.history) == 2
-    assert (tmp_path / "history.jsonl").exists()
+    assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "optuna.db").exists()
 
     sr_b = await BayesianSearch(project=project, storage_dir=tmp_path, resume=True).search(
-        _make_evaluator([0.3, 0.4]), Budget(max_trials=4), seed=42,
+        _make_evaluator([0.3, 0.4]),
+        Budget(max_trials=4),
+        seed=42,
     )
     assert len(sr_b.history) == 4
     scores = [h.answer_accuracy for h in sr_b.history]
@@ -452,9 +461,11 @@ async def test_bayesian_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path)
     project = _tiny_project()
 
     await BayesianSearch(project=project, storage_dir=tmp_path).search(
-        _make_evaluator([0.1, 0.2]), Budget(max_trials=2), seed=42,
+        _make_evaluator([0.1, 0.2]),
+        Budget(max_trials=2),
+        seed=42,
     )
-    assert (tmp_path / "history.jsonl").exists()
+    assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "optuna.db").exists()
 
     # Construct a fresh BayesianSearch (resume=False) and confirm prior
@@ -462,7 +473,7 @@ async def test_bayesian_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path)
     # exercise the buggy ``--no-clean`` semantic (loop runs from 1, sqlite
     # still has prior trials), which is out of scope for this test.
     BayesianSearch(project=project, storage_dir=tmp_path)
-    assert (tmp_path / "history.jsonl").exists()
+    assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "optuna.db").exists()
 
 
@@ -477,7 +488,9 @@ async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) 
 
     # Run 2 trials normally to populate optuna.db + history.jsonl.
     await BayesianSearch(project=project, storage_dir=tmp_path).search(
-        _make_evaluator([0.4, 0.5]), Budget(max_trials=2), seed=42,
+        _make_evaluator([0.4, 0.5]),
+        Budget(max_trials=2),
+        seed=42,
     )
 
     # Simulate the pre-resume layout: history.jsonl was never written.
@@ -485,20 +498,29 @@ async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) 
     # bare optimizer (it's written by the bench's _make_metered_evaluator
     # wrapper); synthesize a minimal one so the reconstruction can sum
     # eval_usd. Wall-clock file likewise didn't exist pre-resume.
-    history_path = tmp_path / "history.jsonl"
+    history_path = RunLayout(base=tmp_path).history
     history_path.unlink()
     (tmp_path / "wall_clock.json").unlink()
     bucket = {
         "rag_eval": {
-            "usd": 0.001, "prompt_tokens": 100, "completion_tokens": 10,
-            "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0,
-            "embedding_input_tokens": 0, "n_calls": 1,
+            "usd": 0.001,
+            "prompt_tokens": 100,
+            "completion_tokens": 10,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "embedding_input_tokens": 0,
+            "n_calls": 1,
         }
     }
     import json as _json
-    (tmp_path / "trial_cost_ledger.jsonl").write_text(
-        _json.dumps({"trial_number": 1, "buckets": bucket}) + "\n"
-        + _json.dumps({"trial_number": 2, "buckets": bucket}) + "\n",
+
+    ledger_path = RunLayout(base=tmp_path).trial_cost_ledger
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(
+        _json.dumps({"trial_number": 1, "buckets": bucket})
+        + "\n"
+        + _json.dumps({"trial_number": 2, "buckets": bucket})
+        + "\n",
         encoding="utf-8",
     )
     assert (tmp_path / "optuna.db").exists()
@@ -506,7 +528,9 @@ async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) 
 
     # Resume: self-heal kicks in, reconstructs history.jsonl, continues to 4.
     sr = await BayesianSearch(project=project, storage_dir=tmp_path, resume=True).search(
-        _make_evaluator([0.6, 0.7]), Budget(max_trials=4), seed=42,
+        _make_evaluator([0.6, 0.7]),
+        Budget(max_trials=4),
+        seed=42,
     )
     assert len(sr.history) == 4
     # First two scores came from optuna.db's stored values.

@@ -303,9 +303,7 @@ def sample_optuna(
         expander_llm = None
     temperature = trial.suggest_float("temperature", ss.temperature.min, ss.temperature.max)
     reasoning = (
-        trial.suggest_categorical("reasoning", [False, True])
-        if ss.is_reasoning_allowed(generator_llm)
-        else False
+        trial.suggest_categorical("reasoning", [False, True]) if ss.is_reasoning_allowed(generator_llm) else False
     )
 
     if index_type in GRAPH_INDEX_TYPES and ss.graph_retrieval is not None:

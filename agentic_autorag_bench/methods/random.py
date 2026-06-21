@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from agentic_autorag.config.models import ProjectConfig
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.methods._logging import log_trial_banner
 from agentic_autorag_bench.methods._sampler import sample_random
@@ -24,7 +25,6 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 # is more honest than silently emitting an invalid trial.
 MAX_RESAMPLE_ATTEMPTS = 1000
 
-_HISTORY_NAME = "history.jsonl"
 _RNG_STATE_NAME = "rng_state.pkl"
 _WALL_CLOCK_NAME = "wall_clock.json"
 
@@ -72,7 +72,7 @@ class RandomSearch:
         n_validation_rejects = 0
         prior_wall_s = 0.0
 
-        history_path = self.storage_dir / _HISTORY_NAME if self.storage_dir else None
+        history_path = RunLayout(base=self.storage_dir).history if self.storage_dir else None
         rng_state_path = self.storage_dir / _RNG_STATE_NAME if self.storage_dir else None
         wall_clock_path = self.storage_dir / _WALL_CLOCK_NAME if self.storage_dir else None
 
@@ -86,7 +86,8 @@ class RandomSearch:
                         "Could not restore RNG state from %s; falling back to a "
                         "fresh seeded RNG. Trials after resume may diverge from "
                         "what a single-process run would have drawn.",
-                        rng_state_path, exc_info=True,
+                        rng_state_path,
+                        exc_info=True,
                     )
             if wall_clock_path is not None and wall_clock_path.exists():
                 try:
@@ -95,11 +96,14 @@ class RandomSearch:
                 except Exception:
                     logger.warning(
                         "Could not parse %s; wall-clock starts at 0",
-                        wall_clock_path, exc_info=True,
+                        wall_clock_path,
+                        exc_info=True,
                     )
             logger.info(
                 "Resuming random search from trial %d/%d (prior wall=%.1fs)",
-                len(history) + 1, budget.max_trials, prior_wall_s,
+                len(history) + 1,
+                budget.max_trials,
+                prior_wall_s,
             )
         # Wiping stale state on a fresh start is the bench-level ``--clean``
         # flag's job (``_clear_output_root_for`` in run.py). We deliberately
@@ -153,9 +157,7 @@ class RandomSearch:
                 _atomic_pickle(rng_state_path, rng.getstate())
             if wall_clock_path is not None:
                 cumulative = prior_wall_s + (time.monotonic() - t_start)
-                wall_clock_path.write_text(
-                    json.dumps({"wall_clock_s": cumulative}), encoding="utf-8"
-                )
+                wall_clock_path.write_text(json.dumps({"wall_clock_s": cumulative}), encoding="utf-8")
 
             best = max(h.answer_accuracy for h in history)
             logger.info(

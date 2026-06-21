@@ -48,7 +48,10 @@ class BenchmarkRunner:
             return
         logger.info(
             "Preparing %s (split=%s, sample_size=%s) at %s",
-            self.name, self.split, self.sample_size, self.output_dir,
+            self.name,
+            self.split,
+            self.sample_size,
+            self.output_dir,
         )
         prepare_benchmark(
             name=self.name,

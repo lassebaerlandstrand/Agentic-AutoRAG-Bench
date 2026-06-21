@@ -56,12 +56,8 @@ def test_chunk_dims_remain_discrete() -> None:
     value and explode storage. Discrete grids are mandatory here."""
     project = _load_project()
     ss = project.search_space
-    assert hasattr(ss.chunking.chunk_token_size, "values"), (
-        "chunk_token_size must be DiscreteValues (cache key)"
-    )
-    assert hasattr(ss.chunking.chunk_token_overlap, "values"), (
-        "chunk_token_overlap must be DiscreteValues (cache key)"
-    )
+    assert hasattr(ss.chunking.chunk_token_size, "values"), "chunk_token_size must be DiscreteValues (cache key)"
+    assert hasattr(ss.chunking.chunk_token_overlap, "values"), "chunk_token_overlap must be DiscreteValues (cache key)"
 
 
 def test_random_sampler_500x_zero_violations() -> None:
@@ -147,9 +143,7 @@ def test_continuous_dims_actually_continuous() -> None:
     # NumericRange-sampled alphas should not all snap to {0, 0.5, 1.0}
     if hybrid_alphas:
         coarse = {round(a, 1) for a in hybrid_alphas}
-        assert len(coarse) > 3, (
-            f"hybrid_alpha samples look discrete: {sorted(hybrid_alphas)[:10]}"
-        )
+        assert len(coarse) > 3, f"hybrid_alpha samples look discrete: {sorted(hybrid_alphas)[:10]}"
     # top_k spans 3..20 — should observe enough variety
     assert len(set(top_ks)) > 5
 

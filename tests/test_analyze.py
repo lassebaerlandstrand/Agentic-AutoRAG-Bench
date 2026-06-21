@@ -6,6 +6,7 @@ import json
 
 import numpy as np
 import yaml
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.analyze import (
     aggregate_by_method,
@@ -73,7 +74,9 @@ def _write_method_dir(root, method: str, seed: int | None, em_scores: list[float
             }
         )
     )
-    (seed_dir / "history.jsonl").write_text(
+    history_path = RunLayout(base=seed_dir).history
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    history_path.write_text(
         "\n".join(
             json.dumps({"trial_number": i + 1, "config": {}, "score": float(em), "metrics": {}, "eval_usd": 0.01})
             for i, em in enumerate(em_scores)
