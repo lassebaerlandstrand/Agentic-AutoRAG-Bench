@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.plots import (
     _entry_eval_usd,
@@ -55,25 +56,31 @@ def _write_seed(
             entry["total_llm_cost_usd"] = c
             entry["trial_metrics"] = {"answer_accuracy": s}
         lines.append(json.dumps(entry))
-    (seed_dir / "history.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    history_path = RunLayout(base=seed_dir).history
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    history_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     if write_benchmark:
         per_q = []
         if judges is None:
             judges = [1, 0, 1, None][: max(1, len(scores))]
         for i, j in enumerate(judges):
-            per_q.append({"id": f"Q{i:02d}", "em": 1.0 if j == 1 else 0.0,
-                          "f1": 1.0 if j == 1 else 0.0, "judge": j})
+            per_q.append({"id": f"Q{i:02d}", "em": 1.0 if j == 1 else 0.0, "f1": 1.0 if j == 1 else 0.0, "judge": j})
         em = float(np.mean([r["em"] for r in per_q]))
         (seed_dir / "benchmark_results.json").write_text(
-            json.dumps({"n_total": len(per_q), "em": em, "f1": em, "mrr": 0.5,
-                        "per_question": per_q}),
+            json.dumps({"n_total": len(per_q), "em": em, "f1": em, "mrr": 0.5, "per_question": per_q}),
             encoding="utf-8",
         )
     (seed_dir / "optimizer_meta.json").write_text(
-        json.dumps({"method": seed_dir.parent.name, "seed": seed_dir.name,
-                    "wall_clock_s": 100.0, "optimizer_usd": 0.05,
-                    "trial_usd_total": sum(eval_usds),
-                    "n_trials_completed": len(scores)}),
+        json.dumps(
+            {
+                "method": seed_dir.parent.name,
+                "seed": seed_dir.name,
+                "wall_clock_s": 100.0,
+                "optimizer_usd": 0.05,
+                "trial_usd_total": sum(eval_usds),
+                "n_trials_completed": len(scores),
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -88,13 +95,15 @@ def test_entry_eval_usd_handles_both_schemas() -> None:
 
 
 def test_holdout_judge_mean_drops_none_rows() -> None:
-    benchmark = {"per_question": [
-        {"id": "a", "judge": 1},
-        {"id": "b", "judge": 0},
-        {"id": "c", "judge": 1},
-        # judge=None means the judge call failed — exclude from denominator
-        {"id": "d", "judge": None},
-    ]}
+    benchmark = {
+        "per_question": [
+            {"id": "a", "judge": 1},
+            {"id": "b", "judge": 0},
+            {"id": "c", "judge": 1},
+            # judge=None means the judge call failed — exclude from denominator
+            {"id": "d", "judge": None},
+        ]
+    }
     assert _holdout_judge_mean(benchmark) == pytest.approx(2 / 3)
 
 
@@ -152,7 +161,9 @@ def test_make_seed_figures_handles_agentic_schema(tmp_path) -> None:
     instead of ``eval_usd``; the per-seed cost plot must still render."""
     seed_dir = tmp_path / "agentic" / "seed_1"
     _write_seed(
-        seed_dir, [0.4, 0.6, 0.5], [0.20, 0.22, 0.21],
+        seed_dir,
+        [0.4, 0.6, 0.5],
+        [0.20, 0.22, 0.21],
         schema="agentic",
     )
     make_seed_figures(seed_dir)

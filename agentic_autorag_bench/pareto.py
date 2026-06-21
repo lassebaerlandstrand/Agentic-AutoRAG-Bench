@@ -5,8 +5,7 @@ on the optimizer's own self-generated exam — no held-out QA. The optimizer
 already writes everything the figure needs: each ``history.jsonl`` row carries
 ``answer_accuracy``, ``mean_llm_cost_per_query_usd``, and ``is_pareto_optimal`` (the
 flag is recomputed over all trials after every trial and the whole file rewritten,
-so the final file reflects the final frontier), and ``frontier.json`` carries
-the knee / recommended / max-accuracy trial numbers.
+so the final file reflects the final frontier).
 
 ``make_pareto_figure`` renders a Syftr-style scatter: a gray cloud of every
 trial with the optimizer's Pareto frontier highlighted, numbered, and described
@@ -80,14 +79,18 @@ def _ensure_corpus(corpus_path: Path, cfg: ParetoConfig) -> None:
     if corpus_path.is_dir() and any(corpus_path.glob("*.pdf")):
         logger.info(
             "UniDoc corpus already present at %s (%d PDFs); skipping download",
-            corpus_path, len(list(corpus_path.glob("*.pdf"))),
+            corpus_path,
+            len(list(corpus_path.glob("*.pdf"))),
         )
         return
     from agentic_autorag_bench.unidoc_corpus import download_unidoc_corpus
 
     logger.info(
         "UniDoc corpus missing at %s; downloading %d %s PDF(s) + %d image(s)",
-        corpus_path, cfg.corpus_max_pdfs, cfg.corpus_domain, cfg.corpus_max_images,
+        corpus_path,
+        cfg.corpus_max_pdfs,
+        cfg.corpus_domain,
+        cfg.corpus_max_images,
     )
     download_unidoc_corpus(
         corpus_path,
@@ -105,9 +108,7 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
     raise RuntimeError("agentic_cost manages its own evaluator; the stub must not be called")
 
 
-async def run_pareto(
-    config_path: str | Path, *, figure_only: bool = False, resume: bool = False
-) -> None:
+async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resume: bool = False) -> None:
     """Run (or skip) the agentic_cost search, then render the Pareto figure."""
     from agentic_autorag.litellm_runtime import configure_litellm_runtime
 
@@ -137,7 +138,8 @@ async def run_pareto(
         _persist_search_result(sr, seed_dir)
         logger.info(
             "agentic_cost pareto run done | trials=%d | best_accuracy=%.3f",
-            len(sr.history), max((h.answer_accuracy for h in sr.history), default=0.0),
+            len(sr.history),
+            max((h.answer_accuracy for h in sr.history), default=0.0),
         )
 
     figures_dir = cfg.output_root / "figures"
@@ -174,8 +176,21 @@ _QUERY_EXPANSION_LABELS = {
 # Vendor/region tokens to strip from a model id so labels read "kimi-k2.5"
 # rather than "moonshotai.kimi-k2.5" or "us.meta.llama...".
 _MODEL_VENDOR_TOKENS = {
-    "moonshotai", "us", "global", "amazon", "meta", "mistral", "google", "qwen",
-    "nvidia", "zai", "minimax", "openai", "ai21", "cohere", "anthropic",
+    "moonshotai",
+    "us",
+    "global",
+    "amazon",
+    "meta",
+    "mistral",
+    "google",
+    "qwen",
+    "nvidia",
+    "zai",
+    "minimax",
+    "openai",
+    "ai21",
+    "cohere",
+    "anthropic",
 }
 
 
@@ -280,7 +295,12 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     ax.scatter(
         [p.cost_per_query for p in points],
         [p.answer_accuracy * 100 for p in points],
-        s=42, c="#d9d9d9", edgecolors="none", alpha=0.7, zorder=1, label="All trials",
+        s=42,
+        c="#d9d9d9",
+        edgecolors="none",
+        alpha=0.7,
+        zorder=1,
+        label="All trials",
     )
 
     # Frontier line (sorted by cost ascending).
@@ -288,7 +308,10 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
         ax.plot(
             [p.cost_per_query for p in frontier],
             [p.answer_accuracy * 100 for p in frontier],
-            color="#7f7f7f", lw=1.1, zorder=2, label="Pareto frontier",
+            color="#7f7f7f",
+            lw=1.1,
+            zorder=2,
+            label="Pareto frontier",
         )
 
     # Colored, numbered frontier points + side-legend descriptions.
@@ -296,13 +319,22 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     cmap = plt.get_cmap(cmap_name)
     for i, p in enumerate(frontier, start=1):
         ax.scatter(
-            p.cost_per_query, p.answer_accuracy * 100,
-            s=110, color=cmap((i - 1) % cmap.N), edgecolors="black", linewidths=0.6, zorder=4,
+            p.cost_per_query,
+            p.answer_accuracy * 100,
+            s=110,
+            color=cmap((i - 1) % cmap.N),
+            edgecolors="black",
+            linewidths=0.6,
+            zorder=4,
             label=f"{i}. {_describe_config(p.config)}",
         )
         ax.annotate(
-            str(i), (p.cost_per_query, p.answer_accuracy * 100),
-            textcoords="offset points", xytext=(6, 5), fontweight="bold", zorder=6,
+            str(i),
+            (p.cost_per_query, p.answer_accuracy * 100),
+            textcoords="offset points",
+            xytext=(6, 5),
+            fontweight="bold",
+            zorder=6,
         )
 
     ax.set_xscale("log")
@@ -314,8 +346,13 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     ax.set_title(f"UniDoc{title_domain} — {display_label('agentic_cost')} cost vs. accuracy (self-generated exam)")
 
     ax.legend(
-        loc="upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, fontsize=8,
-        title="Frontier configurations", title_fontsize=9, borderaxespad=0.0,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),
+        frameon=False,
+        fontsize=8,
+        title="Frontier configurations",
+        title_fontsize=9,
+        borderaxespad=0.0,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")

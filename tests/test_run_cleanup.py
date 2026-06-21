@@ -22,8 +22,7 @@ def _seed_with_history(seed_dir: Path) -> None:
     """Lay down a minimal seed dir so we can confirm it gets wiped/preserved."""
     seed_dir.mkdir(parents=True)
     (seed_dir / "history.jsonl").write_text(
-        json.dumps({"trial_number": 1, "score": 0.5, "config": {}, "eval_usd": 0.1})
-        + "\n",
+        json.dumps({"trial_number": 1, "score": 0.5, "config": {}, "eval_usd": 0.1}) + "\n",
         encoding="utf-8",
     )
 
@@ -155,8 +154,7 @@ def test_simulates_stale_figure_scenario(tmp_path: Path) -> None:
     (seed_dir / "figures").mkdir()
     (seed_dir / "figures" / "score_per_trial.png").write_bytes(b"OLD-RUN-RENDER")
     (seed_dir / "history.jsonl").write_text(
-        json.dumps({"trial_number": 1, "score": 0.825, "config": {}, "eval_usd": 0.1})
-        + "\n",
+        json.dumps({"trial_number": 1, "score": 0.825, "config": {}, "eval_usd": 0.1}) + "\n",
         encoding="utf-8",
     )
 

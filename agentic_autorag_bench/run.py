@@ -30,6 +30,7 @@ from agentic_autorag.config.models import TrialConfig
 from agentic_autorag.cost_ledger import CostLedger, get_active_ledger, reset_active_ledger, set_active_ledger
 from agentic_autorag.litellm_runtime import configure_litellm_runtime
 from agentic_autorag.orchestrator import Orchestrator
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
@@ -81,9 +82,7 @@ def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
         return []
     method_prefixes = tuple(f"{m}@" for m in methods)
     checkpoint_dirs = [
-        child.name
-        for child in output_root.iterdir()
-        if child.is_dir() and child.name.startswith(method_prefixes)
+        child.name for child in output_root.iterdir() if child.is_dir() and child.name.startswith(method_prefixes)
     ]
     targets = [*methods, *checkpoint_dirs]
     removed: list[str] = []
@@ -162,9 +161,7 @@ def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
         "checkpoints": bench.checkpoints,
         "agentic_autorag": _optimizer_provenance(),
     }
-    (output_root / "bench_metadata.json").write_text(
-        json.dumps(meta, indent=2), encoding="utf-8"
-    )
+    (output_root / "bench_metadata.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
 def _swap_in_staged_figures(output_root: Path) -> None:
@@ -257,10 +254,7 @@ class BenchConfig:
         raw_checkpoints = raw.get("checkpoints") or {}
         unknown_methods = set(raw_checkpoints) - ALL_METHODS
         if unknown_methods:
-            raise ValueError(
-                f"Unknown methods in checkpoints block of {config_path}: "
-                f"{sorted(unknown_methods)}"
-            )
+            raise ValueError(f"Unknown methods in checkpoints block of {config_path}: {sorted(unknown_methods)}")
         checkpoints: dict[str, list[int]] = {}
         for method, ks in raw_checkpoints.items():
             cleaned = sorted({int(k) for k in ks if 0 < int(k) < max_trials})
@@ -298,8 +292,10 @@ def _persist_search_result(sr: SearchResult, dest: Path) -> None:
     # subset (trial_number / config / score / metrics / eval_usd), all of which
     # also exist on the framework's TrialRecord, so analyze.py reads either
     # equivalently. Don't overwrite the rich version.
-    history_path = dest / "history.jsonl"
+    layout = RunLayout(base=dest)
+    history_path = layout.history
     if not sr.method.startswith("agentic_") or not history_path.exists():
+        layout.ensure_details()
         history_path.write_text(
             "\n".join(json.dumps(h.to_dict()) for h in sr.history) + ("\n" if sr.history else ""),
             encoding="utf-8",
@@ -337,7 +333,7 @@ def _read_trial_cost_ledger(method_dir: Path) -> list[dict]:
     include a ``"status"`` field (agentic writes ``"failed"`` for trials
     whose evaluation errored — the spend is real and stays in the sum).
     """
-    path = method_dir / "trial_cost_ledger.jsonl"
+    path = RunLayout(base=method_dir).trial_cost_ledger
     if not path.exists():
         return []
     entries: list[dict] = []
@@ -469,7 +465,11 @@ async def _evaluate_checkpoints(
         make_seed_figures(ck_dir)
         logger.info(
             "  checkpoint %s seed=%s @%d done | best_accuracy=%.3f | trial_usd=$%.4f",
-            method_name, seed, k, best.answer_accuracy, sr_at_k.trial_usd_total,
+            method_name,
+            seed,
+            k,
+            best.answer_accuracy,
+            sr_at_k.trial_usd_total,
         )
 
 
@@ -535,8 +535,10 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
 
         if ledger is not None and before is not None:
             delta = ledger.delta_since(before)
+            layout = RunLayout(base=method_dir)
             try:
-                with (method_dir / "trial_cost_ledger.jsonl").open("a", encoding="utf-8") as fh:
+                layout.ensure_details()
+                with layout.trial_cost_ledger.open("a", encoding="utf-8") as fh:
                     fh.write(json.dumps({"trial_number": trial_num, "buckets": delta}) + "\n")
             except OSError:
                 logger.warning("Failed to append trial_cost_ledger.jsonl", exc_info=True)
@@ -582,7 +584,7 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
     so the seeded set matches whatever the un-interrupted run would have
     accumulated up to the same trial.
     """
-    history_path = method_dir / "history.jsonl"
+    history_path = RunLayout(base=method_dir).history
     if not history_path.exists():
         return
     corpus_hash = shared._corpus_cache_key()
@@ -599,7 +601,8 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
             logger.warning(
                 "Could not re-derive emb_fp for a history line in %s; first "
                 "post-resume encounter of that embedder may be charged again.",
-                history_path, exc_info=True,
+                history_path,
+                exc_info=True,
             )
             continue
         shared._seen_emb_fps.add(emb_fp)
@@ -607,7 +610,8 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
     if n_seeded:
         logger.info(
             "Seeded %d embedding fingerprint(s) into shared._seen_emb_fps from %s",
-            n_seeded, history_path,
+            n_seeded,
+            history_path,
         )
 
 
@@ -640,8 +644,10 @@ async def _run_optimizer_with_ledger(
     not double-charge the ``embedding_build`` bucket.
     """
     if method_name.startswith("agentic_"):
+
         async def _stub_evaluator(_config: TrialConfig) -> TrialResult:  # pragma: no cover
             raise RuntimeError(f"{method_name} should not call the bench evaluator")
+
         return await optimizer.search(_stub_evaluator, budget, seed=seed)
 
     original_output_dir = shared.output_dir
@@ -661,9 +667,7 @@ async def _run_optimizer_with_ledger(
             # ``glob('**/cost_breakdown.json')`` does not conflate this
             # bench-side ledger (rescore-only) with autorag's own per-run
             # ``autorag_project/cost_breakdown.json`` (enumeration + qa-gen).
-            (method_dir / "bench_ledger.json").write_text(
-                json.dumps(ledger.to_dict(), indent=2), encoding="utf-8"
-            )
+            (method_dir / "bench_ledger.json").write_text(json.dumps(ledger.to_dict(), indent=2), encoding="utf-8")
         except OSError:
             logger.warning("Failed to write bench_ledger.json", exc_info=True)
         reset_active_ledger(token)
@@ -671,7 +675,10 @@ async def _run_optimizer_with_ledger(
     return sr
 
 
-_RESUME_STATE_FILES = ("history.jsonl", "optuna.db", "rng_state.pkl")
+# Bench-managed top-level resume state. ``history.jsonl`` is also resume
+# state but lives under ``details/`` (optimizer layout), so it's checked
+# separately via ``RunLayout``.
+_RESUME_STATE_FILES = ("optuna.db", "rng_state.pkl")
 
 
 def _has_prior_trial_state(method_dir: Path) -> bool:
@@ -680,6 +687,8 @@ def _has_prior_trial_state(method_dir: Path) -> bool:
     main loop's ``method_dir.mkdir``) are treated as fresh starts so
     ``--resume`` is a no-op for methods that haven't started yet.
     """
+    if RunLayout(base=method_dir).history.exists():
+        return True
     return any((method_dir / name).exists() for name in _RESUME_STATE_FILES)
 
 
@@ -719,7 +728,8 @@ async def run_matrix(
                 "Cleared %s under %s before run; figures/, .shared_cache/, "
                 "and method dirs not in this run are preserved. Pass "
                 "--no-clean to resume a partial run within a method.",
-                sorted(removed), bench.output_root,
+                sorted(removed),
+                bench.output_root,
             )
 
     benchmark = BenchmarkRunner(
@@ -763,8 +773,8 @@ async def run_matrix(
                 resume_this_method = resume and _has_prior_trial_state(method_dir)
                 if resume and not resume_this_method:
                     logger.info(
-                        "--resume passed but %s has no prior trial state; "
-                        "starting from trial 1", method_dir,
+                        "--resume passed but %s has no prior trial state; starting from trial 1",
+                        method_dir,
                     )
                 optimizer = _build_optimizer(
                     method_name,
@@ -790,7 +800,8 @@ async def run_matrix(
                 _persist_search_result(sr, method_dir)
                 logger.info(
                     "%s seed=%s done | best_accuracy=%.3f | trials=%d | wall=%.1fs | trial_usd=$%.4f | optim_usd=$%.4f",
-                    method_name, seed,
+                    method_name,
+                    seed,
                     max((h.answer_accuracy for h in sr.history), default=0.0),
                     len(sr.history),
                     sr.wall_clock_s,
@@ -870,9 +881,11 @@ def run_cli(
         logging.getLogger(noisy).setLevel(logging.WARNING)
     run_logger = logging.getLogger("agentic_autorag_bench.run")
     run_logger.setLevel(logging.INFO)
-    asyncio.run(run_matrix(
-        config_path,
-        methods_override=methods,
-        clean=clean,
-        resume=resume,
-    ))
+    asyncio.run(
+        run_matrix(
+            config_path,
+            methods_override=methods,
+            clean=clean,
+            resume=resume,
+        )
+    )

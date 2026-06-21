@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass
 
 from agentic_autorag.orchestrator import Orchestrator
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.types import Budget, Evaluator, HistoryEntry, SearchResult
 
@@ -136,7 +137,7 @@ def _read_run_costs_from_ledger_dump(output_dir: str) -> tuple[float, float]:
     import json
     from pathlib import Path
 
-    path = Path(output_dir) / "cost_breakdown.json"
+    path = RunLayout(base=Path(output_dir)).cost_breakdown
     if not path.exists():
         return 0.0, 0.0
     try:

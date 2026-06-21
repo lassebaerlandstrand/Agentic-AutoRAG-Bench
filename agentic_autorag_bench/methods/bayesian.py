@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from agentic_autorag.config.models import ProjectConfig
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.methods._logging import log_trial_banner
 from agentic_autorag_bench.methods._sampler import sample_optuna
@@ -26,7 +27,6 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 _STUDY_NAME = "agentic_autorag_bench_bayesian_v2"
 _DB_NAME = "optuna.db"
 _SAMPLER_PICKLE = "optuna_sampler.pkl"
-_HISTORY_NAME = "history.jsonl"
 _WALL_CLOCK_NAME = "wall_clock.json"
 
 # Cap on infeasible ask/tell-PRUNED rounds per budget slot before giving up.
@@ -79,7 +79,7 @@ class BayesianSearch:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         db_path = self.storage_dir / _DB_NAME
         sampler_path = self.storage_dir / _SAMPLER_PICKLE
-        history_path = self.storage_dir / _HISTORY_NAME
+        history_path = RunLayout(base=self.storage_dir).history
         wall_clock_path = self.storage_dir / _WALL_CLOCK_NAME
 
         # Wiping stale state on a fresh start is the bench-level ``--clean``
@@ -129,7 +129,9 @@ class BayesianSearch:
                 # zero, which only affects downstream plots for the
                 # recovered trials, not the optimizer's continuation.
                 history = _reconstruct_history_from_optuna(
-                    study, self.project, self.storage_dir,
+                    study,
+                    self.project,
+                    self.storage_dir,
                 )
                 for entry in history:
                     _append_history(history_path, entry)
@@ -151,11 +153,14 @@ class BayesianSearch:
                 except Exception:
                     logger.warning(
                         "Could not parse %s; wall-clock starts at 0",
-                        wall_clock_path, exc_info=True,
+                        wall_clock_path,
+                        exc_info=True,
                     )
             logger.info(
                 "Resuming Bayesian search from trial %d/%d (prior wall=%.1fs)",
-                len(history) + 1, budget.max_trials, prior_wall_s,
+                len(history) + 1,
+                budget.max_trials,
+                prior_wall_s,
             )
 
         trial_usd_total = sum(h.eval_usd for h in history)
@@ -223,9 +228,7 @@ class BayesianSearch:
                 logger.warning("Failed to persist Optuna sampler", exc_info=True)
             _append_history(history_path, entry)
             cumulative = prior_wall_s + (time.monotonic() - t_start)
-            wall_clock_path.write_text(
-                json.dumps({"wall_clock_s": cumulative}), encoding="utf-8"
-            )
+            wall_clock_path.write_text(json.dumps({"wall_clock_s": cumulative}), encoding="utf-8")
 
             best = max(h.answer_accuracy for h in history)
             logger.info(
@@ -305,7 +308,7 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
     if not completed:
         return []
 
-    cost_path = storage_dir / "trial_cost_ledger.jsonl"
+    cost_path = RunLayout(base=storage_dir).trial_cost_ledger
     cost_by_trial: dict[int, dict[str, float | int]] = {}
     if cost_path.exists():
         for line in cost_path.read_text(encoding="utf-8").splitlines():
@@ -322,9 +325,7 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
                 "eval_usd": sum(float(b.get("usd", 0.0)) for b in buckets.values()),
                 "prompt_tokens": sum(int(b.get("prompt_tokens", 0)) for b in buckets.values()),
                 "completion_tokens": sum(int(b.get("completion_tokens", 0)) for b in buckets.values()),
-                "embedding_tokens": sum(
-                    int(b.get("embedding_input_tokens", 0)) for b in buckets.values()
-                ),
+                "embedding_tokens": sum(int(b.get("embedding_input_tokens", 0)) for b in buckets.values()),
             }
             cost_by_trial[trial_num] = agg
 
@@ -336,7 +337,8 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
         except Exception:
             logger.warning(
                 "Could not reconstruct config for optuna trial %d during resume; skipping",
-                ft.number, exc_info=True,
+                ft.number,
+                exc_info=True,
             )
             continue
         score = float(ft.value) if ft.value is not None else 0.0

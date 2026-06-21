@@ -128,7 +128,9 @@ def test_discover_targets_includes_checkpoints_by_default(tmp_path: Path) -> Non
     _seed_dir_with_primary(tmp_path, "agentic_score@20", 1)
     targets = _discover_targets(tmp_path, methods_filter=None, include_checkpoints=True)
     assert {t.parent.name for t in targets} == {
-        "agentic_score", "agentic_score@10", "agentic_score@20",
+        "agentic_score",
+        "agentic_score@10",
+        "agentic_score@20",
     }
 
 
@@ -147,7 +149,9 @@ def test_discover_targets_methods_filter_matches_base(tmp_path: Path) -> None:
     _seed_dir_with_primary(tmp_path, "agentic_score@10", 1)
     _seed_dir_with_primary(tmp_path, "bayesian", 1)
     targets = _discover_targets(
-        tmp_path, methods_filter={"agentic_score"}, include_checkpoints=True,
+        tmp_path,
+        methods_filter={"agentic_score"},
+        include_checkpoints=True,
     )
     assert {t.parent.name for t in targets} == {"agentic_score", "agentic_score@10"}
 
@@ -170,6 +174,7 @@ def _write_benchmark(path: Path, ids: list[str], filtered_ids: list[str]) -> Non
     picks them up.
     """
     from agentic_autorag.examiner._errors import CONTENT_FILTER_SENTINEL
+
     per_q: list[dict[str, Any]] = []
     for qid in ids:
         row = {"id": qid, "em": 1.0, "f1": 1.0, "judge": 1, "retrieved_doc_ids": []}
@@ -180,12 +185,19 @@ def _write_benchmark(path: Path, ids: list[str], filtered_ids: list[str]) -> Non
             row["judge"] = None
         per_q.append(row)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({
-        "n_total": len(ids), "n_valid": len(ids),
-        "em": 0.5, "f1": 0.5, "llm_judge_accuracy": 0.5,
-        "per_question": per_q,
-        "judge_model": "test-judge",
-    }))
+    path.write_text(
+        json.dumps(
+            {
+                "n_total": len(ids),
+                "n_valid": len(ids),
+                "em": 0.5,
+                "f1": 0.5,
+                "llm_judge_accuracy": 0.5,
+                "per_question": per_q,
+                "judge_model": "test-judge",
+            }
+        )
+    )
 
 
 def test_union_exclusion_includes_content_filter_from_replays(tmp_path: Path) -> None:
@@ -207,9 +219,7 @@ def test_union_exclusion_includes_content_filter_from_replays(tmp_path: Path) ->
     # Every benchmark file got rewritten with the union id in excluded_question_ids.
     for path in (primary, replay, other_primary):
         data = json.loads(path.read_text(encoding="utf-8"))
-        assert "q_filtered" in data["excluded_question_ids"], (
-            f"{path.relative_to(tmp_path)} missed the union id"
-        )
+        assert "q_filtered" in data["excluded_question_ids"], f"{path.relative_to(tmp_path)} missed the union id"
 
     # by_run reports the replay file with a richer key that disambiguates run.
     assert any("/run_002" in k for k in registry["by_run"]), (
@@ -222,11 +232,13 @@ def test_union_exclusion_includes_content_filter_from_replays(tmp_path: Path) ->
 
 def test_aggregate_uses_mean_sd_across_replays() -> None:
     """3 replays with known per-run means → triple is (mean, mean-sd, mean+sd)."""
+
     def _bm(em: float, judge_correct: int) -> dict:
         return {
             "per_question": [{"id": "q1", "em": em, "f1": em, "judge": judge_correct}],
             "excluded_question_ids": [],
         }
+
     # Three runs with EM = 0.5, 0.6, 0.7 → mean=0.6, sd(ddof=1)=0.1.
     result = MethodResult(
         method="agentic_score",
@@ -252,18 +264,19 @@ def test_aggregate_counts_abstention_as_incorrect() -> None:
     4 judged = 0.25, regardless of how many of the wrong ones were
     abstentions vs. flat-wrong.
     """
+
     def _bm(judges: list[int]) -> dict:
         return {
-            "per_question": [
-                {"id": f"q{i}", "em": 0.0, "f1": 0.0, "judge": j}
-                for i, j in enumerate(judges)
-            ],
+            "per_question": [{"id": f"q{i}", "em": 0.0, "f1": 0.0, "judge": j} for i, j in enumerate(judges)],
             "excluded_question_ids": [],
         }
+
     result = MethodResult(
-        method="bayesian", seed=1,
+        method="bayesian",
+        seed=1,
         benchmarks=[_bm([1, -1, -1, 0])],
-        optimizer_meta={}, history=[],
+        optimizer_meta={},
+        history=[],
     )
     _em, _f1, judge_runs = result.per_run_means()
     assert abs(judge_runs[0] - 0.25) < 1e-9
@@ -293,7 +306,11 @@ def test_aggregate_falls_back_to_zero_width_for_n_1() -> None:
         "excluded_question_ids": [],
     }
     result = MethodResult(
-        method="random", seed=1, benchmarks=[bm], optimizer_meta={}, history=[],
+        method="random",
+        seed=1,
+        benchmarks=[bm],
+        optimizer_meta={},
+        history=[],
     )
     stats = aggregate_by_method([result])
     em_mean, em_lo, em_hi = stats["random"]["em"]
@@ -306,16 +323,28 @@ def test_load_results_picks_up_holdout_replays(tmp_path: Path) -> None:
     in the returned ``MethodResult.benchmarks`` list, in numbered order."""
     seed_dir = tmp_path / "agentic_score" / "seed_1"
     seed_dir.mkdir(parents=True)
-    (seed_dir / "benchmark_results.json").write_text(json.dumps({
-        "per_question": [{"id": "q1", "em": 0.5, "f1": 0.5, "judge": 1}],
-    }))
+    (seed_dir / "benchmark_results.json").write_text(
+        json.dumps(
+            {
+                "per_question": [{"id": "q1", "em": 0.5, "f1": 0.5, "judge": 1}],
+            }
+        )
+    )
     (seed_dir / "holdout_replays").mkdir()
-    (seed_dir / "holdout_replays" / "run_002.json").write_text(json.dumps({
-        "per_question": [{"id": "q1", "em": 0.6, "f1": 0.6, "judge": 1}],
-    }))
-    (seed_dir / "holdout_replays" / "run_003.json").write_text(json.dumps({
-        "per_question": [{"id": "q1", "em": 0.7, "f1": 0.7, "judge": 0}],
-    }))
+    (seed_dir / "holdout_replays" / "run_002.json").write_text(
+        json.dumps(
+            {
+                "per_question": [{"id": "q1", "em": 0.6, "f1": 0.6, "judge": 1}],
+            }
+        )
+    )
+    (seed_dir / "holdout_replays" / "run_003.json").write_text(
+        json.dumps(
+            {
+                "per_question": [{"id": "q1", "em": 0.7, "f1": 0.7, "judge": 0}],
+            }
+        )
+    )
     results = load_results(tmp_path)
     assert len(results) == 1
     assert len(results[0].benchmarks) == 3
@@ -343,22 +372,29 @@ async def test_replay_holdout_skips_existing_runs(tmp_path: Path) -> None:
     project_yaml = tmp_path / "project.yaml"
     project_yaml.write_text(yaml.safe_dump({"meta": {"output_dir": str(tmp_path / "_cache")}}))
     config_yaml = tmp_path / "bench_config.yaml"
-    config_yaml.write_text(yaml.safe_dump({
-        "project_config": str(project_yaml),
-        "methods": ["agentic_score"],
-        "seeds": [1],
-        "budget": {"max_trials": 1},
-        "benchmark": {
-            "name": "hotpot_qa", "split": "validation",
-            "sample_size": 100, "prep_seed": 42,
-            "output_dir": str(tmp_path / "_data"),
-        },
-        "hold_out": {"limit": 10, "judge_model": "test", "concurrency": 1},
-        "output_root": str(output_root),
-    }))
+    config_yaml.write_text(
+        yaml.safe_dump(
+            {
+                "project_config": str(project_yaml),
+                "methods": ["agentic_score"],
+                "seeds": [1],
+                "budget": {"max_trials": 1},
+                "benchmark": {
+                    "name": "hotpot_qa",
+                    "split": "validation",
+                    "sample_size": 100,
+                    "prep_seed": 42,
+                    "output_dir": str(tmp_path / "_data"),
+                },
+                "hold_out": {"limit": 10, "judge_model": "test", "concurrency": 1},
+                "output_root": str(output_root),
+            }
+        )
+    )
 
     # Mock the evaluator + the post-pass functions so the test does no LLM work.
     eval_calls: list[Path] = []
+
     async def _fake_evaluate(*, output_path: Path, **kwargs) -> dict:
         eval_calls.append(Path(output_path))
         _write_benchmark(Path(output_path), ["q1"], filtered_ids=[])
@@ -394,21 +430,28 @@ async def test_replay_holdout_is_idempotent_when_full(tmp_path: Path) -> None:
     project_yaml = tmp_path / "project.yaml"
     project_yaml.write_text(yaml.safe_dump({"meta": {"output_dir": str(tmp_path / "_cache")}}))
     config_yaml = tmp_path / "bench_config.yaml"
-    config_yaml.write_text(yaml.safe_dump({
-        "project_config": str(project_yaml),
-        "methods": ["agentic_score"],
-        "seeds": [1],
-        "budget": {"max_trials": 1},
-        "benchmark": {
-            "name": "hotpot_qa", "split": "validation",
-            "sample_size": 100, "prep_seed": 42,
-            "output_dir": str(tmp_path / "_data"),
-        },
-        "hold_out": {"limit": 10, "judge_model": "test", "concurrency": 1},
-        "output_root": str(output_root),
-    }))
+    config_yaml.write_text(
+        yaml.safe_dump(
+            {
+                "project_config": str(project_yaml),
+                "methods": ["agentic_score"],
+                "seeds": [1],
+                "budget": {"max_trials": 1},
+                "benchmark": {
+                    "name": "hotpot_qa",
+                    "split": "validation",
+                    "sample_size": 100,
+                    "prep_seed": 42,
+                    "output_dir": str(tmp_path / "_data"),
+                },
+                "hold_out": {"limit": 10, "judge_model": "test", "concurrency": 1},
+                "output_root": str(output_root),
+            }
+        )
+    )
 
     eval_calls: list[Path] = []
+
     async def _count_call(*, output_path: Path, **kwargs) -> dict:
         eval_calls.append(Path(output_path))
         return {}

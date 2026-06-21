@@ -12,14 +12,20 @@ def _write_run(root: Path, method: str, seed: str, rows: list[dict], judge_model
     seed_dir = root / method / seed
     seed_dir.mkdir(parents=True, exist_ok=True)
     f = seed_dir / "benchmark_results.json"
-    f.write_text(json.dumps({
-        "benchmark": "hotpot",
-        "n_total": len(rows),
-        "n_valid": sum(1 for r in rows if r.get("error") is None),
-        "em": 0.0, "f1": 0.0, "llm_judge_accuracy": None,
-        "per_question": rows,
-        "judge_model": judge_model,
-    }))
+    f.write_text(
+        json.dumps(
+            {
+                "benchmark": "hotpot",
+                "n_total": len(rows),
+                "n_valid": sum(1 for r in rows if r.get("error") is None),
+                "em": 0.0,
+                "f1": 0.0,
+                "llm_judge_accuracy": None,
+                "per_question": rows,
+                "judge_model": judge_model,
+            }
+        )
+    )
     return f
 
 

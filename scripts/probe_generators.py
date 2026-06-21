@@ -196,8 +196,6 @@ def _print_report(summaries: list[dict]) -> None:
             f"{m['mean_prompt_tokens']:>4.0f}/{m['mean_completion_tokens']:<6.0f} "
             f"{m['total_wall_s']:6.1f}s ${m['total_usd']:>8.4f}"
         )
-        if m["missed"]:
-            print(f"    missed: {', '.join(m['missed'])}")
 
 
 def main() -> int:
