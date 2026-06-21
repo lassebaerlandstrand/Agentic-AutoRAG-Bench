@@ -106,7 +106,7 @@ results_hotpot/                          # or results_paper_musique / results_mu
       cache_events.jsonl                 # first-use cache-credit events (phase: exam_gen | trial)
       cost_breakdown.json                # framework-side run-total ledger (agentic only)
       bench_ledger.json                  # bench-side run-total ledger (non-agentic only)
-      frontier.json, frontier_report.md, frontier/<trial>.yaml
+      frontier.json, frontier/<trial>.yaml
       run.log
   <method>@<k>/                          # checkpoint sibling: e.g. agentic_score@10, agentic_score@20
     figures/                             # per-checkpoint (across seeds)

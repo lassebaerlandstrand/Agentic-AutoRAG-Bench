@@ -1,0 +1,182 @@
+[
+  {
+    "id": "Q01",
+    "category": "multi_hop",
+    "question": "The mathematician who proved the two incompleteness theorems was born in 1906 in a city then called Brünn. What is that city called today?",
+    "gold_answers": ["Brno"]
+  },
+  {
+    "id": "Q02",
+    "category": "multi_hop",
+    "question": "Which film won the Academy Award for Best Picture at the ceremony held in March 1995? Give only the surname of that film's director.",
+    "gold_answers": ["Zemeckis", "Robert Zemeckis"]
+  },
+  {
+    "id": "Q03",
+    "category": "multi_hop",
+    "question": "Who was the President of the United States immediately before the president who was in office during the Cuban Missile Crisis? Give the surname.",
+    "gold_answers": ["Eisenhower", "Dwight D. Eisenhower", "Dwight Eisenhower"]
+  },
+  {
+    "id": "Q04",
+    "category": "factual_precision",
+    "question": "In Gabriel García Márquez's novel 'One Hundred Years of Solitude', what is the name of the fictional town where the Buendía family lives?",
+    "gold_answers": ["Macondo"]
+  },
+  {
+    "id": "Q05",
+    "category": "multi_hop",
+    "question": "The actor who played the title role in 'Forrest Gump' later starred in a film about a man stranded alone on a deserted island. What is the name of the volleyball that becomes his companion?",
+    "gold_answers": ["Wilson"]
+  },
+  {
+    "id": "Q06",
+    "category": "factual_precision",
+    "question": "For how many complete years did the longest-reigning British monarch in history reign? Round down to a whole number of years.",
+    "gold_answers": ["70", "70 years"]
+  },
+  {
+    "id": "Q07",
+    "category": "science",
+    "question": "The element curium is named after a husband-and-wife pair of scientists. What is curium's atomic number?",
+    "gold_answers": ["96"]
+  },
+  {
+    "id": "Q08",
+    "category": "factual_precision",
+    "question": "In Greek mythology, who was the mother of the twin deities Apollo and Artemis?",
+    "gold_answers": ["Leto", "Latona"]
+  },
+  {
+    "id": "Q09",
+    "category": "numeric",
+    "question": "Compute the exact value of (37 × 43) − (29 × 31).",
+    "gold_answers": ["692"]
+  },
+  {
+    "id": "Q10",
+    "category": "numeric",
+    "question": "A rectangular tank measures 1.2 m by 0.8 m by 0.5 m. How many liters of water does it hold when completely full?",
+    "gold_answers": ["480", "480 L", "480 liters", "480 litres"]
+  },
+  {
+    "id": "Q11",
+    "category": "numeric",
+    "question": "What is the value of 7 factorial (7!)?",
+    "gold_answers": ["5040", "5,040"]
+  },
+  {
+    "id": "Q12",
+    "category": "numeric",
+    "question": "Convert the binary number 101101 to a decimal (base-10) integer.",
+    "gold_answers": ["45"]
+  },
+  {
+    "id": "Q13",
+    "category": "numeric",
+    "question": "A car worth $25,000 when new loses 20% of its current value each year. What is it worth after exactly two years?",
+    "gold_answers": ["16000", "16,000", "$16,000", "$16000"]
+  },
+  {
+    "id": "Q14",
+    "category": "logic",
+    "question": "If 3 painters can paint 3 fences in 3 hours, how many painters are needed to paint 9 fences in 9 hours?",
+    "gold_answers": ["3", "3 painters", "three"]
+  },
+  {
+    "id": "Q15",
+    "category": "numeric",
+    "question": "What is the derivative of x^3 with respect to x, evaluated at x = 2?",
+    "gold_answers": ["12"]
+  },
+  {
+    "id": "Q16",
+    "category": "science",
+    "question": "A solution has a hydrogen-ion concentration of 1 × 10^-4 mol/L. What is its pH?",
+    "gold_answers": ["4"]
+  },
+  {
+    "id": "Q17",
+    "category": "numeric",
+    "question": "A right triangle has legs of length 9 and 12. What is the length of its hypotenuse?",
+    "gold_answers": ["15"]
+  },
+  {
+    "id": "Q18",
+    "category": "numeric",
+    "question": "How many distinct ways can the letters of the word 'LEVEL' be arranged?",
+    "gold_answers": ["30"]
+  },
+  {
+    "id": "Q19",
+    "category": "numeric",
+    "question": "What is the remainder when 2^10 is divided by 7?",
+    "gold_answers": ["2"]
+  },
+  {
+    "id": "Q20",
+    "category": "numeric",
+    "question": "A marathon is 42.195 km. How many miles is that, rounded to one decimal place? Use 1 mile = 1.609 km.",
+    "gold_answers": ["26.2", "26.2 miles"]
+  },
+  {
+    "id": "Q21",
+    "category": "counting",
+    "question": "How many times does the letter 'i' appear in the word 'indivisibility'?",
+    "gold_answers": ["6", "six"]
+  },
+  {
+    "id": "Q22",
+    "category": "counting",
+    "question": "In the word 'Mississippi', how many distinct letters appear more than once?",
+    "gold_answers": ["3", "three"]
+  },
+  {
+    "id": "Q23",
+    "category": "counting",
+    "question": "How many times does the letter 'a' (upper- or lowercase) appear in the phrase: 'A man, a plan, a canal, Panama'?",
+    "gold_answers": ["10", "ten"]
+  },
+  {
+    "id": "Q24",
+    "category": "logic",
+    "question": "A farmer has 15 cows. All but 8 of them are sold. How many cows does the farmer have left?",
+    "gold_answers": ["8", "8 cows", "eight"]
+  },
+  {
+    "id": "Q25",
+    "category": "logic",
+    "question": "A doctor gives you 3 pills and tells you to take one every half hour. How many minutes will have passed by the time you take the last pill?",
+    "gold_answers": ["60", "60 minutes", "one hour"]
+  },
+  {
+    "id": "Q26",
+    "category": "logic",
+    "question": "On an island where knights always tell the truth and knaves always lie, you meet two inhabitants, A and B. A says, 'We are both knaves.' Is A a knight or a knave?",
+    "gold_answers": ["knave"]
+  },
+  {
+    "id": "Q27",
+    "category": "logic",
+    "question": "Five runners — Alice, Bob, Carol, Dave, and Eve — finish a race with no ties. Alice finishes before Bob. Carol finishes after Bob but before Dave. Eve finishes before Alice. Who finishes in second place?",
+    "gold_answers": ["Alice"]
+  },
+  {
+    "id": "Q28",
+    "category": "temporal",
+    "question": "How many days are there from January 1, 2024 to March 1, 2024, counting both endpoints? Note that 2024 is a leap year.",
+    "gold_answers": ["61", "61 days"]
+  },
+  {
+    "id": "Q29",
+    "category": "temporal",
+    "question": "If January 1, 2024 is a Monday, what day of the week is March 1, 2024? Note that 2024 is a leap year.",
+    "gold_answers": ["Friday"]
+  },
+  {
+    "id": "Q30",
+    "category": "science",
+    "question": "What is the speed of light in a vacuum, in meters per second, as an exact integer?",
+    "gold_answers": ["299792458", "299,792,458"]
+  }
+]
