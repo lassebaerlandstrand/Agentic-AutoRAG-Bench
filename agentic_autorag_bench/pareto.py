@@ -1,27 +1,29 @@
-"""Cost-aware Pareto experiment: run ``agentic_cost`` on UniDoc, plot its trials.
+"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``motpe_warmstart`` on UniDoc.
 
-A single ``agentic_cost`` search on the UniDoc (healthcare) PDF corpus, scored
-on the optimizer's own self-generated exam — no held-out QA. The optimizer
-already writes everything the figure needs: each ``history.jsonl`` row carries
-``answer_accuracy``, ``mean_llm_cost_per_query_usd``, and ``is_pareto_optimal`` (the
-flag is recomputed over all trials after every trial and the whole file rewritten,
-so the final file reflects the final frontier).
+Two cost-aware searches on the UniDoc (healthcare) PDF corpus, scored on the
+optimizer's own self-generated exam — no held-out QA. ``agentic_cost`` is the full
+agentic optimizer (Pareto-aware reasoning); ``motpe_warmstart`` is KB-warm-started
+multi-objective MO-TPE. Both minimize the SAME ``mean_llm_cost_per_query_usd`` and
+maximize the SAME exam accuracy on the SAME exam, so the comparison is fair.
 
-``make_pareto_figure`` renders a Syftr-style scatter: a gray cloud of every
-trial with the optimizer's Pareto frontier highlighted, numbered, and described
-in a side legend. X-axis is deploy-time cost **per query** (not Syftr's
-per-100-calls).
+``make_pareto_figure`` renders a single-method Syftr-style scatter (a gray cloud of
+every trial with the optimizer's self-marked Pareto frontier highlighted, numbered,
+and described in a side legend). ``make_pareto_comparison_figure`` overlays both
+methods' frontiers, and ``compute_pareto_hypervolumes`` scores each frontier against
+a SHARED reference point (pooled across both methods) so the two hypervolumes are
+comparable. X-axis is deploy-time cost **per query**.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 
-from agentic_autorag_bench._figstyle import apply_paper_style, display_label
+from agentic_autorag_bench._figstyle import apply_paper_style, color_for, display_label
 from agentic_autorag_bench.plots import _import_matplotlib, _read_history
 
 logger = logging.getLogger("agentic_autorag_bench.run")
@@ -109,43 +111,118 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
 
 
 async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resume: bool = False) -> None:
-    """Run (or skip) the agentic_cost search, then render the Pareto figure."""
+    """Run the cost-aware Pareto comparison — ``agentic_cost`` (full agentic) vs
+    ``motpe_warmstart`` (KB-warm-started MO-TPE) — then render the dual-frontier
+    figure with a shared-reference-point hypervolume.
+
+    Both methods evaluate the SAME self-generated exam on the SAME corpus: the
+    shared orchestrator (used for the MO-TPE evaluator) and agentic_cost's own
+    orchestrator load the same project config, so the corpus index + exam.json
+    cache is shared. Only the proposer differs.
+    """
     from agentic_autorag.litellm_runtime import configure_litellm_runtime
+    from agentic_autorag.orchestrator import Orchestrator
 
     from agentic_autorag_bench.methods.agentic import AgenticOptimizer
-    from agentic_autorag_bench.run import _persist_search_result
+    from agentic_autorag_bench.methods.motpe import MOTPESearch
+    from agentic_autorag_bench.run import _persist_search_result, _run_optimizer_with_ledger
     from agentic_autorag_bench.types import Budget
 
     cfg = ParetoConfig.load(config_path)
-    seed_dir = cfg.output_root / "agentic_cost" / f"seed_{cfg.seed}"
+    seed_label = f"seed_{cfg.seed}"
+    agentic_dir = cfg.output_root / "agentic_cost" / seed_label
+    motpe_dir = cfg.output_root / "motpe_warmstart" / seed_label
 
     if not figure_only:
         configure_litellm_runtime()
         corpus_path = _read_corpus_path(cfg.project_config_path)
         _ensure_corpus(corpus_path, cfg)
+        budget = Budget(max_trials=cfg.max_trials)
 
-        seed_dir.mkdir(parents=True, exist_ok=True)
-        logger.info("=" * 60)
-        logger.info("PARETO RUN | agentic_cost | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
-        logger.info("=" * 60)
-        optimizer = AgenticOptimizer(
-            config_path=str(cfg.project_config_path),
-            output_dir=str(seed_dir),
-            cost_aware=True,
-            resume=resume,
-        )
-        sr = await optimizer.search(_stub_evaluator, Budget(max_trials=cfg.max_trials), seed=cfg.seed)
-        _persist_search_result(sr, seed_dir)
-        logger.info(
-            "agentic_cost pareto run done | trials=%d | best_accuracy=%.3f",
-            len(sr.history),
-            max((h.answer_accuracy for h in sr.history), default=0.0),
-        )
+        logger.info("Setting up shared orchestrator for the Pareto comparison (exam generated on first run)")
+        shared = Orchestrator(str(cfg.project_config_path))
+        shared.evaluator.quiet_per_question = True
+        try:
+            await shared.setup()
+
+            # agentic_cost — full agentic, cost-aware (self-contained orchestrator).
+            agentic_dir.mkdir(parents=True, exist_ok=True)
+            logger.info("=" * 60)
+            logger.info("PARETO | agentic_cost | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
+            logger.info("=" * 60)
+            agentic_opt = AgenticOptimizer(
+                config_path=str(cfg.project_config_path),
+                output_dir=str(agentic_dir),
+                cost_aware=True,
+                resume=resume,
+            )
+            sr_a = await agentic_opt.search(_stub_evaluator, budget, seed=cfg.seed)
+            _persist_search_result(sr_a, agentic_dir)
+            logger.info(
+                "agentic_cost done | trials=%d | best_accuracy=%.3f",
+                len(sr_a.history),
+                max((h.answer_accuracy for h in sr_a.history), default=0.0),
+            )
+
+            # motpe_warmstart — KB-warm-started multi-objective MO-TPE, driving the
+            # shared bench evaluator (cost_aware=True in the project config makes it
+            # two-objective, minimizing the same mean_llm_cost_per_query_usd).
+            motpe_dir.mkdir(parents=True, exist_ok=True)
+            logger.info("=" * 60)
+            logger.info("PARETO | motpe_warmstart | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
+            logger.info("=" * 60)
+            resume_motpe = resume and (motpe_dir / "optuna.db").exists()
+            motpe_opt = MOTPESearch(
+                project=shared.config,
+                storage_dir=motpe_dir,
+                warm_start=True,
+                name="motpe_warmstart",
+                resume=resume_motpe,
+            )
+            sr_m = await _run_optimizer_with_ledger(
+                motpe_opt,
+                method_name="motpe_warmstart",
+                shared=shared,
+                method_dir=motpe_dir,
+                budget=budget,
+                seed=cfg.seed,
+                resume=resume_motpe,
+            )
+            _persist_search_result(sr_m, motpe_dir)
+            logger.info(
+                "motpe_warmstart done | trials=%d | best_accuracy=%.3f",
+                len(sr_m.history),
+                max((h.answer_accuracy for h in sr_m.history), default=0.0),
+            )
+        finally:
+            await shared.cleanup()
 
     figures_dir = cfg.output_root / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
-    make_pareto_figure(seed_dir, figures_dir / "pareto.png", domain=cfg.corpus_domain)
-    logger.info("Wrote %s", figures_dir / "pareto.png")
+    # Per-method detailed scatter (agentic_cost carries the self-marked frontier
+    # + config legend); the head-to-head lives in the comparison figure.
+    make_pareto_figure(agentic_dir, figures_dir / "pareto_agentic_cost.png", domain=cfg.corpus_domain)
+
+    method_points = {
+        "agentic_cost": _load_trial_points(agentic_dir),
+        "motpe_warmstart": _load_trial_points(motpe_dir),
+    }
+    method_points = {m: pts for m, pts in method_points.items() if pts}
+    if not method_points:
+        logger.warning("No plottable trials for either method; skipping comparison figure + hypervolume.json")
+        return
+
+    hv_info = compute_pareto_hypervolumes(method_points)
+    (cfg.output_root / "hypervolume.json").write_text(json.dumps(hv_info, indent=2), encoding="utf-8")
+    make_pareto_comparison_figure(
+        method_points, hv_info, figures_dir / "pareto_comparison.png", domain=cfg.corpus_domain
+    )
+    logger.info(
+        "Wrote %s + hypervolume.json (shared cost_ref=%.5f; HV %s)",
+        figures_dir / "pareto_comparison.png",
+        hv_info["cost_reference"],
+        {m: round(d["hypervolume"], 5) for m, d in hv_info["methods"].items()},
+    )
 
 
 def pareto_cli(config_path: str, *, figure_only: bool = False, resume: bool = False) -> None:
@@ -354,6 +431,126 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
         title_fontsize=9,
         borderaxespad=0.0,
     )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+# ----------------------------------------------- two-method Pareto comparison
+
+
+@dataclass
+class _FrontierRecord:
+    """Minimal record for the framework's ``compute_frontier`` / ``compute_hypervolume``
+    (which read ``trial_number`` / ``answer_accuracy`` / ``mean_llm_cost_per_query_usd``)."""
+
+    trial_number: int
+    answer_accuracy: float
+    mean_llm_cost_per_query_usd: float
+
+
+def compute_pareto_hypervolumes(method_points: dict[str, list[_TrialPoint]]) -> dict:
+    """Per-method Pareto frontier + hypervolume against a SHARED reference point.
+
+    The reference point is computed once over the POOLED trials of every method
+    (``cost_ref = 2 × max positive cost`` across both methods, ``score_ref = 0``),
+    so the two hypervolumes are directly comparable. Computing HV per-method with
+    each method's own ``max(cost)`` would make the two numbers incommensurable —
+    the Exp-2 fairness landmine. Frontiers are recomputed here via the framework's
+    ``compute_frontier`` (not any optimizer's self-marked flag) so both methods are
+    treated identically.
+    """
+    from agentic_autorag.optimizer import pareto as fpareto
+
+    all_costs = [p.cost_per_query for pts in method_points.values() for p in pts]
+    cost_ref = fpareto.cost_reference(all_costs)
+    ref_point = (0.0, cost_ref)
+    out: dict = {"score_reference": 0.0, "cost_reference": cost_ref, "methods": {}}
+    for method, pts in method_points.items():
+        records = [_FrontierRecord(p.trial_number, p.answer_accuracy, p.cost_per_query) for p in pts]
+        frontier = fpareto.compute_frontier(records)
+        hv = fpareto.compute_hypervolume(frontier, ref_point=ref_point)
+        out["methods"][method] = {
+            "hypervolume": hv,
+            "n_trials": len(records),
+            "n_frontier": len(frontier),
+            "frontier_trials": [r.trial_number for r in frontier],
+        }
+    return out
+
+
+def make_pareto_comparison_figure(
+    method_points: dict[str, list[_TrialPoint]],
+    hv_info: dict,
+    out_path: Path,
+    *,
+    domain: str = "",
+) -> None:
+    """Overlay both methods' trial clouds + Pareto frontiers on one figure, with
+    each method's shared-reference-point hypervolume in the legend. No-op when
+    nothing is plottable."""
+    if not any(method_points.values()):
+        logger.warning("No plottable trials; skipping pareto comparison figure")
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
+
+    for method, pts in method_points.items():
+        if not pts:
+            continue
+        color = color_for(method)
+        ax.scatter(
+            [p.cost_per_query for p in pts],
+            [p.answer_accuracy * 100 for p in pts],
+            s=28,
+            color=color,
+            alpha=0.22,
+            edgecolors="none",
+            zorder=1,
+        )
+        info = hv_info["methods"].get(method, {})
+        frontier_tns = set(info.get("frontier_trials", []))
+        frontier = sorted((p for p in pts if p.trial_number in frontier_tns), key=lambda p: p.cost_per_query)
+        hv = info.get("hypervolume", 0.0)
+        label = f"{display_label(method)} (HV={hv:.4f})"
+        if len(frontier) >= 2:
+            ax.plot(
+                [p.cost_per_query for p in frontier],
+                [p.answer_accuracy * 100 for p in frontier],
+                color=color,
+                lw=1.6,
+                marker="o",
+                ms=6,
+                markeredgecolor="black",
+                markeredgewidth=0.5,
+                zorder=3,
+                label=label,
+            )
+        elif frontier:
+            ax.scatter(
+                [frontier[0].cost_per_query],
+                [frontier[0].answer_accuracy * 100],
+                color=color,
+                s=80,
+                edgecolors="black",
+                linewidths=0.5,
+                zorder=3,
+                label=label,
+            )
+        else:
+            ax.plot([], [], color=color, label=label)
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Cost per query (USD)")
+    ax.set_ylabel("Exam accuracy (%)")
+    ax.set_ylim(0, 100)
+    ax.grid(alpha=0.3, which="both")
+    title_domain = f" ({domain})" if domain else ""
+    ax.set_title(f"UniDoc{title_domain} — cost vs. accuracy Pareto frontiers")
+    ax.legend(loc="lower right", frameon=False, fontsize=9, title="Frontier (shared HV ref point)")
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
