@@ -21,7 +21,7 @@ meta:
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
   # for post-hoc analysis but is hidden from the agentic optimizer's prompts:
   # no Pareto block, no polish stance, no knee anchor, no cheapest-in-band
-  # signal. Every method (random / Bayesian / agentic / AutoRAG) optimizes
+  # signal. Every method (random / MO-TPE / agentic) optimizes
   # the same scalar objective so the headline number is apples-to-apples.
   # A separate Pareto matrix config will set this to true once written.
   cost_aware: false

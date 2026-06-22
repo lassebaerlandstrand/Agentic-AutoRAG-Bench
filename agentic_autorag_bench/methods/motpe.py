@@ -457,6 +457,13 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
             }
             cost_by_trial[trial_num] = agg
 
+    # Multi-objective (cost_aware) studies store the per-query cost as objective-1
+    # (``study.tell(trial, [accuracy, mean_llm_cost_per_query_usd])``). Recover it
+    # so resumed Pareto trials keep the SAME cost objective the live path records —
+    # it is unrecoverable from trial_cost_ledger.jsonl (which holds judge-inclusive
+    # bucket totals, not the per-query deploy-time mean). Single-objective studies
+    # have no cost to recover; 0.0 is correct there.
+    n_objectives = len(study.directions)
     include_graph = project.uses_graph()
     entries: list[HistoryEntry] = []
     for bench_idx, ft in enumerate(completed, start=1):
@@ -472,6 +479,7 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
         # ``values[0]`` is accuracy in both single- and multi-objective mode
         # (``FrozenTrial.value`` raises for multi-objective trials).
         score = float(ft.values[0]) if ft.values else 0.0
+        cost = float(ft.values[1]) if (n_objectives > 1 and ft.values and len(ft.values) > 1) else 0.0
         agg = cost_by_trial.get(bench_idx, {})
         entries.append(
             HistoryEntry(
@@ -488,6 +496,7 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
                 prompt_tokens=int(agg.get("prompt_tokens", 0)),
                 completion_tokens=int(agg.get("completion_tokens", 0)),
                 embedding_tokens=int(agg.get("embedding_tokens", 0)),
+                mean_llm_cost_per_query_usd=cost,
             )
         )
     return entries

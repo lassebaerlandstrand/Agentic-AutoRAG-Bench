@@ -96,7 +96,7 @@ search_space:
       - "sentence-transformers/all-MiniLM-L6-v2"
 
   # top_k and hybrid_alpha are runtime-only (not in any cache key), so
-  # continuous ranges are safe and let Bayesian's TPE learn gradients.
+  # continuous ranges are safe and let MO-TPE learn gradients.
   # bm25_vector_fusion gates whether hybrid_alpha is actually consulted;
   # the sampler skips it under rrf and uses the midpoint for serialization.
   retrieval:

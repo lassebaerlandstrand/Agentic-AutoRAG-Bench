@@ -1,13 +1,14 @@
 # Paper-scale framework project config — HotpotQA distractor, expanded space.
 #
-# The active bench matrix is { agentic_score, agentic_cost, random, bayesian }.
-# The original Marker-Inc AutoRAG baseline was decoupled on 2026-05-27 (see
+# The active accuracy matrix is { agentic_score, agentic_nokb, motpe_warmstart,
+# motpe, random }; agentic_cost is the Pareto experiment. The original Marker-Inc
+# AutoRAG baseline was decoupled on 2026-05-27 (see
 # agentic_autorag_bench/_deprecated/README.md). With AutoRAG gone, the search
 # space is no longer restricted to its lowest common denominator — chunking
 # is sweepable, top_k / hybrid_alpha / reranker_top_n can be continuous,
 # query_expansion gains HyDE, and the generator pool is broad. Bench's
-# random + Bayesian samplers already dispatch on DiscreteValues vs
-# NumericRange, so the same project config powers all four methods.
+# random + MO-TPE samplers already dispatch on DiscreteValues vs
+# NumericRange, so the same project config powers every method.
 
 meta:
   project_name: "hotpot-paper"
@@ -23,7 +24,7 @@ meta:
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
   # for post-hoc analysis but is hidden from the agentic optimizer's prompts:
   # no Pareto block, no polish stance, no knee anchor, no cheapest-in-band
-  # signal. Every method (random / Bayesian / agentic_score / agentic_cost)
+  # signal. Every method (random / MO-TPE / agentic_score / agentic_cost)
   # optimizes the same scalar objective so the headline number is
   # apples-to-apples. The agentic_cost variant flips cost_aware=True at the
   # orchestrator level for the Pareto matrix (see methods/agentic.py).
@@ -100,7 +101,7 @@ search_space:
       - "sentence-transformers/all-MiniLM-L6-v2"
 
   # top_k and hybrid_alpha are runtime-only (not in any cache key), so
-  # continuous ranges are safe and let Bayesian's TPE learn gradients.
+  # continuous ranges are safe and let MO-TPE learn gradients.
   # bm25_vector_fusion gates whether hybrid_alpha is actually consulted;
   # the sampler skips it under rrf and uses the midpoint for serialization.
   retrieval:
