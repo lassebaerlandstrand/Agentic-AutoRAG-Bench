@@ -147,7 +147,7 @@ def test_discover_targets_methods_filter_matches_base(tmp_path: Path) -> None:
     """
     _seed_dir_with_primary(tmp_path, "agentic_score", 1)
     _seed_dir_with_primary(tmp_path, "agentic_score@10", 1)
-    _seed_dir_with_primary(tmp_path, "bayesian", 1)
+    _seed_dir_with_primary(tmp_path, "motpe", 1)
     targets = _discover_targets(
         tmp_path,
         methods_filter={"agentic_score"},
@@ -272,7 +272,7 @@ def test_aggregate_counts_abstention_as_incorrect() -> None:
         }
 
     result = MethodResult(
-        method="bayesian",
+        method="motpe",
         seed=1,
         benchmarks=[_bm([1, -1, -1, 0])],
         optimizer_meta={},
@@ -281,7 +281,7 @@ def test_aggregate_counts_abstention_as_incorrect() -> None:
     _em, _f1, judge_runs = result.per_run_means()
     assert abs(judge_runs[0] - 0.25) < 1e-9
     stats = aggregate_by_method([result])
-    assert abs(stats["bayesian"]["judge"][0] - 0.25) < 1e-9
+    assert abs(stats["motpe"]["judge"][0] - 0.25) < 1e-9
 
 
 def test_row_judge_drops_only_none_not_abstention() -> None:

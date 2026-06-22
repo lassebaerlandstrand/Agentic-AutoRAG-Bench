@@ -72,7 +72,7 @@ def test_random_sampler_500x_zero_violations() -> None:
 
 
 def test_optuna_sampler_100x_zero_violations() -> None:
-    """Same guarantee for the Bayesian path."""
+    """Same guarantee for the MO-TPE path."""
     project = _load_project()
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     study = optuna.create_study(
@@ -128,7 +128,7 @@ def test_reasoning_only_toggled_for_capable_generators() -> None:
 
 def test_continuous_dims_actually_continuous() -> None:
     """``top_k`` and ``hybrid_alpha`` should produce non-grid values when
-    sampled, exercising Bayesian's continuous path. (Discrete-only would
+    sampled, exercising MO-TPE's continuous path. (Discrete-only would
     silently revert the sampler to a categorical surrogate.)"""
     project = _load_project()
     ss = project.search_space

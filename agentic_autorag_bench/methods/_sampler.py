@@ -255,6 +255,74 @@ def sample_random(
     )
 
 
+def config_to_optuna_params(config: TrialConfig, search_space: SearchSpace) -> dict[str, object]:
+    """Inverse of :func:`sample_optuna`: the fixed-parameter dict that, enqueued
+    via ``study.enqueue_trial`` and replayed through ``sample_optuna``, reproduces
+    ``config`` exactly.
+
+    Only the parameters ``sample_optuna`` would actually ``suggest_*`` for this
+    config's active conditional branch are emitted, with the types Optuna expects
+    (``index_type`` as its string ``.value``, discrete/range ints as ``int``,
+    ``hybrid_alpha``/``temperature`` as ``float``). The two snap-to-grid dims
+    (``chunk_token_overlap``, ``reranker_top_n``) are emitted only when their
+    legal set spans more than one value — exactly the condition under which
+    ``sample_optuna`` issues a ``suggest_int`` for them. Fidelity matters for
+    warm-start: a missing key would let TPE resample that dimension, so the
+    evaluated seed would drift from the agent's proposal. The round-trip is
+    covered by a property test.
+    """
+    ss = search_space
+    params: dict[str, object] = {}
+
+    params["chunking_strategy"] = config.chunking_strategy
+    params["embedding_model"] = config.embedding_model
+    params["chunk_token_size"] = int(config.chunk_token_size)
+
+    co_dim = ss.chunking.chunk_token_overlap
+    if isinstance(co_dim, DiscreteValues):
+        legal = [int(v) for v in co_dim.values if v < config.chunk_token_size]
+        if legal and legal[0] != legal[-1]:
+            params["chunk_token_overlap"] = int(config.chunk_token_overlap)
+    else:
+        params["chunk_token_overlap"] = int(config.chunk_token_overlap)
+
+    params["index_type"] = getattr(config.index_type, "value", config.index_type)
+    params["top_k"] = int(config.top_k)
+
+    if config.index_type == IndexType.HYBRID_BM25_VECTOR:
+        params["bm25_vector_fusion"] = config.bm25_vector_fusion
+        if config.bm25_vector_fusion == "alpha":
+            params["hybrid_alpha"] = float(config.hybrid_alpha)
+
+    params["reranker"] = config.reranker
+    if config.reranker != "none":
+        rn_dim = ss.reranker.top_n
+        if isinstance(rn_dim, DiscreteValues):
+            legal = [int(v) for v in rn_dim.values if v <= config.top_k]
+            if legal and legal[0] != legal[-1]:
+                params["reranker_top_n"] = int(config.reranker_top_n)
+        else:
+            params["reranker_top_n"] = int(config.reranker_top_n)
+
+    params["query_expansion"] = config.query_expansion
+    params["long_context_reorder"] = config.long_context_reorder
+    params["passage_compressor"] = config.passage_compressor
+    params["generator_llm"] = config.generator_llm
+    if config.passage_compressor != "none":
+        params["compressor_llm"] = config.compressor_llm
+    if config.query_expansion != "none":
+        params["expander_llm"] = config.expander_llm
+    params["temperature"] = float(config.temperature)
+    if ss.is_reasoning_allowed(config.generator_llm):
+        params["reasoning"] = config.reasoning
+
+    if config.index_type in GRAPH_INDEX_TYPES and ss.graph_retrieval is not None:
+        params["graph_query_mode"] = config.graph_query_mode
+        params["graph_top_k"] = int(config.graph_top_k)
+
+    return params
+
+
 def sample_optuna(
     trial: optuna.Trial,
     search_space: SearchSpace,

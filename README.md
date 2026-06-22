@@ -6,19 +6,26 @@ a held-out `Table_1.md`.
 
 ## Methods
 
-| Key             | Strategy                                                          | Per-trial signal                       | Seeded |
-|-----------------|-------------------------------------------------------------------|----------------------------------------|--------|
-| `agentic_score` | Reasoning loop (ours), score-only objective (`cost_aware=False`)  | Open-ended LLM-judged exam, end-to-end | ✓      |
-| `agentic_cost`  | Reasoning loop (ours), Pareto-aware objective (`cost_aware=True`) | Same exam                              | ✓      |
-| `random`        | Random search                                                     | Same exam                              | ✓      |
-| `bayesian`      | Optuna TPE                                                        | Same exam                              | ✓      |
+| Key                | Strategy                                                          | Per-trial signal                       | Seeded |
+|--------------------|-------------------------------------------------------------------|----------------------------------------|--------|
+| `agentic_score`    | Reasoning loop (ours), score-only objective (`cost_aware=False`)  | Open-ended LLM-judged exam, end-to-end | ✓      |
+| `agentic_cost`     | Reasoning loop (ours), Pareto-aware objective (`cost_aware=True`) | Same exam                              | ✓      |
+| `agentic_nokb`     | Ours, KB-off ablation (cold reasoning)                            | Same exam                              | ✓      |
+| `agentic_nodiag`   | Ours, diagnosis-off ablation (registered; off the headline matrix)| Same exam                             | ✓      |
+| `motpe`            | Optuna group-decomposed multivariate MO-TPE (= syftr's optimizer) | Same exam                              | ✓      |
+| `motpe_warmstart`  | `motpe` seeded with the agent's frozen KB prior (cold proposer)   | Same exam                              | ✓      |
+| `random`           | Random search                                                     | Same exam                              | ✓      |
 
-All four search the same `TrialConfig` space and are re-scored on the same
-held-out exam, so the final-score column in `Table_1.md` is directly
-comparable across rows. `agentic_score` and `agentic_cost` share the same
-`AgenticOptimizer` class — they differ only in the `meta.cost_aware` flag
-passed to the framework, which switches the Proposer between score-maximising
-and Pareto-aware stances.
+All methods search the same `TrialConfig` space and are re-scored on the same
+held-out exam, so the final-score column in `Table_1.md` is directly comparable
+across rows (the YAHPO/HPOBench standard: fix the benchmark, swap the proposer).
+`agentic_*` share the same `AgenticOptimizer` class — they differ only in the
+`meta.cost_aware` flag and the `use_knowledge_base` / `use_diagnosis` ablation
+toggles passed to the framework. `motpe` / `motpe_warmstart` share the
+`MOTPESearch` class; `meta.cost_aware` switches it between single-objective
+(accuracy) and two-objective (accuracy ↑, per-query cost ↓) mode, mirroring the
+agentic flag. The MO-TPE sampler config (`multivariate, group, constant_liar`)
+matches syftr's published optimizer — asserted by a behavioral-equivalence test.
 
 The original Marker-Inc AutoRAG baseline (`autorag_our_exam`, `autorag_ragas`)
 was dropped from the active matrix on 2026-05-27; the code is preserved
@@ -42,14 +49,15 @@ uv run agentic-autorag-bench run --config configs/multihop_rag_paper.yaml
 
 # Specific methods — repeat -m for each
 uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m agentic_score
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m random -m bayesian
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m random -m motpe
 
 # Resume a partial run within a method (skip the start-of-run reset)
 uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m agentic_score --no-clean
 ```
 
-Method keys: `agentic_score`, `agentic_cost`, `random`, `bayesian`. Each
-one passed via `-m` must also be declared in the config's `methods:` list.
+Method keys: `agentic_score`, `agentic_cost`, `agentic_nokb`, `agentic_nodiag`,
+`motpe`, `motpe_warmstart`, `random`. Each one passed via `-m` must also be
+declared in the config's `methods:` list.
 
 Datasets are selected by config, not flag: each `configs/<dataset>_paper.yaml`
 points at its own `output_root` (`results_hotpot/`, `results_paper_musique/`,
@@ -77,7 +85,7 @@ checkpoints:
 ```
 
 Each declared `k < max_trials` adds one extra held-out evaluation per
-seed. Lets the paper compare e.g. `agentic_score@20` vs. `bayesian` at
+seed. Lets the paper compare e.g. `agentic_score@20` vs. `motpe` at
 the full 40-trial budget without paying for extra search trials. The
 held-out judge caches per `(config_hash, question_id)`, so identical
 configs across checkpoints incur no extra cost.
@@ -93,7 +101,7 @@ results_hotpot/                          # or results_paper_musique / results_mu
   figures/                               # matrix-level (cross-method); only updated at end-of-run via staging swap
     Table_1.md, score_per_trial.png, best_so_far.png, holdout_metrics.png,
     cost_breakdown.png, token_breakdown.png, appendix/
-  <method>/                              # e.g. agentic_score, random, bayesian
+  <method>/                              # e.g. agentic_score, random, motpe
     figures/                             # per-method (across seeds)
     <seed_label>/
       figures/                           # per-seed (score_per_trial, cost_per_trial)
@@ -127,7 +135,7 @@ makes `sum(trial.tokens) == framework_run_total` reconcile exactly while
 preserving per-seed variance.
 
 **Fairness rule (exam-gen exclusion).** Only `agentic_*` generates its own
-exam; `random` / `bayesian` reuse ours. Counting exam-gen cost would
+exam; `random` / `motpe` reuse ours. Counting exam-gen cost would
 penalise the method that creates exams for work the others don't do, so
 the bench tally **excludes** exam-gen LLM and embedding tokens. The
 framework still records its own exam-gen cost in the `exam_generation`

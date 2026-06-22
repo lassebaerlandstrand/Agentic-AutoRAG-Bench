@@ -11,10 +11,11 @@
 project_config: ./musique_paper_project.yaml
 
 methods:
-  - random
-  - bayesian
-  - agentic_score   # cost_aware=False (highest-score)
-  - agentic_cost    # cost_aware=True  (Pareto-aware)
+  - agentic_score      # full agentic (cost_aware=False, KB on, diagnosis on)
+  - agentic_nokb       # KB-off ablation
+  - motpe_warmstart    # MO-TPE seeded with the agent's frozen KB prior
+  - motpe              # cold MO-TPE (= syftr's optimizer)
+  - random             # exploration floor
 
 seeds: [1]
 

@@ -44,7 +44,7 @@ def run(
         "disk continue from trial K+1; empty dirs start fresh. A trial "
         "interrupted mid-evaluation is discarded and re-attempted. "
         "Implies --no-clean (mutually exclusive with --clean). Typical "
-        "use after a Ctrl+C: `--methods bayesian --resume`.",
+        "use after a Ctrl+C: `--methods motpe --resume`.",
     ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""

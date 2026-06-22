@@ -35,7 +35,7 @@ from agentic_autorag.output_layout import RunLayout
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
-from agentic_autorag_bench.methods.bayesian import BayesianSearch
+from agentic_autorag_bench.methods.motpe import MOTPESearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.plots import (
     make_matrix_figures,
@@ -46,7 +46,15 @@ from agentic_autorag_bench.types import Budget, HistoryEntry, SearchResult, Tria
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-STOCHASTIC_METHODS = {"random", "bayesian", "agentic_score", "agentic_cost"}
+STOCHASTIC_METHODS = {
+    "random",
+    "motpe",
+    "motpe_warmstart",
+    "agentic_score",
+    "agentic_cost",
+    "agentic_nokb",
+    "agentic_nodiag",
+}
 # Kept (empty) so deterministic methods can be reintroduced without rewiring
 # the dispatch loop in ``run_matrix``. AutoRAG variants used to live here
 # before being moved to agentic_autorag_bench/_deprecated/autorag/.
@@ -54,9 +62,11 @@ DETERMINISTIC_METHODS: set[str] = set()
 ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
 # Methods that share the bench's ``shared`` Orchestrator via ``evaluate_trial``.
 # These need the bench to install a per-(method, seed) cost ledger and reset
-# ``shared._seen_emb_fps`` between runs; agentic instantiates its own
-# Orchestrator so it manages its own ledger lifecycle.
-_SHARED_EVALUATOR_METHODS = {"random", "bayesian"}
+# ``shared._seen_emb_fps`` between runs; agentic_* instantiate their own
+# Orchestrator so they manage their own ledger lifecycle. (Dispatch keys off
+# the ``agentic_`` name prefix in ``_run_optimizer_with_ledger``; this set is
+# documentary.)
+_SHARED_EVALUATOR_METHODS = {"random", "motpe", "motpe_warmstart"}
 
 
 def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
@@ -327,7 +337,7 @@ def _read_trial_cost_ledger(method_dir: Path) -> list[dict]:
 
     The ledger is written for every method (framework's
     ``_finalize_trial_accounting`` for agentic_*, bench's
-    ``_make_metered_evaluator`` for random/bayesian). Each line has
+    ``_make_metered_evaluator`` for random/motpe). Each line has
     ``{"trial_number": int, "buckets": {bucket_name: {usd, prompt_tokens,
     completion_tokens, embedding_input_tokens, n_calls, ...}}}`` and may
     include a ``"status"`` field (agentic writes ``"failed"`` for trials
@@ -483,13 +493,22 @@ def _build_optimizer(
 ):
     if name == "random":
         return RandomSearch(project=project, storage_dir=output_dir, resume=resume)
-    if name == "bayesian":
-        return BayesianSearch(project=project, storage_dir=output_dir, resume=resume)
-    if name in {"agentic_score", "agentic_cost"}:
+    if name in {"motpe", "motpe_warmstart"}:
+        return MOTPESearch(
+            project=project,
+            storage_dir=output_dir,
+            resume=resume,
+            warm_start=(name == "motpe_warmstart"),
+            name=name,
+        )
+    if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag"}:
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
+            use_knowledge_base=(name != "agentic_nokb"),
+            use_diagnosis=(name != "agentic_nodiag"),
+            method_name=name,
             resume=resume,
         )
     raise ValueError(f"Unknown method {name!r}")
@@ -498,7 +517,7 @@ def _build_optimizer(
 def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
     """Wrap ``shared.evaluate_trial`` with per-trial ledger snapshot/delta.
 
-    Used by methods that drive the shared Orchestrator (random / bayesian).
+    Used by methods that drive the shared Orchestrator (random / motpe).
     Captures the cost-ledger delta over each trial, writes one line to
     ``method_dir/trial_cost_ledger.jsonl``, flushes any pending cache-event
     credits the orchestrator queued via ``_credit_embedding_build``, and
@@ -512,14 +531,14 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
     ``eval_usd`` sums every USD bucket in the ledger delta (RAG generation,
     judge, query expansion, any other trial-phase LLM call) rather than
     using ``ExamResult.total_llm_cost_usd``, which is documented RAG-only
-    and would silently omit the judge from random/bayesian's reported
+    and would silently omit the judge from random/motpe's reported
     ``trial_usd_total``. The agentic adapter folds judge in by reading
     ``cost_breakdown.json``; this keeps the bench-side methods symmetric.
 
     ``_current_phase`` is promoted to ``"trial"`` so any
     ``_credit_embedding_build`` event fired by ``evaluate_trial`` is tagged
     with the trial number in ``cache_events.jsonl`` — the shared
-    Orchestrator stays at ``"setup"`` otherwise because random/bayesian
+    Orchestrator stays at ``"setup"`` otherwise because random/motpe
     never call the framework's per-trial phase-setting path.
     """
     trial_counter = [0]
@@ -565,6 +584,7 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             embedding_tokens=embedding_tokens,
+            mean_llm_cost_per_query_usd=float(getattr(exam_result, "mean_llm_cost_per_query_usd", 0.0)),
         )
 
     return evaluator
@@ -574,7 +594,7 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
     """Mark every embedding fingerprint already paid for by this (method,
     seed)'s prior trials as seen on the shared orchestrator.
 
-    Used on ``--resume`` for shared-evaluator methods (random / bayesian).
+    Used on ``--resume`` for shared-evaluator methods (random / motpe).
     Without this, the first post-resume encounter of an embedder that the
     prior run already credited to ``embedding_build`` would charge it a
     second time, breaking the bench's "first use per (method, seed) only"
@@ -627,7 +647,7 @@ async def _run_optimizer_with_ledger(
 ) -> SearchResult:
     """Run ``optimizer.search`` with a per-(method, seed) cost-ledger context.
 
-    For methods that drive the shared Orchestrator (``random``, ``bayesian``,
+    For methods that drive the shared Orchestrator (``random``, ``motpe``,
     plus ``autorag_*`` which uses the shared evaluator for the rescore step):
     install a fresh ``CostLedger`` so per-trial token deltas can be captured,
     reset the shared orchestrator's cache-credit bookkeeping

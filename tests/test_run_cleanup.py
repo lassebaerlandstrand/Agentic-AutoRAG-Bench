@@ -5,7 +5,7 @@ matching ``<method>@<k>/`` checkpoint dirs). Method dirs not in the
 current run, ``.shared_cache/``, the cross-method ``figures/`` dir,
 ``bench_metadata.json``, and any user files at ``output_root`` are
 preserved — so ``-m agentic`` does not touch a previous run's
-``random/`` or ``bayesian/`` results, and the previous matrix figures
+``random/`` or ``motpe/`` results, and the previous matrix figures
 stay readable for the entire duration of a new run (the new figures
 are atomically swapped in at end-of-run).
 """
@@ -28,9 +28,9 @@ def _seed_with_history(seed_dir: Path) -> None:
 
 
 def test_only_targeted_method_dir_is_wiped(tmp_path: Path) -> None:
-    """``-m agentic`` resets agentic/ but preserves random/, bayesian/, etc."""
+    """``-m agentic`` resets agentic/ but preserves random/, motpe/, etc."""
     root = tmp_path / "results_paper"
-    for method in ("agentic", "random", "bayesian"):
+    for method in ("agentic", "random", "motpe"):
         _seed_with_history(root / method / "seed_1")
 
     removed = _clear_output_root_for(root, ["agentic"])
@@ -38,7 +38,7 @@ def test_only_targeted_method_dir_is_wiped(tmp_path: Path) -> None:
     assert removed == ["agentic"]
     assert not (root / "agentic").exists()
     assert (root / "random" / "seed_1" / "history.jsonl").exists()
-    assert (root / "bayesian" / "seed_1" / "history.jsonl").exists()
+    assert (root / "motpe" / "seed_1" / "history.jsonl").exists()
 
 
 def test_figures_dir_is_preserved_during_clean(tmp_path: Path) -> None:
@@ -94,7 +94,7 @@ def test_all_methods_wiped_when_all_methods_run(tmp_path: Path) -> None:
     cleanup, so every method dir gets reset — matching ``run`` config that
     declared them. ``figures/`` and the bench metadata sidecar survive."""
     root = tmp_path / "results_paper"
-    methods = ("agentic_score", "agentic_cost", "random", "bayesian")
+    methods = ("agentic_score", "agentic_cost", "random", "motpe")
     for method in methods:
         _seed_with_history(root / method / "seed_1")
     (root / "figures").mkdir()

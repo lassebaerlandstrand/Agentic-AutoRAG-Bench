@@ -4,16 +4,23 @@
 # ``agentic_score`` in favour of ``agentic_cost``.)
 #
 # Default iteration knobs assume the wide search space defined in
-# ``hotpot_paper_project.yaml`` (14 embedders × ~43 generators × continuous
+# ``hotpot_paper_project.yaml`` (13 embedders × 39 generators × continuous
 # top_k/hybrid_alpha × ...). Dial down inline overrides for dev runs.
+#
+# Accuracy-experiment method ladder (locked): random (floor) → motpe (SOTA
+# statistical search, = syftr's optimizer) → motpe_warmstart (same + the agent's
+# frozen KB prior as startup) → agentic_score (full agentic) → agentic_nokb
+# (KB-off ablation). agentic_cost belongs to the Pareto experiment (unidoc), not
+# here; agentic_nodiag is registered but kept out of the headline matrix.
 
 project_config: ./hotpot_paper_project.yaml
 
 methods:
-  - agentic_score   # cost_aware=False (highest-score)
-  - random
-  - bayesian
-  - agentic_cost    # cost_aware=True (Pareto-aware)
+  - agentic_score      # full agentic (cost_aware=False, KB on, diagnosis on)
+  - agentic_nokb       # KB-off ablation (cold reasoning)
+  - motpe_warmstart    # MO-TPE seeded with the agent's frozen KB prior
+  - motpe              # cold MO-TPE (= syftr's optimizer)
+  - random             # exploration floor
 
 seeds: [1]
 
@@ -25,12 +32,11 @@ budget:
 # in ``history[:k]`` on the held-out QA. Writes a sibling
 # ``<method>@<k>/seed_<n>/`` directory per checkpoint. Lets the paper show
 # "ours at trial k" vs. "baseline at trial max_trials" without paying for
-# extra search trials. Random/Bayesian are not checkpointed (saves held-out
+# extra search trials. Baselines are not checkpointed (saves held-out
 # judge cost — the headline question is "how does ours catch up to
-# Bayesian/random when given fewer trials", not the inverse).
+# MO-TPE/random when given fewer trials", not the inverse).
 checkpoints:
   agentic_score: [10, 20]
-  agentic_cost:  [10, 20]
 
 benchmark:
   name: hotpot_qa

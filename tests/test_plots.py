@@ -3,7 +3,7 @@
 The matrix-level figures share their writers with ``analyze.py`` and are
 covered transitively by ``test_analyze.py``. These tests focus on the
 seed-level and method-level entry points and on the schema-dual cost
-extraction (agentic vs. random/bayesian history.jsonl shapes).
+extraction (agentic vs. random/motpe history.jsonl shapes).
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ def _write_seed(
     """Lay down a minimal seed-dir so plots can read it.
 
     ``schema='bench'`` mirrors the bench's reduced HistoryEntry (random,
-    bayesian). ``schema='agentic'`` mirrors the framework's richer
+    motpe). ``schema='agentic'`` mirrors the framework's richer
     history.jsonl (uses ``total_llm_cost_usd`` instead of ``eval_usd``).
     """
     seed_dir.mkdir(parents=True, exist_ok=True)
@@ -225,7 +225,7 @@ def test_make_matrix_figures_assembles_full_matrix(tmp_path) -> None:
     output_root = tmp_path / "results_paper"
     _write_seed(output_root / "agentic_score" / "seed_1", [0.6, 0.7, 0.75], [0.1, 0.1, 0.1])
     _write_seed(output_root / "random" / "seed_1", [0.3, 0.5, 0.6], [0.1, 0.1, 0.1])
-    _write_seed(output_root / "bayesian" / "seed_1", [0.4, 0.55, 0.62], [0.1, 0.1, 0.1])
+    _write_seed(output_root / "motpe" / "seed_1", [0.4, 0.55, 0.62], [0.1, 0.1, 0.1])
     make_matrix_figures(output_root)
     figs = output_root / "figures"
     for name in (
