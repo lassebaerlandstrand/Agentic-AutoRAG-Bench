@@ -26,6 +26,7 @@ METHOD_COLOR: dict[str, str] = {
     "random": "#ff7f0e",  # orange
     "motpe": "#2ca02c",  # green
     "motpe_warmstart": "#9467bd",  # purple
+    "qlognehvi": "#d62728",  # red (GP-BO degradation reference)
 }
 _FALLBACK_COLOR = "#888888"
 
@@ -39,6 +40,7 @@ _DISPLAY_LABEL: dict[str, str] = {
     "random": "Random",
     "motpe": "MO-TPE",
     "motpe_warmstart": "MO-TPE (KB warm-start)",
+    "qlognehvi": "GP-BO (qLogNEHVI)",
 }
 
 

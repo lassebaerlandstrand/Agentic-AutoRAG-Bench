@@ -36,6 +36,7 @@ from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
 from agentic_autorag_bench.methods.motpe import MOTPESearch
+from agentic_autorag_bench.methods.qlognehvi import QLogNEHVISearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.plots import (
     make_matrix_figures,
@@ -50,6 +51,7 @@ STOCHASTIC_METHODS = {
     "random",
     "motpe",
     "motpe_warmstart",
+    "qlognehvi",
     "agentic_score",
     "agentic_cost",
     "agentic_nokb",
@@ -66,7 +68,7 @@ ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
 # Orchestrator so they manage their own ledger lifecycle. (Dispatch keys off
 # the ``agentic_`` name prefix in ``_run_optimizer_with_ledger``; this set is
 # documentary.)
-_SHARED_EVALUATOR_METHODS = {"random", "motpe", "motpe_warmstart"}
+_SHARED_EVALUATOR_METHODS = {"random", "motpe", "motpe_warmstart", "qlognehvi"}
 
 
 def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
@@ -501,6 +503,8 @@ def _build_optimizer(
             warm_start=(name == "motpe_warmstart"),
             name=name,
         )
+    if name == "qlognehvi":
+        return QLogNEHVISearch(project=project, storage_dir=output_dir, resume=resume)
     if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag"}:
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),

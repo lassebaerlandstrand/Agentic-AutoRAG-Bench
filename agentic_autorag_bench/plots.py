@@ -56,6 +56,7 @@ METHOD_ORDER = [
     "agentic_nodiag",
     "motpe_warmstart",
     "motpe",
+    "qlognehvi",
     "random",
 ]
 
@@ -69,6 +70,7 @@ SEQUENTIAL = {
     "agentic_nodiag",
     "motpe_warmstart",
     "motpe",
+    "qlognehvi",
     "random",
 }
 

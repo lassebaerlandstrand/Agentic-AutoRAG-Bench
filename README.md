@@ -14,6 +14,7 @@ a held-out `Table_1.md`.
 | `agentic_nodiag`   | Ours, diagnosis-off ablation (registered; off the headline matrix)| Same exam                             | ✓      |
 | `motpe`            | Optuna group-decomposed multivariate MO-TPE (= syftr's optimizer) | Same exam                              | ✓      |
 | `motpe_warmstart`  | `motpe` seeded with the agent's frozen KB prior (cold proposer)   | Same exam                              | ✓      |
+| `qlognehvi`        | Ax/BoTorch multi-objective GP-BO (Barker et al.); **needs `uv add ax-platform`** | Same exam                | ✓      |
 | `random`           | Random search                                                     | Same exam                              | ✓      |
 
 All methods search the same `TrialConfig` space and are re-scored on the same
@@ -26,6 +27,14 @@ toggles passed to the framework. `motpe` / `motpe_warmstart` share the
 (accuracy) and two-objective (accuracy ↑, per-query cost ↓) mode, mirroring the
 agentic flag. The MO-TPE sampler config (`multivariate, group, constant_liar`)
 matches syftr's published optimizer — asserted by a behavioral-equivalence test.
+
+`qlognehvi` is a **multi-objective** GP-BO degradation reference (accuracy ↑,
+per-query cost ↓) for the Pareto experiment — it refuses a single-objective
+(`cost_aware: false`) config. It is registered but kept out of every default
+`methods:` list because Ax pulls `botorch`/`gpytorch` and pins `torch`: run
+`uv add ax-platform` (and re-check the `torch` version your sentence-transformers
+embedders use) before listing it. Its encode/flatten-decode core is unit-tested;
+the Ax service loop is unverified until the dependency is added.
 
 The original Marker-Inc AutoRAG baseline (`autorag_our_exam`, `autorag_ragas`)
 was dropped from the active matrix on 2026-05-27; the code is preserved
