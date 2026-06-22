@@ -30,6 +30,7 @@ from agentic_autorag.config.models import (
     SearchSpace,
     TrialConfig,
 )
+from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.methods._sampler import (
     config_to_optuna_params,
@@ -171,6 +172,30 @@ async def test_cost_aware_drives_objective_directions(tmp_path: Path, monkeypatc
     )
     assert captured["direction"] == "maximize"
     assert captured["directions"] is None
+
+
+@pytest.mark.asyncio
+async def test_multiobjective_resume_recovers_cost_objective(tmp_path: Path) -> None:
+    """Regression: the MO resume self-heal path recovers per-query cost from optuna
+    objective-1, not 0.0 — else resumed Pareto trials get silently dropped from the
+    frontier/HV (the cost row is filtered out at cost<=0)."""
+    project = _project(True)
+    costs = [0.004, 0.002]
+    await MOTPESearch(project=project, storage_dir=tmp_path).search(
+        _make_evaluator([0.5, 0.7], costs=costs), Budget(max_trials=2), seed=1
+    )
+    # Simulate the pre-resume layout: history.jsonl missing, optuna.db remains.
+    RunLayout(base=tmp_path).history.unlink()
+    (tmp_path / "wall_clock.json").unlink()
+
+    sr = await MOTPESearch(project=project, storage_dir=tmp_path, resume=True).search(
+        _make_evaluator([0.6, 0.8], costs=[0.003, 0.001]), Budget(max_trials=4), seed=1
+    )
+    assert len(sr.history) == 4
+    # Reconstructed trials 1-2 keep their original per-query cost (not 0.0).
+    recovered = {round(h.mean_llm_cost_per_query_usd, 6) for h in sr.history[:2]}
+    assert recovered == set(costs), recovered
+    assert all(h.mean_llm_cost_per_query_usd > 0 for h in sr.history[:2])
 
 
 @pytest.mark.asyncio
