@@ -171,9 +171,9 @@ async def _probe_model(
 
 
 def _sort_key(m: dict) -> float:
-    # Slowest first; models that never returned (no latency) sort to the top —
-    # unreachable/timed-out is the strongest exclusion signal.
-    return m["latency_s"]["median"] if m["latency_s"] else float("inf")
+    # Longest total wall-clock first — the models that make the eval slowest
+    # are the prime pruning candidates.
+    return m["total_wall_s"]
 
 
 def _fmt_s(x: float | None) -> str:
