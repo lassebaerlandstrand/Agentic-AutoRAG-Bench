@@ -61,6 +61,7 @@ METHOD_ORDER = [
     "agentic_nodiag",
     "motpe_warmstart",
     "motpe",
+    "qlognehvi",
     "random",
 ]
 
