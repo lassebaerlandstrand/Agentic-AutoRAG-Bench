@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
+import pytest
 import yaml
 from agentic_autorag.output_layout import RunLayout
 
@@ -14,8 +15,15 @@ from agentic_autorag_bench.pareto import (
     _ensure_corpus,
     _load_trial_points,
     _short_model,
+    _TrialPoint,
+    compute_pareto_hypervolumes,
+    make_pareto_comparison_figure,
     make_pareto_figure,
 )
+
+
+def _point(n: int, cost: float, acc: float) -> _TrialPoint:
+    return _TrialPoint(trial_number=n, cost_per_query=cost, answer_accuracy=acc, is_pareto=False, config={})
 
 
 def _write_history(seed_dir, rows: list[dict]) -> None:
@@ -265,3 +273,54 @@ def test_ensure_corpus_downloads_when_empty(tmp_path) -> None:
     assert kwargs["domain"] == "healthcare"
     assert kwargs["max_pdfs"] == 230
     assert kwargs["max_images"] == 20
+
+
+# ----------------------------------------------- two-method hypervolume
+
+
+def test_compute_pareto_hypervolumes_uses_shared_reference() -> None:
+    """Both methods' HV is scored against ONE reference point pooled across both
+    (cost_ref = 2 × max pooled cost), so the two numbers are comparable."""
+    method_points = {
+        "agentic_cost": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8)],
+        "motpe_warmstart": [_point(1, 0.001, 0.5), _point(2, 0.003, 0.7)],
+    }
+    hv = compute_pareto_hypervolumes(method_points)
+
+    # Shared cost reference = 2 × max pooled cost (0.003).
+    assert hv["cost_reference"] == pytest.approx(0.006)
+    assert hv["score_reference"] == 0.0
+    # Both points of each method are non-dominated → both on each frontier.
+    assert hv["methods"]["agentic_cost"]["frontier_trials"] == [1, 2]
+    assert hv["methods"]["motpe_warmstart"]["frontier_trials"] == [1, 2]
+    # Hand-computed staircase areas against the shared ref point (0, 0.006).
+    assert hv["methods"]["agentic_cost"]["hypervolume"] == pytest.approx(0.0038)
+    assert hv["methods"]["motpe_warmstart"]["hypervolume"] == pytest.approx(0.0031)
+    # The dominating frontier has the larger hypervolume.
+    assert hv["methods"]["agentic_cost"]["hypervolume"] > hv["methods"]["motpe_warmstart"]["hypervolume"]
+
+
+def test_compute_pareto_hypervolumes_drops_dominated_from_frontier() -> None:
+    method_points = {
+        "m": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.5), _point(3, 0.003, 0.9)],
+    }
+    hv = compute_pareto_hypervolumes(method_points)
+    # Trial 2 (more cost, less accuracy than trial 1) is dominated → off frontier.
+    assert hv["methods"]["m"]["frontier_trials"] == [1, 3]
+
+
+def test_make_pareto_comparison_figure_emits_png(tmp_path) -> None:
+    method_points = {
+        "agentic_cost": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8), _point(3, 0.004, 0.55)],
+        "motpe_warmstart": [_point(1, 0.0012, 0.5), _point(2, 0.003, 0.7)],
+    }
+    hv = compute_pareto_hypervolumes(method_points)
+    out = tmp_path / "figures" / "pareto_comparison.png"
+    make_pareto_comparison_figure(method_points, hv, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_make_pareto_comparison_figure_no_points_is_noop(tmp_path) -> None:
+    out = tmp_path / "figures" / "pareto_comparison.png"
+    make_pareto_comparison_figure({"agentic_cost": [], "motpe_warmstart": []}, {"methods": {}}, out)
+    assert not out.exists()
