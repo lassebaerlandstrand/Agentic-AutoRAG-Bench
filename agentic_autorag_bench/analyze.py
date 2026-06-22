@@ -53,8 +53,16 @@ N_BOOTSTRAP = 1000
 CI_ALPHA = 0.05
 
 # Stable display order shared by the Markdown table and figure writers so the
-# paper's narrative ("agentic vs. random/bayesian") reads the same everywhere.
-METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian"]
+# paper's narrative ("agentic vs. MO-TPE/random") reads the same everywhere.
+METHOD_ORDER = [
+    "agentic_score",
+    "agentic_cost",
+    "agentic_nokb",
+    "agentic_nodiag",
+    "motpe_warmstart",
+    "motpe",
+    "random",
+]
 
 
 def _order_methods_for_analyze(method_names) -> list[str]:

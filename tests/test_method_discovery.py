@@ -27,7 +27,7 @@ def test_order_methods_groups_checkpoints_after_parent() -> None:
         "random",
         "agentic_score@20",
         "agentic_score",
-        "bayesian",
+        "motpe",
         "agentic_score@10",
         "agentic_cost",
         "agentic_cost@10",
@@ -38,8 +38,8 @@ def test_order_methods_groups_checkpoints_after_parent() -> None:
         "agentic_score@20",
         "agentic_cost",
         "agentic_cost@10",
+        "motpe",
         "random",
-        "bayesian",
     ]
 
 

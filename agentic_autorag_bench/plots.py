@@ -49,12 +49,28 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 # the two must agree. ``@k`` checkpoint variants (e.g. ``agentic_score@10``)
 # are interleaved at render time by ``_discover_method_names`` so they
 # appear immediately after their parent base method, in ascending k order.
-METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian"]
+METHOD_ORDER = [
+    "agentic_score",
+    "agentic_cost",
+    "agentic_nokb",
+    "agentic_nodiag",
+    "motpe_warmstart",
+    "motpe",
+    "random",
+]
 
 # Methods whose per-trial trajectory is meaningful. ``@k`` checkpoint
 # variants inherit sequential-ness from their parent (they're a strict
 # prefix of the parent's history) via ``_is_sequential``.
-SEQUENTIAL = {"agentic_score", "agentic_cost", "random", "bayesian"}
+SEQUENTIAL = {
+    "agentic_score",
+    "agentic_cost",
+    "agentic_nokb",
+    "agentic_nodiag",
+    "motpe_warmstart",
+    "motpe",
+    "random",
+}
 
 # Directory names that live next to method dirs under ``output_root`` but are
 # not method results. ``_seed_dirs`` and ``make_matrix_figures`` skip these.
@@ -116,7 +132,7 @@ def _entry_eval_usd(e: dict) -> float:
 
     The framework writes ``total_llm_cost_usd`` into agentic's
     ``history.jsonl``; the bench's reduced ``HistoryEntry`` writes
-    ``eval_usd`` for random/bayesian. Both name the same quantity.
+    ``eval_usd`` for random/motpe. Both name the same quantity.
     """
     if "eval_usd" in e:
         return float(e["eval_usd"])

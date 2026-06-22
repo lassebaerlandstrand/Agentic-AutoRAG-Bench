@@ -21,18 +21,24 @@ if TYPE_CHECKING:
 METHOD_COLOR: dict[str, str] = {
     "agentic_score": "#1f77b4",  # blue
     "agentic_cost": "#17becf",  # cyan
+    "agentic_nokb": "#aec7e8",  # light blue (agentic ablation)
+    "agentic_nodiag": "#c5b0d5",  # light purple (agentic ablation)
     "random": "#ff7f0e",  # orange
-    "bayesian": "#2ca02c",  # green
+    "motpe": "#2ca02c",  # green
+    "motpe_warmstart": "#9467bd",  # purple
 }
 _FALLBACK_COLOR = "#888888"
 
-# Paper-facing display names (display-only). ``agentic_cost`` is mapped for
-# when the cost-aware run lands; it does not appear in the current figure set.
+# Paper-facing display names (display-only). The internal method keys, config
+# YAML, and on-disk ``results_*/<method>/`` directories are unchanged.
 _DISPLAY_LABEL: dict[str, str] = {
     "agentic_score": "Agentic (Ours)",
     "agentic_cost": "Agentic-Pareto (Ours)",
+    "agentic_nokb": "Agentic (no KB)",
+    "agentic_nodiag": "Agentic (no diagnosis)",
     "random": "Random",
-    "bayesian": "Bayesian (TPE)",
+    "motpe": "MO-TPE",
+    "motpe_warmstart": "MO-TPE (KB warm-start)",
 }
 
 
@@ -52,7 +58,7 @@ def display_label(method: str) -> str:
     """Paper-facing label for a method name.
 
     ``agentic_score`` → "Agentic (Ours)"; ``agentic_score@10`` → "Agentic@10";
-    ``bayesian`` → "Bayesian (TPE)"; unknown names fall back to a hyphenated
+    ``motpe`` → "MO-TPE"; unknown names fall back to a hyphenated
     form so nothing renders as raw snake_case.
     """
     if "@" in method:
