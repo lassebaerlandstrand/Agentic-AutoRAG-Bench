@@ -39,10 +39,11 @@ examiner:
   exam_size: 100
   initial_question_multiplier: 1.8
   probe_selection: true
-  # Neighborhood-builder thresholds. MuSiQue's corpus is Wikipedia paragraph
-  # snippets like HotpotQA — same chunk-floor binding regime (18 chunks ≈
-  # 1.8k words gives the composer enough material for 2-4 hop chains).
-  neighborhood_min_chunks: 18
+  # Neighborhood-builder thresholds. MuSiQue chunks are the smallest (~60 words
+  # median), so it needs more of them to match hotpot's word-content: the
+  # 25-chunk floor binds (~1.5k words, vs hotpot's 20×81≈1.6k), still well
+  # below the 5k-word floor. Gives the composer enough material for 2-4 hops.
+  neighborhood_min_chunks: 25
   neighborhood_min_words: 5000
   # Wikipedia paragraphs are single-topic snippets — same-doc siblings
   # are sparse. Cross-doc cosine neighbors carry the multi-hop signal.

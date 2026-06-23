@@ -38,8 +38,9 @@ examiner:
   exam_size: 100
   initial_question_multiplier: 1.8
   probe_selection: true
-  # Neighborhood-builder thresholds. On full-article corpora (multihop news,
-  # median ~450 words/chunk) the 5k-word floor binds first.
+  # Neighborhood-builder thresholds. MultiHop chunks are large (~937 words
+  # median, near the 1k cap), so the 5k-WORD floor binds first at ~6 chunks —
+  # the 18-chunk floor is never reached. Word-bound by design (full articles).
   neighborhood_min_chunks: 18
   neighborhood_min_words: 5000
   # Cross-doc dominant; a small same-doc share for multi-chunk articles.

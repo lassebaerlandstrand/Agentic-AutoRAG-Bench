@@ -52,10 +52,10 @@ examiner:
   probe_selection: true
   # Neighborhood-builder thresholds. The composer sees a neighborhood per
   # call (anchor + same-doc siblings + cosine-similar cross-doc chunks).
-  # HotpotQA paragraphs are ~50-100 words each so the 18-chunk floor binds
-  # first (~1.8k words), giving the composer enough raw material for
-  # 3-hop chains.
-  neighborhood_min_chunks: 18
+  # HotpotQA chunks are ~81 words (median), so the 20-chunk floor binds first
+  # (~1.6k words) — well below the 5k-word floor — giving the composer enough
+  # raw material for 3-hop chains.
+  neighborhood_min_chunks: 20
   neighborhood_min_words: 5000
   # HotpotQA paragraphs are single-topic snippets, so same-document siblings
   # are sparse — cross-doc cosine neighbors carry essentially all the
