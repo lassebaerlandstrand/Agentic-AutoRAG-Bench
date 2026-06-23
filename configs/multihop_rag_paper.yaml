@@ -1,10 +1,6 @@
 # Paper-scale matrix config — score-only EMNLP Table 1 run on MultiHop-RAG.
-# Mirrors hotpot_paper.yaml exactly (same methods, seeds, budget, hold-out
-# settings) so the three benchmarks differ only in dataset.
-#
-# Currently dialled DOWN for iteration: single seed, 3 trials, 300-question
-# hold-out. Bump these for the camera-ready run (see hotpot_paper.yaml for
-# the canonical paper-scale numbers).
+# Mirrors hotpot_paper.yaml (same methods, seeds, budget, checkpoints, hold-out)
+# so the three benchmarks differ only in dataset.
 #
 # Run a single method with: -m random  (or any subset present in `methods`).
 
@@ -17,10 +13,13 @@ methods:
   - motpe              # cold MO-TPE (= syftr's optimizer)
   - random             # exploration floor
 
-seeds: [1]
+seeds: [1, 2, 3]
 
 budget:
-  max_trials: 3
+  max_trials: 40
+
+checkpoints:
+  agentic_score: [10, 20]
 
 benchmark:
   name: multihop_rag

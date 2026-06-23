@@ -22,7 +22,7 @@ methods:
   - motpe              # cold MO-TPE (= syftr's optimizer)
   - random             # exploration floor
 
-seeds: [1]
+seeds: [1, 2, 3]
 
 budget:
   max_trials: 40
