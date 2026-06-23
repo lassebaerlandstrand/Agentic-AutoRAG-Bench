@@ -35,9 +35,8 @@ agent:
   concurrency: 10
 
 examiner:
-  # Smaller exam than hotpot/musique: the corpus is only ~600 long articles.
-  exam_size: 50
-  initial_question_multiplier: 3.0
+  exam_size: 100
+  initial_question_multiplier: 1.8
   probe_selection: true
   # Neighborhood-builder thresholds. On full-article corpora (multihop news,
   # median ~450 words/chunk) the 5k-word floor binds first.

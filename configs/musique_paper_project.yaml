@@ -37,7 +37,7 @@ agent:
 
 examiner:
   exam_size: 100
-  initial_question_multiplier: 6.0
+  initial_question_multiplier: 1.8
   probe_selection: true
   # Neighborhood-builder thresholds. MuSiQue's corpus is Wikipedia paragraph
   # snippets like HotpotQA — same chunk-floor binding regime (18 chunks ≈
