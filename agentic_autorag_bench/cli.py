@@ -24,17 +24,17 @@ def run(
         "-m",
         help="Subset of methods to run (must be present in the config; repeat flag for multiple).",
     ),
-    clean: bool = typer.Option(
-        True,
+    clean: bool | None = typer.Option(
+        None,
         "--clean/--no-clean",
         help="Reset the per-method dirs about to be run (and any matching "
         "@k checkpoint dirs) so their contents reflect the current run "
-        "only. ``figures/`` is NOT wiped — matrix figures are staged "
-        "and atomically swapped at end-of-run so the previous figures "
-        "stay readable throughout. Method dirs not in this run, "
-        "``.shared_cache/``, and user files at output_root are also "
-        "preserved. Pass --no-clean to keep prior files in place "
-        "without resuming trial state (use --resume for that).",
+        "only. Defaults ON for a fresh run, but ``--resume`` implies "
+        "``--no-clean`` automatically. ``figures/`` is NOT wiped — matrix "
+        "figures are staged and atomically swapped at end-of-run so the "
+        "previous figures stay readable throughout. Method dirs not in this "
+        "run, ``.shared_cache/``, and user files at output_root are also "
+        "preserved.",
     ),
     resume: bool = typer.Option(
         False,
@@ -43,24 +43,37 @@ def run(
         "trial. Per-(method, seed) directories with prior trial state on "
         "disk continue from trial K+1; empty dirs start fresh. A trial "
         "interrupted mid-evaluation is discarded and re-attempted. "
-        "Implies --no-clean (mutually exclusive with --clean). Typical "
-        "use after a Ctrl+C: `--methods motpe --resume`.",
+        "Implies --no-clean. Typical use after a Ctrl+C or a crash: "
+        "`--resume` (optionally with `-m motpe`).",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Allow a --clean start to wipe method dirs that already contain "
+        "COMPLETED hold-out results. Without it, a clean start refuses to "
+        "delete finished work (so an accidental re-launch of the documented "
+        "`run` command after a crash can't destroy days of results) — pass "
+        "--resume to continue instead, or --force to deliberately restart.",
     ),
 ) -> None:
     """Run the (method × seed) matrix described by the YAML config."""
-    if resume and clean:
+    # ``--resume`` implies ``--no-clean``: only error if the user EXPLICITLY
+    # asked for --clean alongside --resume (clean is True, not the None default).
+    if resume and clean is True:
         raise typer.BadParameter(
             "--resume and --clean are mutually exclusive: --resume needs the "
-            "prior method dirs intact to continue from. Pass `--no-clean` "
-            "explicitly together with --resume, or drop --resume to start fresh."
+            "prior method dirs intact to continue from. Drop --clean (--resume "
+            "already implies --no-clean), or drop --resume to start a fresh clean run."
         )
+    effective_clean = False if resume else (True if clean is None else clean)
     from agentic_autorag_bench.run import run_cli
 
     run_cli(
         config,
         methods=methods or None,
-        clean=clean,
+        clean=effective_clean,
         resume=resume,
+        force=force,
     )
 
 

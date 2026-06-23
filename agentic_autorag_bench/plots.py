@@ -146,10 +146,15 @@ def _read_history(seed_dir: Path) -> list[dict]:
     if not path.exists():
         return []
     out: list[dict] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            out.append(json.loads(line))
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                out.append(json.loads(line))
+    except (OSError, json.JSONDecodeError):
+        # A kill mid-write can truncate the last line; keep the good prefix so
+        # trajectory figures still render rather than aborting the whole plot.
+        logger.warning("Truncated/corrupt history at %s; using %d good line(s)", path, len(out), exc_info=True)
     out.sort(key=lambda e: int(e.get("trial_number", 0)))
     return out
 
@@ -158,7 +163,11 @@ def _read_benchmark(seed_dir: Path) -> dict | None:
     path = seed_dir / "benchmark_results.json"
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Unreadable/corrupt benchmark_results at %s; skipping", path, exc_info=True)
+        return None
 
 
 def _seed_dirs(method_dir: Path) -> list[Path]:

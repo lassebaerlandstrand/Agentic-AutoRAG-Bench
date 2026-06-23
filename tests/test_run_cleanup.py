@@ -15,7 +15,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agentic_autorag_bench.run import _clear_output_root_for
+from agentic_autorag_bench.run import (
+    _clear_output_root_for,
+    _is_method_seed_complete,
+    _methods_with_completed_results,
+)
 
 
 def _seed_with_history(seed_dir: Path) -> None:
@@ -162,3 +166,78 @@ def test_simulates_stale_figure_scenario(tmp_path: Path) -> None:
 
     assert not (seed_dir / "figures").exists()
     assert not (seed_dir / "history.jsonl").exists()
+
+
+def _seed_complete_method(seed_dir: Path, *, n_trials: int) -> None:
+    """Lay down the on-disk markers a fully-finished (method, seed) leaves:
+    a held-out ``benchmark_results.json`` plus ``optimizer_meta.json``."""
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    (seed_dir / "benchmark_results.json").write_text('{"accuracy": 0.8}', encoding="utf-8")
+    (seed_dir / "optimizer_meta.json").write_text(
+        json.dumps({"n_trials_completed": n_trials}), encoding="utf-8"
+    )
+
+
+def test_complete_when_holdout_present_and_no_checkpoints(tmp_path: Path) -> None:
+    """A bare method (no checkpoints) is complete once its held-out result exists."""
+    root = tmp_path / "results"
+    _seed_complete_method(root / "random" / "seed_1", n_trials=2)
+    assert _is_method_seed_complete(root, "random", "seed_1", []) is True
+
+
+def test_incomplete_when_holdout_missing(tmp_path: Path) -> None:
+    """Search may have finished but a crash before/within held-out leaves no
+    benchmark_results.json — the pair must be re-entered, not skipped."""
+    root = tmp_path / "results"
+    seed_dir = root / "random" / "seed_1"
+    seed_dir.mkdir(parents=True)
+    (seed_dir / "history.jsonl").write_text(
+        json.dumps({"trial_number": 1, "config": {}, "answer_accuracy": 0.5, "eval_usd": 0.1}) + "\n",
+        encoding="utf-8",
+    )
+    assert _is_method_seed_complete(root, "random", "seed_1", []) is False
+
+
+def test_incomplete_when_a_declared_checkpoint_holdout_is_missing(tmp_path: Path) -> None:
+    """Main held-out done but a declared @k checkpoint (k < n_trials) hasn't
+    been evaluated yet → not complete."""
+    root = tmp_path / "results"
+    _seed_complete_method(root / "agentic_score" / "seed_1", n_trials=20)
+    # @10 present, @5 missing
+    _seed_complete_method(root / "agentic_score@10" / "seed_1", n_trials=10)
+    assert _is_method_seed_complete(root, "agentic_score", "seed_1", [5, 10]) is False
+
+
+def test_complete_when_all_declared_checkpoints_present(tmp_path: Path) -> None:
+    root = tmp_path / "results"
+    _seed_complete_method(root / "agentic_score" / "seed_1", n_trials=20)
+    _seed_complete_method(root / "agentic_score@5" / "seed_1", n_trials=5)
+    _seed_complete_method(root / "agentic_score@10" / "seed_1", n_trials=10)
+    assert _is_method_seed_complete(root, "agentic_score", "seed_1", [5, 10]) is True
+
+
+def test_checkpoint_beyond_completed_trials_not_required(tmp_path: Path) -> None:
+    """If only 8 trials completed (failures ate the rest), a declared @10
+    checkpoint is never produced by _evaluate_checkpoints (k >= n_trials), so
+    the guard must not demand its directory — else resume would loop forever."""
+    root = tmp_path / "results"
+    _seed_complete_method(root / "motpe" / "seed_1", n_trials=8)
+    # @10 dir intentionally absent; n_trials_completed=8 so it's not required.
+    assert _is_method_seed_complete(root, "motpe", "seed_1", [10]) is True
+
+
+def test_methods_with_completed_results_detects_finished_work(tmp_path: Path) -> None:
+    """The clean-wipe safety guard must see a method with a finished hold-out."""
+    root = tmp_path / "results"
+    _seed_complete_method(root / "random" / "seed_1", n_trials=2)
+    # motpe present but only mid-search (history, no benchmark_results) → not "completed"
+    (root / "motpe" / "seed_1").mkdir(parents=True)
+    (root / "motpe" / "seed_1" / "history.jsonl").write_text("{}\n", encoding="utf-8")
+
+    done = _methods_with_completed_results(root, ["random", "motpe", "agentic_score"])
+    assert done == ["random"]
+
+
+def test_methods_with_completed_results_empty_on_fresh_root(tmp_path: Path) -> None:
+    root = tmp_path / "never"
+    assert _methods_with_completed_results(root, ["random", "motpe"]) == []

@@ -38,6 +38,8 @@ from agentic_autorag_bench.methods._sampler import (
     sample_random,
 )
 from agentic_autorag_bench.methods.motpe import (
+    _DB_NAME,
+    _STUDY_NAME,
     SAMPLER_KWARGS,
     MOTPESearch,
     _make_sampler,
@@ -301,3 +303,65 @@ async def test_warmstart_evaluates_cold_proposer_configs_first(tmp_path: Path, m
     assert [h.config["top_k"] for h in sr.history[:3]] == [3, 5, 10]
     assert sr.extras["n_warmstart"] == 3
     assert sr.method == "motpe_warmstart"
+
+
+async def test_resume_marks_orphaned_running_trial_failed(tmp_path: Path) -> None:
+    """A SIGKILL between study.ask() and study.tell() leaves a RUNNING trial in
+    optuna.db. On --resume, motpe must mark it FAIL via its trial NUMBER (a
+    FrozenTrial from get_trials() is not a valid study.tell() target and would
+    raise 'Trial must be a trial object or trial number', aborting the resume).
+    This is the most common crash case — kills happen DURING a trial."""
+    project = _project(False)
+    # Simulate the interrupted run: a study on disk with one orphaned RUNNING trial.
+    storage = f"sqlite:///{tmp_path / _DB_NAME}"
+    study = optuna.create_study(
+        direction="maximize", sampler=_make_sampler(1), storage=storage, study_name=_STUDY_NAME
+    )
+    study.ask()  # RUNNING, never told → orphaned by the "crash"
+    assert len(study.get_trials(states=(optuna.trial.TrialState.RUNNING,))) == 1
+    del study  # release the sqlite handle
+
+    # Resume must not raise and must run a full fresh budget (no usable history).
+    sr = await MOTPESearch(project=project, storage_dir=tmp_path, resume=True).search(
+        _make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1
+    )
+    assert len(sr.history) == 3
+
+
+async def test_warmstart_optimizer_usd_recovered_on_resume(tmp_path: Path, monkeypatch) -> None:
+    """The warm-start proposer spend lives in no per-trial ledger line, so a
+    crash+resume (which skips warm-start and installs a fresh ledger) must
+    recover it from the sidecar instead of silently resetting optimizer_usd to 0."""
+    space = SearchSpace(
+        chunking=ChunkingSearchSpace(
+            strategies=["recursive"],
+            chunk_token_size=DiscreteValues(values=[256, 512]),
+            chunk_token_overlap=DiscreteValues(values=[0, 64]),
+        ),
+        embedding=EmbeddingSearchSpace(models=["m1"]),
+        retrieval=RetrievalSearchSpace(index_types=[IndexType.VECTOR_ONLY], top_k=DiscreteValues(values=[3, 5, 10])),
+        reranker=RerankerSearchSpace(models=["none"], top_n=DiscreteValues(values=[3, 5, 10])),
+        query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
+        passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
+        generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
+        temperature=NumericRange(min=0.0, max=0.0),
+    )
+    project = _project(False, space)
+    canned = [_grid_config(3), _grid_config(5), _grid_config(10)]
+
+    async def fake_warmstart(self, n, seed):  # noqa: ANN001, ARG001
+        return canned[:n], 0.1234
+
+    monkeypatch.setattr(MOTPESearch, "_propose_warmstart", fake_warmstart)
+
+    # Fresh warm-started run records optimizer_usd and the sidecar.
+    fresh = MOTPESearch(project=project, storage_dir=tmp_path, warm_start=True, name="motpe_warmstart")
+    sr1 = await fresh.search(_make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1)
+    assert sr1.optimizer_usd == 0.1234
+    assert (tmp_path / "warmstart_cost.json").exists()
+
+    # Resume (warm-start skipped) must recover the same optimizer_usd from disk.
+    resumed = MOTPESearch(project=project, storage_dir=tmp_path, warm_start=True, resume=True, name="motpe_warmstart")
+    sr2 = await resumed.search(_make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1)
+    assert sr2.optimizer_usd == 0.1234
+    assert sr2.extras["n_warmstart"] == 0  # not re-proposed on resume

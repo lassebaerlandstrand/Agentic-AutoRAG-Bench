@@ -233,6 +233,9 @@ class BenchConfig:
     hold_out_judge_model: str | None
     hold_out_concurrency: int
     output_root: Path
+    # QA metadata.question_type values to drop from the held-out scoring (e.g.
+    # MultiHop-RAG's ``null_query`` rows, which the free-form judge can't score).
+    hold_out_exclude_question_types: list[str] = field(default_factory=list)
     # Per-method early-stopping checkpoints. After a method's full
     # max_trials-budget search finishes, the orchestrator additionally
     # evaluates the best config seen in ``history[:k]`` on the held-out QA
@@ -290,6 +293,7 @@ class BenchConfig:
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
             output_root=Path(raw["output_root"]).resolve(),
+            hold_out_exclude_question_types=list(raw["hold_out"].get("exclude_question_types") or []),
             checkpoints=checkpoints,
         )
 
@@ -473,6 +477,7 @@ async def _evaluate_checkpoints(
             judge_model=bench.hold_out_judge_model,
             limit=bench.hold_out_limit,
             concurrency=bench.hold_out_concurrency,
+            exclude_question_types=bench.hold_out_exclude_question_types,
         )
         make_seed_figures(ck_dir)
         logger.info(
@@ -716,12 +721,70 @@ def _has_prior_trial_state(method_dir: Path) -> bool:
     return any((method_dir / name).exists() for name in _RESUME_STATE_FILES)
 
 
+def _is_method_seed_complete(
+    output_root: Path,
+    method_name: str,
+    seed_label: str,
+    checkpoints: list[int],
+) -> bool:
+    """Has this (method, seed) already finished *everything* a fresh run would do?
+
+    A multi-day matrix that crashes and relaunches with ``--resume`` must not
+    re-pay for work that already landed on disk. The optimizer's ``search()``
+    skips completed trials cheaply, but ``run_matrix`` would otherwise still
+    re-run the 300-question held-out ``benchmark.evaluate`` (real RAG
+    generation + index rebuild), re-render figures, and re-evaluate every
+    ``@k`` checkpoint for a (method, seed) that fully finished before the
+    crash. This guard lets the loop ``continue`` past such pairs.
+
+    ``benchmark_results.json`` is the completion sentinel: it is written *last*
+    (after search returns to budget and ``_persist_search_result`` runs), so
+    its presence means search + main held-out both finished. Checkpoints are
+    written afterward, so each declared ``@k`` that the parent run would have
+    produced (``k < n_trials_completed`` — the same guard ``_evaluate_checkpoints``
+    applies) must also have its own held-out result. Any missing piece returns
+    ``False`` so the pair is re-entered and resumed from where it stopped.
+    """
+    base = output_root / method_name / seed_label
+    if not (base / "benchmark_results.json").exists():
+        return False
+    n_done: int | None = None
+    meta_path = base / "optimizer_meta.json"
+    if meta_path.exists():
+        try:
+            n_done = int(json.loads(meta_path.read_text(encoding="utf-8")).get("n_trials_completed"))
+        except (ValueError, TypeError, json.JSONDecodeError):
+            n_done = None
+    for k in checkpoints:
+        if n_done is not None and k >= n_done:
+            # ``_evaluate_checkpoints`` skips k >= len(history); such a
+            # checkpoint dir is never produced, so don't require it here.
+            continue
+        ck = output_root / f"{method_name}@{k}" / seed_label / "benchmark_results.json"
+        if not ck.exists():
+            return False
+    return True
+
+
+def _methods_with_completed_results(output_root: Path, methods: list[str]) -> list[str]:
+    """Names among ``methods`` whose dir holds at least one finished hold-out
+    (a ``*/benchmark_results.json``). Used to refuse a destructive clean of
+    already-completed work unless explicitly forced."""
+    done: list[str] = []
+    for m in methods:
+        mdir = output_root / m
+        if mdir.is_dir() and any(mdir.glob("*/benchmark_results.json")):
+            done.append(m)
+    return done
+
+
 async def run_matrix(
     config_path: str | Path,
     *,
     methods_override: list[str] | None = None,
     clean: bool = True,
     resume: bool = False,
+    force: bool = False,
 ) -> None:
     # litellm.drop_params=True so provider-specific params (seed, temperature
     # on gpt-5) are silently dropped instead of erroring. The framework's
@@ -744,6 +807,18 @@ async def run_matrix(
                 "edit the config or pick a subset of its methods"
             )
         bench.methods = [m for m in bench.methods if m in set(methods_override)]
+
+    if clean and not force:
+        # Don't let an accidental re-launch of the documented `run` command
+        # after a crash silently rmtree days of finished results. Require an
+        # explicit --force to wipe completed work; otherwise point at --resume.
+        completed = _methods_with_completed_results(bench.output_root, bench.methods)
+        if completed:
+            raise ValueError(
+                f"Refusing to --clean: {sorted(completed)} under {bench.output_root} already "
+                "have completed hold-out results. Pass --resume to continue the run "
+                "(skips finished (method, seed) pairs), or --force to deliberately wipe and restart."
+            )
 
     if clean:
         removed = _clear_output_root_for(bench.output_root, bench.methods)
@@ -786,6 +861,21 @@ async def run_matrix(
             for seed in seeds_for_method:
                 seed_label = f"seed_{seed}" if seed is not None else "default"
                 method_dir = bench.output_root / method_name / seed_label
+
+                # Resume fast-path: a (method, seed) that already finished
+                # search + held-out + all its checkpoints is skipped entirely,
+                # so a crash-relaunch never re-pays for completed work. Only on
+                # --resume; a fresh/--clean run has nothing on disk to skip.
+                if resume and _is_method_seed_complete(
+                    bench.output_root, method_name, seed_label, bench.checkpoints.get(method_name, [])
+                ):
+                    logger.info(
+                        "SKIP %s | %s — already complete (held-out + checkpoints on disk)",
+                        method_name,
+                        seed_label,
+                    )
+                    continue
+
                 method_dir.mkdir(parents=True, exist_ok=True)
                 logger.info("=" * 60)
                 logger.info("RUNNING %s | %s", method_name, seed_label)
@@ -842,6 +932,7 @@ async def run_matrix(
                     judge_model=bench.hold_out_judge_model,
                     limit=bench.hold_out_limit,
                     concurrency=bench.hold_out_concurrency,
+                    exclude_question_types=bench.hold_out_exclude_question_types,
                 )
 
                 # Per-seed figures: render as soon as one (method, seed) finishes
@@ -873,20 +964,35 @@ async def run_matrix(
     finally:
         await shared.cleanup()
 
-    # Cross-method content-filter exclusion: drop any question that any
-    # method's best config got rejected on, so all rows score the same
-    # denominator. Runs after every hold-out so the union is complete.
-    apply_union_exclusion(bench.output_root)
+    # Cross-method content-filter exclusion + matrix figures run AFTER all the
+    # expensive search + hold-out compute has been persisted per (method, seed).
+    # A failure here must not discard that work, so the whole post-processing
+    # block is best-effort: on any error, log and leave the per-seed results on
+    # disk — they can be re-rendered later with ``analyze`` (or the next
+    # ``--resume`` will redo this step). apply_union_exclusion already skips
+    # individually-corrupt files internally.
+    try:
+        # Drop any question any method's best config got rejected on, so all
+        # rows score the same denominator. Runs after every hold-out so the
+        # union is complete.
+        apply_union_exclusion(bench.output_root)
 
-    # Matrix figures see the union-exclusion-adjusted hold-out scores; calling
-    # before apply_union_exclusion would bake stale per-question denominators
-    # into the table. Rendered into a staging dir first; the previous run's
-    # figures/ stays readable until the swap at the very end.
-    staging_dir = bench.output_root / _FIGURES_STAGING_NAME
-    if staging_dir.exists():
-        shutil.rmtree(staging_dir)
-    make_matrix_figures(bench.output_root, figures_dir=staging_dir)
-    _swap_in_staged_figures(bench.output_root)
+        # Matrix figures see the union-exclusion-adjusted hold-out scores;
+        # calling before apply_union_exclusion would bake stale per-question
+        # denominators into the table. Rendered into a staging dir first; the
+        # previous run's figures/ stays readable until the swap at the very end.
+        staging_dir = bench.output_root / _FIGURES_STAGING_NAME
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir)
+        make_matrix_figures(bench.output_root, figures_dir=staging_dir)
+        _swap_in_staged_figures(bench.output_root)
+    except Exception:
+        logger.exception(
+            "End-of-run union-exclusion / matrix figures failed; per-(method, seed) "
+            "results are intact on disk. Re-render with `agentic-autorag-bench analyze "
+            "--results-dir %s` or re-run with --resume.",
+            bench.output_root,
+        )
 
 
 def run_cli(
@@ -895,6 +1001,7 @@ def run_cli(
     methods: list[str] | None = None,
     clean: bool = True,
     resume: bool = False,
+    force: bool = False,
 ) -> None:
     """Sync wrapper for the Typer CLI."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
@@ -911,5 +1018,6 @@ def run_cli(
             methods_override=methods,
             clean=clean,
             resume=resume,
+            force=force,
         )
     )

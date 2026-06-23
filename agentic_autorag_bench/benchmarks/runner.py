@@ -70,12 +70,16 @@ class BenchmarkRunner:
         judge_model: str | None,
         limit: int | None = None,
         concurrency: int = 10,
+        exclude_question_types: list[str] | None = None,
     ) -> dict:
         """Score one winning ``TrialConfig`` against the held-out QA.
 
         Writes ``benchmark_results.json`` to ``output_path``. The framework's
         runner takes a path to the trial yaml; we materialise the trial config
         next to ``output_path`` for that interface and clean it up after.
+
+        ``exclude_question_types`` is forwarded to the framework runner so e.g.
+        MultiHop-RAG's unscorable ``null_query`` rows are dropped before scoring.
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -92,6 +96,7 @@ class BenchmarkRunner:
                 judge_model=judge_model,
                 concurrency=concurrency,
                 limit=limit,
+                exclude_question_types=exclude_question_types,
             )
             return result.model_dump(mode="json") if hasattr(result, "model_dump") else dict(result)
         finally:
