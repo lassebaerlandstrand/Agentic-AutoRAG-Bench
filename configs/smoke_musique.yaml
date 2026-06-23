@@ -1,0 +1,32 @@
+# SMOKE bench config for MuSiQue — see smoke_hotpot.yaml header.
+
+project_config: ./smoke_musique_project.yaml
+
+methods:
+  - random
+  - motpe
+  - motpe_warmstart
+  - agentic_score
+  - agentic_nokb
+
+seeds: [1, 2]
+
+budget:
+  max_trials: 2
+
+checkpoints:
+  agentic_score: [1]
+
+benchmark:
+  name: musique
+  split: validation
+  sample_size: 2417
+  prep_seed: 42
+  output_dir: ./benchmark_data/musique_val_2417
+
+hold_out:
+  limit: 12
+  judge_model: azure/gpt-4o-mini
+  concurrency: 8
+
+output_root: ./results_smoke_musique

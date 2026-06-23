@@ -1,0 +1,36 @@
+# SMOKE bench config for MultiHop-RAG — see smoke_hotpot.yaml header.
+# Most important smoke: long-doc corpus + null-query QA.
+
+project_config: ./smoke_multihop_rag_project.yaml
+
+methods:
+  - random
+  - motpe
+  - motpe_warmstart
+  - agentic_score
+  - agentic_nokb
+
+seeds: [1, 2]
+
+budget:
+  max_trials: 2
+
+checkpoints:
+  agentic_score: [1]
+
+benchmark:
+  name: multihop_rag
+  split: MultiHopRAG
+  sample_size: 2000
+  prep_seed: 42
+  output_dir: ./benchmark_data/multihop_rag_val
+
+hold_out:
+  limit: 12
+  judge_model: azure/gpt-4o-mini
+  concurrency: 8
+  # Drop MultiHop-RAG's unscorable null_query rows (gold "Insufficient
+  # information.") — see configs/multihop_rag_paper.yaml for the rationale.
+  exclude_question_types: [null_query]
+
+output_root: ./results_smoke_multihop_rag

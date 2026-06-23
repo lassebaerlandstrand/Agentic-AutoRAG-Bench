@@ -47,6 +47,7 @@ _STUDY_NAME = "agentic_autorag_bench_motpe_v1"
 _DB_NAME = "optuna.db"
 _SAMPLER_PICKLE = "optuna_sampler.pkl"
 _WALL_CLOCK_NAME = "wall_clock.json"
+_WARMSTART_COST_NAME = "warmstart_cost.json"
 
 # syftr's published sampler configuration (syftr/optuna_helper.py). Exposed as a
 # dict so the behavioral-equivalence test can assert our construction matches it
@@ -162,12 +163,15 @@ class MOTPESearch:
         history: list[HistoryEntry] = []
         prior_wall_s = 0.0
         if self.resume:
-            # A Ctrl+C between ``study.ask()`` and ``study.tell()`` leaves a
+            # A SIGKILL/Ctrl+C between ``study.ask()`` and ``study.tell()`` leaves a
             # RUNNING trial in sqlite that TPE would never fit on. Mark them
             # FAIL so resumed asks generate fresh trial ids without leftover
-            # noise in ``study.get_trials()``.
+            # noise in ``study.get_trials()``. ``study.tell`` takes a trial NUMBER
+            # (or a live Trial), NOT the FrozenTrial that ``get_trials`` returns —
+            # pass ``t.number`` or it raises "Trial must be a trial object or
+            # trial number" and aborts the whole resume.
             for t in study.get_trials(deepcopy=False, states=(TrialState.RUNNING,)):
-                study.tell(t, state=TrialState.FAIL)
+                study.tell(t.number, state=TrialState.FAIL)
 
             if history_path.exists():
                 history = _load_history(history_path)
@@ -201,6 +205,7 @@ class MOTPESearch:
         n_validation_rejects = 0
         n_pruned = 0
         n_warmstart = 0
+        warmstart_cost_path = self.storage_dir / _WARMSTART_COST_NAME
 
         # Warm-start: enqueue cold KB-grounded proposer configs so the first
         # ``n_startup`` asks return the agent's frozen prior instead of random
@@ -212,6 +217,23 @@ class MOTPESearch:
                 study.enqueue_trial(config_to_optuna_params(cfg, self.project.search_space), skip_if_exists=False)
             n_warmstart = len(warm_configs)
             logger.info("MO-TPE warm-start: enqueued %d cold proposer config(s)", n_warmstart)
+            # Persist the proposer spend so a crash+resume can recover it: the
+            # warm-start happens BEFORE the per-trial ledger snapshots, so it
+            # lives in no trial_cost_ledger.jsonl line, and resume installs a
+            # fresh empty ledger — without this sidecar the optimizer_usd column
+            # would silently reset to $0 for the whole method on resume.
+            try:
+                warmstart_cost_path.write_text(json.dumps({"optimizer_usd": optimizer_usd}), encoding="utf-8")
+            except OSError:
+                logger.warning("Failed to persist warm-start cost sidecar", exc_info=True)
+        elif self.warm_start and warmstart_cost_path.exists():
+            # Resume of a warm-started run: recover the proposer spend recorded
+            # on the original fresh run.
+            try:
+                optimizer_usd = float(json.loads(warmstart_cost_path.read_text(encoding="utf-8"))["optimizer_usd"])
+                logger.info("Recovered warm-start optimizer_usd=$%.4f from sidecar on resume", optimizer_usd)
+            except (OSError, ValueError, KeyError, json.JSONDecodeError):
+                logger.warning("Could not read warm-start cost sidecar on resume; optimizer_usd stays 0", exc_info=True)
 
         t_start = time.monotonic()
         for trial_num in range(len(history) + 1, budget.max_trials + 1):

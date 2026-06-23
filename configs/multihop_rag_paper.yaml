@@ -33,5 +33,12 @@ hold_out:
   limit: 300
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
+  # MultiHop-RAG's null_query rows (12% of QA) have gold "Insufficient
+  # information." and empty supporting docs. The free-form judge can't award
+  # credit for them (the generation prompt forbids abstention; any abstention
+  # routes to NO_ANSWER == wrong), so they'd deflate every method's headline
+  # accuracy by a fixed dead-weight and compress the between-method spread.
+  # Dropped from scoring; the abstention subset is out of scope for this run.
+  exclude_question_types: [null_query]
 
 output_root: ./results_multihop_rag

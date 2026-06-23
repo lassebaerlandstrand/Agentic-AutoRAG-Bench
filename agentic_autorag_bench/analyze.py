@@ -253,18 +253,27 @@ def load_results(results_dir: Path) -> list[MethodResult]:
             if not bench_path.exists():
                 logger.warning("Skipping %s/%s: no benchmark_results.json", method_dir.name, seed_dir.name)
                 continue
-            benchmarks: list[dict] = [json.loads(bench_path.read_text(encoding="utf-8"))]
-            replays_dir = seed_dir / "holdout_replays"
-            if replays_dir.is_dir():
-                for rp in sorted(replays_dir.glob("run_*.json")):
-                    benchmarks.append(json.loads(rp.read_text(encoding="utf-8")))
-            optimizer_meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-            history = []
-            if history_path.exists():
-                for line in history_path.read_text(encoding="utf-8").splitlines():
-                    line = line.strip()
-                    if line:
-                        history.append(json.loads(line))
+            # A process killed mid-write can leave a truncated json anywhere in
+            # this seed tree. Skip the whole (method, seed) on any read error
+            # rather than abort the matrix render — the next --resume rewrites it.
+            try:
+                benchmarks: list[dict] = [json.loads(bench_path.read_text(encoding="utf-8"))]
+                replays_dir = seed_dir / "holdout_replays"
+                if replays_dir.is_dir():
+                    for rp in sorted(replays_dir.glob("run_*.json")):
+                        benchmarks.append(json.loads(rp.read_text(encoding="utf-8")))
+                optimizer_meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+                history = []
+                if history_path.exists():
+                    for line in history_path.read_text(encoding="utf-8").splitlines():
+                        line = line.strip()
+                        if line:
+                            history.append(json.loads(line))
+            except (OSError, json.JSONDecodeError):
+                logger.warning(
+                    "Skipping %s/%s: unreadable/corrupt result file", method_dir.name, seed_dir.name, exc_info=True
+                )
+                continue
             seed: int | None = int(seed_dir.name.removeprefix("seed_")) if seed_dir.name.startswith("seed_") else None
             out.append(
                 MethodResult(

@@ -1,0 +1,78 @@
+# SMOKE project config — tiny, all-reachable, all-cached pool. Purpose: exercise
+# the full bench plumbing (sampling of every conditional dim, hybrid retrieval,
+# QE LLM, reranker, warm-start proposer, agentic orchestrator + KB ablation,
+# held-out eval, figures, resume) fast and cheap. NOT a paper config.
+
+meta:
+  project_name: "smoke-hotpot"
+  corpus_path: "./benchmark_data/hotpot_val_2000/corpus"
+  corpus_description: |
+    English Wikipedia. Documents are short paragraph snippets (~50–100
+    words each), one paragraph per page/entity rather than full articles.
+    Content is encyclopedic prose: entity-centric, factoid-dense, neutral
+    register.
+  output_dir: "./results_smoke_hotpot/.shared_cache"
+  max_trials: 2
+  cache_max_gb: 10.0
+  cost_aware: false
+
+agent:
+  examiner_model: "azure/gpt-4o-mini"
+  optimizer_model: "azure/gpt-4o-mini"
+  judge_model: "azure/gpt-4o-mini"
+  optimizer_reasoning_effort: medium
+  examiner_reasoning_effort: medium
+  concurrency: 8
+
+examiner:
+  exam_size: 12
+  initial_question_multiplier: 2.0
+  probe_selection: true
+  neighborhood_min_chunks: 18
+  neighborhood_min_words: 5000
+  neighborhood_same_doc_weight: 0.0
+  neighborhood_cross_doc_weight: 1.0
+  min_doc_words: 20
+
+parsing:
+  ocr: false
+  table_structure: false
+  near_duplicate_detection_enabled: true
+  near_duplicate_threshold: 0.85
+
+search_space:
+  chunking:
+    strategies: ["recursive"]
+    chunk_token_size: { values: [256, 512] }
+    chunk_token_overlap: { values: [0, 32] }
+
+  embedding:
+    models:
+      - "sentence-transformers/all-MiniLM-L6-v2"
+      - "BAAI/bge-small-en-v1.5"
+
+  retrieval:
+    index_types: ["vector_only", "hybrid_bm25_vector"]
+    top_k: { min: 3, max: 10 }
+    hybrid_alpha: { min: 0.0, max: 1.0 }
+    bm25_vector_fusion: ["alpha", "rrf"]
+    long_context_reorder: [false, true]
+
+  query_expansion:
+    strategies: ["none", "multi_query"]
+    models:
+      - "azure/gpt-4o-mini"
+
+  reranker:
+    models:
+      - "none"
+      - "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    top_n: { min: 3, max: 10 }
+
+  generator:
+    models:
+      - "azure/gpt-4o-mini"
+      - "bedrock/qwen.qwen3-32b-v1:0"
+    reasoning: false
+
+  temperature: { min: 1.0, max: 1.0 }

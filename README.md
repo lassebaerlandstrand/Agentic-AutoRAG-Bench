@@ -48,7 +48,19 @@ uv sync --extra dev
 # Bench reads .env (symlink the framework's) for AZURE_API_KEY, AZURE_API_BASE.
 ```
 
-## Run
+## Run the whole experiment (one command)
+
+```bash
+# Runs all 3 accuracy datasets + the UniDoc Pareto demo, sequentially, each in
+# its own subprocess. Re-running after a crash auto-resumes every stage and
+# never wipes finished work (only --fresh wipes). See the script header for flags.
+./scripts/run_full_experiment.sh                 # full run (auto resume-or-start)
+./scripts/run_full_experiment.sh --smoke         # tiny 2-trial/2-seed dry run of the whole pipeline
+./scripts/run_full_experiment.sh --only hotpot   # one stage
+./scripts/run_full_experiment.sh --no-pareto     # skip the Pareto stage
+```
+
+## Run one dataset
 
 ```bash
 # Full matrix on one dataset
@@ -60,8 +72,14 @@ uv run agentic-autorag-bench run --config configs/multihop_rag_paper.yaml
 uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m agentic_score
 uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m random -m motpe
 
-# Resume a partial run within a method (skip the start-of-run reset)
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m agentic_score --no-clean
+# Resume after a Ctrl+C / crash — --resume implies --no-clean and skips every
+# (method, seed) that already finished (search + hold-out + checkpoints on disk),
+# so it only pays for unfinished work.
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --resume
+
+# Deliberately wipe completed results and restart from scratch (a plain clean
+# run refuses to delete finished work without this).
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --force
 ```
 
 Method keys: `agentic_score`, `agentic_cost`, `agentic_nokb`, `agentic_nodiag`,
@@ -78,9 +96,27 @@ in this run, `.shared_cache/`, `bench_metadata.json`, and any user files
 at `output_root` survive. The cross-method `figures/` directory is NOT
 wiped at start-of-run — new matrix figures are rendered to a staging
 directory and atomically swapped at the very end, so the previous run's
-figures stay readable for the entire duration of a new run. Pass
-`--no-clean` to skip the per-method reset entirely (useful for resuming
-a partial run).
+figures stay readable for the entire duration of a new run. A clean start
+**refuses to delete a method dir that already holds completed hold-out
+results** unless you pass `--force` — so an accidental re-launch of the
+plain `run` command after a crash can't destroy days of work. Pass
+`--resume` to continue instead (it implies `--no-clean` and skips finished
+(method, seed) pairs); `--no-clean` alone keeps prior files without resuming
+trial state.
+
+**Crash recovery.** Hold-out results are written atomically and the
+end-of-run union-exclusion + figure pass skips any unreadable file, so a
+kill mid-write never corrupts the tree or aborts the render. After any
+interruption, just re-run with `--resume` (or re-run the launcher, which
+adds `--resume` automatically) — completed work is skipped, only unfinished
+(method, seed) pairs run.
+
+**Held-out question filtering.** A `hold_out.exclude_question_types` list in
+the bench config drops QA rows by `metadata.question_type` before scoring.
+MultiHop-RAG sets `[null_query]` because its "Insufficient information."
+abstention rows are unscorable by the free-form judge (it can't award credit
+for an abstention), which would otherwise deflate every method's headline
+accuracy by a fixed ~12%.
 
 **Checkpoints.** Declare per-method early-stopping points in the bench
 config to evaluate `history[:k]`'s best on the held-out QA as a sibling

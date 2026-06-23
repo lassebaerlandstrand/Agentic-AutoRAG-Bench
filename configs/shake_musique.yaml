@@ -1,0 +1,30 @@
+# SHAKE-OUT bench config — uses the REAL musique project config (its actual
+# 4-embedder / 6-generator pool, o4-mini agents) to exercise the real model
+# pools at a realistic hold-out size. More trials than the smoke; 1 seed;
+# 3 representative methods. NOT the paper run.
+
+project_config: ./musique_paper_project.yaml
+
+methods:
+  - random
+  - motpe_warmstart
+  - agentic_score
+
+seeds: [1]
+
+budget:
+  max_trials: 6
+
+benchmark:
+  name: musique
+  split: validation
+  sample_size: 2417
+  prep_seed: 42
+  output_dir: ./benchmark_data/musique_val_2417
+
+hold_out:
+  limit: 40
+  judge_model: azure/o4-mini
+  concurrency: 10
+
+output_root: ./results_shake_musique

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 from agentic_autorag.examiner._errors import CONTENT_FILTER_SENTINEL
@@ -26,6 +27,14 @@ from agentic_autorag.examiner._errors import CONTENT_FILTER_SENTINEL
 logger = logging.getLogger("agentic_autorag_bench.run")
 
 _RETRIEVAL_KS: tuple[int, ...] = (1, 2, 5, 10)
+
+
+def _atomic_write_json(path: Path, obj: object) -> None:
+    """Write JSON via a tmp file + ``os.replace`` so a kill mid-write never
+    leaves a half-written (and thus unreadable-on-resume) file."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2), encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def _retrieval_metrics_for_row(
@@ -85,7 +94,24 @@ def _run_key(f: Path) -> str:
     return f"{f.parent.parent.name}/{f.parent.name}"
 
 
-def _collect_filtered_ids(method_files: list[Path]) -> tuple[set[str], dict[str, list[str]]]:
+def _safe_load_results(f: Path) -> dict | None:
+    """Load a ``benchmark_results.json``-shaped file, or ``None`` if it can't be read.
+
+    A multi-day run killed mid-write can leave a truncated or zero-byte
+    results file on disk. The end-of-run union-exclusion + figure pass must
+    degrade gracefully past such a file (treat it as "not yet scored") rather
+    than abort the whole matrix after all the expensive search + hold-out
+    compute already landed. The next ``--resume`` re-runs that one (method,
+    seed) and rewrites a valid file.
+    """
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Skipping unreadable/corrupt hold-out file %s (treated as not-yet-scored)", f, exc_info=True)
+        return None
+
+
+def _collect_filtered_ids(loaded: list[tuple[Path, dict]]) -> tuple[set[str], dict[str, list[str]]]:
     """Scan every per_question for CONTENT_FILTER rows.
 
     Returns ``(union_ids, by_run)`` where ``by_run`` keys are "method/seed_dir"
@@ -95,8 +121,7 @@ def _collect_filtered_ids(method_files: list[Path]) -> tuple[set[str], dict[str,
     """
     union: set[str] = set()
     by_run: dict[str, list[str]] = {}
-    for f in method_files:
-        data = json.loads(f.read_text(encoding="utf-8"))
+    for f, data in loaded:
         per_q = data.get("per_question", [])
         run_key = _run_key(f)
         ids = sorted(r["id"] for r in per_q if r.get("error") == CONTENT_FILTER_SENTINEL)
@@ -224,7 +249,18 @@ def apply_union_exclusion(output_root: Path) -> dict:
         logger.info("No benchmark_results.json files found under %s — skipping union exclusion", output_root)
         return {"excluded_ids": [], "by_run": {}}
 
-    union, by_run = _collect_filtered_ids(method_files)
+    # Load each file once, skipping any that are corrupt/half-written (e.g. a
+    # process killed mid-write). A skipped file is simply not part of the union
+    # and is left untouched on disk for the next --resume to regenerate.
+    loaded = [(f, data) for f in method_files if (data := _safe_load_results(f)) is not None]
+    n_skipped = len(method_files) - len(loaded)
+    if n_skipped:
+        logger.warning("Union exclusion skipped %d unreadable hold-out file(s)", n_skipped)
+    if not loaded:
+        logger.info("No readable benchmark_results.json under %s — skipping union exclusion", output_root)
+        return {"excluded_ids": [], "by_run": {}}
+
+    union, by_run = _collect_filtered_ids(loaded)
     if union:
         logger.info(
             "Union-excluding %d content-filtered question(s) across %d hold-out run(s); contributing runs: %s",
@@ -241,16 +277,16 @@ def apply_union_exclusion(output_root: Path) -> dict:
 
     # Always rewrite so every benchmark_results.json has the same shape:
     # explicit ``excluded_question_ids`` field and aggregates recomputed from
-    # the persisted per_question rows. Idempotent.
-    for f in method_files:
-        data = json.loads(f.read_text(encoding="utf-8"))
+    # the persisted per_question rows. Idempotent. Written atomically so a kill
+    # during this pass can't itself create the corrupt file we just guarded against.
+    for f, data in loaded:
         adjusted = _rescore_one(data, union)
-        f.write_text(json.dumps(adjusted, indent=2), encoding="utf-8")
+        _atomic_write_json(f, adjusted)
 
     registry = {
         "excluded_question_ids": sorted(union),
         "by_run": by_run,
-        "n_runs_scanned": len(method_files),
+        "n_runs_scanned": len(loaded),
     }
     (output_root / "filtered_questions.json").write_text(json.dumps(registry, indent=2), encoding="utf-8")
     return registry
