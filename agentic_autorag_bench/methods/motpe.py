@@ -16,8 +16,6 @@ each trial actually visits. This is syftr's ``HierarchicalTPESampler`` intent.
 
 Single- vs multi-objective is config-driven (``meta.cost_aware``), mirroring how
 the agentic optimizer flips ``agentic_score`` → ``agentic_cost`` on the same flag.
-The ``warm_start`` variant seeds the first ``n_startup_trials`` slots with cold
-KB-grounded proposer configs instead of random draws (see ``_propose_warmstart``).
 
 Ask-and-tell loop so the async ``evaluator`` integrates naturally — pruned trials
 don't block subsequent suggestions. Sampler state is pickled per-trial so a
@@ -31,10 +29,11 @@ import json
 import logging
 import pickle
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from agentic_autorag.config.models import ProjectConfig
+from agentic_autorag.config.models import ProjectConfig, TrialConfig
 from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.methods._logging import log_trial_banner
@@ -47,7 +46,40 @@ _STUDY_NAME = "agentic_autorag_bench_motpe_v1"
 _DB_NAME = "optuna.db"
 _SAMPLER_PICKLE = "optuna_sampler.pkl"
 _WALL_CLOCK_NAME = "wall_clock.json"
-_WARMSTART_COST_NAME = "warmstart_cost.json"
+
+# Transfer-warm-start (syftr's transfer-learning, Conway et al., AutoML-Conf
+# 2025). ``motpe_warm`` injects the paired ``random`` run's COMPLETED trials —
+# config params AND their already-known objective value(s) — into the study as a
+# FREE, UNCOUNTED prior via ``create_trial`` + ``add_trial`` (NOT ``enqueue_trial``,
+# which would re-evaluate). The prior informs TPE's surrogate but is NOT part of
+# the optimization budget: the method then runs the FULL ``budget.max_trials``
+# optimization trials as normal TPE. Because the prior count (~budget.max_trials)
+# already exceeds ``n_startup_trials``, TPE is model-guided from the first
+# optimization trial. This is syftr's transfer-learning at our 40-trial scale,
+# isolating the value of the warm-start PRIOR from TPE itself.
+#
+# The injected prior is invisible to selection, figures and downstream transfer:
+# every prior trial is tagged ``transfer_prior=True`` and excluded everywhere
+# history is reconstructed/selected, so ``history.jsonl`` for ``motpe_warm`` holds
+# exactly ``budget.max_trials`` genuine TPE optimization trials.
+TRANSFER_EMBED_MODEL = "BAAI/bge-large-en-v1.5"
+KMEANS_RANDOM_STATE = 0
+_TRANSFER_SEED_META_NAME = "transfer_seed_meta.json"
+
+# Optuna ``user_attr`` flag marking an injected free-prior trial. Read by the
+# resume self-heal (``_reconstruct_history_from_optuna``) to exclude the prior
+# from the method's recorded history, so the prior never leaks into selection,
+# learning curves, @k data or downstream transfer.
+_TRANSFER_PRIOR_ATTR = "transfer_prior"
+
+# Cap on how many random trials we inject as the free prior — mirrors syftr's
+# ``max_total``. When the paired random run has <= MAX_TRANSFER_PRIOR completed
+# trials (the normal case at our 40-trial scale) we inject ALL of them with NO
+# embedding and NO clustering, exactly as syftr does when candidates <= max_total.
+# Only when the count EXCEEDS this cap do we fall back to bge-large KMeans
+# best-per-cluster downsampling to MAX_TRANSFER_PRIOR. At <=100 the embedder is
+# never loaded.
+MAX_TRANSFER_PRIOR = 100
 
 # syftr's published sampler configuration (syftr/optuna_helper.py). Exposed as a
 # dict so the behavioral-equivalence test can assert our construction matches it
@@ -77,6 +109,191 @@ def _make_sampler(seed: int | None):
     return optuna.samplers.TPESampler(seed=seed, **SAMPLER_KWARGS)
 
 
+class MissingTransferSource(Exception):
+    """The paired ``random`` history needed to warm-start ``motpe_warm`` is
+    absent or has ZERO completed trials.
+
+    Raised by ``MOTPESearch`` in transfer-warm mode so the matrix runner can
+    SKIP this (dataset, seed) cell with a clear warning rather than aborting:
+    ``random`` simply has not been run for this cell yet.
+    """
+
+
+@dataclass(frozen=True)
+class _TransferSeed:
+    """One config carried over from the random source, with its provenance.
+
+    ``random_mean_llm_cost_per_query_usd`` is carried so a two-objective
+    (``cost_aware``) study can inject the prior with BOTH objective values.
+    """
+
+    config: dict
+    random_trial_number: int
+    random_answer_accuracy: float
+    random_mean_llm_cost_per_query_usd: float
+
+
+def _default_config_embedder() -> Callable[[str], list[float]]:
+    """Load the bge-large embedder and return a config-JSON → vector function.
+
+    Mirrors syftr's ``get_embedding_model(...).get_query_embedding(text)``: each
+    flow's config JSON is embedded with ``BAAI/bge-large-en-v1.5`` so KMeans
+    clusters configs by structural similarity. Uses the same SentenceTransformer
+    path the framework's index builder uses for HF embedders (no hand-rolled
+    HTTP), loaded lazily so importing this module never pulls torch/network.
+    """
+    from sentence_transformers import SentenceTransformer
+
+    model = SentenceTransformer(TRANSFER_EMBED_MODEL)
+
+    def embed(text: str) -> list[float]:
+        return [float(x) for x in model.encode(text)]
+
+    return embed
+
+
+def _load_random_history(source_history_path: Path) -> list[HistoryEntry]:
+    """Read the paired ``random`` run's completed-trial history."""
+    if not source_history_path.exists():
+        raise MissingTransferSource(
+            f"random history not found at {source_history_path}; run the random "
+            "method for this dataset+seed before motpe_warm"
+        )
+    return _load_history(source_history_path)
+
+
+def _dedupe_random_history(random_history: list[HistoryEntry]) -> dict[str, _TransferSeed]:
+    """Deduplicate the random run by config, keeping the best-accuracy occurrence
+    of each so a config that random happened to evaluate twice is injected once."""
+    best_by_config: dict[str, _TransferSeed] = {}
+    for entry in random_history:
+        key = json.dumps(entry.config, sort_keys=True)
+        prior = best_by_config.get(key)
+        if prior is None or entry.answer_accuracy > prior.random_answer_accuracy:
+            best_by_config[key] = _TransferSeed(
+                config=entry.config,
+                random_trial_number=entry.trial_number,
+                random_answer_accuracy=entry.answer_accuracy,
+                random_mean_llm_cost_per_query_usd=entry.mean_llm_cost_per_query_usd,
+            )
+    return best_by_config
+
+
+def _select_transfer_seeds(
+    random_history: list[HistoryEntry],
+    *,
+    n_seeds: int,
+    embed: Callable[[str], list[float]],
+) -> list[_TransferSeed]:
+    """Downsample the random run to ``n_seeds`` diverse, strong configs.
+
+    Only invoked as a fallback when the distinct-config count EXCEEDS ``n_seeds``
+    (= ``MAX_TRANSFER_PRIOR``). Serializes each distinct random-trial config to
+    JSON, embeds it with bge-large, KMeans over the embeddings
+    (``n_clusters=n_seeds``), and keeps the MAX-accuracy member of each cluster —
+    diverse (one per cluster) yet strong (best in cluster). At our 40-trial scale
+    the distinct count is always <= ``n_seeds`` so this — and the embedder — is
+    never reached; ``_collect_transfer_prior`` short-circuits to all-of-them.
+    """
+    import numpy as np
+    from sklearn.cluster import KMeans
+
+    best_by_config = _dedupe_random_history(random_history)
+    keys = list(best_by_config.keys())
+    embeddings = np.array([embed(key) for key in keys])
+    labels = KMeans(n_clusters=n_seeds, random_state=KMEANS_RANDOM_STATE).fit_predict(embeddings)
+
+    selected: list[_TransferSeed] = []
+    for cluster in range(n_seeds):
+        members = [best_by_config[keys[i]] for i in range(len(keys)) if labels[i] == cluster]
+        if members:
+            selected.append(max(members, key=lambda s: s.random_answer_accuracy))
+    return selected
+
+
+def _collect_transfer_prior(
+    random_history: list[HistoryEntry],
+    *,
+    max_prior: int,
+    embed: Callable[[str], list[float]] | None,
+) -> tuple[list[_TransferSeed], bool]:
+    """Pick the free-prior trials to inject, gating the embedder behind the cap.
+
+    Returns ``(seeds, downsampled)``. When the distinct-config count is
+    ``<= max_prior`` (the normal case at our scale) ALL distinct configs are
+    injected with NO embedding and NO clustering, and ``downsampled`` is False —
+    the embedder is never loaded. Only when the count EXCEEDS ``max_prior`` do we
+    load bge-large and KMeans-downsample to ``max_prior`` (``downsampled`` True).
+
+    Raises ``MissingTransferSource`` when the random run has zero completed
+    trials, so the matrix runner SKIPs the cell.
+    """
+    best_by_config = _dedupe_random_history(random_history)
+    if not best_by_config:
+        raise MissingTransferSource(
+            "random run has zero completed trials; motpe_warm has no prior to inject"
+        )
+    if len(best_by_config) <= max_prior:
+        return list(best_by_config.values()), False
+
+    # Only here do we need the embedder. Load lazily if the caller did not inject
+    # a deterministic one (tests pass a network-free embed).
+    embed_fn = embed or _default_config_embedder()
+    seeds = _select_transfer_seeds(random_history, n_seeds=max_prior, embed=embed_fn)
+    return seeds, True
+
+
+def _best_prior_values(seeds: list[_TransferSeed], *, cost_aware: bool) -> dict[str, float]:
+    """The prior's BEST objective value(s), for disclosure: if the optimization
+    trials fail to beat this, the warm start dominated. Accuracy is the max over
+    the prior; in cost-aware mode we also record the cost OF that best-accuracy
+    config (the single point selection would pick)."""
+    best = max(seeds, key=lambda s: s.random_answer_accuracy)
+    values: dict[str, float] = {"answer_accuracy": best.random_answer_accuracy}
+    if cost_aware:
+        values["mean_llm_cost_per_query_usd"] = best.random_mean_llm_cost_per_query_usd
+    return values
+
+
+def _write_transfer_seed_meta(
+    path: Path,
+    seeds: list[_TransferSeed],
+    *,
+    downsampled: bool,
+    cost_aware: bool,
+) -> None:
+    """Record that the prior is a FREE/uncounted warm start, how many trials were
+    injected, whether KMeans downsampling fired, and the prior's BEST objective
+    value(s) — so the paper can disclose if the optimization trials failed to beat
+    the warm start."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "design": "free_prior",
+                "prior_is_free_uncounted": True,
+                "n_injected": len(seeds),
+                "downsampled": downsampled,
+                "max_transfer_prior": MAX_TRANSFER_PRIOR,
+                "transfer_embed_model": TRANSFER_EMBED_MODEL if downsampled else None,
+                "kmeans_random_state": KMEANS_RANDOM_STATE if downsampled else None,
+                "prior_best": _best_prior_values(seeds, cost_aware=cost_aware),
+                "seeds": [
+                    {
+                        "random_trial_number": s.random_trial_number,
+                        "random_answer_accuracy": s.random_answer_accuracy,
+                        "random_mean_llm_cost_per_query_usd": s.random_mean_llm_cost_per_query_usd,
+                        "config": s.config,
+                    }
+                    for s in seeds
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
 @dataclass
 class MOTPESearch:
     """Group-decomposed multivariate MO-TPE over the project's SearchSpace.
@@ -92,18 +309,21 @@ class MOTPESearch:
     the budget comparable to the agentic baseline, whose Proposer is
     constraint-aware. ``extras`` surfaces ``n_validation_rejects`` and
     ``n_pruned`` so the paper can report how often TPE proposed infeasible points.
-
-    ``warm_start`` replaces the random startup trials with cold KB-grounded
-    proposer configs (the agent's frozen prior); the proposer spend is reported
-    under ``optimizer_usd``.
     """
 
     project: ProjectConfig
     storage_dir: Path
     resume: bool = False
-    warm_start: bool = False
     name: str = "motpe"
     deterministic: bool = False
+    # Transfer-warm-start: when true, the paired ``random`` cell's completed
+    # trials (from ``transfer_source_dir``) are injected as a FREE, uncounted
+    # prior before the FULL ``budget.max_trials`` optimization trials run.
+    # ``config_embedder`` is injectable so the (rare, >MAX_TRANSFER_PRIOR)
+    # downsampling path can use a deterministic, network-free embedding in tests.
+    warm_transfer: bool = False
+    transfer_source_dir: Path | None = None
+    config_embedder: Callable[[str], list[float]] | None = field(default=None, repr=False)
 
     async def search(
         self,
@@ -200,40 +420,18 @@ class MOTPESearch:
                 prior_wall_s,
             )
 
+        # Transfer-warm-start: inject the paired ``random`` cell's completed
+        # trials as a FREE, uncounted prior (config params + already-known
+        # objective value(s), tagged ``transfer_prior``). Only on a fresh start —
+        # on resume the prior is already in optuna.db (and is excluded from the
+        # reconstructed history by its ``transfer_prior`` tag).
+        if self.warm_transfer and not self.resume:
+            self._inject_transfer_prior(study, cost_aware=cost_aware)
+
         trial_usd_total = sum(h.eval_usd for h in history)
         optimizer_usd = 0.0
         n_validation_rejects = 0
         n_pruned = 0
-        n_warmstart = 0
-        warmstart_cost_path = self.storage_dir / _WARMSTART_COST_NAME
-
-        # Warm-start: enqueue cold KB-grounded proposer configs so the first
-        # ``n_startup`` asks return the agent's frozen prior instead of random
-        # draws. Only on a fresh start — on resume the enqueued WAITING trials
-        # persist in storage and would otherwise be double-queued.
-        if self.warm_start and not self.resume and not history:
-            warm_configs, optimizer_usd = await self._propose_warmstart(N_STARTUP_TRIALS, seed)
-            for cfg in warm_configs:
-                study.enqueue_trial(config_to_optuna_params(cfg, self.project.search_space), skip_if_exists=False)
-            n_warmstart = len(warm_configs)
-            logger.info("MO-TPE warm-start: enqueued %d cold proposer config(s)", n_warmstart)
-            # Persist the proposer spend so a crash+resume can recover it: the
-            # warm-start happens BEFORE the per-trial ledger snapshots, so it
-            # lives in no trial_cost_ledger.jsonl line, and resume installs a
-            # fresh empty ledger — without this sidecar the optimizer_usd column
-            # would silently reset to $0 for the whole method on resume.
-            try:
-                warmstart_cost_path.write_text(json.dumps({"optimizer_usd": optimizer_usd}), encoding="utf-8")
-            except OSError:
-                logger.warning("Failed to persist warm-start cost sidecar", exc_info=True)
-        elif self.warm_start and warmstart_cost_path.exists():
-            # Resume of a warm-started run: recover the proposer spend recorded
-            # on the original fresh run.
-            try:
-                optimizer_usd = float(json.loads(warmstart_cost_path.read_text(encoding="utf-8"))["optimizer_usd"])
-                logger.info("Recovered warm-start optimizer_usd=$%.4f from sidecar on resume", optimizer_usd)
-            except (OSError, ValueError, KeyError, json.JSONDecodeError):
-                logger.warning("Could not read warm-start cost sidecar on resume; optimizer_usd stays 0", exc_info=True)
 
         t_start = time.monotonic()
         for trial_num in range(len(history) + 1, budget.max_trials + 1):
@@ -334,86 +532,101 @@ class MOTPESearch:
             extras={
                 "n_validation_rejects": n_validation_rejects,
                 "n_pruned": n_pruned,
-                "n_warmstart": n_warmstart,
                 "cost_aware": cost_aware,
+                "warm_transfer": self.warm_transfer,
                 "study_name": _STUDY_NAME,
                 "storage": str(db_path),
             },
         )
 
-    async def _propose_warmstart(self, n: int, seed: int | None) -> tuple[list, float]:
-        """Generate up to ``n`` distinct cold proposer configs (the agent's frozen
-        prior) and return ``(configs, proposer_usd)``.
+    def _inject_transfer_prior(self, study, *, cost_aware: bool) -> None:
+        """Inject the paired ``random`` cell's completed trials as a FREE prior.
 
-        The same KB-grounded optimizer LLM the agent uses, called with empty trial
-        history so each config reflects only the KB + corpus description + search
-        space — no per-question reasoning. ``meta.cost_aware`` drives the prompt
-        stance so the warm-start prior matches the experiment (cost-aware for the
-        Pareto run). The proposer spend is captured from the active cost-ledger
-        delta and reported as ``optimizer_usd`` (optimizer-side, like the agent's
-        own proposer), not folded into any trial.
+        Reads the paired ``random`` run's history from ``transfer_source_dir``,
+        collects the prior (ALL distinct configs when count <= MAX_TRANSFER_PRIOR
+        with NO embedder; KMeans-downsampled to MAX_TRANSFER_PRIOR otherwise),
+        then for EACH prior config builds a COMPLETE Optuna trial carrying its
+        config params AND its already-known objective value(s) via
+        ``create_trial`` + ``study.add_trial`` (NOT ``enqueue_trial`` — that would
+        re-evaluate). Each injected trial is tagged ``transfer_prior`` so it is
+        excluded everywhere history is reconstructed/selected. Writes
+        ``transfer_seed_meta.json`` for provenance. Raises ``MissingTransferSource``
+        if the random run is absent or has zero completed trials.
+
+        Single-objective (Exp1): ``value = answer_accuracy``. Multi-objective
+        (Exp2, ``cost_aware``): ``values = (accuracy, mean_llm_cost_per_query_usd)``
+        matching the study directions ``[maximize, minimize]``.
         """
-        from agentic_autorag.config.knowledge_base import KnowledgeBase
-        from agentic_autorag.cost_ledger import get_active_ledger
-        from agentic_autorag.optimizer.history import HistoryLog
-        from agentic_autorag.optimizer.reasoning_agent import ReasoningAgent
+        import optuna
 
-        try:
-            kb: KnowledgeBase | None = KnowledgeBase()
-        except Exception:
-            logger.warning("Warm-start: could not load knowledge base; proposing without it", exc_info=True)
-            kb = None
+        if self.transfer_source_dir is None:
+            raise MissingTransferSource("motpe_warm requires transfer_source_dir to be set")
 
-        history = HistoryLog(path=str(self.storage_dir / "_warmstart_history.jsonl"), load_existing=False)
-        agent = ReasoningAgent(
-            agent_model=self.project.agent.optimizer_model,
-            config=self.project,
-            history=history,
-            knowledge_base=kb,
-            seed=seed,
+        source_history_path = RunLayout(base=self.transfer_source_dir).history
+        random_history = _load_random_history(source_history_path)
+        seeds, downsampled = _collect_transfer_prior(
+            random_history,
+            max_prior=MAX_TRANSFER_PRIOR,
+            embed=self.config_embedder,
         )
-        corpus_description = self.project.meta.corpus_description
-        include_graph = self.project.uses_graph()
 
-        ledger = get_active_ledger()
-        before = ledger.snapshot() if ledger is not None else None
+        ss = self.project.search_space
+        for s in seeds:
+            cfg = TrialConfig(**s.config)
+            params, distributions = self._params_and_distributions(cfg, ss)
+            if cost_aware:
+                created = optuna.trial.create_trial(
+                    state=optuna.trial.TrialState.COMPLETE,
+                    values=[s.random_answer_accuracy, s.random_mean_llm_cost_per_query_usd],
+                    params=params,
+                    distributions=distributions,
+                    user_attrs={_TRANSFER_PRIOR_ATTR: True},
+                )
+            else:
+                created = optuna.trial.create_trial(
+                    state=optuna.trial.TrialState.COMPLETE,
+                    value=s.random_answer_accuracy,
+                    params=params,
+                    distributions=distributions,
+                    user_attrs={_TRANSFER_PRIOR_ATTR: True},
+                )
+            study.add_trial(created)
 
-        configs: list = []
-        seen: set[str] = set()
-        base = (seed if seed is not None else 0) * 1000
-        attempts = 0
-        max_attempts = n * 5
-        while len(configs) < n and attempts < max_attempts:
-            # Vary the seed per call so a seed-respecting provider still yields a
-            # diverse draw from the prior (a seed-ignoring provider varies via
-            # intrinsic nondeterminism either way).
-            agent.seed = base + attempts
-            attempts += 1
-            try:
-                cfg = await agent.propose_initial(corpus_description)
-            except Exception:
-                logger.warning("Warm-start proposal attempt failed; continuing", exc_info=True)
-                continue
-            key = json.dumps(cfg.to_prompt_dump(include_graph=include_graph), sort_keys=True, default=str)
-            if key in seen:
-                continue
-            seen.add(key)
-            configs.append(cfg)
+        _write_transfer_seed_meta(
+            RunLayout(base=self.storage_dir).details / _TRANSFER_SEED_META_NAME,
+            seeds,
+            downsampled=downsampled,
+            cost_aware=cost_aware,
+        )
+        logger.info(
+            "motpe_warm: injected %d FREE-prior trial(s) from %s (downsampled=%s; "
+            "best prior accuracy=%.3f). TPE then runs the full optimization budget on top.",
+            len(seeds),
+            source_history_path,
+            downsampled,
+            max(s.random_answer_accuracy for s in seeds),
+        )
 
-        if len(configs) < n:
-            logger.warning(
-                "Warm-start produced %d/%d distinct configs after %d attempts; "
-                "the remaining startup slots fall back to TPE random draws.",
-                len(configs),
-                n,
-                attempts,
-            )
+    @staticmethod
+    def _params_and_distributions(cfg: TrialConfig, search_space):
+        """Recover the Optuna ``params`` AND ``distributions`` a define-by-run
+        ``sample_optuna`` would have recorded for ``cfg``.
 
-        proposer_usd = 0.0
-        if ledger is not None and before is not None:
-            delta = ledger.delta_since(before)
-            proposer_usd = sum(float(b.get("usd", 0.0)) for b in delta.values())
-        return configs, proposer_usd
+        ``create_trial`` needs both, and for a conditional define-by-run space the
+        active distributions depend on the config's branch. We replay ``cfg``
+        through ``sample_optuna`` on an ephemeral enqueued trial: that populates
+        ``trial.params`` and ``trial.distributions`` with exactly the active dims
+        (and only those), which we read back. No evaluation happens — the
+        ephemeral study is discarded.
+        """
+        import optuna
+
+        params_in = config_to_optuna_params(cfg, search_space)
+        ephemeral = optuna.create_study(sampler=optuna.samplers.RandomSampler(seed=0))
+        ephemeral.enqueue_trial(params_in, skip_if_exists=False)
+        trial = ephemeral.ask()
+        sample_optuna(trial, search_space)
+        return dict(trial.params), dict(trial.distributions)
 
 
 def _load_history(path: Path) -> list[HistoryEntry]:
@@ -446,13 +659,25 @@ def _reconstruct_history_from_optuna(study, project, storage_dir: Path) -> list[
     Bench's per-iteration ``trial_num`` (1-indexed, increments only on SUCCESSFUL
     evaluation) corresponds to the sorted order of COMPLETE Optuna trials, NOT to
     ``FrozenTrial.number`` (which also increments on pruned/failed asks).
+
+    ``motpe_warm`` injects the paired ``random`` cell's trials as a FREE prior
+    tagged ``transfer_prior``. Those are COMPLETE Optuna trials too, but they are
+    NOT optimization trials and must NOT appear in the method's history (else they
+    leak into selection, learning curves and @k data, and shift the bench
+    ``trial_num`` indexing). They are excluded here by their ``transfer_prior``
+    user-attr; cold ``motpe`` trials never carry it, so this path is unchanged
+    for cold runs.
     """
     import optuna
 
     from agentic_autorag_bench.methods._sampler import sample_optuna
 
     completed = sorted(
-        study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)),
+        (
+            t
+            for t in study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
+            if not t.user_attrs.get(_TRANSFER_PRIOR_ATTR, False)
+        ),
         key=lambda t: t.number,
     )
     if not completed:

@@ -283,7 +283,7 @@ def test_compute_pareto_hypervolumes_uses_shared_reference() -> None:
     (cost_ref = 2 × max pooled cost), so the two numbers are comparable."""
     method_points = {
         "agentic_cost": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8)],
-        "motpe_warmstart": [_point(1, 0.001, 0.5), _point(2, 0.003, 0.7)],
+        "motpe": [_point(1, 0.001, 0.5), _point(2, 0.003, 0.7)],
     }
     hv = compute_pareto_hypervolumes(method_points)
 
@@ -292,12 +292,12 @@ def test_compute_pareto_hypervolumes_uses_shared_reference() -> None:
     assert hv["score_reference"] == 0.0
     # Both points of each method are non-dominated → both on each frontier.
     assert hv["methods"]["agentic_cost"]["frontier_trials"] == [1, 2]
-    assert hv["methods"]["motpe_warmstart"]["frontier_trials"] == [1, 2]
+    assert hv["methods"]["motpe"]["frontier_trials"] == [1, 2]
     # Hand-computed staircase areas against the shared ref point (0, 0.006).
     assert hv["methods"]["agentic_cost"]["hypervolume"] == pytest.approx(0.0038)
-    assert hv["methods"]["motpe_warmstart"]["hypervolume"] == pytest.approx(0.0031)
+    assert hv["methods"]["motpe"]["hypervolume"] == pytest.approx(0.0031)
     # The dominating frontier has the larger hypervolume.
-    assert hv["methods"]["agentic_cost"]["hypervolume"] > hv["methods"]["motpe_warmstart"]["hypervolume"]
+    assert hv["methods"]["agentic_cost"]["hypervolume"] > hv["methods"]["motpe"]["hypervolume"]
 
 
 def test_compute_pareto_hypervolumes_drops_dominated_from_frontier() -> None:
@@ -312,7 +312,7 @@ def test_compute_pareto_hypervolumes_drops_dominated_from_frontier() -> None:
 def test_make_pareto_comparison_figure_emits_png(tmp_path) -> None:
     method_points = {
         "agentic_cost": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8), _point(3, 0.004, 0.55)],
-        "motpe_warmstart": [_point(1, 0.0012, 0.5), _point(2, 0.003, 0.7)],
+        "motpe": [_point(1, 0.0012, 0.5), _point(2, 0.003, 0.7)],
     }
     hv = compute_pareto_hypervolumes(method_points)
     out = tmp_path / "figures" / "pareto_comparison.png"
@@ -322,5 +322,5 @@ def test_make_pareto_comparison_figure_emits_png(tmp_path) -> None:
 
 def test_make_pareto_comparison_figure_no_points_is_noop(tmp_path) -> None:
     out = tmp_path / "figures" / "pareto_comparison.png"
-    make_pareto_comparison_figure({"agentic_cost": [], "motpe_warmstart": []}, {"methods": {}}, out)
+    make_pareto_comparison_figure({"agentic_cost": [], "motpe": []}, {"methods": {}}, out)
     assert not out.exists()

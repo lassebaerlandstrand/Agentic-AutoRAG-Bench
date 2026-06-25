@@ -54,8 +54,9 @@ METHOD_ORDER = [
     "agentic_cost",
     "agentic_nokb",
     "agentic_nodiag",
-    "motpe_warmstart",
+    "agentic_opro",
     "motpe",
+    "motpe_warm",
     "qlognehvi",
     "random",
 ]
@@ -68,8 +69,9 @@ SEQUENTIAL = {
     "agentic_cost",
     "agentic_nokb",
     "agentic_nodiag",
-    "motpe_warmstart",
+    "agentic_opro",
     "motpe",
+    "motpe_warm",
     "qlognehvi",
     "random",
 }

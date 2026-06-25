@@ -1,9 +1,8 @@
 """MO-TPE baseline: behavioral equivalence to syftr, config-driven objective
-mode, warm-start enqueue, and the warm-start inverse-mapping round-trip.
+mode, and the config→Optuna-params inverse-mapping round-trip.
 
 These are the correctness-critical tests for the strong baseline. The LLM is
-never called: the warm-start proposer is mocked, and the round-trip is pure
-sampler math.
+never called; the round-trip is pure sampler math.
 """
 
 from __future__ import annotations
@@ -214,16 +213,16 @@ async def test_multiobjective_records_per_query_cost(tmp_path: Path) -> None:
     assert sr.best_config == max(sr.history, key=lambda h: h.answer_accuracy).config
 
 
-# -------------------------------------------------- warm-start inverse round-trip
+# ----------------------------------------------- config→params inverse round-trip
 
 
 def test_config_to_optuna_params_round_trip() -> None:
     """Enqueueing the inverse params and replaying through ``sample_optuna``
     reproduces the original config EXACTLY across every conditional branch.
 
-    This is the fidelity guarantee warm-start relies on: a missing/incorrect
-    param would let TPE resample that dim, so the evaluated seed would drift
-    from the agent's proposal.
+    This is the fidelity guarantee enqueuing a specific config relies on: a
+    missing/incorrect param would let TPE resample that dim, so the evaluated
+    seed would drift from the intended config.
     """
     ss = _rich_search_space()
     rng = random.Random(12345)
@@ -242,67 +241,7 @@ def test_config_to_optuna_params_round_trip() -> None:
         )
 
 
-# ------------------------------------------------------- warm-start end-to-end
-
-
-def _grid_config(top_k: int) -> TrialConfig:
-    """A valid config in the discrete vector-only space below, distinct by top_k."""
-    return TrialConfig(
-        chunking_strategy="recursive",
-        chunk_token_size=256,
-        chunk_token_overlap=0,
-        embedding_model="m1",
-        index_type=IndexType.VECTOR_ONLY,
-        top_k=top_k,
-        reranker="none",
-        reranker_top_n=3,
-        query_expansion="none",
-        passage_compressor="none",
-        generator_llm="ollama/llama3.2",
-        temperature=0.0,
-        reasoning=False,
-    )
-
-
-@pytest.mark.asyncio
-async def test_warmstart_evaluates_cold_proposer_configs_first(tmp_path: Path, monkeypatch) -> None:
-    """``motpe_warmstart`` enqueues the cold proposer's configs so the first
-    asks return the agent's frozen prior (not random startup draws)."""
-    from agentic_autorag.optimizer.reasoning_agent import ReasoningAgent
-
-    space = SearchSpace(
-        chunking=ChunkingSearchSpace(
-            strategies=["recursive"],
-            chunk_token_size=DiscreteValues(values=[256, 512]),
-            chunk_token_overlap=DiscreteValues(values=[0, 64]),
-        ),
-        embedding=EmbeddingSearchSpace(models=["m1"]),
-        retrieval=RetrievalSearchSpace(index_types=[IndexType.VECTOR_ONLY], top_k=DiscreteValues(values=[3, 5, 10])),
-        reranker=RerankerSearchSpace(models=["none"], top_n=DiscreteValues(values=[3, 5, 10])),
-        query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
-        passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
-        temperature=NumericRange(min=0.0, max=0.0),
-    )
-    project = _project(False, space)
-
-    canned = [_grid_config(3), _grid_config(5), _grid_config(10)]
-    calls = {"i": 0}
-
-    async def fake_propose_initial(self, corpus_description):  # noqa: ANN001
-        cfg = canned[calls["i"] % len(canned)]
-        calls["i"] += 1
-        return cfg
-
-    monkeypatch.setattr(ReasoningAgent, "propose_initial", fake_propose_initial)
-
-    optimizer = MOTPESearch(project=project, storage_dir=tmp_path, warm_start=True, name="motpe_warmstart")
-    sr = await optimizer.search(_make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1)
-
-    # The 3 distinct cold configs were enqueued and evaluated first, in order.
-    assert [h.config["top_k"] for h in sr.history[:3]] == [3, 5, 10]
-    assert sr.extras["n_warmstart"] == 3
-    assert sr.method == "motpe_warmstart"
+# ----------------------------------------------------------------- resume
 
 
 async def test_resume_marks_orphaned_running_trial_failed(tmp_path: Path) -> None:
@@ -326,42 +265,3 @@ async def test_resume_marks_orphaned_running_trial_failed(tmp_path: Path) -> Non
         _make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1
     )
     assert len(sr.history) == 3
-
-
-async def test_warmstart_optimizer_usd_recovered_on_resume(tmp_path: Path, monkeypatch) -> None:
-    """The warm-start proposer spend lives in no per-trial ledger line, so a
-    crash+resume (which skips warm-start and installs a fresh ledger) must
-    recover it from the sidecar instead of silently resetting optimizer_usd to 0."""
-    space = SearchSpace(
-        chunking=ChunkingSearchSpace(
-            strategies=["recursive"],
-            chunk_token_size=DiscreteValues(values=[256, 512]),
-            chunk_token_overlap=DiscreteValues(values=[0, 64]),
-        ),
-        embedding=EmbeddingSearchSpace(models=["m1"]),
-        retrieval=RetrievalSearchSpace(index_types=[IndexType.VECTOR_ONLY], top_k=DiscreteValues(values=[3, 5, 10])),
-        reranker=RerankerSearchSpace(models=["none"], top_n=DiscreteValues(values=[3, 5, 10])),
-        query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
-        passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
-        temperature=NumericRange(min=0.0, max=0.0),
-    )
-    project = _project(False, space)
-    canned = [_grid_config(3), _grid_config(5), _grid_config(10)]
-
-    async def fake_warmstart(self, n, seed):  # noqa: ANN001, ARG001
-        return canned[:n], 0.1234
-
-    monkeypatch.setattr(MOTPESearch, "_propose_warmstart", fake_warmstart)
-
-    # Fresh warm-started run records optimizer_usd and the sidecar.
-    fresh = MOTPESearch(project=project, storage_dir=tmp_path, warm_start=True, name="motpe_warmstart")
-    sr1 = await fresh.search(_make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1)
-    assert sr1.optimizer_usd == 0.1234
-    assert (tmp_path / "warmstart_cost.json").exists()
-
-    # Resume (warm-start skipped) must recover the same optimizer_usd from disk.
-    resumed = MOTPESearch(project=project, storage_dir=tmp_path, warm_start=True, resume=True, name="motpe_warmstart")
-    sr2 = await resumed.search(_make_evaluator([0.5] * 3), Budget(max_trials=3), seed=1)
-    assert sr2.optimizer_usd == 0.1234
-    assert sr2.extras["n_warmstart"] == 0  # not re-proposed on resume
