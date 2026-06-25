@@ -149,6 +149,28 @@ def pareto(
     pareto_cli(config, figure_only=figure_only, resume=resume)
 
 
+@app.command("kb-greedy")
+def kb_greedy(
+    config: str = typer.Option(..., "--config", "-c", help="Path to paper-mode YAML (same one passed to `run`)"),
+    seed: int = typer.Option(42, "--seed", help="Seed label for the kb_greedy/seed_<n>/ output dir."),
+) -> None:
+    """Evaluate the KB's strongest pipeline once on the held-out gold (no search).
+
+    A reference bar: the most-capable config (strongest LLM/embedder/reranker,
+    max chunk/top_k/reranker_top_n) scored once on the same hold-out as the
+    matrix methods. Writes ``kb_greedy/seed_<n>/benchmark_results.json``.
+    """
+    import asyncio
+    import logging
+
+    from agentic_autorag_bench.methods.kb_greedy import run_kb_greedy
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
+    for noisy in ("LiteLLM", "litellm", "sentence_transformers", "httpx"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+    asyncio.run(run_kb_greedy(config, seed=seed))
+
+
 @app.command()
 def analyze(
     results_dir: str = typer.Option("results_paper/", "--results-dir", help="Where the matrix run wrote outputs"),
