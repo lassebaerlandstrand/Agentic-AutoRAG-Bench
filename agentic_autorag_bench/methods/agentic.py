@@ -36,6 +36,11 @@ class AgenticOptimizer:
     hook; ``agentic_nodiag`` skips the per-question diagnosis stage) via an
     explicit ``method_name``. Both default on, so the headline ``agentic_score``
     / ``agentic_cost`` runs are unaffected.
+
+    ``opro`` is the naive-LLM-proposer baseline (``agentic_opro``): KB off,
+    diagnosis off, and the proposer sees only a compact ``config -> accuracy``
+    history. It isolates the value of the agentic KB/diagnosis machinery from a
+    plain LLM optimizing over the score trajectory (cite OPRO, Yang et al.).
     """
 
     config_path: str
@@ -43,6 +48,7 @@ class AgenticOptimizer:
     cost_aware: bool
     use_knowledge_base: bool = True
     use_diagnosis: bool = True
+    opro: bool = False
     deterministic: bool = False
     resume: bool = False
     method_name: str | None = None
@@ -71,6 +77,7 @@ class AgenticOptimizer:
             skip_final_report=True,
             use_knowledge_base=self.use_knowledge_base,
             use_diagnosis=self.use_diagnosis,
+            compact_history=self.opro,
         )
         orch.evaluator.quiet_per_question = True
         # NB: the framework enables ``litellm.drop_params=True`` so reasoning

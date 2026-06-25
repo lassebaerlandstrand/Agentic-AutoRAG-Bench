@@ -1,10 +1,10 @@
-"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``motpe_warmstart`` on UniDoc.
+"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``motpe`` on UniDoc.
 
 Two cost-aware searches on the UniDoc (healthcare) PDF corpus, scored on the
 optimizer's own self-generated exam — no held-out QA. ``agentic_cost`` is the full
-agentic optimizer (Pareto-aware reasoning); ``motpe_warmstart`` is KB-warm-started
-multi-objective MO-TPE. Both minimize the SAME ``mean_llm_cost_per_query_usd`` and
-maximize the SAME exam accuracy on the SAME exam, so the comparison is fair.
+agentic optimizer (Pareto-aware reasoning); ``motpe`` is the cold (KB-independent)
+multi-objective MO-TPE rival. Both minimize the SAME ``mean_llm_cost_per_query_usd``
+and maximize the SAME exam accuracy on the SAME exam, so the comparison is fair.
 
 ``make_pareto_figure`` renders a single-method Syftr-style scatter (a gray cloud of
 every trial with the optimizer's self-marked Pareto frontier highlighted, numbered,
@@ -112,8 +112,8 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
 
 async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resume: bool = False) -> None:
     """Run the cost-aware Pareto comparison — ``agentic_cost`` (full agentic) vs
-    ``motpe_warmstart`` (KB-warm-started MO-TPE) — then render the dual-frontier
-    figure with a shared-reference-point hypervolume.
+    ``motpe`` (cold, KB-independent multi-objective MO-TPE) — then render the
+    dual-frontier figure with a shared-reference-point hypervolume.
 
     Both methods evaluate the SAME self-generated exam on the SAME corpus: the
     shared orchestrator (used for the MO-TPE evaluator) and agentic_cost's own
@@ -131,7 +131,7 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
     cfg = ParetoConfig.load(config_path)
     seed_label = f"seed_{cfg.seed}"
     agentic_dir = cfg.output_root / "agentic_cost" / seed_label
-    motpe_dir = cfg.output_root / "motpe_warmstart" / seed_label
+    motpe_dir = cfg.output_root / "motpe" / seed_label
 
     if not figure_only:
         configure_litellm_runtime()
@@ -164,24 +164,23 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
                 max((h.answer_accuracy for h in sr_a.history), default=0.0),
             )
 
-            # motpe_warmstart — KB-warm-started multi-objective MO-TPE, driving the
+            # motpe — cold (KB-independent) multi-objective MO-TPE, driving the
             # shared bench evaluator (cost_aware=True in the project config makes it
             # two-objective, minimizing the same mean_llm_cost_per_query_usd).
             motpe_dir.mkdir(parents=True, exist_ok=True)
             logger.info("=" * 60)
-            logger.info("PARETO | motpe_warmstart | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
+            logger.info("PARETO | motpe | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
             logger.info("=" * 60)
             resume_motpe = resume and (motpe_dir / "optuna.db").exists()
             motpe_opt = MOTPESearch(
                 project=shared.config,
                 storage_dir=motpe_dir,
-                warm_start=True,
-                name="motpe_warmstart",
+                name="motpe",
                 resume=resume_motpe,
             )
             sr_m = await _run_optimizer_with_ledger(
                 motpe_opt,
-                method_name="motpe_warmstart",
+                method_name="motpe",
                 shared=shared,
                 method_dir=motpe_dir,
                 budget=budget,
@@ -190,7 +189,7 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
             )
             _persist_search_result(sr_m, motpe_dir)
             logger.info(
-                "motpe_warmstart done | trials=%d | best_accuracy=%.3f",
+                "motpe done | trials=%d | best_accuracy=%.3f",
                 len(sr_m.history),
                 max((h.answer_accuracy for h in sr_m.history), default=0.0),
             )
@@ -205,7 +204,7 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
 
     method_points = {
         "agentic_cost": _load_trial_points(agentic_dir),
-        "motpe_warmstart": _load_trial_points(motpe_dir),
+        "motpe": _load_trial_points(motpe_dir),
     }
     method_points = {m: pts for m, pts in method_points.items() if pts}
     if not method_points:

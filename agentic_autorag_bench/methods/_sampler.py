@@ -266,10 +266,10 @@ def config_to_optuna_params(config: TrialConfig, search_space: SearchSpace) -> d
     ``hybrid_alpha``/``temperature`` as ``float``). The two snap-to-grid dims
     (``chunk_token_overlap``, ``reranker_top_n``) are emitted only when their
     legal set spans more than one value — exactly the condition under which
-    ``sample_optuna`` issues a ``suggest_int`` for them. Fidelity matters for
-    warm-start: a missing key would let TPE resample that dimension, so the
-    evaluated seed would drift from the agent's proposal. The round-trip is
-    covered by a property test.
+    ``sample_optuna`` issues a ``suggest_int`` for them. Fidelity matters when
+    enqueuing a specific config: a missing key would let TPE resample that
+    dimension, so the evaluated seed would drift from the intended config. The
+    round-trip is covered by a property test.
     """
     ss = search_space
     params: dict[str, object] = {}

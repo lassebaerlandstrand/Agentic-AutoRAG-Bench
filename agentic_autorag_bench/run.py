@@ -35,7 +35,7 @@ from agentic_autorag.output_layout import RunLayout
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
-from agentic_autorag_bench.methods.motpe import MOTPESearch
+from agentic_autorag_bench.methods.motpe import MissingTransferSource, MOTPESearch
 from agentic_autorag_bench.methods.qlognehvi import QLogNEHVISearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.plots import (
@@ -50,12 +50,13 @@ logger = logging.getLogger("agentic_autorag_bench.run")
 STOCHASTIC_METHODS = {
     "random",
     "motpe",
-    "motpe_warmstart",
+    "motpe_warm",
     "qlognehvi",
     "agentic_score",
     "agentic_cost",
     "agentic_nokb",
     "agentic_nodiag",
+    "agentic_opro",
 }
 # Kept (empty) so deterministic methods can be reintroduced without rewiring
 # the dispatch loop in ``run_matrix``. AutoRAG variants used to live here
@@ -68,7 +69,14 @@ ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
 # Orchestrator so they manage their own ledger lifecycle. (Dispatch keys off
 # the ``agentic_`` name prefix in ``_run_optimizer_with_ledger``; this set is
 # documentary.)
-_SHARED_EVALUATOR_METHODS = {"random", "motpe", "motpe_warmstart", "qlognehvi"}
+_SHARED_EVALUATOR_METHODS = {"random", "motpe", "motpe_warm", "qlognehvi"}
+
+# ``motpe_warm`` transfer-warm-starts from the bench's own ``random`` results
+# for the same (dataset, seed), so ``random`` MUST execute first within a
+# dataset. ``_order_methods_for_run`` enforces this; ``_build_optimizer`` reads
+# the paired random cell from ``output_root/<_RANDOM_METHOD_NAME>/<seed_label>``.
+_RANDOM_METHOD_NAME = "random"
+_MOTPE_WARM_METHOD_NAME = "motpe_warm"
 
 
 def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
@@ -500,23 +508,38 @@ def _build_optimizer(
 ):
     if name == "random":
         return RandomSearch(project=project, storage_dir=output_dir, resume=resume)
-    if name in {"motpe", "motpe_warmstart"}:
+    if name == "motpe":
         return MOTPESearch(
             project=project,
             storage_dir=output_dir,
             resume=resume,
-            warm_start=(name == "motpe_warmstart"),
             name=name,
+        )
+    if name == "motpe_warm":
+        # Paired sibling: motpe_warm seed s warm-starts from random seed s.
+        # ``output_dir`` is ``output_root/motpe_warm/<seed_label>``; the random
+        # source is ``output_root/random/<seed_label>``.
+        transfer_source_dir = output_dir.parent.parent / _RANDOM_METHOD_NAME / output_dir.name
+        return MOTPESearch(
+            project=project,
+            storage_dir=output_dir,
+            resume=resume,
+            name=name,
+            warm_transfer=True,
+            transfer_source_dir=transfer_source_dir,
         )
     if name == "qlognehvi":
         return QLogNEHVISearch(project=project, storage_dir=output_dir, resume=resume)
-    if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag"}:
+    if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag", "agentic_opro"}:
+        # ``agentic_opro`` is the naive-LLM baseline: KB off, diagnosis off, and
+        # a compact ``config -> accuracy`` history (the ``opro`` flag).
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
-            use_knowledge_base=(name != "agentic_nokb"),
-            use_diagnosis=(name != "agentic_nodiag"),
+            use_knowledge_base=(name not in {"agentic_nokb", "agentic_opro"}),
+            use_diagnosis=(name not in {"agentic_nodiag", "agentic_opro"}),
+            opro=(name == "agentic_opro"),
             method_name=name,
             resume=resume,
         )
@@ -766,6 +789,28 @@ def _is_method_seed_complete(
     return True
 
 
+def _order_methods_for_run(methods: list[str]) -> list[str]:
+    """Stable execution order that guarantees ``random`` precedes ``motpe_warm``.
+
+    ``motpe_warm`` transfer-warm-starts from the paired ``random`` cell, a hard
+    data dependency, so ``random`` must finish first within a dataset. Only this
+    one constraint is enforced; every other method keeps its config-declared
+    order so partial-method runs stay predictable. When ``motpe_warm`` is
+    requested without ``random`` in the same run, the order is unchanged and the
+    per-cell ``MissingTransferSource`` guard reports the missing source.
+    """
+    if _MOTPE_WARM_METHOD_NAME not in methods or _RANDOM_METHOD_NAME not in methods:
+        return list(methods)
+    warm_idx = methods.index(_MOTPE_WARM_METHOD_NAME)
+    random_idx = methods.index(_RANDOM_METHOD_NAME)
+    if random_idx < warm_idx:
+        return list(methods)
+    ordered = [m for m in methods if m != _RANDOM_METHOD_NAME]
+    insert_at = ordered.index(_MOTPE_WARM_METHOD_NAME)
+    ordered.insert(insert_at, _RANDOM_METHOD_NAME)
+    return ordered
+
+
 def _methods_with_completed_results(output_root: Path, methods: list[str]) -> list[str]:
     """Names among ``methods`` whose dir holds at least one finished hold-out
     (a ``*/benchmark_results.json``). Used to refuse a destructive clean of
@@ -856,7 +901,9 @@ async def run_matrix(
 
         budget = Budget(max_trials=bench.max_trials)
 
-        for method_name in bench.methods:
+        # ``motpe_warm`` reads the paired ``random`` cell, so ``random`` must run
+        # first within the dataset (see ``_order_methods_for_run``).
+        for method_name in _order_methods_for_run(bench.methods):
             seeds_for_method = bench.seeds if method_name in STOCHASTIC_METHODS else [None]
             for seed in seeds_for_method:
                 seed_label = f"seed_{seed}" if seed is not None else "default"
@@ -907,6 +954,14 @@ async def run_matrix(
                         seed=seed,
                         resume=resume_this_method,
                     )
+                except MissingTransferSource as exc:
+                    logger.warning(
+                        "SKIP %s | %s: %s — run random for this dataset+seed first",
+                        method_name,
+                        seed_label,
+                        exc,
+                    )
+                    continue
                 except Exception:
                     logger.exception("%s seed=%s failed", method_name, seed)
                     continue
