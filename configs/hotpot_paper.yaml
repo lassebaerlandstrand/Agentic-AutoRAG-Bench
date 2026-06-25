@@ -7,20 +7,24 @@
 # ``hotpot_paper_project.yaml`` (13 embedders × 39 generators × continuous
 # top_k/hybrid_alpha × ...). Dial down inline overrides for dev runs.
 #
-# Accuracy-experiment method ladder (locked): random (floor) → motpe (SOTA
-# statistical search, = syftr's optimizer) → motpe_warmstart (same + the agent's
-# frozen KB prior as startup) → agentic_score (full agentic) → agentic_nokb
-# (KB-off ablation). agentic_cost belongs to the Pareto experiment (unidoc), not
-# here; agentic_nodiag is registered but kept out of the headline matrix.
+# Accuracy-experiment method slate (locked, 6 methods). Decomposition ladder:
+# agentic_opro (no KB, no diagnosis) → agentic_nodiag (+KB) → agentic_score
+# (+diagnosis); so KB-value = nodiag−opro, diagnosis-value = score−nodiag.
+# Statistical rivals: random (floor) → motpe (cold group-multivariate MO-TPE,
+# syftr-class) → motpe_warm (motpe + a free, uncounted transfer prior seeded
+# from this run's random cell). agentic_cost belongs to the Pareto experiment
+# (unidoc), not here. kb_greedy is a single-config reference run via its own
+# script, not a matrix method.
 
 project_config: ./hotpot_paper_project.yaml
 
 methods:
-  - agentic_score      # full agentic (cost_aware=False, KB on, diagnosis on)
-  - agentic_nokb       # KB-off ablation (cold reasoning)
-  - motpe_warmstart    # MO-TPE seeded with the agent's frozen KB prior
-  - motpe              # cold MO-TPE (= syftr's optimizer)
-  - random             # exploration floor
+  - agentic_score      # full agentic: KB on, diagnosis on — method under test
+  - agentic_nodiag     # diagnosis-off ablation (KB on); isolates the diagnosis loop
+  - agentic_opro       # naive LLM proposer: compact (config→score) history, no KB, no diagnosis
+  - motpe              # cold group-multivariate MO-TPE (syftr-class statistical search)
+  - motpe_warm         # MO-TPE + free uncounted transfer prior from random (runs after random)
+  - random             # exploration floor (also motpe_warm's transfer source)
 
 seeds: [1, 2, 3]
 
@@ -37,6 +41,7 @@ budget:
 # MO-TPE/random when given fewer trials", not the inverse).
 checkpoints:
   agentic_score: [10, 20]
+  agentic_opro: [10, 20]
 
 benchmark:
   name: hotpot_qa
