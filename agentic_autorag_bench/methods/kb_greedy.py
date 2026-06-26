@@ -27,6 +27,8 @@ from agentic_autorag.config.models import (
     IndexType,
     ProjectConfig,
     TrialConfig,
+    _dim_max_value,
+    _dim_min_value,
 )
 from agentic_autorag.examiner.probe_selector import rank_models_for_probes, select_probe_configs
 
@@ -84,15 +86,24 @@ async def build_strongest_config(project: ProjectConfig) -> TrialConfig:
         raise RuntimeError("kb_greedy: probe builder produced no valid config")
     _label, strongest = probes[-1]
 
-    # The probe builder derives chunk overlap as chunk_size // 10, which need not
-    # be a search-space-valid value. Snap it to the nearest valid overlap so
-    # kb_greedy stays a point the search methods could also have reached.
+    # Snap the capability levers to their search-grid extremes. The probe builder
+    # can emit search-space-invalid values (overlap = chunk_size // 10,
+    # temperature = 0.0 even when the space pins it) and, if a narrow space dedups
+    # Tier-4 into Tier-3, can drop top_k / reranker_top_n below their max. Forcing
+    # the grid extremes keeps kb_greedy the "most capable" config AND a point the
+    # search methods could also have reached, regardless of dedup collapse.
+    updates: dict = {
+        "top_k": int(_dim_max_value(ss.retrieval.top_k)),
+        "reranker_top_n": int(_dim_max_value(ss.reranker.top_n)),
+    }
     overlap_dim = ss.chunking.chunk_token_overlap
-    if isinstance(overlap_dim, DiscreteValues) and strongest.chunk_token_overlap not in overlap_dim.values:
+    if isinstance(overlap_dim, DiscreteValues):
         valid = [v for v in overlap_dim.values if v < strongest.chunk_token_size]
         if valid:
-            nearest = min(valid, key=lambda v: abs(v - strongest.chunk_token_overlap))
-            strongest = strongest.model_copy(update={"chunk_token_overlap": nearest})
+            updates["chunk_token_overlap"] = max(valid)
+    t_min, t_max = _dim_min_value(ss.temperature), _dim_max_value(ss.temperature)
+    updates["temperature"] = min(max(strongest.temperature, t_min), t_max)
+    strongest = strongest.model_copy(update=updates)
 
     if strongest.index_type in GRAPH_INDEX_TYPES:
         replacement = next((it for it in _NON_GRAPH_PREFERENCE if it in ss.retrieval.index_types), None)
