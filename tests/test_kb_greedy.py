@@ -38,7 +38,10 @@ from agentic_autorag_bench.methods.kb_greedy import build_strongest_config, run_
 _RANK_IDENTITY = "agentic_autorag_bench.methods.kb_greedy.rank_models_for_probes"
 
 
-def _search_space(index_types: list[IndexType] | None = None) -> SearchSpace:
+def _search_space(
+    index_types: list[IndexType] | None = None,
+    temperature: NumericRange | None = None,
+) -> SearchSpace:
     return SearchSpace(
         chunking=ChunkingSearchSpace(
             strategies=["recursive", "fixed"],
@@ -58,14 +61,17 @@ def _search_space(index_types: list[IndexType] | None = None) -> SearchSpace:
             top_n=DiscreteValues(values=[3, 10]),
         ),
         generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
-        temperature=NumericRange(min=0.0, max=1.0),
+        temperature=temperature or NumericRange(min=0.0, max=1.0),
     )
 
 
-def _project(index_types: list[IndexType] | None = None) -> ProjectConfig:
+def _project(
+    index_types: list[IndexType] | None = None,
+    temperature: NumericRange | None = None,
+) -> ProjectConfig:
     return ProjectConfig(
         meta=MetaConfig(corpus_description="A tiny test corpus."),
-        search_space=_search_space(index_types),
+        search_space=_search_space(index_types, temperature),
         agent=AgentConfig(
             optimizer_model="ollama/llama3.2",
             examiner_model="ollama/llama3.2",
@@ -89,7 +95,20 @@ async def test_build_strongest_config_picks_kb_strongest() -> None:
     assert trial.chunk_token_size == 512  # max chunk
     assert trial.top_k == 20  # max top_k
     assert trial.reranker_top_n == 10  # max reranker_top_n
+    assert trial.chunk_token_overlap == 64  # max valid overlap < chunk_size
     assert trial.index_type == IndexType.HYBRID_BM25_VECTOR  # strongest non-graph index
+
+
+@pytest.mark.asyncio
+async def test_build_strongest_config_snaps_pinned_temperature() -> None:
+    """The probe builder hardcodes temperature=0.0; when the space pins
+    temperature (as the paper configs do at 1.0), kb_greedy must snap to the
+    pinned value so the config is search-space-valid."""
+    project = _project(temperature=NumericRange(min=1.0, max=1.0))
+    with patch(_RANK_IDENTITY, new=AsyncMock(side_effect=_identity_rank)):
+        trial = await build_strongest_config(project)
+
+    assert trial.temperature == 1.0
 
 
 @pytest.mark.asyncio
