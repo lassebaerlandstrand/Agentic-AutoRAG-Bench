@@ -1,16 +1,19 @@
-"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``motpe`` on UniDoc.
+"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``random`` vs ``motpe_warm`` on UniDoc.
 
-Two cost-aware searches on the UniDoc (healthcare) PDF corpus, scored on the
+Three cost-aware searches on the UniDoc (healthcare) PDF corpus, scored on the
 optimizer's own self-generated exam — no held-out QA. ``agentic_cost`` is the full
-agentic optimizer (Pareto-aware reasoning); ``motpe`` is the cold (KB-independent)
-multi-objective MO-TPE rival. Both minimize the SAME ``mean_llm_cost_per_query_usd``
-and maximize the SAME exam accuracy on the SAME exam, so the comparison is fair.
+agentic optimizer (Pareto-aware reasoning); ``random`` is the exploration floor and
+the transfer source; ``motpe_warm`` is the two-objective MO-TPE warm-started from
+``random`` (all of random's completed trials injected as a free, uncounted transfer
+prior). All minimize the SAME ``mean_llm_cost_per_query_usd`` and maximize the SAME
+exam accuracy on the SAME exam, so the comparison is fair. ``random`` runs before
+``motpe_warm`` (a hard data dependency).
 
 ``make_pareto_figure`` renders a single-method Syftr-style scatter (a gray cloud of
 every trial with the optimizer's self-marked Pareto frontier highlighted, numbered,
-and described in a side legend). ``make_pareto_comparison_figure`` overlays both
-methods' frontiers, and ``compute_pareto_hypervolumes`` scores each frontier against
-a SHARED reference point (pooled across both methods) so the two hypervolumes are
+and described in a side legend). ``make_pareto_comparison_figure`` overlays every
+method's frontier, and ``compute_pareto_hypervolumes`` scores each frontier against
+a SHARED reference point (pooled across all methods) so the hypervolumes are
 comparable. X-axis is deploy-time cost **per query**.
 """
 
@@ -112,26 +115,32 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
 
 async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resume: bool = False) -> None:
     """Run the cost-aware Pareto comparison — ``agentic_cost`` (full agentic) vs
-    ``motpe`` (cold, KB-independent multi-objective MO-TPE) — then render the
-    dual-frontier figure with a shared-reference-point hypervolume.
+    ``random`` (floor + transfer source) vs ``motpe_warm`` (two-objective MO-TPE
+    warm-started from ``random``) — then render the multi-frontier figure with a
+    shared-reference-point hypervolume.
 
-    Both methods evaluate the SAME self-generated exam on the SAME corpus: the
-    shared orchestrator (used for the MO-TPE evaluator) and agentic_cost's own
-    orchestrator load the same project config, so the corpus index + exam.json
-    cache is shared. Only the proposer differs.
+    All three methods evaluate the SAME self-generated exam on the SAME corpus:
+    the shared orchestrator (used for the random / motpe_warm evaluator) and
+    agentic_cost's own orchestrator load the same project config, so the corpus
+    index + exam.json cache is shared. Only the proposer differs. ``random`` runs
+    before ``motpe_warm`` — a hard data dependency, since ``motpe_warm`` injects
+    all of the paired ``random`` cell's completed trials as a free, uncounted
+    transfer prior.
     """
     from agentic_autorag.litellm_runtime import configure_litellm_runtime
     from agentic_autorag.orchestrator import Orchestrator
 
     from agentic_autorag_bench.methods.agentic import AgenticOptimizer
     from agentic_autorag_bench.methods.motpe import MOTPESearch
+    from agentic_autorag_bench.methods.random import RandomSearch
     from agentic_autorag_bench.run import _persist_search_result, _run_optimizer_with_ledger
     from agentic_autorag_bench.types import Budget
 
     cfg = ParetoConfig.load(config_path)
     seed_label = f"seed_{cfg.seed}"
     agentic_dir = cfg.output_root / "agentic_cost" / seed_label
-    motpe_dir = cfg.output_root / "motpe" / seed_label
+    random_dir = cfg.output_root / "random" / seed_label
+    motpe_warm_dir = cfg.output_root / "motpe_warm" / seed_label
 
     if not figure_only:
         configure_litellm_runtime()
@@ -164,34 +173,68 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
                 max((h.answer_accuracy for h in sr_a.history), default=0.0),
             )
 
-            # motpe — cold (KB-independent) multi-objective MO-TPE, driving the
-            # shared bench evaluator (cost_aware=True in the project config makes it
-            # two-objective, minimizing the same mean_llm_cost_per_query_usd).
-            motpe_dir.mkdir(parents=True, exist_ok=True)
+            # random — exploration floor AND motpe_warm's transfer source; drives
+            # the shared bench evaluator (cost_aware=True in the project config
+            # makes every trial record the same mean_llm_cost_per_query_usd).
+            # MUST run before motpe_warm.
+            random_dir.mkdir(parents=True, exist_ok=True)
             logger.info("=" * 60)
-            logger.info("PARETO | motpe | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
+            logger.info("PARETO | random | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
             logger.info("=" * 60)
-            resume_motpe = resume and (motpe_dir / "optuna.db").exists()
-            motpe_opt = MOTPESearch(
+            resume_random = resume and (random_dir / "rng_state.pkl").exists()
+            random_opt = RandomSearch(
                 project=shared.config,
-                storage_dir=motpe_dir,
-                name="motpe",
-                resume=resume_motpe,
+                storage_dir=random_dir,
+                resume=resume_random,
             )
-            sr_m = await _run_optimizer_with_ledger(
-                motpe_opt,
-                method_name="motpe",
+            sr_r = await _run_optimizer_with_ledger(
+                random_opt,
+                method_name="random",
                 shared=shared,
-                method_dir=motpe_dir,
+                method_dir=random_dir,
                 budget=budget,
                 seed=cfg.seed,
-                resume=resume_motpe,
+                resume=resume_random,
             )
-            _persist_search_result(sr_m, motpe_dir)
+            _persist_search_result(sr_r, random_dir)
             logger.info(
-                "motpe done | trials=%d | best_accuracy=%.3f",
-                len(sr_m.history),
-                max((h.answer_accuracy for h in sr_m.history), default=0.0),
+                "random done | trials=%d | best_accuracy=%.3f",
+                len(sr_r.history),
+                max((h.answer_accuracy for h in sr_r.history), default=0.0),
+            )
+
+            # motpe_warm — two-objective MO-TPE warm-started from the paired random
+            # cell (all of random's completed trials injected as a free, uncounted
+            # transfer prior), driving the shared bench evaluator. cost_aware=True
+            # in the project config makes it minimize the same
+            # mean_llm_cost_per_query_usd as agentic_cost.
+            motpe_warm_dir.mkdir(parents=True, exist_ok=True)
+            logger.info("=" * 60)
+            logger.info("PARETO | motpe_warm | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
+            logger.info("=" * 60)
+            resume_warm = resume and (motpe_warm_dir / "optuna.db").exists()
+            motpe_warm_opt = MOTPESearch(
+                project=shared.config,
+                storage_dir=motpe_warm_dir,
+                name="motpe_warm",
+                warm_transfer=True,
+                transfer_source_dir=random_dir,
+                resume=resume_warm,
+            )
+            sr_w = await _run_optimizer_with_ledger(
+                motpe_warm_opt,
+                method_name="motpe_warm",
+                shared=shared,
+                method_dir=motpe_warm_dir,
+                budget=budget,
+                seed=cfg.seed,
+                resume=resume_warm,
+            )
+            _persist_search_result(sr_w, motpe_warm_dir)
+            logger.info(
+                "motpe_warm done | trials=%d | best_accuracy=%.3f",
+                len(sr_w.history),
+                max((h.answer_accuracy for h in sr_w.history), default=0.0),
             )
         finally:
             await shared.cleanup()
@@ -204,11 +247,12 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
 
     method_points = {
         "agentic_cost": _load_trial_points(agentic_dir),
-        "motpe": _load_trial_points(motpe_dir),
+        "random": _load_trial_points(random_dir),
+        "motpe_warm": _load_trial_points(motpe_warm_dir),
     }
     method_points = {m: pts for m, pts in method_points.items() if pts}
     if not method_points:
-        logger.warning("No plottable trials for either method; skipping comparison figure + hypervolume.json")
+        logger.warning("No plottable trials for any method; skipping comparison figure + hypervolume.json")
         return
 
     hv_info = compute_pareto_hypervolumes(method_points)

@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$SMOKE" -eq 1 ]]; then
-  # name|bench-config  (smoke configs: 2 trials × 2 seeds × all 5 methods)
+  # name|bench-config  (smoke configs: 2 trials × 2 seeds × the full method set)
   ACCURACY_STAGES=(
     "hotpot|configs/smoke_hotpot.yaml"
     "musique|configs/smoke_musique.yaml"
@@ -113,10 +113,10 @@ run_pareto_stage() {
   out_root="$(_output_root_of "$cfg")"
   log="$LOG_DIR/pareto_${STAMP}.log"
 
-  # The NEW Pareto run (agentic_cost vs motpe_warmstart) leaves these markers;
+  # The NEW Pareto run (agentic_cost vs random vs motpe_warm) leaves these markers;
   # an older/incompatible results_unidoc/ (e.g. a single-method run) has neither.
   local has_new_marker=0
-  if [[ -f "$out_root/hypervolume.json" || -d "$out_root/motpe_warmstart" ]]; then
+  if [[ -f "$out_root/hypervolume.json" || -d "$out_root/motpe_warm" ]]; then
     has_new_marker=1
   fi
 
