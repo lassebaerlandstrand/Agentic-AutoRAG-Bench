@@ -7,7 +7,7 @@ project_config: ./musique_paper_project.yaml
 
 methods:
   - random
-  - motpe_warmstart
+  - motpe_warm
   - agentic_score
 
 seeds: [1]
