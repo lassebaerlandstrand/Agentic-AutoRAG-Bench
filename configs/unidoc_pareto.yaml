@@ -1,8 +1,9 @@
 # Entry config for the `pareto` command: run the cost-aware Pareto comparison —
-# agentic_cost (full agentic) vs motpe_warmstart (KB-warm-started MO-TPE) — on the
-# UniDoc (healthcare) PDF corpus and render the dual-frontier cost-vs-accuracy
-# figure with a shared-reference-point hypervolume. No held-out QA — trials are
-# scored on the optimizer's own self-generated exam.
+# agentic_cost (full agentic) vs random (floor + transfer source) vs motpe_warm
+# (two-objective MO-TPE warm-started from random) — on the UniDoc (healthcare) PDF
+# corpus and render the multi-frontier cost-vs-accuracy figure with a
+# shared-reference-point hypervolume. No held-out QA — trials are scored on the
+# optimizer's own self-generated exam.
 #
 #   uv run agentic-autorag-bench pareto --config configs/unidoc_pareto.yaml
 

@@ -13,7 +13,7 @@ a held-out `Table_1.md`.
 | `agentic_nokb`     | Ours, KB-off ablation (cold reasoning)                            | Same exam                              | ✓      |
 | `agentic_nodiag`   | Ours, diagnosis-off ablation (registered; off the headline matrix)| Same exam                             | ✓      |
 | `motpe`            | Optuna group-decomposed multivariate MO-TPE (= syftr's optimizer) | Same exam                              | ✓      |
-| `motpe_warmstart`  | `motpe` seeded with the agent's frozen KB prior (cold proposer)   | Same exam                              | ✓      |
+| `motpe_warm`       | `motpe` + a free, uncounted transfer prior from this run's `random` | Same exam                            | ✓      |
 | `qlognehvi`        | Ax/BoTorch multi-objective GP-BO (Barker et al.); **needs `uv add ax-platform`** | Same exam                | ✓      |
 | `random`           | Random search                                                     | Same exam                              | ✓      |
 
@@ -22,7 +22,7 @@ held-out exam, so the final-score column in `Table_1.md` is directly comparable
 across rows (the YAHPO/HPOBench standard: fix the benchmark, swap the proposer).
 `agentic_*` share the same `AgenticOptimizer` class — they differ only in the
 `meta.cost_aware` flag and the `use_knowledge_base` / `use_diagnosis` ablation
-toggles passed to the framework. `motpe` / `motpe_warmstart` share the
+toggles passed to the framework. `motpe` / `motpe_warm` share the
 `MOTPESearch` class; `meta.cost_aware` switches it between single-objective
 (accuracy) and two-objective (accuracy ↑, per-query cost ↓) mode, mirroring the
 agentic flag. The MO-TPE sampler config (`multivariate, group, constant_liar`)
@@ -82,8 +82,16 @@ uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --resume
 uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --force
 ```
 
+The diagnosis/KB ablations (`agentic_nodiag`, `agentic_nokb`) are a Hotpot-only
+pass that runs AFTER the headline, reusing the same frozen exam under
+`results_hotpot/.shared_cache`:
+
+```bash
+uv run agentic-autorag-bench run --config configs/hotpot_ablation.yaml
+```
+
 Method keys: `agentic_score`, `agentic_cost`, `agentic_nokb`, `agentic_nodiag`,
-`motpe`, `motpe_warmstart`, `random`. Each one passed via `-m` must also be
+`motpe`, `motpe_warm`, `random`. Each one passed via `-m` must also be
 declared in the config's `methods:` list.
 
 Datasets are selected by config, not flag: each `configs/<dataset>_paper.yaml`

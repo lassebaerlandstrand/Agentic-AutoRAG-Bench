@@ -154,7 +154,6 @@ search_space:
       - "bedrock/zai.glm-4.7"
       - "bedrock/us.meta.llama4-scout-17b-instruct-v1:0"
       - "bedrock/us.amazon.nova-lite-v1:0"
-      - "bedrock/minimax.minimax-m2"
       - "azure/gpt-4o"
       - "azure/gpt-4o-mini"
       - "azure/o4-mini"

@@ -50,3 +50,9 @@ results_*/
 
 # Exploratory analysis artifacts paired with the results_* runs.
 *_artifacts/
+
+# Session-local scratch — not part of the shipped benchmark artifact.
+/CLAUDE.md
+/knowledge_base_render.md
+*.out
+configs/_canary_*
