@@ -7,9 +7,10 @@ project_config: ./smoke_hotpot_project.yaml
 methods:
   - random
   - motpe
-  - motpe_warmstart
+  - motpe_warm
   - agentic_score
-  - agentic_nokb
+  - agentic_nodiag
+  - agentic_opro
 
 seeds: [1, 2]
 
@@ -19,6 +20,7 @@ budget:
 # One checkpoint to exercise the @k synthesis + held-out path.
 checkpoints:
   agentic_score: [1]
+  agentic_opro: [1]
 
 benchmark:
   name: hotpot_qa
