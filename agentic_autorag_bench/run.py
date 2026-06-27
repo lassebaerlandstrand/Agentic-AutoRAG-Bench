@@ -648,7 +648,7 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
         try:
             data = json.loads(line)
             trial_config = TrialConfig(**data["config"])
-            emb_fp = trial_config.to_structural().embeddings_fingerprint(corpus_hash)
+            emb_fp = trial_config.to_structural().embeddings_fingerprint(corpus_hash, shared._doc_ids)
         except Exception:
             logger.warning(
                 "Could not re-derive emb_fp for a history line in %s; first "
