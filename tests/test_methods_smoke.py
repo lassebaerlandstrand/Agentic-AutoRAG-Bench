@@ -80,6 +80,50 @@ def _make_evaluator(scores: list[float]):
     return evaluator
 
 
+def _make_cost_evaluator(cost_per_query: float):
+    """Evaluator returning a fixed non-zero deploy-time per-query cost, so tests
+    can assert the search carries it into every HistoryEntry (the second Pareto
+    objective and motpe_warm's warm-prior cost both read this field)."""
+
+    async def evaluator(config: TrialConfig) -> TrialResult:
+        return TrialResult(
+            answer_accuracy=0.5,
+            metrics={"answer_accuracy": 0.5, "mean_em": 0.0, "mean_f1": 0.0, "mean_retrieval_quality": 0.0},
+            eval_usd=0.002,
+            mean_llm_cost_per_query_usd=cost_per_query,
+        )
+
+    return evaluator
+
+
+@pytest.mark.asyncio
+async def test_random_search_records_mean_llm_cost_per_query(tmp_path: Path) -> None:
+    """Regression: RandomSearch must carry the evaluator's
+    ``mean_llm_cost_per_query_usd`` into every HistoryEntry. When it was
+    dropped (HistoryEntry defaults it to 0.0), random's Pareto frontier
+    collapsed to nothing (``_load_trial_points`` filters cost>0) and
+    motpe_warm's two-objective warm prior — which reads this field from
+    random's history — was injected cost-blind (every prior at cost 0)."""
+    project = _tiny_project()
+    optimizer = RandomSearch(project=project, storage_dir=tmp_path)
+
+    sr = await optimizer.search(_make_cost_evaluator(0.0031), Budget(max_trials=3), seed=42)
+
+    assert [h.mean_llm_cost_per_query_usd for h in sr.history] == pytest.approx([0.0031] * 3)
+
+
+@pytest.mark.asyncio
+async def test_motpe_search_records_mean_llm_cost_per_query(tmp_path: Path) -> None:
+    """Parity: MOTPESearch must likewise carry the per-query cost, since the
+    cost-aware study minimizes it as the second objective."""
+    project = _tiny_project()
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
+
+    sr = await optimizer.search(_make_cost_evaluator(0.0027), Budget(max_trials=3), seed=42)
+
+    assert [h.mean_llm_cost_per_query_usd for h in sr.history] == pytest.approx([0.0027] * 3)
+
+
 @pytest.mark.asyncio
 async def test_random_search_runs_to_completion() -> None:
     project = _tiny_project()
