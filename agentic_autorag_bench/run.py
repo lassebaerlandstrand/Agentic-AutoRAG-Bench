@@ -245,8 +245,9 @@ class BenchConfig:
     # ``splits/holdout_qa.json``). When None the runner falls back to the full
     # ``qa.json`` under the benchmark output dir.
     hold_out_qa_path: Path | None = None
-    # QA metadata.question_type values to drop from the held-out scoring (e.g.
-    # MultiHop-RAG's ``null_query`` rows, which the free-form judge can't score).
+    # QA metadata.question_type values to drop from the held-out scoring. A
+    # general escape hatch for excising a broken question type; unused by the
+    # paper configs (abstention rows are now scored, not dropped).
     hold_out_exclude_question_types: list[str] = field(default_factory=list)
     # Per-method early-stopping checkpoints. After a method's full
     # max_trials-budget search finishes, the orchestrator additionally
@@ -305,9 +306,7 @@ class BenchConfig:
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
             output_root=Path(raw["output_root"]).resolve(),
-            hold_out_qa_path=(
-                Path(raw["hold_out"]["qa_path"]).resolve() if raw["hold_out"].get("qa_path") else None
-            ),
+            hold_out_qa_path=(Path(raw["hold_out"]["qa_path"]).resolve() if raw["hold_out"].get("qa_path") else None),
             hold_out_exclude_question_types=list(raw["hold_out"].get("exclude_question_types") or []),
             checkpoints=checkpoints,
         )

@@ -79,6 +79,41 @@ def test_oversized_holdout_raises() -> None:
         stratified_split(pool, stratify_key="n_hops", holdout_size=200, seed=1)
 
 
+def test_null_query_rows_retained_as_abstention_stratum() -> None:
+    # null_query rows carry no supporting docs but are benchmark-verified
+    # unanswerable, so the split keeps them as their own stratum.
+    pool = _pool({"comparison_query": 120, "inference_query": 120}, key="question_type") + _pool(
+        {"null_query": 60}, key="question_type", with_docs=False
+    )
+    result = stratified_split(pool, stratify_key="question_type", holdout_size=100, seed=1)
+    prov = result.provenance
+    assert prov.n_excluded_no_docs == 0  # abstention rows are not "excluded no docs"
+    assert prov.n_abstention_retained == 60
+    assert prov.n_pool_usable == 300
+    # Proportional share in both slices (60 of 300 usable -> 20 of a 100 holdout).
+    hd = Counter((p.metadata or {}).get("question_type") for p in result.holdout)
+    od = Counter((p.metadata or {}).get("question_type") for p in result.optimization)
+    assert hd["null_query"] == 20
+    assert od["null_query"] == 40
+
+
+def test_docless_answerable_still_excluded_when_abstention_retained() -> None:
+    # Only null_query doc-less rows are kept; a doc-less *answerable* row is
+    # still dropped (it can't be grounded or scored for retrieval).
+    pool = (
+        _pool({"comparison_query": 100}, key="question_type")
+        + _pool({"null_query": 40}, key="question_type", with_docs=False)
+        + _pool({"inference_query": 30}, key="question_type", with_docs=False)
+    )
+    result = stratified_split(pool, stratify_key="question_type", holdout_size=50, seed=1)
+    prov = result.provenance
+    assert prov.n_excluded_no_docs == 30  # the doc-less inference rows
+    assert prov.n_abstention_retained == 40
+    assert prov.n_pool_usable == 140  # 100 answerable + 40 abstention
+    surviving = result.holdout + result.optimization
+    assert all((p.metadata or {}).get("question_type") != "inference_query" for p in surviving)
+
+
 def test_detect_stratify_key() -> None:
     assert detect_stratify_key(_pool({"a": 3}, key="type")) == "type"
     assert detect_stratify_key(_pool({"a": 3}, key="question_type")) == "question_type"

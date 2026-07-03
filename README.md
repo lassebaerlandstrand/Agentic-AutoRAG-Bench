@@ -119,12 +119,16 @@ interruption, just re-run with `--resume` (or re-run the launcher, which
 adds `--resume` automatically) — completed work is skipped, only unfinished
 (method, seed) pairs run.
 
-**Held-out question filtering.** A `hold_out.exclude_question_types` list in
-the bench config drops QA rows by `metadata.question_type` before scoring.
-MultiHop-RAG sets `[null_query]` because its "Insufficient information."
-abstention rows are unscorable by the free-form judge (it can't award credit
-for an abstention), which would otherwise deflate every method's headline
-accuracy by a fixed ~12%.
+**Abstention (`null_query`) scoring.** MultiHop-RAG's ~12% "Insufficient
+information." rows are **scored, not dropped**. Each carries a benchmark-verified
+unanswerable gold; the judge grades a system that likewise abstains as correct
+and one that hallucinates an answer as wrong. They flow into both the optimizer's
+real-QA exam and the held-out slice as their own `null_query` stratum. Note the
+deliberate **denominator asymmetry**: answer accuracy *includes* the abstention
+slice, while retrieval metrics (recall / MRR) *exclude* it — an unanswerable
+question has no gold documents to retrieve. The `hold_out.exclude_question_types`
+config knob remains as a general escape hatch for excising a broken question
+type, but the paper configs leave it empty.
 
 **Checkpoints.** Declare per-method early-stopping points in the bench
 config to evaluate `history[:k]`'s best on the held-out QA as a sibling

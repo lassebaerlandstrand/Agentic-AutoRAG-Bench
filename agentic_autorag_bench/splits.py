@@ -7,7 +7,9 @@ mirrors the pool's difficulty mix — replacing the contiguous ``qa_pairs[:limit
 held-out, which on a hop-sorted pool silently returned only the easiest stratum.
 Everything else usable becomes the optimization reservoir the real-QA exam draws
 its questions from. Rows with no gold documents (empty ``supporting_doc_ids``)
-are excluded: they can't be grounded into an exam nor scored for retrieval.
+are excluded — they can't be grounded into an exam nor scored for retrieval —
+except benchmark-labeled unanswerable rows (``question_type == "null_query"``),
+which are retained as their own verified-abstention stratum.
 """
 
 from __future__ import annotations
@@ -29,6 +31,11 @@ DEFAULT_HOLDOUT_SIZE = 300
 # names a ``metadata`` field whose value labels the stratum.
 STRATIFY_KEY_PRIORITY: tuple[str, ...] = ("n_hops", "type", "question_type")
 
+# ``question_type`` value marking benchmark-verified unanswerable rows (their
+# gold is a statement of insufficiency and they carry no supporting docs).
+# These are retained despite having no docs and scored as calibrated abstention.
+ABSTENTION_QUESTION_TYPE = "null_query"
+
 
 class SplitProvenance(BaseModel):
     """Reproducibility record written alongside the split files."""
@@ -36,7 +43,8 @@ class SplitProvenance(BaseModel):
     stratify_key: str
     seed: int
     n_pool_total: int
-    n_excluded_no_docs: int
+    n_excluded_no_docs: int  # doc-less answerable rows dropped (abstention rows are kept)
+    n_abstention_retained: int  # ``null_query`` rows retained as the abstention stratum
     n_pool_usable: int
     holdout_size: int
     opt_size: int
@@ -107,8 +115,11 @@ def stratified_split(
     """
     key = stratify_key or detect_stratify_key(pairs)
 
-    usable = [p for p in pairs if p.supporting_doc_ids]
+    usable = [
+        p for p in pairs if p.supporting_doc_ids or (p.metadata or {}).get("question_type") == ABSTENTION_QUESTION_TYPE
+    ]
     n_excluded = len(pairs) - len(usable)
+    n_abstention = sum(1 for p in usable if (p.metadata or {}).get("question_type") == ABSTENTION_QUESTION_TYPE)
     if holdout_size > len(usable):
         raise ValueError(
             f"holdout_size ({holdout_size}) exceeds usable pool "
@@ -145,6 +156,7 @@ def stratified_split(
         seed=seed,
         n_pool_total=len(pairs),
         n_excluded_no_docs=n_excluded,
+        n_abstention_retained=n_abstention,
         n_pool_usable=len(usable),
         holdout_size=len(holdout),
         opt_size=len(optimization),
