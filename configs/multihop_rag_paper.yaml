@@ -30,15 +30,18 @@ benchmark:
   output_dir: ./benchmark_data/multihop_rag_val
 
 hold_out:
-  limit: 300
+  # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
+  # contiguous qa.json[:limit] slice. The split already drops doc-less rows, so
+  # MultiHop-RAG's 243 null_query rows are gone; ~300 stratified questions
+  # remain, so limit is null.
+  qa_path: ./benchmark_data/multihop_rag_val/splits/holdout_qa.json
+  limit: null
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
-  # MultiHop-RAG's null_query rows (12% of QA) have gold "Insufficient
-  # information." and empty supporting docs. The free-form judge can't award
-  # credit for them (the generation prompt forbids abstention; any abstention
-  # routes to NO_ANSWER == wrong), so they'd deflate every method's headline
-  # accuracy by a fixed dead-weight and compress the between-method spread.
-  # Dropped from scoring; the abstention subset is out of scope for this run.
+  # Belt-and-suspenders: the stratified split already excludes null_query rows
+  # (empty supporting docs), but keep the filter so a stray abstention row can't
+  # deflate the headline. Those rows have gold "Insufficient information." and
+  # the free-form judge routes any abstention to NO_ANSWER == wrong.
   exclude_question_types: [null_query]
 
 output_root: ./results_multihop_rag

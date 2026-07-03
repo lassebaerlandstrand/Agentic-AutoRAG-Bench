@@ -47,6 +47,10 @@ agent:
   concurrency: 8
 
 examiner:
+  # Headline (Exp 1) optimizes against the real-QA exam built from Hotpot's own
+  # held-in questions (LLM-extracted, verify_source_facts-grounded tier-C spans),
+  # not the corpus self-exam. Loaded via this path; generation is skipped.
+  custom_exam_path: ./benchmark_data/hotpot_val_2000/real_qa_exam.json
   exam_size: 100
   initial_question_multiplier: 1.8
   probe_selection: true
