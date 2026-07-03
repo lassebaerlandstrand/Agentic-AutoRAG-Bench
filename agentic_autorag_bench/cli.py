@@ -26,6 +26,14 @@ def run(
         "-m",
         help="Subset of methods to run (must be present in the config; repeat flag for multiple).",
     ),
+    seeds: list[int] = typer.Option(
+        None,
+        "--seeds",
+        help="Subset of seeds to run (must be present in the config; repeat flag for "
+        "multiple, e.g. --seeds 1). Lets a launcher drive one (method, seed) unit at a "
+        "time for seed-major scheduling — finishing every method at seed 1 before seed 2. "
+        "Deterministic methods have no seed and are skipped when --seeds is set.",
+    ),
     clean: bool | None = typer.Option(
         None,
         "--clean/--no-clean",
@@ -73,6 +81,7 @@ def run(
     run_cli(
         config,
         methods=methods or None,
+        seeds=seeds or None,
         clean=effective_clean,
         resume=resume,
         force=force,
