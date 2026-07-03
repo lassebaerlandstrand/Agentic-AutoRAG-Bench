@@ -835,6 +835,7 @@ async def run_matrix(
     config_path: str | Path,
     *,
     methods_override: list[str] | None = None,
+    seeds_override: list[int] | None = None,
     clean: bool = True,
     resume: bool = False,
     force: bool = False,
@@ -860,6 +861,14 @@ async def run_matrix(
                 "edit the config or pick a subset of its methods"
             )
         bench.methods = [m for m in bench.methods if m in set(methods_override)]
+
+    if seeds_override is not None:
+        unknown_seeds = set(seeds_override) - set(bench.seeds)
+        if unknown_seeds:
+            raise ValueError(
+                f"--seeds includes {sorted(unknown_seeds)} which are not in {config_path} "
+                f"(config seeds: {bench.seeds}); pick a subset of the configured seeds"
+            )
 
     if clean and not force:
         # Don't let an accidental re-launch of the documented `run` command
@@ -913,6 +922,10 @@ async def run_matrix(
         # first within the dataset (see ``_order_methods_for_run``).
         for method_name in _order_methods_for_run(bench.methods):
             seeds_for_method = bench.seeds if method_name in STOCHASTIC_METHODS else [None]
+            if seeds_override is not None:
+                # A (method, seed) unit only applies to seeded (stochastic) methods;
+                # a deterministic method's [None] filters out and is skipped here.
+                seeds_for_method = [s for s in seeds_for_method if s in set(seeds_override)]
             for seed in seeds_for_method:
                 seed_label = f"seed_{seed}" if seed is not None else "default"
                 method_dir = bench.output_root / method_name / seed_label
@@ -1063,6 +1076,7 @@ def run_cli(
     config_path: str,
     *,
     methods: list[str] | None = None,
+    seeds: list[int] | None = None,
     clean: bool = True,
     resume: bool = False,
     force: bool = False,
@@ -1080,6 +1094,7 @@ def run_cli(
         run_matrix(
             config_path,
             methods_override=methods,
+            seeds_override=seeds,
             clean=clean,
             resume=resume,
             force=force,

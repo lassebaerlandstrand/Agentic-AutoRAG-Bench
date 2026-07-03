@@ -17,6 +17,7 @@ import pytest
 from agentic_autorag_bench.run import (
     BenchConfig,
     _swap_in_staged_figures,
+    run_matrix,
 )
 
 # ---- BenchConfig.checkpoints parsing -----------------------------------
@@ -150,3 +151,27 @@ def test_swap_recovers_from_leftover_previous_backup(tmp_path: Path) -> None:
     assert (root / "figures" / "new.png").read_bytes() == b"NEW"
     assert not (root / "_figures_previous").exists()
     assert not (root / "_figures_staging").exists()
+
+
+# ---- run_matrix --seeds override validation ----------------------------
+
+
+async def test_run_matrix_rejects_seed_not_in_config(tmp_path: Path) -> None:
+    """A --seeds value absent from the config's seed list fails loudly before
+    any data prep or orchestrator setup, mirroring the --methods override
+    guard. This is the launcher's per-(method, seed) unit primitive: a typo'd
+    seed should not silently run nothing."""
+    cfg = tmp_path / "hotpot_paper.yaml"
+    (tmp_path / "project.yaml").write_text("dummy: true")
+    cfg.write_text(
+        "project_config: ./project.yaml\n"
+        "methods: [random]\n"
+        "seeds: [1]\n"
+        "budget: {max_trials: 40}\n"
+        "benchmark: {name: hotpot_qa, split: validation, sample_size: 10, output_dir: ./bench}\n"
+        "hold_out: {limit: 10, judge_model: null, concurrency: 1}\n"
+        "output_root: ./results\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=r"--seeds includes \[2\]"):
+        await run_matrix(cfg, seeds_override=[2], clean=False)
