@@ -79,8 +79,9 @@ class BenchmarkRunner:
         runner takes a path to the trial yaml; we materialise the trial config
         next to ``output_path`` for that interface and clean it up after.
 
-        ``exclude_question_types`` is forwarded to the framework runner so e.g.
-        MultiHop-RAG's unscorable ``null_query`` rows are dropped before scoring.
+        ``exclude_question_types`` is forwarded to the framework runner as a
+        general escape hatch for dropping a broken question type before scoring
+        (unused by the paper configs; abstention rows are scored, not dropped).
         ``qa_path_override`` points the held-out scoring at a specific QA file
         (e.g. the stratified ``splits/holdout_qa.json``) instead of the full
         ``qa.json`` — the fix for the biased contiguous held-out slice.

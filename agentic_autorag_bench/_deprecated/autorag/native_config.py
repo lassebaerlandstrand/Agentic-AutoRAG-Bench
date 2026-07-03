@@ -54,9 +54,10 @@ from agentic_autorag.engine.pipeline import (
     _DEFAULT_TREE_SUMMARIZE_PROMPT_TMPL,
 )
 from agentic_autorag.engine.pipeline import _MULTI_QUERY_PROMPT as FRAMEWORK_MULTI_QUERY_PROMPT
-from agentic_autorag.examiner.prompts import NAIVE_RAG_PROMPT, answer_format_hint
+from agentic_autorag.benchmark_eval.prompts import ANSWER_PROMPT
+from agentic_autorag.examiner.prompts import answer_format_hint
 
-# Mirror the framework's NAIVE_RAG_PROMPT so AutoRAG's internal rouge metric
+# Mirror the framework's ANSWER_PROMPT so AutoRAG's internal rouge metric
 # optimises under the same prompt the bench's rescore uses for every method.
 # A diverging prompt would mean AutoRAG enumerates one objective (rouge over
 # its static prompt) then gets scored on another (judge-acc over the
@@ -66,16 +67,16 @@ from agentic_autorag.examiner.prompts import NAIVE_RAG_PROMPT, answer_format_hin
 #   - ``{context}`` -> ``{retrieved_contents}``: AutoRAG's fstring module
 #     uses this variable name.
 #   - ``{question}`` -> ``{query}``: same.
-# The per-question ``{answer_format_hint}`` placeholder is replaced at
-# generation time with the framework's neutral fallback. AutoRAG's static
-# config can't inject per-question hints (no per-row prompt substitution),
-# so the fallback is the most-honest reproduction of the framework's prompt
-# inside AutoRAG's constraints. Disclosed in the paper's accounting note.
+# The per-question ``{answer_format_line}`` slot is filled at import time with
+# the framework's neutral fallback hint. AutoRAG's static config can't inject
+# per-question hints (no per-row prompt substitution), so the fallback is the
+# most-honest reproduction of the framework's prompt inside AutoRAG's
+# constraints. Disclosed in the paper's accounting note.
 FREE_FORM_PROMPT_TEMPLATE = (
-    NAIVE_RAG_PROMPT
+    ANSWER_PROMPT
+    .replace("{answer_format_line}", f"Expected answer format: {answer_format_hint(None, None)}\n\n")
     .replace("{context}", "{retrieved_contents}")
     .replace("{question}", "{query}")
-    .replace("{answer_format_hint}", answer_format_hint(None, None))
 )
 
 # Explicit reranker mapping. The previous heuristic (substring match) was
