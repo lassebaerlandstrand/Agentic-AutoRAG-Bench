@@ -54,7 +54,11 @@ benchmark:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 300
+  # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
+  # contiguous qa.json[:limit] slice. Already excludes doc-less rows and is
+  # exactly ~300 stratified questions, so limit is null (use all of it).
+  qa_path: ./benchmark_data/hotpot_val_2000/splits/holdout_qa.json
+  limit: null
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 

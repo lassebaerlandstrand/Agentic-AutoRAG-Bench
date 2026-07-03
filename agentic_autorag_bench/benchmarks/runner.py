@@ -71,6 +71,7 @@ class BenchmarkRunner:
         limit: int | None = None,
         concurrency: int = 10,
         exclude_question_types: list[str] | None = None,
+        qa_path_override: str | Path | None = None,
     ) -> dict:
         """Score one winning ``TrialConfig`` against the held-out QA.
 
@@ -80,6 +81,9 @@ class BenchmarkRunner:
 
         ``exclude_question_types`` is forwarded to the framework runner so e.g.
         MultiHop-RAG's unscorable ``null_query`` rows are dropped before scoring.
+        ``qa_path_override`` points the held-out scoring at a specific QA file
+        (e.g. the stratified ``splits/holdout_qa.json``) instead of the full
+        ``qa.json`` — the fix for the biased contiguous held-out slice.
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -91,7 +95,7 @@ class BenchmarkRunner:
             result = await run_benchmark_evaluate(
                 project_config_path=project_config_path,
                 trial_config_path=str(trial_yaml_path),
-                qa_path=str(self.qa_path),
+                qa_path=str(qa_path_override or self.qa_path),
                 output_path=str(output_path),
                 judge_model=judge_model,
                 concurrency=concurrency,

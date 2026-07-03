@@ -241,6 +241,10 @@ class BenchConfig:
     hold_out_judge_model: str | None
     hold_out_concurrency: int
     output_root: Path
+    # Optional explicit held-out QA file (e.g. the stratified
+    # ``splits/holdout_qa.json``). When None the runner falls back to the full
+    # ``qa.json`` under the benchmark output dir.
+    hold_out_qa_path: Path | None = None
     # QA metadata.question_type values to drop from the held-out scoring (e.g.
     # MultiHop-RAG's ``null_query`` rows, which the free-form judge can't score).
     hold_out_exclude_question_types: list[str] = field(default_factory=list)
@@ -301,6 +305,9 @@ class BenchConfig:
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
             output_root=Path(raw["output_root"]).resolve(),
+            hold_out_qa_path=(
+                Path(raw["hold_out"]["qa_path"]).resolve() if raw["hold_out"].get("qa_path") else None
+            ),
             hold_out_exclude_question_types=list(raw["hold_out"].get("exclude_question_types") or []),
             checkpoints=checkpoints,
         )
@@ -486,6 +493,7 @@ async def _evaluate_checkpoints(
             limit=bench.hold_out_limit,
             concurrency=bench.hold_out_concurrency,
             exclude_question_types=bench.hold_out_exclude_question_types,
+            qa_path_override=bench.hold_out_qa_path,
         )
         make_seed_figures(ck_dir)
         logger.info(
@@ -893,7 +901,7 @@ async def run_matrix(
     # calls per trial. setup() is idempotent — the parsed corpus, exam.json,
     # and ingredient cache live under the project YAML's meta.output_dir
     # (./results/.shared_cache by default) so they're reused across methods.
-    logger.info("Setting up shared orchestrator (will generate exam.json on first run)")
+    logger.info("Setting up shared orchestrator (loads examiner.custom_exam_path if set, else generates the exam)")
     shared = Orchestrator(str(bench.project_config_path))
     shared.evaluator.quiet_per_question = True
     try:
@@ -988,6 +996,7 @@ async def run_matrix(
                     limit=bench.hold_out_limit,
                     concurrency=bench.hold_out_concurrency,
                     exclude_question_types=bench.hold_out_exclude_question_types,
+                    qa_path_override=bench.hold_out_qa_path,
                 )
 
                 # Per-seed figures: render as soon as one (method, seed) finishes

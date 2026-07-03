@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 
 app = typer.Typer(name="agentic-autorag-bench", help="Agentic AutoRAG benchmark suite")
@@ -195,6 +197,116 @@ def analyze(
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
     run_analyze(results_dir, output or results_dir)
+
+
+@app.command("prepare-splits")
+def prepare_splits(
+    qa: str = typer.Option(..., "--qa", help="Path to a prepared benchmark qa.json"),
+    output: str = typer.Option(
+        ..., "--output", "-o", help="Output dir for holdout_qa.json + optimization_qa.json + provenance"
+    ),
+    stratify_key: str | None = typer.Option(
+        None,
+        "--stratify-key",
+        help="metadata field to stratify by (n_hops, type, question_type); auto-detected if omitted",
+    ),
+    holdout_size: int = typer.Option(300, "--holdout-size", help="Held-out gold slice size"),
+    seed: int = typer.Option(42, "--seed", help="Deterministic split seed"),
+) -> None:
+    """Draw a stratified held-out slice from a benchmark qa.json.
+
+    Replaces the biased contiguous held-out slice: the held-out mirrors the
+    pool's difficulty mix, doc-less rows are excluded, and every remaining usable
+    row becomes the optimization reservoir the real-QA exam is built from.
+    """
+    import logging
+
+    from agentic_autorag.benchmarks import load_qa
+
+    from agentic_autorag_bench.splits import stratified_split, write_splits
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
+    pairs = load_qa(Path(qa))
+    result = stratified_split(pairs, stratify_key=stratify_key, holdout_size=holdout_size, seed=seed)
+    paths = write_splits(result, Path(output))
+    prov = result.provenance
+    print(f"Stratified split by {prov.stratify_key!r} (seed={prov.seed})")
+    print(f"  pool: {prov.n_pool_usable} usable of {prov.n_pool_total} ({prov.n_excluded_no_docs} doc-less excluded)")
+    print(f"  holdout ({prov.holdout_size}):   {prov.holdout_distribution}  -> {paths['holdout']}")
+    print(f"  reservoir ({prov.opt_size}): {prov.opt_distribution}  -> {paths['optimization']}")
+    print(f"  disjoint: {prov.disjoint}  provenance -> {paths['provenance']}")
+
+
+@app.command("real-exam")
+def real_exam(
+    project_config: str = typer.Option(
+        ..., "--project-config", help="Project YAML (corpus_path + model aliases + examiner model)"
+    ),
+    splits_dir: str = typer.Option(
+        ..., "--splits-dir", help="Directory from prepare-splits (optimization_qa.json + split_provenance.json)"
+    ),
+    output: str = typer.Option(..., "--output", "-o", help="Destination for the real-QA exam JSON"),
+    exam_size: int = typer.Option(100, "--exam-size", help="Number of tier-C questions in the exam"),
+    extractor_model: str | None = typer.Option(
+        None, "--extractor-model", help="LLM for span extraction; defaults to the project's examiner model"
+    ),
+    concurrency: int = typer.Option(10, help="Concurrent extraction calls"),
+    seed: int = typer.Option(42, "--seed", help="Deterministic draw seed"),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Build a 100 %-grounded real-QA exam from a benchmark's own questions.
+
+    Every question is tier C (verbatim evidence spans) and the difficulty mix
+    matches the held-out slice; ungroundable draws are replaced until each
+    stratum is full. Point ``examiner.custom_exam_path`` at the output.
+    """
+    import asyncio
+    import json
+    import logging
+
+    from agentic_autorag.benchmarks import load_qa
+    from agentic_autorag.config.loader import load_config
+    from agentic_autorag.engine._io import load_direct_read_corpus
+    from agentic_autorag.litellm_runtime import configure_litellm_runtime, install_model_aliases
+
+    from agentic_autorag_bench.real_exam import build_real_exam, write_real_exam
+
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
+    if not verbose:
+        for noisy in ("LiteLLM", "litellm", "httpx"):
+            logging.getLogger(noisy).setLevel(logging.WARNING)
+
+    splits = Path(splits_dir)
+    optimization_pool = load_qa(splits / "optimization_qa.json")
+    holdout_distribution = json.loads((splits / "split_provenance.json").read_text(encoding="utf-8"))[
+        "holdout_distribution"
+    ]
+
+    project = load_config(project_config)
+    configure_litellm_runtime(project.model_aliases)
+    install_model_aliases(project.model_aliases)
+    doc_ids, texts = load_direct_read_corpus(Path(project.meta.corpus_path))
+    corpus = dict(zip(doc_ids, texts, strict=True))
+
+    exam, provenance = asyncio.run(
+        build_real_exam(
+            optimization_pool,
+            corpus,
+            holdout_distribution,
+            extractor_model=extractor_model or project.agent.examiner_model,
+            reasoning_effort=project.agent.examiner_reasoning_effort,
+            exam_size=exam_size,
+            fuzzy_threshold=project.examiner.source_fact_verify_fuzzy_threshold,
+            concurrency=concurrency,
+            seed=seed,
+        )
+    )
+    prov_path = write_real_exam(exam, provenance, Path(output))
+    print(f"Real-QA exam: {len(exam)} tier-C questions -> {output}")
+    print(f"  target mix (held-out): {provenance.target_distribution}")
+    print(f"  exam mix:              {provenance.exam_distribution}")
+    print(f"  extracted per stratum: {provenance.per_stratum_extracted}")
+    print(f"  provenance -> {prov_path}")
 
 
 if __name__ == "__main__":

@@ -30,7 +30,11 @@ benchmark:
   output_dir: ./benchmark_data/musique_val_2417
 
 hold_out:
-  limit: 300
+  # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
+  # contiguous qa.json[:limit] slice, which on MuSiQue's hop-sorted pool
+  # returned 100% 2-hop. Already ~300 stratified questions, so limit is null.
+  qa_path: ./benchmark_data/musique_val_2417/splits/holdout_qa.json
+  limit: null
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
