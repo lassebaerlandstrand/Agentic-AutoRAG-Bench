@@ -37,6 +37,8 @@ meta:
 model_aliases:
   azure/gpt-5-nano: azure/gpt-5-nano-1
   azure/gpt-5-mini: azure/gpt-5-mini-1
+  azure/gpt-4.1-nano: azure/gpt-4.1-nano-1
+  azure/gpt-4.1-mini: azure/gpt-4.1-mini-1
 
 agent:
   examiner_model: "bedrock/minimax.minimax-m2.5"
@@ -137,37 +139,41 @@ search_space:
   # expressive.
   generator:
     models:
-      - "bedrock/openai.gpt-oss-20b-1:0"
-      - "bedrock/openai.gpt-oss-120b-1:0"
-      - "bedrock/qwen.qwen3-32b-v1:0"
-      - "bedrock/nvidia.nemotron-nano-3-30b"
-      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"
-      - "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0"
-      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
       - "bedrock/us.amazon.nova-micro-v1:0"
-      - "bedrock/mistral.magistral-small-2509"
-      - "bedrock/mistral.ministral-3-14b-instruct"
-      - "bedrock/mistral.ministral-3-8b-instruct"
-      - "bedrock/mistral.ministral-3-3b-instruct"
-      - "bedrock/mistral.mistral-large-3-675b-instruct"
-      - "bedrock/mistral.mistral-7b-instruct-v0:2"
-      - "bedrock/mistral.mixtral-8x7b-instruct-v0:1"
+      - "bedrock/us.amazon.nova-lite-v1:0"
+      - "bedrock/us.amazon.nova-pro-v1:0"
       - "bedrock/google.gemma-3-4b-it"
       - "bedrock/google.gemma-3-12b-it"
       - "bedrock/google.gemma-3-27b-it"
-      - "bedrock/zai.glm-4.7"
+      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"
       - "bedrock/us.meta.llama4-scout-17b-instruct-v1:0"
-      - "bedrock/us.amazon.nova-lite-v1:0"
+      - "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0"
+      - "bedrock/mistral.magistral-small-2509"
+      - "bedrock/mistral.ministral-3-3b-instruct"
+      - "bedrock/mistral.ministral-3-8b-instruct"
+      - "bedrock/mistral.ministral-3-14b-instruct"
+      - "bedrock/mistral.mistral-7b-instruct-v0:2"
+      - "bedrock/mistral.mistral-large-3-675b-instruct"
+      - "bedrock/mistral.mixtral-8x7b-instruct-v0:1"
+      - "bedrock/nvidia.nemotron-nano-3-30b"
+      - "bedrock/openai.gpt-oss-20b-1:0"
+      - "bedrock/openai.gpt-oss-120b-1:0"
+      - "bedrock/qwen.qwen3-32b-v1:0"
+      - "bedrock/qwen.qwen3-coder-30b-a3b-v1:0"
+      - "bedrock/zai.glm-4.7"
       - "azure/gpt-4o"
       - "azure/gpt-4o-mini"
+      - "azure/gpt-4.1-mini"
+      - "azure/gpt-4.1-nano"
       - "azure/o4-mini"
       - "azure/gpt-5-mini"
       - "azure/gpt-5-nano"
       - "azure/gpt-5.4-mini"
       - "azure/gpt-5.4-nano"
-      - "vertex_ai/gemini-3.1-flash-lite-preview"
-      - "vertex_ai/gemini-2.5-flash-lite"
       - "vertex_ai/gemini-2.5-flash"
+      - "vertex_ai/gemini-2.5-flash-lite"
+      - "vertex_ai/gemini-3.1-flash-lite-preview"
     # Per-trial reasoning toggle. The sampler will pick reasoning=True only
     # for trials whose generator supports it (via LiteLLM's
     # supports_reasoning); other trials get reasoning=False without
