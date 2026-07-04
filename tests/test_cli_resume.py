@@ -16,8 +16,8 @@ runner = CliRunner()
 def _capture_clean(monkeypatch) -> dict:
     captured: dict = {}
 
-    def fake_run_cli(config, *, methods=None, clean=True, resume=False, force=False):  # noqa: ANN001
-        captured.update(config=config, methods=methods, clean=clean, resume=resume, force=force)
+    def fake_run_cli(config, *, methods=None, seeds=None, clean=True, resume=False, force=False):  # noqa: ANN001
+        captured.update(config=config, methods=methods, seeds=seeds, clean=clean, resume=resume, force=force)
 
     monkeypatch.setattr(run_module, "run_cli", fake_run_cli)
     return captured
