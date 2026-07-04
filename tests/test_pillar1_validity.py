@@ -34,7 +34,7 @@ def test_load_trajectory_reads_all_seeds(tmp_path: Path) -> None:
     _write_history(results, "seed_2", [{"trial_number": 1, "config": {"top_k": 9}, "answer_accuracy": 0.6}])
     points = p1.load_trajectory(results)
     assert len(points) == 2
-    assert {p.real_qa_score for p in points} == {0.4, 0.6}
+    assert {p.validation_score for p in points} == {0.4, 0.6}
 
 
 def test_load_trajectory_missing_raises(tmp_path: Path) -> None:
@@ -44,11 +44,11 @@ def test_load_trajectory_missing_raises(tmp_path: Path) -> None:
 
 def test_sample_configs_spans_range(tmp_path: Path) -> None:
     points = [
-        p1.TrajectoryPoint(trial_number=i, seed="seed_1", config={"top_k": i}, real_qa_score=i / 100)
+        p1.TrajectoryPoint(trial_number=i, seed="seed_1", config={"top_k": i}, validation_score=i / 100)
         for i in range(100)
     ]
     picked = p1.sample_configs(points, n=5)
-    scores = [p.real_qa_score for p in picked]
+    scores = [p.validation_score for p in picked]
     assert len(picked) == 5
     assert scores[0] == pytest.approx(0.0)  # lowest
     assert scores[-1] == pytest.approx(0.99)  # highest
@@ -61,19 +61,19 @@ def test_sample_configs_returns_all_when_small() -> None:
 
 
 def test_compute_validity_perfect_correlation() -> None:
-    real = [0.1, 0.3, 0.5, 0.7, 0.9]
-    report = p1.compute_validity(real, real)
+    validation = [0.1, 0.3, 0.5, 0.7, 0.9]
+    report = p1.compute_validity(validation, validation)
     assert report.spearman_rho == pytest.approx(1.0)
     assert report.kendall_tau == pytest.approx(1.0)
-    assert report.selection_regret == pytest.approx(0.0)  # self-best == real-best
+    assert report.selection_regret == pytest.approx(0.0)  # self-best == validation-best
 
 
 def test_compute_validity_anti_correlation_has_regret() -> None:
-    real = [0.1, 0.3, 0.5, 0.7, 0.9]
+    validation = [0.1, 0.3, 0.5, 0.7, 0.9]
     self_scores = [0.9, 0.7, 0.5, 0.3, 0.1]  # inverted
-    report = p1.compute_validity(real, self_scores)
+    report = p1.compute_validity(validation, self_scores)
     assert report.spearman_rho == pytest.approx(-1.0)
-    # self-best (idx 0) has the WORST real score → regret = 0.9 - 0.1.
+    # self-best (idx 0) has the WORST validation score → regret = 0.9 - 0.1.
     assert report.selection_regret == pytest.approx(0.8)
 
 
@@ -88,7 +88,7 @@ def test_build_self_exam_project_strips_custom_exam_path(tmp_path: Path) -> None
         yaml.safe_dump(
             {
                 "meta": {"project_name": "x", "output_dir": "./results/.shared_cache"},
-                "examiner": {"exam_size": 100, "custom_exam_path": "./real_qa_exam.json"},
+                "examiner": {"exam_size": 100, "custom_exam_path": "./validation_exam.json"},
                 "agent": {"optimizer_model": "m", "examiner_model": "m", "judge_model": "m"},
             }
         ),
@@ -97,6 +97,6 @@ def test_build_self_exam_project_strips_custom_exam_path(tmp_path: Path) -> None
     out_dir = tmp_path / "selfexam_cache"
     written = p1.build_self_exam_project(paper, out_dir)
     raw = yaml.safe_load(written.read_text())
-    assert "custom_exam_path" not in raw["examiner"]  # generate self-exam, not the real-QA exam
+    assert "custom_exam_path" not in raw["examiner"]  # generate self-exam, not the validation exam
     assert raw["meta"]["output_dir"] == str(out_dir)
     assert raw["examiner"]["exam_size"] == 100  # other fields preserved

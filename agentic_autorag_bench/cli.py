@@ -246,16 +246,16 @@ def prepare_splits(
     print(f"  disjoint: {prov.disjoint}  provenance -> {paths['provenance']}")
 
 
-@app.command("real-exam")
-def real_exam(
+@app.command("build-validation-exam")
+def validation_exam(
     project_config: str = typer.Option(
         ..., "--project-config", help="Project YAML (corpus_path + model aliases + examiner model)"
     ),
     splits_dir: str = typer.Option(
         ..., "--splits-dir", help="Directory from prepare-splits (optimization_qa.json + split_provenance.json)"
     ),
-    output: str = typer.Option(..., "--output", "-o", help="Destination for the real-QA exam JSON"),
-    exam_size: int = typer.Option(100, "--exam-size", help="Number of tier-C questions in the exam"),
+    output: str = typer.Option(..., "--output", "-o", help="Destination for the validation exam JSON"),
+    exam_size: int = typer.Option(100, "--exam-size", help="Number of questions in the exam"),
     extractor_model: str | None = typer.Option(
         None, "--extractor-model", help="LLM for span extraction; defaults to the project's examiner model"
     ),
@@ -263,11 +263,13 @@ def real_exam(
     seed: int = typer.Option(42, "--seed", help="Deterministic draw seed"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
-    """Build a 100 %-grounded real-QA exam from a benchmark's own questions.
+    """Build a fully-grounded validation exam from a benchmark's own questions.
 
-    Every question is tier C (verbatim evidence spans) and the difficulty mix
-    matches the held-out slice; ungroundable draws are replaced until each
-    stratum is full. Point ``examiner.custom_exam_path`` at the output.
+    Every answerable question is tier C (verbatim evidence spans) and the
+    difficulty mix matches the held-out slice; ungroundable draws are replaced
+    until each answerable stratum is full, while any ``null_query`` stratum
+    passes through as verified-unanswerable. Point ``examiner.custom_exam_path``
+    at the output.
     """
     import asyncio
     import json
@@ -278,7 +280,7 @@ def real_exam(
     from agentic_autorag.engine._io import load_direct_read_corpus
     from agentic_autorag.litellm_runtime import configure_litellm_runtime, install_model_aliases
 
-    from agentic_autorag_bench.real_exam import build_real_exam, write_real_exam
+    from agentic_autorag_bench.validation_exam import build_validation_exam, write_validation_exam
 
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
     if not verbose:
@@ -298,7 +300,7 @@ def real_exam(
     corpus = dict(zip(doc_ids, texts, strict=True))
 
     exam, provenance = asyncio.run(
-        build_real_exam(
+        build_validation_exam(
             optimization_pool,
             corpus,
             holdout_distribution,
@@ -310,8 +312,8 @@ def real_exam(
             seed=seed,
         )
     )
-    prov_path = write_real_exam(exam, provenance, Path(output))
-    print(f"Real-QA exam: {len(exam)} tier-C questions -> {output}")
+    prov_path = write_validation_exam(exam, provenance, Path(output))
+    print(f"Validation exam: {len(exam)} questions ({provenance.n_abstention} verified-unanswerable) -> {output}")
     print(f"  target mix (held-out): {provenance.target_distribution}")
     print(f"  exam mix:              {provenance.exam_distribution}")
     print(f"  extracted per stratum: {provenance.per_stratum_extracted}")

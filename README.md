@@ -123,7 +123,7 @@ adds `--resume` automatically) — completed work is skipped, only unfinished
 information." rows are **scored, not dropped**. Each carries a benchmark-verified
 unanswerable gold; the judge grades a system that likewise abstains as correct
 and one that hallucinates an answer as wrong. They flow into both the optimizer's
-real-QA exam and the held-out slice as their own `null_query` stratum. Note the
+validation exam and the held-out slice as their own `null_query` stratum. Note the
 deliberate **denominator asymmetry**: answer accuracy *includes* the abstention
 slice, while retrieval metrics (recall / MRR) *exclude* it — an unanswerable
 question has no gold documents to retrieve. The `hold_out.exclude_question_types`

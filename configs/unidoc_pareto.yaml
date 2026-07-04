@@ -1,6 +1,7 @@
 # Entry config for the `pareto` command: run the cost-aware Pareto comparison —
-# agentic_cost (full agentic) vs random (floor + transfer source) vs motpe_warm
-# (two-objective MO-TPE warm-started from random) — on the UniDoc (healthcare) PDF
+# agentic_cost (full agentic) vs random (floor + transfer source) vs motpe (cold
+# two-objective MO-TPE) vs motpe_warm (same MO-TPE warm-started from random; the
+# cold→warm frontier gap is the transfer-prior's value) — on the UniDoc (healthcare) PDF
 # corpus and render the multi-frontier cost-vs-accuracy figure with a
 # shared-reference-point hypervolume. No held-out QA — trials are scored on the
 # optimizer's own self-generated exam.

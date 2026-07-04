@@ -1,0 +1,124 @@
+# TEST project config (scratch) — MO-TPE warm validation run on UniDoc.
+# Derived from unidoc_pareto_project.yaml with three deltas for this test:
+#   1. meta.output_dir points at an ISOLATED copy of the UniDoc shared cache
+#      (exam.json + exam_cost.json + embeddings reused; results_unidoc untouched).
+#   2. ALL azure/ generator models removed (7) and the azure model_aliases
+#      dropped; the azure/gpt-4o-mini query-expansion model is swapped for a
+#      non-azure model (vertex_ai/gemini-2.5-flash-lite, already in the pool).
+#      The judge (azure_ai/DeepSeek-V3.2, a separate endpoint) is kept.
+#   3. Everything else (search space, examiner, parsing, cost_aware) is verbatim.
+
+meta:
+  project_name: "unidoc-motpe-warm-test"
+  corpus_path: "./benchmark_data/unidoc_healthcare/corpus"
+  corpus_description: |
+    Real-world enterprise healthcare documents from UniDoc-Bench: insurance
+    forms, claims and explanation-of-benefits statements, clinical notes, and
+    similar PDFs, plus some scanned page images. Multi-page layouts with
+    tables, figures, and mixed formatting; image pages are read via OCR.
+    Dense, domain-specific prose rather than short encyclopedic snippets.
+  output_dir: "./results_test_motpe_warm_unidoc/.shared_cache"
+  max_trials: 40
+  cache_max_gb: 40.0
+  cost_aware: true
+
+agent:
+  examiner_model: "bedrock/minimax.minimax-m2.5"
+  optimizer_model: "bedrock/moonshotai.kimi-k2.5"
+  judge_model: "azure_ai/DeepSeek-V3.2"
+  optimizer_reasoning_effort: medium
+  examiner_reasoning_effort: medium
+  concurrency: 8
+
+examiner:
+  exam_size: 100
+  initial_question_multiplier: 1.7
+  probe_selection: true
+  neighborhood_min_chunks: 18
+  neighborhood_min_words: 5000
+  neighborhood_same_doc_weight: 0.8
+  neighborhood_cross_doc_weight: 0.2
+  min_doc_words: 20
+
+parsing:
+  ocr: true
+  table_structure: true
+  near_duplicate_detection_enabled: true
+  near_duplicate_threshold: 0.85
+
+search_space:
+  chunking:
+    strategies: ["recursive", "fixed"]
+    chunk_token_size: { values: [128, 256, 384, 512] }
+    chunk_token_overlap: { values: [0, 32, 48, 64] }
+
+  embedding:
+    models:
+      - "IEITYuan/Yuan-embedding-2.0-en"
+      - "Qwen/Qwen3-Embedding-0.6B"
+      - "ibm-granite/granite-embedding-english-r2"
+      - "ibm-granite/granite-embedding-small-english-r2"
+      - "intfloat/e5-large-v2"
+      - "intfloat/multilingual-e5-large-instruct"
+      - "BAAI/bge-large-en-v1.5"
+      - "BAAI/bge-small-en-v1.5"
+      - "BAAI/bge-m3"
+      - "Snowflake/snowflake-arctic-embed-l-v2.0"
+      - "Snowflake/snowflake-arctic-embed-xs"
+      - "mixedbread-ai/mxbai-embed-large-v1"
+      - "sentence-transformers/all-MiniLM-L6-v2"
+
+  retrieval:
+    index_types: ["vector_only", "hybrid_bm25_vector"]
+    top_k: { min: 3, max: 20 }
+    hybrid_alpha: { min: 0.0, max: 1.0 }
+    bm25_vector_fusion: ["alpha", "rrf"]
+    long_context_reorder: [false, true]
+
+  query_expansion:
+    strategies: ["none", "hyde", "multi_query", "query_decompose"]
+    models:
+      # azure/gpt-4o-mini removed; non-azure drop-in for the LLM-based
+      # expansion strategies (already verified as a generator-pool model).
+      - "vertex_ai/gemini-2.5-flash-lite"
+
+  reranker:
+    models:
+      - "none"
+      - "BAAI/bge-reranker-v2-m3"
+      - "cross-encoder/ms-marco-MiniLM-L-6-v2"
+      - "Alibaba-NLP/gte-reranker-modernbert-base"
+      - "mixedbread-ai/mxbai-rerank-xsmall-v1"
+    top_n: { min: 3, max: 10 }
+
+  generator:
+    # 24 models (31 minus the 7 azure/ entries).
+    models:
+      - "bedrock/openai.gpt-oss-20b-1:0"
+      - "bedrock/openai.gpt-oss-120b-1:0"
+      - "bedrock/qwen.qwen3-32b-v1:0"
+      - "bedrock/nvidia.nemotron-nano-3-30b"
+      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"
+      - "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0"
+      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+      - "bedrock/us.amazon.nova-micro-v1:0"
+      - "bedrock/mistral.magistral-small-2509"
+      - "bedrock/mistral.ministral-3-14b-instruct"
+      - "bedrock/mistral.ministral-3-8b-instruct"
+      - "bedrock/mistral.ministral-3-3b-instruct"
+      - "bedrock/mistral.mistral-large-3-675b-instruct"
+      - "bedrock/mistral.mistral-7b-instruct-v0:2"
+      - "bedrock/mistral.mixtral-8x7b-instruct-v0:1"
+      - "bedrock/google.gemma-3-4b-it"
+      - "bedrock/google.gemma-3-12b-it"
+      - "bedrock/google.gemma-3-27b-it"
+      - "bedrock/zai.glm-4.7"
+      - "bedrock/us.meta.llama4-scout-17b-instruct-v1:0"
+      - "bedrock/us.amazon.nova-lite-v1:0"
+      - "vertex_ai/gemini-3.1-flash-lite-preview"
+      - "vertex_ai/gemini-2.5-flash-lite"
+      - "vertex_ai/gemini-2.5-flash"
+    reasoning: true
+    reasoning_effort: medium
+
+  temperature: { min: 1.0, max: 1.0 }

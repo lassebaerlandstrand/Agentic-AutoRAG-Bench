@@ -1,13 +1,15 @@
-"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``random`` vs ``motpe_warm`` on UniDoc.
+"""Cost-aware Pareto experiment: ``agentic_cost`` vs ``random`` vs ``motpe`` vs ``motpe_warm`` on UniDoc.
 
-Three cost-aware searches on the UniDoc (healthcare) PDF corpus, scored on the
+Four cost-aware searches on the UniDoc (healthcare) PDF corpus, scored on the
 optimizer's own self-generated exam — no held-out QA. ``agentic_cost`` is the full
 agentic optimizer (Pareto-aware reasoning); ``random`` is the exploration floor and
-the transfer source; ``motpe_warm`` is the two-objective MO-TPE warm-started from
-``random`` (all of random's completed trials injected as a free, uncounted transfer
-prior). All minimize the SAME ``mean_llm_cost_per_query_usd`` and maximize the SAME
-exam accuracy on the SAME exam, so the comparison is fair. ``random`` runs before
-``motpe_warm`` (a hard data dependency).
+the transfer source; ``motpe`` is the cold two-objective MO-TPE (no transfer prior);
+``motpe_warm`` is the SAME MO-TPE warm-started from ``random`` (all of random's
+completed trials injected as a free, uncounted transfer prior). The cold→warm
+frontier gap isolates the value of that transfer prior (warm-start ablation). All
+minimize the SAME ``mean_llm_cost_per_query_usd`` and maximize the SAME exam accuracy
+on the SAME exam, so the comparison is fair. ``random`` runs before ``motpe_warm``
+(a hard data dependency); cold ``motpe`` has none.
 
 ``make_pareto_figure`` renders a single-method Syftr-style scatter (a gray cloud of
 every trial with the optimizer's self-marked Pareto frontier highlighted, numbered,
@@ -115,17 +117,17 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
 
 async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resume: bool = False) -> None:
     """Run the cost-aware Pareto comparison — ``agentic_cost`` (full agentic) vs
-    ``random`` (floor + transfer source) vs ``motpe_warm`` (two-objective MO-TPE
-    warm-started from ``random``) — then render the multi-frontier figure with a
-    shared-reference-point hypervolume.
+    ``random`` (floor + transfer source) vs ``motpe`` (cold two-objective MO-TPE)
+    vs ``motpe_warm`` (same MO-TPE warm-started from ``random``) — then render the
+    multi-frontier figure with a shared-reference-point hypervolume.
 
-    All three methods evaluate the SAME self-generated exam on the SAME corpus:
-    the shared orchestrator (used for the random / motpe_warm evaluator) and
-    agentic_cost's own orchestrator load the same project config, so the corpus
+    All four methods evaluate the SAME self-generated exam on the SAME corpus:
+    the shared orchestrator (used for the random / motpe / motpe_warm evaluator)
+    and agentic_cost's own orchestrator load the same project config, so the corpus
     index + exam.json cache is shared. Only the proposer differs. ``random`` runs
     before ``motpe_warm`` — a hard data dependency, since ``motpe_warm`` injects
     all of the paired ``random`` cell's completed trials as a free, uncounted
-    transfer prior.
+    transfer prior; cold ``motpe`` injects none, so it has no ordering constraint.
     """
     from agentic_autorag.litellm_runtime import configure_litellm_runtime
     from agentic_autorag.orchestrator import Orchestrator
@@ -140,6 +142,7 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
     seed_label = f"seed_{cfg.seed}"
     agentic_dir = cfg.output_root / "agentic_cost" / seed_label
     random_dir = cfg.output_root / "random" / seed_label
+    motpe_dir = cfg.output_root / "motpe" / seed_label
     motpe_warm_dir = cfg.output_root / "motpe_warm" / seed_label
 
     if not figure_only:
@@ -236,6 +239,38 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
                 len(sr_w.history),
                 max((h.answer_accuracy for h in sr_w.history), default=0.0),
             )
+
+            # motpe (cold) — the SAME two-objective MO-TPE as motpe_warm but with
+            # NO transfer prior (warm_transfer defaults False, no transfer_source_dir),
+            # driving the shared bench evaluator. The cold→warm frontier gap isolates
+            # the value of random's free transfer prior (warm-start ablation). No data
+            # dependency, so ordering is free.
+            motpe_dir.mkdir(parents=True, exist_ok=True)
+            logger.info("=" * 60)
+            logger.info("PARETO | motpe | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
+            logger.info("=" * 60)
+            resume_cold = resume and (motpe_dir / "optuna.db").exists()
+            motpe_opt = MOTPESearch(
+                project=shared.config,
+                storage_dir=motpe_dir,
+                name="motpe",
+                resume=resume_cold,
+            )
+            sr_c = await _run_optimizer_with_ledger(
+                motpe_opt,
+                method_name="motpe",
+                shared=shared,
+                method_dir=motpe_dir,
+                budget=budget,
+                seed=cfg.seed,
+                resume=resume_cold,
+            )
+            _persist_search_result(sr_c, motpe_dir)
+            logger.info(
+                "motpe done | trials=%d | best_accuracy=%.3f",
+                len(sr_c.history),
+                max((h.answer_accuracy for h in sr_c.history), default=0.0),
+            )
         finally:
             await shared.cleanup()
 
@@ -248,6 +283,7 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
     method_points = {
         "agentic_cost": _load_trial_points(agentic_dir),
         "random": _load_trial_points(random_dir),
+        "motpe": _load_trial_points(motpe_dir),
         "motpe_warm": _load_trial_points(motpe_warm_dir),
     }
     method_points = {m: pts for m, pts in method_points.items() if pts}
@@ -496,11 +532,11 @@ def compute_pareto_hypervolumes(method_points: dict[str, list[_TrialPoint]]) -> 
     """Per-method Pareto frontier + hypervolume against a SHARED reference point.
 
     The reference point is computed once over the POOLED trials of every method
-    (``cost_ref = 2 × max positive cost`` across both methods, ``score_ref = 0``),
-    so the two hypervolumes are directly comparable. Computing HV per-method with
-    each method's own ``max(cost)`` would make the two numbers incommensurable —
+    (``cost_ref = 2 × max positive cost`` across all methods, ``score_ref = 0``),
+    so the per-method hypervolumes are directly comparable. Computing HV per-method
+    with each method's own ``max(cost)`` would make the numbers incommensurable —
     the Exp-2 fairness landmine. Frontiers are recomputed here via the framework's
-    ``compute_frontier`` (not any optimizer's self-marked flag) so both methods are
+    ``compute_frontier`` (not any optimizer's self-marked flag) so all methods are
     treated identically.
     """
     from agentic_autorag.optimizer import pareto as fpareto
@@ -529,7 +565,7 @@ def make_pareto_comparison_figure(
     *,
     domain: str = "",
 ) -> None:
-    """Overlay both methods' trial clouds + Pareto frontiers on one figure, with
+    """Overlay every method's trial cloud + Pareto frontier on one figure, with
     each method's shared-reference-point hypervolume in the legend. No-op when
     nothing is plottable."""
     if not any(method_points.values()):
