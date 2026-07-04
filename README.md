@@ -48,17 +48,47 @@ uv sync --extra dev
 # Bench reads .env (symlink the framework's) for AZURE_API_KEY, AZURE_API_BASE.
 ```
 
-## Run the whole experiment (one command)
+## Reproduce Experiment 1 (the accuracy headline)
+
+Experiment 1 is a `(dataset × method × seed)` matrix: **3 datasets** (HotpotQA,
+MuSiQue, MultiHop-RAG) × **5 search methods** (`random`, `motpe`, `motpe_warm`,
+`agentic_opro`, `agentic_score`) × **3 seeds**, at **30 trials** each, plus a
+`kb_greedy` reference at 3 seeds per dataset. All output lands under a single
+`experiment-1/<dataset>/` tree (`output_root`/`output_dir` in the configs).
+
+A 2-worker, seed-major, dependency-gated scheduler (`scripts/run_experiment1.py`)
+runs one `(method, seed)` unit per subprocess with `--resume`, gates `motpe_warm`
+after its paired `random` cell, keeps at most 2 units running (the
+DeepSeek-endpoint-safe ceiling), and renders each dataset's `Table_1.md` with
+`analyze` at the end. Held-out variance comes from the **3 seeds** (one held-out
+eval per `(method, seed)`; `agentic_score` also emits `@10`/`@20` sample-efficiency
+checkpoints — no `replay-holdout`).
 
 ```bash
-# Runs all 3 accuracy datasets + the UniDoc Pareto demo, sequentially, each in
-# its own subprocess. Re-running after a crash auto-resumes every stage and
-# never wipes finished work (only --fresh wipes). See the script header for flags.
-./scripts/run_full_experiment.sh                 # full run (auto resume-or-start)
-./scripts/run_full_experiment.sh --smoke         # tiny 2-trial/2-seed dry run of the whole pipeline
-./scripts/run_full_experiment.sh --only hotpot   # one stage
-./scripts/run_full_experiment.sh --no-pareto     # skip the Pareto stage
+# Validate the plan without running anything (unit DAG, warm→random gates, argv):
+uv run python scripts/run_experiment1.py --dry-run --include-kb-greedy
+
+# Launch detached so it survives the shell/session closing (runs ~1–2 days):
+mkdir -p experiment-1/logs
+setsid nohup uv run python scripts/run_experiment1.py --include-kb-greedy \
+    > experiment-1/logs/nohup.out 2>&1 &
+echo $! > experiment-1/logs/scheduler.pid
+
+# Monitor:
+tail -f experiment-1/logs/scheduler.log        # timestamped START/DONE/FAIL/RETRY lines
+cat experiment-1/logs/STATUS.json              # counts, running units, per-dataset progress, ETA
 ```
+
+**Resume / crash-safety.** Every unit runs with `--resume`; completion is judged
+by **disk state** (`benchmark_results.json` + `@k` sentinels), never the exit code
+(a single-unit `run` exits 0 even on an internal skip). If the scheduler dies, just
+relaunch the same command — finished units are skipped. Transient API failures are
+retried with backoff (≤4 attempts).
+
+**Method-key notes.** OPRO is the key `agentic_opro` (not `opro`); MO-TPE is
+`motpe`/`motpe_warm`; `kb_greedy` is the standalone `kb-greedy` subcommand, not a
+`-m` method. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
+Experiment 2 (UniDoc Pareto) is separate; run it via the `pareto` subcommand.
 
 ## Run one dataset
 
@@ -95,8 +125,8 @@ Method keys: `agentic_score`, `agentic_cost`, `agentic_nokb`, `agentic_nodiag`,
 declared in the config's `methods:` list.
 
 Datasets are selected by config, not flag: each `configs/<dataset>_paper.yaml`
-points at its own `output_root` (`results_hotpot/`, `results_paper_musique/`,
-`results_multihop_rag/`) so the three runs don't collide.
+points at its own `output_root` (`experiment-1/hotpot/`, `experiment-1/musique/`,
+`experiment-1/multihop/`) so the three runs don't collide.
 
 **Scoped reset.** Each run wipes only the per-method dirs it's about to
 write (and any matching `<method>@<k>` checkpoint dirs). Method dirs not
@@ -150,7 +180,7 @@ configs across checkpoints incur no extra cost.
 ## Output layout
 
 ```
-results_hotpot/                          # or results_paper_musique / results_multihop_rag
+experiment-1/hotpot/                     # or experiment-1/musique / experiment-1/multihop
   bench_metadata.json                    # dataset + methods + seeds + max_trials + checkpoints
   filtered_questions.json                # held-out questions excluded across all runs (content-filter union)
   .shared_cache/                         # corpus + exam + embedding ingredients (reused across methods + runs)

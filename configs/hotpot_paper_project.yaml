@@ -18,8 +18,8 @@ meta:
     words each), one paragraph per page/entity rather than full articles.
     Content is encyclopedic prose: entity-centric, factoid-dense, neutral
     register.
-  output_dir: "./results_hotpot/.shared_cache"
-  max_trials: 40
+  output_dir: "./experiment-1/hotpot/.shared_cache"
+  max_trials: 30
   cache_max_gb: 40.0
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
   # for post-hoc analysis but is hidden from the agentic optimizer's prompts:

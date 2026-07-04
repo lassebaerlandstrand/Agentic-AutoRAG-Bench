@@ -1,0 +1,85 @@
+# THROWAWAY smoke config — validates the Experiment-1 pipeline + scheduler
+# end-to-end on a tiny budget. Trimmed search space (1 embedder, 1 generator,
+# no reranker/query-expansion) so it runs in a few minutes. Delete after smoke.
+# Isolated output under experiment-1/_smoke/ so it never touches the real run.
+
+meta:
+  project_name: "smoke-hotpot"
+  corpus_path: "./benchmark_data/hotpot_val_2000/corpus"
+  corpus_description: |
+    English Wikipedia. Documents are short paragraph snippets (~50–100
+    words each), one paragraph per page/entity rather than full articles.
+    Content is encyclopedic prose: entity-centric, factoid-dense, neutral
+    register.
+  output_dir: "./experiment-1/_smoke/.shared_cache"
+  max_trials: 3
+  cache_max_gb: 40.0
+  cost_aware: false
+
+model_aliases:
+  azure/gpt-5-nano: azure/gpt-5-nano-1
+  azure/gpt-5-mini: azure/gpt-5-mini-1
+  azure/gpt-4.1-nano: azure/gpt-4.1-nano-1
+  azure/gpt-4.1-mini: azure/gpt-4.1-mini-1
+
+agent:
+  examiner_model: "bedrock/minimax.minimax-m2.5"
+  optimizer_model: "bedrock/moonshotai.kimi-k2.5"
+  judge_model: "azure_ai/DeepSeek-V3.2"
+  optimizer_reasoning_effort: medium
+  examiner_reasoning_effort: medium
+  concurrency: 8
+
+examiner:
+  # Loads the real frozen validation exam; generation is skipped.
+  custom_exam_path: ./benchmark_data/hotpot_val_2000/validation_exam.json
+  exam_size: 100
+  initial_question_multiplier: 1.8
+  probe_selection: true
+  neighborhood_min_chunks: 20
+  neighborhood_min_words: 5000
+  neighborhood_same_doc_weight: 0.0
+  neighborhood_cross_doc_weight: 1.0
+  min_doc_words: 20
+
+parsing:
+  ocr: false
+  table_structure: false
+  near_duplicate_detection_enabled: true
+  near_duplicate_threshold: 0.85
+
+# TRIMMED search space (smoke only) — 1 fast embedder, 1 reachable generator.
+search_space:
+  chunking:
+    strategies: ["recursive"]
+    chunk_token_size: { values: [256] }
+    chunk_token_overlap: { values: [0] }
+
+  embedding:
+    models:
+      - "BAAI/bge-small-en-v1.5"
+
+  retrieval:
+    index_types: ["vector_only"]
+    top_k: { min: 3, max: 5 }
+    hybrid_alpha: { min: 0.0, max: 1.0 }
+    bm25_vector_fusion: ["alpha"]
+    long_context_reorder: [false]
+
+  query_expansion:
+    strategies: ["none"]
+    models:
+      - "azure/gpt-4o-mini"
+
+  reranker:
+    models:
+      - "none"
+    top_n: { min: 3, max: 5 }
+
+  generator:
+    models:
+      - "azure/gpt-4o-mini"
+    reasoning: false
+    reasoning_effort: medium
+
+  temperature: { min: 1.0, max: 1.0 }

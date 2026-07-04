@@ -16,11 +16,10 @@ methods:
 seeds: [1, 2, 3]
 
 budget:
-  max_trials: 40
+  max_trials: 30
 
 checkpoints:
   agentic_score: [10, 20]
-  agentic_opro: [10, 20]
 
 benchmark:
   name: musique
@@ -38,4 +37,4 @@ hold_out:
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
-output_root: ./results_paper_musique
+output_root: ./experiment-1/musique
