@@ -14,8 +14,8 @@ meta:
     Content is encyclopedic prose: entity-centric, factoid-dense, neutral
     register. Corpus is pre-segmented at the paragraph boundary upstream
     of any chunker.
-  output_dir: "./results_paper_musique/.shared_cache"
-  max_trials: 40
+  output_dir: "./experiment-1/musique/.shared_cache"
+  max_trials: 30
   cache_max_gb: 20.0
   # Score-only mode for the headline Table 1; cost is recorded but hidden from
   # the agentic optimizer's prompts so every method optimizes the same scalar.

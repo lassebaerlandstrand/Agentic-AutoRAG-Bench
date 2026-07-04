@@ -15,8 +15,8 @@ meta:
     entities and quotes, time-anchored events, and topic concentration
     inside each category. Multi-hop questions cross multiple articles in
     the same topic cluster.
-  output_dir: "./results_multihop_rag/.shared_cache"
-  max_trials: 40
+  output_dir: "./experiment-1/multihop/.shared_cache"
+  max_trials: 30
   cache_max_gb: 20.0
   # Score-only mode for the headline Table 1; the agentic_cost bench method
   # overrides cost_aware to true at runtime for the Pareto experiment.

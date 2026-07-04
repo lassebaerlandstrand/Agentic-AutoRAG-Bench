@@ -177,6 +177,7 @@ async def run_kb_greedy(config_path: str | Path, *, seed: int = 42) -> None:
         project_config_path=str(bench.project_config_path),
         trial_config=trial,
         output_path=seed_dir / "benchmark_results.json",
+        qa_path_override=bench.hold_out_qa_path,
         judge_model=bench.hold_out_judge_model,
         limit=bench.hold_out_limit,
         concurrency=bench.hold_out_concurrency,

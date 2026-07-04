@@ -32,7 +32,7 @@ methods:
 seeds: [1, 2, 3]
 
 budget:
-  max_trials: 40
+  max_trials: 30
 
 # Per-method early-stopping checkpoints: after a method's full
 # ``max_trials``-budget search finishes, also evaluate the best config seen
@@ -44,7 +44,6 @@ budget:
 # MO-TPE/random when given fewer trials", not the inverse).
 checkpoints:
   agentic_score: [10, 20]
-  agentic_opro: [10, 20]
 
 benchmark:
   name: hotpot_qa
@@ -62,4 +61,4 @@ hold_out:
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
-output_root: ./results_hotpot
+output_root: ./experiment-1/hotpot
