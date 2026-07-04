@@ -1,4 +1,4 @@
-"""Tests for the benchmark real-QA exam builder (framework ``ground_exam`` mocked).
+"""Tests for the benchmark validation exam builder (framework ``ground_exam`` mocked).
 
 The builder's job is the benchmark policy on top of ``ground_exam``: fill each
 answerable stratum to a held-out-matched target with fully grounded (tier-C)
@@ -16,7 +16,7 @@ import pytest
 from agentic_autorag.benchmarks.schema import BenchmarkQAPair
 from agentic_autorag.config.models import OpenEndedQuestion
 
-from agentic_autorag_bench.real_exam import build_real_exam, map_reasoning_type
+from agentic_autorag_bench.validation_exam import build_validation_exam, map_reasoning_type
 
 
 def _to_tier_c(q: OpenEndedQuestion) -> OpenEndedQuestion:
@@ -78,8 +78,8 @@ def test_reasoning_type_never_numeric() -> None:
 async def test_exam_is_all_tier_c_and_matches_holdout_mix() -> None:
     pool = _pool({"bridge": (60, 0), "comparison": (40, 0)})
     holdout_distribution = {"bridge": 60, "comparison": 40}
-    with patch("agentic_autorag_bench.real_exam.ground_exam", new=_fake_ground_exam):
-        exam, prov = await build_real_exam(
+    with patch("agentic_autorag_bench.validation_exam.ground_exam", new=_fake_ground_exam):
+        exam, prov = await build_validation_exam(
             pool, {}, holdout_distribution, extractor_model="test/model", exam_size=50, concurrency=4
         )
     assert len(exam) == 50
@@ -97,8 +97,8 @@ async def test_replaces_ungroundable_until_target_met() -> None:
     # taking the first N candidates would have pulled in 'bad' (tier-B) rows.
     pool = _pool({"bridge": (20, 20)})
     holdout_distribution = {"bridge": 10}
-    with patch("agentic_autorag_bench.real_exam.ground_exam", new=_fake_ground_exam):
-        exam, prov = await build_real_exam(
+    with patch("agentic_autorag_bench.validation_exam.ground_exam", new=_fake_ground_exam):
+        exam, prov = await build_validation_exam(
             pool, {}, holdout_distribution, extractor_model="test/model", exam_size=10, concurrency=4
         )
     assert len(exam) == 10
@@ -115,10 +115,12 @@ async def test_fails_loud_when_stratum_cannot_fill() -> None:
     pool = _pool({"bridge": (90, 0), "comparison": (0, 10)})
     holdout_distribution = {"bridge": 90, "comparison": 10}
     with (
-        patch("agentic_autorag_bench.real_exam.ground_exam", new=_fake_ground_exam),
+        patch("agentic_autorag_bench.validation_exam.ground_exam", new=_fake_ground_exam),
         pytest.raises(ValueError, match="exhausted"),
     ):
-        await build_real_exam(pool, {}, holdout_distribution, extractor_model="test/model", exam_size=50, concurrency=4)
+        await build_validation_exam(
+            pool, {}, holdout_distribution, extractor_model="test/model", exam_size=50, concurrency=4
+        )
 
 
 def _mixed_pool() -> list[BenchmarkQAPair]:
@@ -151,8 +153,8 @@ def _mixed_pool() -> list[BenchmarkQAPair]:
 async def test_abstention_stratum_passes_through_without_grounding() -> None:
     pool = _mixed_pool()
     holdout_distribution = {"inference_query": 60, "null_query": 40}
-    with patch("agentic_autorag_bench.real_exam.ground_exam", new=_fake_ground_exam):
-        exam, prov = await build_real_exam(
+    with patch("agentic_autorag_bench.validation_exam.ground_exam", new=_fake_ground_exam):
+        exam, prov = await build_validation_exam(
             pool, {}, holdout_distribution, extractor_model="test/model", exam_size=50, concurrency=4
         )
     assert len(exam) == 50
@@ -196,10 +198,12 @@ async def test_abstention_stratum_fails_loud_when_too_few_rows() -> None:
     ]
     holdout_distribution = {"inference_query": 50, "null_query": 50}  # wants ~25 abstention, only 3 exist
     with (
-        patch("agentic_autorag_bench.real_exam.ground_exam", new=_fake_ground_exam),
+        patch("agentic_autorag_bench.validation_exam.ground_exam", new=_fake_ground_exam),
         pytest.raises(ValueError, match="abstention stratum"),
     ):
-        await build_real_exam(pool, {}, holdout_distribution, extractor_model="test/model", exam_size=50, concurrency=4)
+        await build_validation_exam(
+            pool, {}, holdout_distribution, extractor_model="test/model", exam_size=50, concurrency=4
+        )
 
 
 class _FakePipelineConfig:
@@ -251,8 +255,8 @@ async def test_null_query_row_scores_through_framework_abstention_path() -> None
             metadata={"question_type": "null_query"},
         )
     ]
-    with patch("agentic_autorag_bench.real_exam.ground_exam", new=_fake_ground_exam):
-        exam, _ = await build_real_exam(
+    with patch("agentic_autorag_bench.validation_exam.ground_exam", new=_fake_ground_exam):
+        exam, _ = await build_validation_exam(
             pool, {}, {"null_query": 1}, extractor_model="test/model", exam_size=1, concurrency=1
         )
     assert exam[0].grounding_tier == "A"

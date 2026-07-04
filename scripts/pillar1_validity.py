@@ -1,17 +1,17 @@
 """Pillar 1 — exam-generation validity harness.
 
 Validates the self-generated exam as a quality signal by correlating its score
-against the real-QA-exam score across configs drawn from ``random``'s Pillar-2
-trajectory. It does NOT re-run the optimizer or the held-out gold: it reads each
-``random`` trial's (config, real-QA-exam accuracy) from ``history.jsonl``,
-samples configs across the score range, re-scores each on the self-exam via the
-framework Orchestrator, and reports Spearman rho / Kendall tau + selection
-regret.
+against the validation-exam score across configs drawn from ``random``'s
+Pillar-2 trajectory. It does NOT re-run the optimizer or the held-out gold: it
+reads each ``random`` trial's (config, validation-exam accuracy) from
+``history.jsonl``, samples configs across the score range, re-scores each on the
+self-exam via the framework Orchestrator, and reports Spearman rho / Kendall tau
++ selection regret.
 
 The self-exam is generated into a separate ``meta.output_dir`` (a sibling of the
 Pillar-2 shared cache) from a copy of the dataset's paper project YAML with
-``examiner.custom_exam_path`` removed — so it can't collide with the real-QA exam
-the headline optimizes against.
+``examiner.custom_exam_path`` removed — so it can't collide with the validation
+exam the headline optimizes against.
 
 Pure functions (``load_trajectory`` / ``sample_configs`` / ``compute_validity`` /
 ``build_self_exam_project``) are import-safe and unit-tested; only
@@ -37,14 +37,14 @@ class TrajectoryPoint:
     trial_number: int
     seed: str
     config: dict
-    real_qa_score: float
+    validation_score: float
 
 
 def load_trajectory(random_results_dir: Path) -> list[TrajectoryPoint]:
     """Read every ``seed_*/details/history.jsonl`` under a ``random`` results dir.
 
     Each history record carries the trial ``config`` and its ``answer_accuracy``
-    on the optimization exam — which, in the Pillar-2 setup, is the real-QA exam.
+    on the optimization exam — which, in the Pillar-2 setup, is the validation exam.
     """
     random_results_dir = Path(random_results_dir)
     points: list[TrajectoryPoint] = []
@@ -64,14 +64,14 @@ def load_trajectory(random_results_dir: Path) -> list[TrajectoryPoint]:
                     trial_number=int(rec.get("trial_number", 0)),
                     seed=seed,
                     config=rec["config"],
-                    real_qa_score=float(rec["answer_accuracy"]),
+                    validation_score=float(rec["answer_accuracy"]),
                 )
             )
     return points
 
 
 def sample_configs(points: list[TrajectoryPoint], n: int = DEFAULT_SAMPLE_SIZE) -> list[TrajectoryPoint]:
-    """Pick ``n`` configs spread evenly across the real-QA score range.
+    """Pick ``n`` configs spread evenly across the validation score range.
 
     Deterministic: sorts by score and takes evenly-spaced ranks, so the sample
     spans low/mid/high without an RNG. Returns everything when the pool is
@@ -81,7 +81,7 @@ def sample_configs(points: list[TrajectoryPoint], n: int = DEFAULT_SAMPLE_SIZE) 
         raise ValueError("n must be positive")
     if len(points) <= n:
         return list(points)
-    ordered = sorted(points, key=lambda p: (p.real_qa_score, p.seed, p.trial_number))
+    ordered = sorted(points, key=lambda p: (p.validation_score, p.seed, p.trial_number))
     picked: list[TrajectoryPoint] = []
     seen: set[int] = set()
     for i in range(n):
@@ -100,35 +100,35 @@ class ValidityReport:
     kendall_tau: float
     kendall_p: float
     selection_regret: float
-    real_scores: list[float]
+    validation_scores: list[float]
     self_scores: list[float]
 
 
-def compute_validity(real_scores: list[float], self_scores: list[float]) -> ValidityReport:
-    """Rank-correlate self-exam vs real-QA-exam scores + selection regret.
+def compute_validity(validation_scores: list[float], self_scores: list[float]) -> ValidityReport:
+    """Rank-correlate self-exam vs validation-exam scores + selection regret.
 
-    ``selection_regret`` is the real-QA accuracy given up by picking the
-    self-exam-best config instead of the real-QA-best config, among the sample —
+    ``selection_regret`` is the validation accuracy given up by picking the
+    self-exam-best config instead of the validation-best config, among the sample —
     the metric that survives even a weak rho.
     """
-    if len(real_scores) != len(self_scores):
-        raise ValueError("real_scores and self_scores must be the same length")
-    if len(real_scores) < 2:
+    if len(validation_scores) != len(self_scores):
+        raise ValueError("validation_scores and self_scores must be the same length")
+    if len(validation_scores) < 2:
         raise ValueError("need at least 2 points to correlate")
 
-    rho, rho_p = spearmanr(real_scores, self_scores)
-    tau, tau_p = kendalltau(real_scores, self_scores)
-    best_real = max(real_scores)
+    rho, rho_p = spearmanr(validation_scores, self_scores)
+    tau, tau_p = kendalltau(validation_scores, self_scores)
+    best_validation = max(validation_scores)
     self_best_idx = max(range(len(self_scores)), key=lambda i: self_scores[i])
-    regret = best_real - real_scores[self_best_idx]
+    regret = best_validation - validation_scores[self_best_idx]
     return ValidityReport(
-        n=len(real_scores),
+        n=len(validation_scores),
         spearman_rho=float(rho),
         spearman_p=float(rho_p),
         kendall_tau=float(tau),
         kendall_p=float(tau_p),
         selection_regret=float(regret),
-        real_scores=list(real_scores),
+        validation_scores=list(validation_scores),
         self_scores=list(self_scores),
     )
 
@@ -138,7 +138,7 @@ def build_self_exam_project(paper_project_path: Path, self_exam_output_dir: Path
 
     Strips ``examiner.custom_exam_path`` (so the Orchestrator generates the
     corpus self-exam) and repoints ``meta.output_dir`` at a dedicated dir so the
-    self-exam cache never collides with the real-QA exam run.
+    self-exam cache never collides with the validation exam run.
     """
     paper_project_path = Path(paper_project_path)
     self_exam_output_dir = Path(self_exam_output_dir)
@@ -191,7 +191,7 @@ def main() -> None:
     sampled = sample_configs(points, n=args.sample_size)
     self_project = build_self_exam_project(args.paper_project, args.self_exam_output)
     self_scores = asyncio.run(score_configs_on_self_exam(self_project, [p.config for p in sampled]))
-    report = compute_validity([p.real_qa_score for p in sampled], self_scores)
+    report = compute_validity([p.validation_score for p in sampled], self_scores)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(asdict(report), indent=2) + "\n", encoding="utf-8")
     print(f"Pillar 1 validity ({report.n} configs) -> {args.output}")

@@ -38,10 +38,10 @@ agent:
   concurrency: 10
 
 examiner:
-  # Headline (Exp 1) optimizes against the real-QA exam built from MuSiQue's own
+  # Headline (Exp 1) optimizes against the validation exam built from MuSiQue's own
   # held-in questions (LLM-extracted, verify_source_facts-grounded tier-C spans),
   # not the corpus self-exam. Loaded via this path; generation is skipped.
-  custom_exam_path: ./benchmark_data/musique_val_2417/real_qa_exam.json
+  custom_exam_path: ./benchmark_data/musique_val_2417/validation_exam.json
   exam_size: 100
   initial_question_multiplier: 1.8
   probe_selection: true

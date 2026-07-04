@@ -1,12 +1,14 @@
-"""Build a fully-grounded real-QA exam from a benchmark's own held-in questions.
+"""Build a fully-grounded validation exam from a benchmark's own held-in questions.
 
-Each answerable optimization-reservoir question carries a gold answer and the
-ids of its supporting corpus documents but no span-level evidence. This module
-recovers tier-C grounding by reusing the framework's ``ground_exam`` (LLM span
-extraction + ``verify_source_facts``), and layers the benchmark policy on top:
-the exam is exactly ``exam_size`` questions with a difficulty mix matched to the
-held-out slice. Because some questions can't be grounded, candidates are drawn
-per stratum lazily and the ones that fail are **replaced** until each stratum
+The validation exam is the set the optimizer scores configs against during
+trials (the held-out gold slice is the separate test set). Each answerable
+optimization-reservoir question carries a gold answer and the ids of its
+supporting corpus documents but no span-level evidence. This module recovers
+tier-C grounding by reusing the framework's ``ground_exam`` (LLM span extraction
++ ``verify_source_facts``), and layers the benchmark policy on top: the exam is
+exactly ``exam_size`` questions with a difficulty mix matched to the held-out
+slice. Because some questions can't be grounded, candidates are drawn per
+stratum lazily and the ones that fail are **replaced** until each stratum
 reaches its target — so every answerable exam question is span-grounded.
 
 Benchmark-labeled unanswerable rows (``question_type == "null_query"``) form a
@@ -67,7 +69,7 @@ def map_reasoning_type(stratify_key: str, stratum_value: str) -> str | None:
     return _REASONING_TYPE_MAP.get((stratify_key, str(stratum_value)), _DEFAULT_REASONING_TYPE)
 
 
-class RealExamProvenance(BaseModel):
+class ValidationExamProvenance(BaseModel):
     """Reproducibility record written next to the exam file."""
 
     n_pool: int
@@ -160,7 +162,7 @@ async def _fill_stratum(
     return selected, pos
 
 
-async def build_real_exam(
+async def build_validation_exam(
     optimization_pool: list[BenchmarkQAPair],
     corpus: dict[str, str],
     holdout_distribution: dict[str, int],
@@ -172,8 +174,8 @@ async def build_real_exam(
     stratify_key: str | None = None,
     concurrency: int = 10,
     seed: int = 42,
-) -> tuple[list[OpenEndedQuestion], RealExamProvenance]:
-    """Build a fully-grounded real-QA exam matched to the held-out difficulty mix.
+) -> tuple[list[OpenEndedQuestion], ValidationExamProvenance]:
+    """Build a fully-grounded validation exam matched to the held-out difficulty mix.
 
     ``holdout_distribution`` (per-stratum held-out counts) sets the mix: the exam
     is apportioned across strata in the same proportions. Answerable strata are
@@ -240,7 +242,7 @@ async def build_real_exam(
     qa_sha = hashlib.sha256(
         json.dumps([p.model_dump(mode="json") for p in optimization_pool], sort_keys=True).encode("utf-8")
     ).hexdigest()
-    provenance = RealExamProvenance(
+    provenance = ValidationExamProvenance(
         n_pool=len(optimization_pool),
         exam_size=len(exam),
         all_tier_c=all_tier_c,
@@ -257,9 +259,9 @@ async def build_real_exam(
     return exam, provenance
 
 
-def write_real_exam(
+def write_validation_exam(
     exam: list[OpenEndedQuestion],
-    provenance: RealExamProvenance,
+    provenance: ValidationExamProvenance,
     output_path: Path,
 ) -> Path:
     """Write the exam JSON and a sibling ``<stem>_provenance.json``."""

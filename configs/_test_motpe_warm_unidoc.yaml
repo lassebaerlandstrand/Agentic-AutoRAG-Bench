@@ -1,0 +1,18 @@
+# TEST entry config (scratch) — MO-TPE warm validation on UniDoc.
+# Consumed by the scratch driver (_motpe_warm_test_driver.py), NOT the stock
+# `pareto` command: we run ONLY random -> motpe_warm (two-objective), skipping
+# agentic_cost. Same ParetoConfig shape as unidoc_pareto.yaml.
+
+project_config: ./_test_motpe_warm_unidoc_project.yaml
+
+seed: 1
+
+budget:
+  max_trials: 40
+
+corpus:
+  domain: healthcare
+  max_pdfs: 230
+  max_images: 20
+
+output_root: ./results_test_motpe_warm_unidoc
