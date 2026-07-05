@@ -231,11 +231,11 @@ def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Pat
                     std = np.nanstd(padded, axis=0)
                 x = np.arange(1, padded.shape[1] + 1)
                 ax.fill_between(x, mean - std, mean + std, alpha=0.15, color=color)
-                (line,) = ax.plot(x, mean, "o-", color=color, markersize=3, linewidth=1.4)
+                (line,) = ax.plot(x, mean, "o-", color=color, markersize=1.4, linewidth=1.4)
             else:
                 scores = per_seed[0]
                 (line,) = ax.plot(
-                    np.arange(1, scores.size + 1), scores, "o-", color=color, markersize=3, linewidth=1.4
+                    np.arange(1, scores.size + 1), scores, "o-", color=color, markersize=1.4, linewidth=1.4
                 )
             handles.setdefault(method, line)
         ax.set_title(header)
