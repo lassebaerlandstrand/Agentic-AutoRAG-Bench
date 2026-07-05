@@ -1,0 +1,6 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "044bd5fc49ded7a1", "tokens_credited": 1641833, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "5fafe4aacc4685e8", "tokens_credited": 1471618, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "11ee3421044c53eb", "tokens_credited": 1635324, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "7b07b1834f685418", "tokens_credited": 1612170, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "3de03489c8e35124", "tokens_credited": 1471618, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "7762d40a13ad4a39", "tokens_credited": 1511640, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}

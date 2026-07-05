@@ -1,0 +1,17 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "bcdee473422c12f9", "tokens_credited": 1568074, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "817c6f3aff73da4c", "tokens_credited": 1568074, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "f4e9642235e912bc", "tokens_credited": 1735740, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "9a0bde582e178bdd", "tokens_credited": 1498626, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 5, "cache_kind": "embeddings", "cache_key": "128d883f50646355", "tokens_credited": 814904, "embedding_model": "sentence-transformers/all-MiniLM-L6-v2", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "80d93bfcbe0b97c0", "tokens_credited": 1471618, "embedding_model": "Snowflake/snowflake-arctic-embed-xs", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "cd018fbd44c06860", "tokens_credited": 1418706, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 10, "cache_kind": "embeddings", "cache_key": "716f564468844b16", "tokens_credited": 1588310, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 11, "cache_kind": "embeddings", "cache_key": "8b90b6b9354ff952", "tokens_credited": 1571287, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 13, "cache_kind": "embeddings", "cache_key": "623c60112b3febc7", "tokens_credited": 1601914, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "5acb463277c53b64", "tokens_credited": 1568715, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "9daa4ee647b456b3", "tokens_credited": 1498749, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": 18, "cache_kind": "embeddings", "cache_key": "a83062628ab8465c", "tokens_credited": 1532778, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 23, "cache_kind": "embeddings", "cache_key": "e9ab827cb6d3e800", "tokens_credited": 1430854, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 24, "cache_kind": "embeddings", "cache_key": "8747084b8e6530ad", "tokens_credited": 1430854, "embedding_model": "Snowflake/snowflake-arctic-embed-xs", "phase": "trial"}
+{"trial_number": 26, "cache_kind": "embeddings", "cache_key": "36877fc233cdd12e", "tokens_credited": 1589086, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 27, "cache_kind": "embeddings", "cache_key": "a2836578e3713682", "tokens_credited": 1588757, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}

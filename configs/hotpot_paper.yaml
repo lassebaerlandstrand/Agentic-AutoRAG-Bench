@@ -8,23 +8,24 @@
 # top_k/hybrid_alpha × ...). Dial down inline overrides for dev runs.
 #
 # Accuracy-experiment headline slate (locked, 5 search methods). Under test:
-# agentic_score (ours: KB on, diagnosis on). LLM-optimizer rival: agentic_opro
-# (faithful OPRO — no KB, no diagnosis, compact config→score history). Statistical
-# rivals: random (floor) → motpe (cold group-multivariate MO-TPE, syftr-class) →
-# motpe_warm (motpe + a free, uncounted transfer prior seeded from this run's
-# random cell). The diagnosis/KB ablations (agentic_nodiag, agentic_nokb) are
-# Hotpot-only and run AFTER the headline via configs/hotpot_ablation.yaml on the
-# same frozen exam, so the decomposition ladder (agentic_opro → agentic_nodiag →
-# agentic_score; KB-value = nodiag−opro, diagnosis-value = score−nodiag) is
-# reconstructed across the two runs. agentic_cost belongs to the Pareto
-# experiment (unidoc), not here. kb_greedy is a single-config reference run via
-# its own script, not a matrix method.
+# agentic_score (ours: KB on, diagnosis on). Ablated LLM-optimizer:
+# agentic_nokb_nodiag (KB off, diagnosis off, compact config→score history).
+# Statistical rivals: random (floor) → motpe (cold group-multivariate MO-TPE,
+# syftr-class) → motpe_warm (motpe + a free, uncounted transfer prior seeded
+# from this run's random cell). The diagnosis/KB ablations (agentic_nodiag,
+# agentic_nokb) are Hotpot-only and run AFTER the headline via
+# configs/hotpot_ablation.yaml on the same frozen exam, so the decomposition
+# ladder (agentic_nokb_nodiag → agentic_nodiag → agentic_score; KB-value =
+# nodiag−nokb_nodiag, diagnosis-value = score−nodiag) is reconstructed across
+# the two runs. agentic_cost belongs to the Pareto experiment (unidoc), not
+# here. kb_greedy is a single-config reference run via its own script, not a
+# matrix method.
 
 project_config: ./hotpot_paper_project.yaml
 
 methods:
   - agentic_score      # full agentic: KB on, diagnosis on — method under test
-  - agentic_opro       # naive LLM proposer: compact (config→score) history, no KB, no diagnosis
+  - agentic_nokb_nodiag  # KB off, diagnosis off, compact (config→score) history proposer
   - motpe              # cold group-multivariate MO-TPE (syftr-class statistical search)
   - motpe_warm         # MO-TPE + free uncounted transfer prior from random (runs after random)
   - random             # exploration floor (also motpe_warm's transfer source)

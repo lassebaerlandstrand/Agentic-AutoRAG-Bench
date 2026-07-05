@@ -52,7 +52,7 @@ uv sync --extra dev
 
 Experiment 1 is a `(dataset × method × seed)` matrix: **3 datasets** (HotpotQA,
 MuSiQue, MultiHop-RAG) × **5 search methods** (`random`, `motpe`, `motpe_warm`,
-`agentic_opro`, `agentic_score`) × **3 seeds**, at **30 trials** each, plus a
+`agentic_nokb_nodiag`, `agentic_score`) × **3 seeds**, at **30 trials** each, plus a
 `kb_greedy` reference at 3 seeds per dataset. All output lands under a single
 `experiment-1/<dataset>/` tree (`output_root`/`output_dir` in the configs).
 
@@ -85,9 +85,10 @@ by **disk state** (`benchmark_results.json` + `@k` sentinels), never the exit co
 relaunch the same command — finished units are skipped. Transient API failures are
 retried with backoff (≤4 attempts).
 
-**Method-key notes.** OPRO is the key `agentic_opro` (not `opro`); MO-TPE is
-`motpe`/`motpe_warm`; `kb_greedy` is the standalone `kb-greedy` subcommand, not a
-`-m` method. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
+**Method-key notes.** The KB+diagnosis ablation (agentic optimizer with KB off,
+diagnosis off, compact score-history proposer) is the key `agentic_nokb_nodiag`;
+MO-TPE is `motpe`/`motpe_warm`; `kb_greedy` is the standalone `kb-greedy`
+subcommand, not a `-m` method. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
 Experiment 2 (UniDoc Pareto) is separate; run it via the `pareto` subcommand.
 
 ## Run one dataset

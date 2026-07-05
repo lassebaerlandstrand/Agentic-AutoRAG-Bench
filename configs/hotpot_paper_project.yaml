@@ -1,6 +1,6 @@
 # Paper-scale framework project config — HotpotQA distractor, expanded space.
 #
-# The active accuracy matrix is { agentic_score, agentic_nodiag, agentic_opro,
+# The active accuracy matrix is { agentic_score, agentic_nodiag, agentic_nokb_nodiag,
 # motpe, motpe_warm, random }; agentic_cost is the Pareto experiment. The original Marker-Inc
 # AutoRAG baseline was decoupled on 2026-05-27 (see
 # agentic_autorag_bench/_deprecated/README.md). With AutoRAG gone, the search

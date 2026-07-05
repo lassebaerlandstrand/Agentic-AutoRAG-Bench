@@ -1,0 +1,9 @@
+{
+  "method": "kb_greedy",
+  "seed": 2,
+  "deterministic": true,
+  "optimizer_usd": 0.0,
+  "trial_usd_total": 0.0,
+  "wall_clock_s": 0.0,
+  "n_trials_completed": 1
+}

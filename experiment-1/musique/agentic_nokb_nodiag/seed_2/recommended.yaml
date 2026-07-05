@@ -1,0 +1,20 @@
+# Recommended config: trial 5
+# accuracy: 0.4100  cost/q: $0.0052
+chunking_strategy: recursive
+chunk_token_size: 256
+chunk_token_overlap: 32
+embedding_model: ibm-granite/granite-embedding-english-r2
+index_type: hybrid_bm25_vector
+top_k: 15
+hybrid_alpha: 0.3
+bm25_vector_fusion: alpha
+long_context_reorder: true
+passage_compressor: none
+reranker: Alibaba-NLP/gte-reranker-modernbert-base
+reranker_top_n: 8
+query_expansion: hyde
+compressor_llm: null
+expander_llm: azure/gpt-4o-mini
+generator_llm: azure/o4-mini
+temperature: 1.0
+reasoning: true

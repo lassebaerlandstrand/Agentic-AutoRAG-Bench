@@ -63,7 +63,7 @@ DATASET_ORDER = {"hotpot": 0, "musique": 1, "multihop": 2}
 METHOD_ORDER = {
     "random": 0,
     "agentic_score": 1,
-    "agentic_opro": 2,
+    "agentic_nokb_nodiag": 2,
     "motpe": 3,
     "motpe_warm": 4,
     "kb_greedy": 5,
