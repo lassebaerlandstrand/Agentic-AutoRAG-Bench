@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
@@ -11,8 +13,12 @@ from agentic_autorag.output_layout import RunLayout
 
 from agentic_autorag_bench.pareto import (
     ParetoConfig,
-    _describe_config,
     _ensure_corpus,
+    method_seed_complete,
+    run_pareto,
+)
+from agentic_autorag_bench.plots import (
+    _describe_config,
     _load_trial_points,
     _short_model,
     _TrialPoint,
@@ -242,8 +248,6 @@ def test_pareto_config_load_resolves_paths(tmp_path) -> None:
 
 
 def _cfg(output_root) -> ParetoConfig:
-    from pathlib import Path
-
     return ParetoConfig(
         project_config_path=Path("proj.yaml"),
         seed=1,
@@ -324,3 +328,161 @@ def test_make_pareto_comparison_figure_no_points_is_noop(tmp_path) -> None:
     out = tmp_path / "figures" / "pareto_comparison.png"
     make_pareto_comparison_figure({"agentic_cost": [], "motpe": []}, {"methods": {}}, out)
     assert not out.exists()
+
+
+# ------------------------------------------ methods/seeds config + selection
+
+
+def test_pareto_config_parses_methods_and_seeds(tmp_path) -> None:
+    (tmp_path / "proj.yaml").write_text("meta:\n  corpus_path: ./corpus\n  output_dir: ./out/.shared_cache\n")
+    (tmp_path / "entry.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "project_config": "./proj.yaml",
+                "seed": 2,
+                "budget": {"max_trials": 30},
+                "methods": ["agentic_cost", "motpe"],
+                "seeds": [1, 2, 3],
+                "output_root": "./out",
+            }
+        )
+    )
+    cfg = ParetoConfig.load(tmp_path / "entry.yaml")
+    assert cfg.methods == ["agentic_cost", "motpe"]
+    assert cfg.seeds == [1, 2, 3]
+    assert cfg.max_trials == 30
+
+
+def test_pareto_config_defaults_methods_and_seeds(tmp_path) -> None:
+    (tmp_path / "proj.yaml").write_text("meta:\n  corpus_path: ./corpus\n  output_dir: ./out/.shared_cache\n")
+    (tmp_path / "entry.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "project_config": "./proj.yaml",
+                "seed": 5,
+                "budget": {"max_trials": 30},
+                "output_root": "./out",
+            }
+        )
+    )
+    cfg = ParetoConfig.load(tmp_path / "entry.yaml")
+    # default method slate (canonical run order) and seeds default to [seed]
+    assert cfg.methods == ["agentic_cost", "random", "motpe_warm", "motpe"]
+    assert cfg.seeds == [5]
+
+
+# -------------------------------------------------- completion oracle (disk)
+
+
+def test_method_seed_complete_reads_optimizer_meta(tmp_path) -> None:
+    root = tmp_path / "out"
+    d = root / "motpe" / "seed_1"
+    d.mkdir(parents=True)
+    assert method_seed_complete(root, "motpe", 1, 30) is False  # no meta yet
+    (d / "optimizer_meta.json").write_text(json.dumps({"n_trials_completed": 12}))
+    assert method_seed_complete(root, "motpe", 1, 30) is False  # short of target
+    (d / "optimizer_meta.json").write_text(json.dumps({"n_trials_completed": 30}))
+    assert method_seed_complete(root, "motpe", 1, 30) is True
+    (d / "optimizer_meta.json").write_text(json.dumps({"n_trials_completed": 31}))
+    assert method_seed_complete(root, "motpe", 1, 30) is True  # >= target
+    (d / "optimizer_meta.json").write_text("{ not json")
+    assert method_seed_complete(root, "motpe", 1, 30) is False  # corrupt -> not done
+
+
+# -------------------------------------- run_pareto: setup-only + method gate
+
+
+def _write_pareto_configs(tmp_path, *, methods=None, seeds=None, max_trials=3):
+    """A minimal real (entry, project) config pair; returns (entry_path, cache_dir)."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    (corpus / "healthcare_stub.pdf").write_bytes(b"%PDF-1.4 stub")
+    out = tmp_path / "out"
+    cache = out / ".shared_cache"
+    (tmp_path / "proj.yaml").write_text(f"meta:\n  corpus_path: {corpus}\n  output_dir: {cache}\n")
+    data = {
+        "project_config": "./proj.yaml",
+        "seed": 1,
+        "budget": {"max_trials": max_trials},
+        "corpus": {"domain": "healthcare", "max_pdfs": 5, "max_images": 0},
+        "output_root": str(out),
+    }
+    if methods is not None:
+        data["methods"] = methods
+    if seeds is not None:
+        data["seeds"] = seeds
+    entry = tmp_path / "entry.yaml"
+    entry.write_text(yaml.safe_dump(data))
+    return entry, cache
+
+
+def _mock_orchestrator():
+    inst = MagicMock()
+    inst.setup = AsyncMock()
+    inst.cleanup = AsyncMock()
+    return inst
+
+
+def test_run_pareto_setup_only_writes_marker_and_runs_no_trials(tmp_path) -> None:
+    from agentic_autorag_bench.pareto import SETUP_MARKER
+
+    entry, cache = _write_pareto_configs(tmp_path)
+    orch = _mock_orchestrator()
+    with (
+        patch("agentic_autorag.litellm_runtime.configure_litellm_runtime") as m_lite,
+        patch("agentic_autorag_bench.pareto._ensure_corpus"),
+        patch("agentic_autorag.orchestrator.Orchestrator", return_value=orch),
+        patch("agentic_autorag_bench.methods.agentic.AgenticOptimizer") as m_ag,
+        patch("agentic_autorag_bench.methods.random.RandomSearch") as m_rand,
+        patch("agentic_autorag_bench.methods.motpe.MOTPESearch") as m_motpe,
+    ):
+        asyncio.run(run_pareto(entry, setup_only=True))
+
+    assert (cache / SETUP_MARKER).exists()  # single-writer warmup marker
+    orch.setup.assert_awaited_once()
+    m_lite.assert_called_once()
+    m_ag.assert_not_called()  # no trials run under --setup-only
+    m_rand.assert_not_called()
+    m_motpe.assert_not_called()
+
+
+def test_run_pareto_agentic_only_skips_shared_orchestrator_and_figures(tmp_path) -> None:
+    entry, cache = _write_pareto_configs(tmp_path)
+    sr = MagicMock()
+    sr.history = []
+    ag_inst = MagicMock()
+    ag_inst.search = AsyncMock(return_value=sr)
+    with (
+        patch("agentic_autorag.litellm_runtime.configure_litellm_runtime"),
+        patch("agentic_autorag_bench.pareto._ensure_corpus"),
+        patch("agentic_autorag.orchestrator.Orchestrator") as m_orch,
+        patch("agentic_autorag_bench.methods.agentic.AgenticOptimizer", return_value=ag_inst) as m_ag,
+        patch("agentic_autorag_bench.methods.random.RandomSearch") as m_rand,
+        patch("agentic_autorag_bench.methods.motpe.MOTPESearch") as m_motpe,
+        patch("agentic_autorag_bench.run._persist_search_result") as m_persist,
+    ):
+        asyncio.run(run_pareto(entry, methods=["agentic_cost"], seed=1))
+
+    m_ag.assert_called_once()
+    m_orch.assert_not_called()  # agentic_cost carries its own orchestrator
+    m_rand.assert_not_called()
+    m_motpe.assert_not_called()
+    m_persist.assert_called_once()
+    # a --methods subset defers figures to the --figure-only finalize pass
+    assert not (cache.parent / "hypervolume.json").exists()
+
+
+def test_run_pareto_motpe_warm_requires_completed_random_transfer_source(tmp_path) -> None:
+    entry, _cache = _write_pareto_configs(tmp_path)
+    orch = _mock_orchestrator()
+    with (
+        patch("agentic_autorag.litellm_runtime.configure_litellm_runtime"),
+        patch("agentic_autorag_bench.pareto._ensure_corpus"),
+        patch("agentic_autorag.orchestrator.Orchestrator", return_value=orch),
+        patch("agentic_autorag_bench.methods.motpe.MOTPESearch") as m_motpe,
+        pytest.raises(RuntimeError, match="transfer prior"),
+    ):
+        # motpe_warm without random in the invocation, and no completed random on disk
+        asyncio.run(run_pareto(entry, methods=["motpe_warm"], seed=1))
+    m_motpe.assert_not_called()
+    orch.cleanup.assert_awaited_once()  # shared orchestrator still torn down

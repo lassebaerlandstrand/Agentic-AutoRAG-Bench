@@ -12,8 +12,16 @@ project_config: ./unidoc_pareto_project.yaml
 
 seed: 1
 
+# Method slate + seeds for the full Exp-2 Pareto sweep. The `pareto` CLI and the
+# scripts/run_experiment2.py scheduler select subsets of these; when neither is
+# passed the full list runs (all four methods, single `seed` above). `random`
+# is motpe_warm's on-disk transfer source, so a motpe_warm cell requires the
+# same-seed random cell complete first (the scheduler encodes that edge).
+methods: [agentic_cost, random, motpe, motpe_warm]
+seeds: [1, 2, 3]
+
 budget:
-  max_trials: 40
+  max_trials: 30
 
 # Corpus is downloaded on first run if meta.corpus_path (in the project config)
 # is empty. PDFs + a few first-page images, to exercise Docling on more file
@@ -23,4 +31,4 @@ corpus:
   max_pdfs: 230
   max_images: 20
 
-output_root: ./results_unidoc
+output_root: ./experiment-2/unidoc

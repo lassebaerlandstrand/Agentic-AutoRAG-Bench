@@ -139,25 +139,54 @@ def pareto(
     figure_only: bool = typer.Option(
         False,
         "--figure-only",
-        help="Skip the search; just re-render figures/pareto.png from an existing "
-        "results_*/agentic_cost/seed_N/ (details/history.jsonl). Useful "
-        "for tweaking the figure without re-running the optimizer.",
+        help="Skip the search; just re-render figures + hypervolume.json from the "
+        "existing per-method seed dirs (details/history.jsonl). Useful for the "
+        "finalize step or tweaking a figure without re-running the optimizers.",
     ),
     resume: bool = typer.Option(
         False,
         "--resume",
-        help="Resume an interrupted agentic_cost search from its last completed trial.",
+        help="Resume interrupted searches from their last completed trial.",
+    ),
+    methods: str = typer.Option(
+        None,
+        "--methods",
+        help="Comma-separated subset of {agentic_cost,random,motpe,motpe_warm} to run "
+        "(default: all four). A subset runs only those cells and defers figures to a "
+        "later --figure-only pass — the scheduler's per-cell atom.",
+    ),
+    seed: int = typer.Option(
+        None,
+        "--seed",
+        help="Override the config's seed for this invocation (writes to <method>/seed_<n>/).",
+    ),
+    setup_only: bool = typer.Option(
+        False,
+        "--setup-only",
+        help="Warm the shared corpus + exam cache with a SINGLE writer, write a "
+        ".setup_complete marker, and exit without running trials. Run this once "
+        "before fanning out concurrent per-method cells (the caches are non-atomic).",
     ),
 ) -> None:
-    """Run agentic_cost's search on the UniDoc corpus and render a Syftr-style
-    cost-vs-accuracy Pareto figure of its trials.
+    """Run the cost-vs-accuracy Pareto comparison on the UniDoc corpus and render
+    the Syftr-style frontier figures.
 
     Scores trials on the optimizer's own self-generated exam (no held-out QA).
-    Downloads the UniDoc corpus on first run if it isn't present yet.
+    Downloads the UniDoc corpus on first run if it isn't present yet. ``--methods``
+    / ``--seed`` / ``--setup-only`` let the Exp-2 scheduler drive one warmup + N
+    concurrent per-method cells + a finalize render.
     """
     from agentic_autorag_bench.pareto import pareto_cli
 
-    pareto_cli(config, figure_only=figure_only, resume=resume)
+    method_list = [m.strip() for m in methods.split(",") if m.strip()] if methods else None
+    pareto_cli(
+        config,
+        figure_only=figure_only,
+        resume=resume,
+        methods=method_list,
+        seed=seed,
+        setup_only=setup_only,
+    )
 
 
 @app.command("kb-greedy")
