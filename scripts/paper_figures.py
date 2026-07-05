@@ -14,8 +14,8 @@ from the source of truth:
   non-search reference row. This is a drop-in LaTeX ``table*`` for the paper's
   ``tab:holdout``. Regenerate and re-paste rather than hand-editing numbers.
 * ``score_per_trial_3panel.pdf`` -- per-trial validation-exam accuracy vs. trial
-  index, one panel per dataset, one line per searching method, +/-SD band across
-  the seeds. Vector PDF for the paper's ``fig:score-per-trial``.
+  index, one panel per dataset, one line per searching method (mean across the
+  seeds). Vector PDF for the paper's ``fig:score-per-trial``.
 
 Aggregation reuses ``analyze.load_results`` + ``aggregate_by_method`` so the
 mean / sample-SD is byte-identical to ``Table_1.md``; styling reuses
@@ -228,9 +228,7 @@ def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Pat
                 padded = _pad_nan(per_seed)
                 with np.errstate(invalid="ignore"):
                     mean = np.nanmean(padded, axis=0)
-                    std = np.nanstd(padded, axis=0)
                 x = np.arange(1, padded.shape[1] + 1)
-                ax.fill_between(x, mean - std, mean + std, alpha=0.15, color=color)
                 (line,) = ax.plot(x, mean, "o-", color=color, markersize=1.4, linewidth=1.4)
             else:
                 scores = per_seed[0]
