@@ -17,8 +17,8 @@ meta:
     similar PDFs, plus some scanned page images. Multi-page layouts with
     tables, figures, and mixed formatting; image pages are read via OCR.
     Dense, domain-specific prose rather than short encyclopedic snippets.
-  output_dir: "./results_unidoc/.shared_cache"
-  max_trials: 40
+  output_dir: "./experiment-2/unidoc/.shared_cache"
+  max_trials: 30
   cache_max_gb: 40.0
   # Pareto experiment: flip cost_aware on so the agentic optimizer's prompts
   # carry the Pareto block / knee anchor / cheapest-in-band signals. The
@@ -47,7 +47,7 @@ agent:
 
 examiner:
   exam_size: 100
-  initial_question_multiplier: 1.7
+  initial_question_multiplier: 1.8
   probe_selection: true
   neighborhood_min_chunks: 18
   neighborhood_min_words: 5000

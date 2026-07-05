@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -1021,4 +1022,331 @@ def _matrix_cost_and_embeddings(out_path: Path, stats: dict[str, dict]) -> None:
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+# =====================================================================
+# Cost-aware Pareto figures (Exp-2 / UniDoc).
+#
+# Relocated here (from pareto.py) so every benchmark figure lives in one
+# module. ``make_pareto_figure`` renders a single-method Syftr-style scatter
+# (gray trial cloud + the optimizer's self-marked frontier, numbered and
+# described in a side legend). ``make_pareto_comparison_figure`` overlays every
+# method's frontier, and ``compute_pareto_hypervolumes`` scores each frontier
+# against a SHARED reference point (pooled across all methods) so the
+# hypervolumes are comparable. X-axis is deploy-time cost **per query**.
+# =====================================================================
+
+_FRONTIER_COLORMAP = "tab10"
+_FRONTIER_COLORMAP_LARGE = "tab20"
+
+_CHUNKING_LABELS = {"recursive": "Recursive Splitting", "fixed": "Token Splitting"}
+_INDEX_LABELS = {
+    "vector_only": "Dense Retrieval",
+    "hybrid_bm25_vector": "Hybrid Retrieval",
+    "graph_only": "Graph Retrieval",
+    "hybrid_graph_vector": "Hybrid Graph Retrieval",
+}
+_QUERY_EXPANSION_LABELS = {
+    "hyde": "HyDE",
+    "multi_query": "Multi-Query",
+    "query_decompose": "Query Decompose",
+}
+# Vendor/region tokens to strip from a model id so labels read "kimi-k2.5"
+# rather than "moonshotai.kimi-k2.5" or "us.meta.llama...".
+_MODEL_VENDOR_TOKENS = {
+    "moonshotai",
+    "us",
+    "global",
+    "amazon",
+    "meta",
+    "mistral",
+    "google",
+    "qwen",
+    "nvidia",
+    "zai",
+    "minimax",
+    "openai",
+    "ai21",
+    "cohere",
+    "anthropic",
+}
+
+
+def _short_model(name: str) -> str:
+    """Compact display name for a LiteLLM model id (drop provider/vendor cruft)."""
+    if not name:
+        return "?"
+    tail = name.split("/")[-1].split(":")[0]
+    parts = tail.split(".")
+    while len(parts) > 1 and parts[0].lower() in _MODEL_VENDOR_TOKENS:
+        parts = parts[1:]
+    return ".".join(parts)
+
+
+def _join_clause(head: str, rest: list[str]) -> str:
+    if not rest:
+        return head
+    if len(rest) == 1:
+        return f"{head} with {rest[0]}"
+    if len(rest) == 2:
+        return f"{head} with {rest[0]} and {rest[1]}"
+    return f"{head} with {', '.join(rest[:-1])}, and {rest[-1]}"
+
+
+def _describe_config(config: dict) -> str:
+    """One-line description of a trial config for the figure legend.
+
+    Includes ``top_k`` (retrieval depth) and ``top_n`` (reranker depth) since
+    they're the levers the cost-aware optimizer most often trades against cost.
+    """
+    head = _short_model(config.get("generator_llm", ""))
+    rest: list[str] = []
+    if (ck := _CHUNKING_LABELS.get(config.get("chunking_strategy"))) is not None:
+        rest.append(ck)
+    if (idx := _INDEX_LABELS.get(config.get("index_type"))) is not None:
+        top_k = config.get("top_k")
+        rest.append(f"{idx} (top_k={top_k})" if top_k is not None else idx)
+    if (qe := _QUERY_EXPANSION_LABELS.get(config.get("query_expansion"))) is not None:
+        rest.append(qe)
+    reranker = config.get("reranker")
+    if reranker and reranker != "none":
+        top_n = config.get("reranker_top_n")
+        label = f"{_short_model(reranker)} reranking"
+        rest.append(f"{label} (top_n={top_n})" if top_n is not None else label)
+    return _join_clause(head, rest)
+
+
+@dataclass
+class _TrialPoint:
+    trial_number: int
+    cost_per_query: float
+    answer_accuracy: float
+    is_pareto: bool
+    config: dict
+
+
+def _load_trial_points(seed_dir: Path) -> list[_TrialPoint]:
+    """Trials with a usable (cost>0, accuracy) pair, from the rich agentic history."""
+    points: list[_TrialPoint] = []
+    for row in _read_history(seed_dir):
+        cost = row.get("mean_llm_cost_per_query_usd")
+        score = row.get("answer_accuracy")
+        if cost is None or score is None or float(cost) <= 0.0:
+            continue
+        points.append(
+            _TrialPoint(
+                trial_number=int(row.get("trial_number", 0)),
+                cost_per_query=float(cost),
+                answer_accuracy=float(score),
+                is_pareto=bool(row.get("is_pareto_optimal", False)),
+                config=row.get("config") or {},
+            )
+        )
+    return points
+
+
+def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> None:
+    """Render the cost-vs-exam-accuracy Pareto figure.
+
+    Gray cloud of every trial; the optimizer's Pareto-optimal trials drawn as
+    colored, numbered markers connected along the frontier and described in a
+    side legend. No-op (no file) when there is nothing plottable.
+    """
+    points = _load_trial_points(seed_dir)
+    if not points:
+        logger.warning("No plottable trials under %s; skipping pareto figure", seed_dir)
+        return
+
+    frontier = sorted((p for p in points if p.is_pareto), key=lambda p: p.cost_per_query)
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    # Narrow plotting axes (in line with the other scatter figures) so the
+    # narrow cost range isn't stretched across the page; the config legend
+    # sits to the right and the tight bbox grows the canvas to fit it.
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
+
+    # Cloud of all trials.
+    ax.scatter(
+        [p.cost_per_query for p in points],
+        [p.answer_accuracy * 100 for p in points],
+        s=42,
+        c="#d9d9d9",
+        edgecolors="none",
+        alpha=0.7,
+        zorder=1,
+        label="All trials",
+    )
+
+    # Frontier line (sorted by cost ascending).
+    if len(frontier) >= 2:
+        ax.plot(
+            [p.cost_per_query for p in frontier],
+            [p.answer_accuracy * 100 for p in frontier],
+            color="#7f7f7f",
+            lw=1.1,
+            zorder=2,
+            label="Pareto frontier",
+        )
+
+    # Colored, numbered frontier points + side-legend descriptions.
+    cmap_name = _FRONTIER_COLORMAP if len(frontier) <= 10 else _FRONTIER_COLORMAP_LARGE
+    cmap = plt.get_cmap(cmap_name)
+    for i, p in enumerate(frontier, start=1):
+        ax.scatter(
+            p.cost_per_query,
+            p.answer_accuracy * 100,
+            s=110,
+            color=cmap((i - 1) % cmap.N),
+            edgecolors="black",
+            linewidths=0.6,
+            zorder=4,
+            label=f"{i}. {_describe_config(p.config)}",
+        )
+        ax.annotate(
+            str(i),
+            (p.cost_per_query, p.answer_accuracy * 100),
+            textcoords="offset points",
+            xytext=(6, 5),
+            fontweight="bold",
+            zorder=6,
+        )
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Cost per query (USD)")
+    ax.set_ylabel("Exam accuracy (%)")
+    ax.set_ylim(0, 100)
+    ax.grid(alpha=0.3, which="both")
+    title_domain = f" ({domain})" if domain else ""
+    ax.set_title(f"UniDoc{title_domain} — {display_label('agentic_cost')} cost vs. accuracy (self-generated exam)")
+
+    ax.legend(
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),
+        frameon=False,
+        fontsize=8,
+        title="Frontier configurations",
+        title_fontsize=9,
+        borderaxespad=0.0,
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+@dataclass
+class _FrontierRecord:
+    """Minimal record for the framework's ``compute_frontier`` / ``compute_hypervolume``
+    (which read ``trial_number`` / ``answer_accuracy`` / ``mean_llm_cost_per_query_usd``)."""
+
+    trial_number: int
+    answer_accuracy: float
+    mean_llm_cost_per_query_usd: float
+
+
+def compute_pareto_hypervolumes(method_points: dict[str, list[_TrialPoint]]) -> dict:
+    """Per-method Pareto frontier + hypervolume against a SHARED reference point.
+
+    The reference point is computed once over the POOLED trials of every method
+    (``cost_ref = 2 × max positive cost`` across all methods, ``score_ref = 0``),
+    so the per-method hypervolumes are directly comparable. Computing HV per-method
+    with each method's own ``max(cost)`` would make the numbers incommensurable —
+    the Exp-2 fairness landmine. Frontiers are recomputed here via the framework's
+    ``compute_frontier`` (not any optimizer's self-marked flag) so all methods are
+    treated identically.
+    """
+    from agentic_autorag.optimizer import pareto as fpareto
+
+    all_costs = [p.cost_per_query for pts in method_points.values() for p in pts]
+    cost_ref = fpareto.cost_reference(all_costs)
+    ref_point = (0.0, cost_ref)
+    out: dict = {"score_reference": 0.0, "cost_reference": cost_ref, "methods": {}}
+    for method, pts in method_points.items():
+        records = [_FrontierRecord(p.trial_number, p.answer_accuracy, p.cost_per_query) for p in pts]
+        frontier = fpareto.compute_frontier(records)
+        hv = fpareto.compute_hypervolume(frontier, ref_point=ref_point)
+        out["methods"][method] = {
+            "hypervolume": hv,
+            "n_trials": len(records),
+            "n_frontier": len(frontier),
+            "frontier_trials": [r.trial_number for r in frontier],
+        }
+    return out
+
+
+def make_pareto_comparison_figure(
+    method_points: dict[str, list[_TrialPoint]],
+    hv_info: dict,
+    out_path: Path,
+    *,
+    domain: str = "",
+) -> None:
+    """Overlay every method's trial cloud + Pareto frontier on one figure, with
+    each method's shared-reference-point hypervolume in the legend. No-op when
+    nothing is plottable."""
+    if not any(method_points.values()):
+        logger.warning("No plottable trials; skipping pareto comparison figure")
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
+
+    for method, pts in method_points.items():
+        if not pts:
+            continue
+        color = _color_for(method)
+        ax.scatter(
+            [p.cost_per_query for p in pts],
+            [p.answer_accuracy * 100 for p in pts],
+            s=28,
+            color=color,
+            alpha=0.22,
+            edgecolors="none",
+            zorder=1,
+        )
+        info = hv_info["methods"].get(method, {})
+        frontier_tns = set(info.get("frontier_trials", []))
+        frontier = sorted((p for p in pts if p.trial_number in frontier_tns), key=lambda p: p.cost_per_query)
+        hv = info.get("hypervolume", 0.0)
+        label = f"{display_label(method)} (HV={hv:.4f})"
+        if len(frontier) >= 2:
+            ax.plot(
+                [p.cost_per_query for p in frontier],
+                [p.answer_accuracy * 100 for p in frontier],
+                color=color,
+                lw=1.6,
+                marker="o",
+                ms=6,
+                markeredgecolor="black",
+                markeredgewidth=0.5,
+                zorder=3,
+                label=label,
+            )
+        elif frontier:
+            ax.scatter(
+                [frontier[0].cost_per_query],
+                [frontier[0].answer_accuracy * 100],
+                color=color,
+                s=80,
+                edgecolors="black",
+                linewidths=0.5,
+                zorder=3,
+                label=label,
+            )
+        else:
+            ax.plot([], [], color=color, label=label)
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Cost per query (USD)")
+    ax.set_ylabel("Exam accuracy (%)")
+    ax.set_ylim(0, 100)
+    ax.grid(alpha=0.3, which="both")
+    title_domain = f" ({domain})" if domain else ""
+    ax.set_title(f"UniDoc{title_domain} — cost vs. accuracy Pareto frontiers")
+    ax.legend(loc="lower right", frameon=False, fontsize=9, title="Frontier (shared HV ref point)")
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)

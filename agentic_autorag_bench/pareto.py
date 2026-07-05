@@ -23,18 +23,28 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
 
-from agentic_autorag_bench._figstyle import apply_paper_style, color_for, display_label
-from agentic_autorag_bench.plots import _import_matplotlib, _read_history
+# Pareto figures live in the shared ``plots`` module (all benchmark figures in
+# one place); the command below just drives them.
+from agentic_autorag_bench.plots import (
+    _load_trial_points,
+    compute_pareto_hypervolumes,
+    make_pareto_comparison_figure,
+    make_pareto_figure,
+)
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-_FRONTIER_COLORMAP = "tab10"
-_FRONTIER_COLORMAP_LARGE = "tab20"
+# Canonical method slate + run order for the Pareto comparison. ``random`` runs
+# before ``motpe_warm`` (its on-disk transfer source); cold ``motpe`` has no
+# ordering constraint. ``agentic_cost`` uses its own self-contained orchestrator.
+_ALL_METHODS = ["agentic_cost", "random", "motpe_warm", "motpe"]
+# Methods that share the single bench evaluator orchestrator (built once per run).
+_SHARED_ORCH_METHODS = frozenset({"random", "motpe_warm", "motpe"})
 
 
 # --------------------------------------------------------------------- config
@@ -57,6 +67,10 @@ class ParetoConfig:
     corpus_max_pdfs: int
     corpus_max_images: int
     output_root: Path
+    # Defaulted so direct construction (tests / ad-hoc) is valid; ``load`` always
+    # sets both from the entry YAML (or the canonical slate / ``[seed]``).
+    methods: list[str] = field(default_factory=lambda: list(_ALL_METHODS))
+    seeds: list[int] = field(default_factory=lambda: [1])
 
     @classmethod
     def load(cls, config_path: str | Path) -> ParetoConfig:
@@ -64,14 +78,17 @@ class ParetoConfig:
         raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
         project_path = (config_path.parent / raw["project_config"]).resolve()
         corpus = raw.get("corpus") or {}
+        seed = int(raw.get("seed", 1))
         return cls(
             project_config_path=project_path,
-            seed=int(raw.get("seed", 1)),
+            seed=seed,
             max_trials=int(raw["budget"]["max_trials"]),
             corpus_domain=str(corpus.get("domain", "healthcare")),
             corpus_max_pdfs=int(corpus.get("max_pdfs", 230)),
             corpus_max_images=int(corpus.get("max_images", 20)),
             output_root=Path(raw["output_root"]).resolve(),
+            methods=[str(m) for m in (raw.get("methods") or _ALL_METHODS)],
+            seeds=[int(s) for s in (raw.get("seeds") or [seed])],
         )
 
 
@@ -79,6 +96,35 @@ def _read_corpus_path(project_config_path: Path) -> Path:
     """``meta.corpus_path`` from the project YAML, resolved like the orchestrator."""
     raw = yaml.safe_load(Path(project_config_path).read_text(encoding="utf-8"))
     return Path(raw["meta"]["corpus_path"]).resolve()
+
+
+def _read_shared_cache_dir(project_config_path: Path) -> Path:
+    """``meta.output_dir`` from the project YAML — the shared cache the orchestrator
+    writes (corpus parse, ``exam.json``, probe indexes). Resolved like the orchestrator."""
+    raw = yaml.safe_load(Path(project_config_path).read_text(encoding="utf-8"))
+    return Path(raw["meta"]["output_dir"]).resolve()
+
+
+SETUP_MARKER = ".setup_complete"
+
+
+def method_seed_complete(output_root: Path, method: str, seed: int, max_trials: int) -> bool:
+    """Disk-truth completion oracle for one Pareto ``(method, seed)`` cell.
+
+    A cell is DONE iff its ``optimizer_meta.json`` reports
+    ``n_trials_completed >= max_trials``. The pareto path never writes
+    ``benchmark_results.json`` (no held-out eval), so the Exp-1 sentinel does not
+    apply here. This is both the Exp-2 scheduler's oracle and run_pareto's
+    ``motpe_warm`` transfer-source guard, so the two always agree.
+    """
+    meta = Path(output_root) / method / f"seed_{seed}" / "optimizer_meta.json"
+    if not meta.exists():
+        return False
+    try:
+        n = int(json.loads(meta.read_text(encoding="utf-8")).get("n_trials_completed", 0))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return False
+    return n >= int(max_trials)
 
 
 def _ensure_corpus(corpus_path: Path, cfg: ParetoConfig) -> None:
@@ -115,19 +161,38 @@ async def _stub_evaluator(_config):  # pragma: no cover - never invoked
     raise RuntimeError("agentic_cost manages its own evaluator; the stub must not be called")
 
 
-async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resume: bool = False) -> None:
+async def run_pareto(
+    config_path: str | Path,
+    *,
+    figure_only: bool = False,
+    resume: bool = False,
+    methods: list[str] | None = None,
+    seed: int | None = None,
+    setup_only: bool = False,
+) -> None:
     """Run the cost-aware Pareto comparison — ``agentic_cost`` (full agentic) vs
     ``random`` (floor + transfer source) vs ``motpe`` (cold two-objective MO-TPE)
     vs ``motpe_warm`` (same MO-TPE warm-started from ``random``) — then render the
     multi-frontier figure with a shared-reference-point hypervolume.
 
-    All four methods evaluate the SAME self-generated exam on the SAME corpus:
-    the shared orchestrator (used for the random / motpe / motpe_warm evaluator)
-    and agentic_cost's own orchestrator load the same project config, so the corpus
-    index + exam.json cache is shared. Only the proposer differs. ``random`` runs
-    before ``motpe_warm`` — a hard data dependency, since ``motpe_warm`` injects
-    all of the paired ``random`` cell's completed trials as a free, uncounted
-    transfer prior; cold ``motpe`` injects none, so it has no ordering constraint.
+    All methods evaluate the SAME self-generated exam on the SAME corpus: the
+    shared orchestrator (used for the random / motpe / motpe_warm evaluator) and
+    agentic_cost's own orchestrator load the same project config, so the corpus
+    index + ``exam.json`` cache is shared. Only the proposer differs.
+
+    Selective / concurrent execution (the Exp-2 scheduler drives this):
+
+    * ``setup_only=True`` — warm the shared caches (corpus parse + ``exam.json`` +
+      probe indexes) with a SINGLE writer and write a ``.setup_complete`` marker,
+      then return without running any trial. This must precede any concurrent
+      per-method fan-out, since the corpus/exam caches are non-atomic.
+    * ``methods`` — run only this subset (canonical order preserved), applying the
+      ``seed`` override. A subset invocation renders NO figures (the finalize pass,
+      ``figure_only=True``, does). ``methods=None`` keeps the original one-process
+      behaviour: run all four in order and render figures at the end.
+    * ``motpe_warm`` reads the paired ``random`` cell's history as its transfer
+      prior; if ``random`` is not in this invocation, the same-seed ``random`` cell
+      must already be complete on disk (else a clear error).
     """
     from agentic_autorag.litellm_runtime import configure_litellm_runtime
     from agentic_autorag.orchestrator import Orchestrator
@@ -139,11 +204,38 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
     from agentic_autorag_bench.types import Budget
 
     cfg = ParetoConfig.load(config_path)
-    seed_label = f"seed_{cfg.seed}"
+    eff_seed = cfg.seed if seed is None else int(seed)
+    # ``methods=None`` = full default run (renders figures); a subset = a
+    # scheduler per-cell run (figures deferred to the --figure-only finalize).
+    run_all = methods is None
+    selected = list(cfg.methods) if run_all else list(methods)
+    unknown = [m for m in selected if m not in _ALL_METHODS]
+    if unknown:
+        raise ValueError(f"unknown pareto method(s) {unknown}; choose from {_ALL_METHODS}")
+
+    seed_label = f"seed_{eff_seed}"
     agentic_dir = cfg.output_root / "agentic_cost" / seed_label
     random_dir = cfg.output_root / "random" / seed_label
     motpe_dir = cfg.output_root / "motpe" / seed_label
     motpe_warm_dir = cfg.output_root / "motpe_warm" / seed_label
+
+    # ---- setup-only: single-writer warmup, then a marker (no trials) ----------
+    if setup_only:
+        configure_litellm_runtime()
+        corpus_path = _read_corpus_path(cfg.project_config_path)
+        _ensure_corpus(corpus_path, cfg)
+        logger.info("PARETO SETUP | warming shared corpus + exam cache (single writer)")
+        orch = Orchestrator(str(cfg.project_config_path))
+        try:
+            await orch.setup()
+        finally:
+            await orch.cleanup()
+        cache_dir = _read_shared_cache_dir(cfg.project_config_path)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        marker = cache_dir / SETUP_MARKER
+        marker.write_text("setup complete\n", encoding="utf-8")
+        logger.info("PARETO SETUP | done; wrote %s", marker)
+        return
 
     if not figure_only:
         configure_litellm_runtime()
@@ -151,128 +243,152 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
         _ensure_corpus(corpus_path, cfg)
         budget = Budget(max_trials=cfg.max_trials)
 
-        logger.info("Setting up shared orchestrator for the Pareto comparison (exam generated on first run)")
-        shared = Orchestrator(str(cfg.project_config_path))
-        shared.evaluator.quiet_per_question = True
-        try:
+        # The shared bench evaluator orchestrator is only needed by
+        # random/motpe/motpe_warm; agentic_cost carries its own. Skip building it
+        # (and its setup()) when only agentic_cost is selected.
+        need_shared = any(m in _SHARED_ORCH_METHODS for m in selected)
+        shared = None
+        if need_shared:
+            logger.info("Setting up shared orchestrator for the Pareto comparison (exam reused from cache)")
+            shared = Orchestrator(str(cfg.project_config_path))
+            shared.evaluator.quiet_per_question = True
             await shared.setup()
+        try:
+            if "agentic_cost" in selected:
+                # agentic_cost — full agentic, cost-aware (self-contained orchestrator).
+                agentic_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("=" * 60)
+                logger.info("PARETO | agentic_cost | seed=%d | max_trials=%d", eff_seed, cfg.max_trials)
+                logger.info("=" * 60)
+                agentic_opt = AgenticOptimizer(
+                    config_path=str(cfg.project_config_path),
+                    output_dir=str(agentic_dir),
+                    cost_aware=True,
+                    resume=resume,
+                )
+                sr_a = await agentic_opt.search(_stub_evaluator, budget, seed=eff_seed)
+                _persist_search_result(sr_a, agentic_dir)
+                logger.info(
+                    "agentic_cost done | trials=%d | best_accuracy=%.3f",
+                    len(sr_a.history),
+                    max((h.answer_accuracy for h in sr_a.history), default=0.0),
+                )
 
-            # agentic_cost — full agentic, cost-aware (self-contained orchestrator).
-            agentic_dir.mkdir(parents=True, exist_ok=True)
-            logger.info("=" * 60)
-            logger.info("PARETO | agentic_cost | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
-            logger.info("=" * 60)
-            agentic_opt = AgenticOptimizer(
-                config_path=str(cfg.project_config_path),
-                output_dir=str(agentic_dir),
-                cost_aware=True,
-                resume=resume,
-            )
-            sr_a = await agentic_opt.search(_stub_evaluator, budget, seed=cfg.seed)
-            _persist_search_result(sr_a, agentic_dir)
-            logger.info(
-                "agentic_cost done | trials=%d | best_accuracy=%.3f",
-                len(sr_a.history),
-                max((h.answer_accuracy for h in sr_a.history), default=0.0),
-            )
+            if "random" in selected:
+                # random — exploration floor AND motpe_warm's transfer source; drives
+                # the shared bench evaluator (cost_aware=True in the project config
+                # makes every trial record the same mean_llm_cost_per_query_usd).
+                # MUST run (or already be complete on disk) before motpe_warm.
+                random_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("=" * 60)
+                logger.info("PARETO | random | seed=%d | max_trials=%d", eff_seed, cfg.max_trials)
+                logger.info("=" * 60)
+                resume_random = resume and (random_dir / "rng_state.pkl").exists()
+                random_opt = RandomSearch(
+                    project=shared.config,
+                    storage_dir=random_dir,
+                    resume=resume_random,
+                )
+                sr_r = await _run_optimizer_with_ledger(
+                    random_opt,
+                    method_name="random",
+                    shared=shared,
+                    method_dir=random_dir,
+                    budget=budget,
+                    seed=eff_seed,
+                    resume=resume_random,
+                )
+                _persist_search_result(sr_r, random_dir)
+                logger.info(
+                    "random done | trials=%d | best_accuracy=%.3f",
+                    len(sr_r.history),
+                    max((h.answer_accuracy for h in sr_r.history), default=0.0),
+                )
 
-            # random — exploration floor AND motpe_warm's transfer source; drives
-            # the shared bench evaluator (cost_aware=True in the project config
-            # makes every trial record the same mean_llm_cost_per_query_usd).
-            # MUST run before motpe_warm.
-            random_dir.mkdir(parents=True, exist_ok=True)
-            logger.info("=" * 60)
-            logger.info("PARETO | random | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
-            logger.info("=" * 60)
-            resume_random = resume and (random_dir / "rng_state.pkl").exists()
-            random_opt = RandomSearch(
-                project=shared.config,
-                storage_dir=random_dir,
-                resume=resume_random,
-            )
-            sr_r = await _run_optimizer_with_ledger(
-                random_opt,
-                method_name="random",
-                shared=shared,
-                method_dir=random_dir,
-                budget=budget,
-                seed=cfg.seed,
-                resume=resume_random,
-            )
-            _persist_search_result(sr_r, random_dir)
-            logger.info(
-                "random done | trials=%d | best_accuracy=%.3f",
-                len(sr_r.history),
-                max((h.answer_accuracy for h in sr_r.history), default=0.0),
-            )
+            if "motpe_warm" in selected:
+                # motpe_warm — two-objective MO-TPE warm-started from the paired random
+                # cell (all of random's completed trials injected as a free, uncounted
+                # transfer prior), driving the shared bench evaluator. When random is
+                # not part of THIS invocation it must already be complete on disk.
+                if "random" not in selected and not method_seed_complete(
+                    cfg.output_root, "random", eff_seed, cfg.max_trials
+                ):
+                    raise RuntimeError(
+                        f"motpe_warm needs a completed random cell as its transfer prior, but "
+                        f"{random_dir} is missing or incomplete "
+                        f"(need optimizer_meta.json n_trials_completed >= {cfg.max_trials}). "
+                        f"Run the same-seed random cell first."
+                    )
+                motpe_warm_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("=" * 60)
+                logger.info("PARETO | motpe_warm | seed=%d | max_trials=%d", eff_seed, cfg.max_trials)
+                logger.info("=" * 60)
+                resume_warm = resume and (motpe_warm_dir / "optuna.db").exists()
+                motpe_warm_opt = MOTPESearch(
+                    project=shared.config,
+                    storage_dir=motpe_warm_dir,
+                    name="motpe_warm",
+                    warm_transfer=True,
+                    transfer_source_dir=random_dir,
+                    resume=resume_warm,
+                )
+                sr_w = await _run_optimizer_with_ledger(
+                    motpe_warm_opt,
+                    method_name="motpe_warm",
+                    shared=shared,
+                    method_dir=motpe_warm_dir,
+                    budget=budget,
+                    seed=eff_seed,
+                    resume=resume_warm,
+                )
+                _persist_search_result(sr_w, motpe_warm_dir)
+                logger.info(
+                    "motpe_warm done | trials=%d | best_accuracy=%.3f",
+                    len(sr_w.history),
+                    max((h.answer_accuracy for h in sr_w.history), default=0.0),
+                )
 
-            # motpe_warm — two-objective MO-TPE warm-started from the paired random
-            # cell (all of random's completed trials injected as a free, uncounted
-            # transfer prior), driving the shared bench evaluator. cost_aware=True
-            # in the project config makes it minimize the same
-            # mean_llm_cost_per_query_usd as agentic_cost.
-            motpe_warm_dir.mkdir(parents=True, exist_ok=True)
-            logger.info("=" * 60)
-            logger.info("PARETO | motpe_warm | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
-            logger.info("=" * 60)
-            resume_warm = resume and (motpe_warm_dir / "optuna.db").exists()
-            motpe_warm_opt = MOTPESearch(
-                project=shared.config,
-                storage_dir=motpe_warm_dir,
-                name="motpe_warm",
-                warm_transfer=True,
-                transfer_source_dir=random_dir,
-                resume=resume_warm,
-            )
-            sr_w = await _run_optimizer_with_ledger(
-                motpe_warm_opt,
-                method_name="motpe_warm",
-                shared=shared,
-                method_dir=motpe_warm_dir,
-                budget=budget,
-                seed=cfg.seed,
-                resume=resume_warm,
-            )
-            _persist_search_result(sr_w, motpe_warm_dir)
-            logger.info(
-                "motpe_warm done | trials=%d | best_accuracy=%.3f",
-                len(sr_w.history),
-                max((h.answer_accuracy for h in sr_w.history), default=0.0),
-            )
-
-            # motpe (cold) — the SAME two-objective MO-TPE as motpe_warm but with
-            # NO transfer prior (warm_transfer defaults False, no transfer_source_dir),
-            # driving the shared bench evaluator. The cold→warm frontier gap isolates
-            # the value of random's free transfer prior (warm-start ablation). No data
-            # dependency, so ordering is free.
-            motpe_dir.mkdir(parents=True, exist_ok=True)
-            logger.info("=" * 60)
-            logger.info("PARETO | motpe | seed=%d | max_trials=%d", cfg.seed, cfg.max_trials)
-            logger.info("=" * 60)
-            resume_cold = resume and (motpe_dir / "optuna.db").exists()
-            motpe_opt = MOTPESearch(
-                project=shared.config,
-                storage_dir=motpe_dir,
-                name="motpe",
-                resume=resume_cold,
-            )
-            sr_c = await _run_optimizer_with_ledger(
-                motpe_opt,
-                method_name="motpe",
-                shared=shared,
-                method_dir=motpe_dir,
-                budget=budget,
-                seed=cfg.seed,
-                resume=resume_cold,
-            )
-            _persist_search_result(sr_c, motpe_dir)
-            logger.info(
-                "motpe done | trials=%d | best_accuracy=%.3f",
-                len(sr_c.history),
-                max((h.answer_accuracy for h in sr_c.history), default=0.0),
-            )
+            if "motpe" in selected:
+                # motpe (cold) — the SAME two-objective MO-TPE as motpe_warm but with
+                # NO transfer prior (warm_transfer defaults False, no transfer_source_dir),
+                # driving the shared bench evaluator. The cold→warm frontier gap isolates
+                # the value of random's free transfer prior (warm-start ablation). No data
+                # dependency, so ordering is free.
+                motpe_dir.mkdir(parents=True, exist_ok=True)
+                logger.info("=" * 60)
+                logger.info("PARETO | motpe | seed=%d | max_trials=%d", eff_seed, cfg.max_trials)
+                logger.info("=" * 60)
+                resume_cold = resume and (motpe_dir / "optuna.db").exists()
+                motpe_opt = MOTPESearch(
+                    project=shared.config,
+                    storage_dir=motpe_dir,
+                    name="motpe",
+                    resume=resume_cold,
+                )
+                sr_c = await _run_optimizer_with_ledger(
+                    motpe_opt,
+                    method_name="motpe",
+                    shared=shared,
+                    method_dir=motpe_dir,
+                    budget=budget,
+                    seed=eff_seed,
+                    resume=resume_cold,
+                )
+                _persist_search_result(sr_c, motpe_dir)
+                logger.info(
+                    "motpe done | trials=%d | best_accuracy=%.3f",
+                    len(sr_c.history),
+                    max((h.answer_accuracy for h in sr_c.history), default=0.0),
+                )
         finally:
-            await shared.cleanup()
+            if shared is not None:
+                await shared.cleanup()
+
+    # Figures render only on the full default run or an explicit --figure-only
+    # pass (the finalize step). A scheduler per-cell subset leaves them alone so
+    # no partial/misleading hypervolume.json is written mid-experiment.
+    if not (run_all or figure_only):
+        return
 
     figures_dir = cfg.output_root / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
@@ -304,7 +420,15 @@ async def run_pareto(config_path: str | Path, *, figure_only: bool = False, resu
     )
 
 
-def pareto_cli(config_path: str, *, figure_only: bool = False, resume: bool = False) -> None:
+def pareto_cli(
+    config_path: str,
+    *,
+    figure_only: bool = False,
+    resume: bool = False,
+    methods: list[str] | None = None,
+    seed: int | None = None,
+    setup_only: bool = False,
+) -> None:
     """Sync wrapper for the Typer CLI."""
     import asyncio
 
@@ -312,324 +436,13 @@ def pareto_cli(config_path: str, *, figure_only: bool = False, resume: bool = Fa
     for noisy in ("LiteLLM", "litellm", "sentence_transformers", "httpx"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     logging.getLogger("agentic_autorag_bench.run").setLevel(logging.INFO)
-    asyncio.run(run_pareto(config_path, figure_only=figure_only, resume=resume))
-
-
-# ------------------------------------------------------------- config labels
-
-_CHUNKING_LABELS = {"recursive": "Recursive Splitting", "fixed": "Token Splitting"}
-_INDEX_LABELS = {
-    "vector_only": "Dense Retrieval",
-    "hybrid_bm25_vector": "Hybrid Retrieval",
-    "graph_only": "Graph Retrieval",
-    "hybrid_graph_vector": "Hybrid Graph Retrieval",
-}
-_QUERY_EXPANSION_LABELS = {
-    "hyde": "HyDE",
-    "multi_query": "Multi-Query",
-    "query_decompose": "Query Decompose",
-}
-# Vendor/region tokens to strip from a model id so labels read "kimi-k2.5"
-# rather than "moonshotai.kimi-k2.5" or "us.meta.llama...".
-_MODEL_VENDOR_TOKENS = {
-    "moonshotai",
-    "us",
-    "global",
-    "amazon",
-    "meta",
-    "mistral",
-    "google",
-    "qwen",
-    "nvidia",
-    "zai",
-    "minimax",
-    "openai",
-    "ai21",
-    "cohere",
-    "anthropic",
-}
-
-
-def _short_model(name: str) -> str:
-    """Compact display name for a LiteLLM model id (drop provider/vendor cruft)."""
-    if not name:
-        return "?"
-    tail = name.split("/")[-1].split(":")[0]
-    parts = tail.split(".")
-    while len(parts) > 1 and parts[0].lower() in _MODEL_VENDOR_TOKENS:
-        parts = parts[1:]
-    return ".".join(parts)
-
-
-def _join_clause(head: str, rest: list[str]) -> str:
-    if not rest:
-        return head
-    if len(rest) == 1:
-        return f"{head} with {rest[0]}"
-    if len(rest) == 2:
-        return f"{head} with {rest[0]} and {rest[1]}"
-    return f"{head} with {', '.join(rest[:-1])}, and {rest[-1]}"
-
-
-def _describe_config(config: dict) -> str:
-    """One-line description of a trial config for the figure legend.
-
-    Includes ``top_k`` (retrieval depth) and ``top_n`` (reranker depth) since
-    they're the levers the cost-aware optimizer most often trades against cost.
-    """
-    head = _short_model(config.get("generator_llm", ""))
-    rest: list[str] = []
-    if (ck := _CHUNKING_LABELS.get(config.get("chunking_strategy"))) is not None:
-        rest.append(ck)
-    if (idx := _INDEX_LABELS.get(config.get("index_type"))) is not None:
-        top_k = config.get("top_k")
-        rest.append(f"{idx} (top_k={top_k})" if top_k is not None else idx)
-    if (qe := _QUERY_EXPANSION_LABELS.get(config.get("query_expansion"))) is not None:
-        rest.append(qe)
-    reranker = config.get("reranker")
-    if reranker and reranker != "none":
-        top_n = config.get("reranker_top_n")
-        label = f"{_short_model(reranker)} reranking"
-        rest.append(f"{label} (top_n={top_n})" if top_n is not None else label)
-    return _join_clause(head, rest)
-
-
-# ------------------------------------------------------------------- figure
-
-
-@dataclass
-class _TrialPoint:
-    trial_number: int
-    cost_per_query: float
-    answer_accuracy: float
-    is_pareto: bool
-    config: dict
-
-
-def _load_trial_points(seed_dir: Path) -> list[_TrialPoint]:
-    """Trials with a usable (cost>0, accuracy) pair, from the rich agentic history."""
-    points: list[_TrialPoint] = []
-    for row in _read_history(seed_dir):
-        cost = row.get("mean_llm_cost_per_query_usd")
-        score = row.get("answer_accuracy")
-        if cost is None or score is None or float(cost) <= 0.0:
-            continue
-        points.append(
-            _TrialPoint(
-                trial_number=int(row.get("trial_number", 0)),
-                cost_per_query=float(cost),
-                answer_accuracy=float(score),
-                is_pareto=bool(row.get("is_pareto_optimal", False)),
-                config=row.get("config") or {},
-            )
+    asyncio.run(
+        run_pareto(
+            config_path,
+            figure_only=figure_only,
+            resume=resume,
+            methods=methods,
+            seed=seed,
+            setup_only=setup_only,
         )
-    return points
-
-
-def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> None:
-    """Render the cost-vs-exam-accuracy Pareto figure.
-
-    Gray cloud of every trial; the optimizer's Pareto-optimal trials drawn as
-    colored, numbered markers connected along the frontier and described in a
-    side legend. No-op (no file) when there is nothing plottable.
-    """
-    points = _load_trial_points(seed_dir)
-    if not points:
-        logger.warning("No plottable trials under %s; skipping pareto figure", seed_dir)
-        return
-
-    frontier = sorted((p for p in points if p.is_pareto), key=lambda p: p.cost_per_query)
-
-    apply_paper_style()
-    plt = _import_matplotlib()
-    # Narrow plotting axes (in line with the other scatter figures) so the
-    # narrow cost range isn't stretched across the page; the config legend
-    # sits to the right and the tight bbox grows the canvas to fit it.
-    fig, ax = plt.subplots(figsize=(8.0, 5.0))
-
-    # Cloud of all trials.
-    ax.scatter(
-        [p.cost_per_query for p in points],
-        [p.answer_accuracy * 100 for p in points],
-        s=42,
-        c="#d9d9d9",
-        edgecolors="none",
-        alpha=0.7,
-        zorder=1,
-        label="All trials",
     )
-
-    # Frontier line (sorted by cost ascending).
-    if len(frontier) >= 2:
-        ax.plot(
-            [p.cost_per_query for p in frontier],
-            [p.answer_accuracy * 100 for p in frontier],
-            color="#7f7f7f",
-            lw=1.1,
-            zorder=2,
-            label="Pareto frontier",
-        )
-
-    # Colored, numbered frontier points + side-legend descriptions.
-    cmap_name = _FRONTIER_COLORMAP if len(frontier) <= 10 else _FRONTIER_COLORMAP_LARGE
-    cmap = plt.get_cmap(cmap_name)
-    for i, p in enumerate(frontier, start=1):
-        ax.scatter(
-            p.cost_per_query,
-            p.answer_accuracy * 100,
-            s=110,
-            color=cmap((i - 1) % cmap.N),
-            edgecolors="black",
-            linewidths=0.6,
-            zorder=4,
-            label=f"{i}. {_describe_config(p.config)}",
-        )
-        ax.annotate(
-            str(i),
-            (p.cost_per_query, p.answer_accuracy * 100),
-            textcoords="offset points",
-            xytext=(6, 5),
-            fontweight="bold",
-            zorder=6,
-        )
-
-    ax.set_xscale("log")
-    ax.set_xlabel("Cost per query (USD)")
-    ax.set_ylabel("Exam accuracy (%)")
-    ax.set_ylim(0, 100)
-    ax.grid(alpha=0.3, which="both")
-    title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — {display_label('agentic_cost')} cost vs. accuracy (self-generated exam)")
-
-    ax.legend(
-        loc="upper left",
-        bbox_to_anchor=(1.02, 1.0),
-        frameon=False,
-        fontsize=8,
-        title="Frontier configurations",
-        title_fontsize=9,
-        borderaxespad=0.0,
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-
-# ----------------------------------------------- two-method Pareto comparison
-
-
-@dataclass
-class _FrontierRecord:
-    """Minimal record for the framework's ``compute_frontier`` / ``compute_hypervolume``
-    (which read ``trial_number`` / ``answer_accuracy`` / ``mean_llm_cost_per_query_usd``)."""
-
-    trial_number: int
-    answer_accuracy: float
-    mean_llm_cost_per_query_usd: float
-
-
-def compute_pareto_hypervolumes(method_points: dict[str, list[_TrialPoint]]) -> dict:
-    """Per-method Pareto frontier + hypervolume against a SHARED reference point.
-
-    The reference point is computed once over the POOLED trials of every method
-    (``cost_ref = 2 × max positive cost`` across all methods, ``score_ref = 0``),
-    so the per-method hypervolumes are directly comparable. Computing HV per-method
-    with each method's own ``max(cost)`` would make the numbers incommensurable —
-    the Exp-2 fairness landmine. Frontiers are recomputed here via the framework's
-    ``compute_frontier`` (not any optimizer's self-marked flag) so all methods are
-    treated identically.
-    """
-    from agentic_autorag.optimizer import pareto as fpareto
-
-    all_costs = [p.cost_per_query for pts in method_points.values() for p in pts]
-    cost_ref = fpareto.cost_reference(all_costs)
-    ref_point = (0.0, cost_ref)
-    out: dict = {"score_reference": 0.0, "cost_reference": cost_ref, "methods": {}}
-    for method, pts in method_points.items():
-        records = [_FrontierRecord(p.trial_number, p.answer_accuracy, p.cost_per_query) for p in pts]
-        frontier = fpareto.compute_frontier(records)
-        hv = fpareto.compute_hypervolume(frontier, ref_point=ref_point)
-        out["methods"][method] = {
-            "hypervolume": hv,
-            "n_trials": len(records),
-            "n_frontier": len(frontier),
-            "frontier_trials": [r.trial_number for r in frontier],
-        }
-    return out
-
-
-def make_pareto_comparison_figure(
-    method_points: dict[str, list[_TrialPoint]],
-    hv_info: dict,
-    out_path: Path,
-    *,
-    domain: str = "",
-) -> None:
-    """Overlay every method's trial cloud + Pareto frontier on one figure, with
-    each method's shared-reference-point hypervolume in the legend. No-op when
-    nothing is plottable."""
-    if not any(method_points.values()):
-        logger.warning("No plottable trials; skipping pareto comparison figure")
-        return
-
-    apply_paper_style()
-    plt = _import_matplotlib()
-    fig, ax = plt.subplots(figsize=(8.0, 5.0))
-
-    for method, pts in method_points.items():
-        if not pts:
-            continue
-        color = color_for(method)
-        ax.scatter(
-            [p.cost_per_query for p in pts],
-            [p.answer_accuracy * 100 for p in pts],
-            s=28,
-            color=color,
-            alpha=0.22,
-            edgecolors="none",
-            zorder=1,
-        )
-        info = hv_info["methods"].get(method, {})
-        frontier_tns = set(info.get("frontier_trials", []))
-        frontier = sorted((p for p in pts if p.trial_number in frontier_tns), key=lambda p: p.cost_per_query)
-        hv = info.get("hypervolume", 0.0)
-        label = f"{display_label(method)} (HV={hv:.4f})"
-        if len(frontier) >= 2:
-            ax.plot(
-                [p.cost_per_query for p in frontier],
-                [p.answer_accuracy * 100 for p in frontier],
-                color=color,
-                lw=1.6,
-                marker="o",
-                ms=6,
-                markeredgecolor="black",
-                markeredgewidth=0.5,
-                zorder=3,
-                label=label,
-            )
-        elif frontier:
-            ax.scatter(
-                [frontier[0].cost_per_query],
-                [frontier[0].answer_accuracy * 100],
-                color=color,
-                s=80,
-                edgecolors="black",
-                linewidths=0.5,
-                zorder=3,
-                label=label,
-            )
-        else:
-            ax.plot([], [], color=color, label=label)
-
-    ax.set_xscale("log")
-    ax.set_xlabel("Cost per query (USD)")
-    ax.set_ylabel("Exam accuracy (%)")
-    ax.set_ylim(0, 100)
-    ax.grid(alpha=0.3, which="both")
-    title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — cost vs. accuracy Pareto frontiers")
-    ax.legend(loc="lower right", frameon=False, fontsize=9, title="Frontier (shared HV ref point)")
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
