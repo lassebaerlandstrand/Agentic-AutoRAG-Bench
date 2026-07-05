@@ -56,7 +56,7 @@ STOCHASTIC_METHODS = {
     "agentic_cost",
     "agentic_nokb",
     "agentic_nodiag",
-    "agentic_opro",
+    "agentic_nokb_nodiag",
 }
 # Kept (empty) so deterministic methods can be reintroduced without rewiring
 # the dispatch loop in ``run_matrix``. AutoRAG variants used to live here
@@ -537,16 +537,17 @@ def _build_optimizer(
         )
     if name == "qlognehvi":
         return QLogNEHVISearch(project=project, storage_dir=output_dir, resume=resume)
-    if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag", "agentic_opro"}:
-        # ``agentic_opro`` is the naive-LLM baseline: KB off, diagnosis off, and
-        # a compact ``config -> accuracy`` history (the ``opro`` flag).
+    if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag", "agentic_nokb_nodiag"}:
+        # ``agentic_nokb_nodiag`` is the KB+diagnosis ablation: knowledge base off,
+        # diagnosis off, and the proposer sees only a compact ``config -> accuracy``
+        # history (the ``compact_history`` flag).
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
-            use_knowledge_base=(name not in {"agentic_nokb", "agentic_opro"}),
-            use_diagnosis=(name not in {"agentic_nodiag", "agentic_opro"}),
-            opro=(name == "agentic_opro"),
+            use_knowledge_base=(name not in {"agentic_nokb", "agentic_nokb_nodiag"}),
+            use_diagnosis=(name not in {"agentic_nodiag", "agentic_nokb_nodiag"}),
+            compact_history=(name == "agentic_nokb_nodiag"),
             method_name=name,
             resume=resume,
         )

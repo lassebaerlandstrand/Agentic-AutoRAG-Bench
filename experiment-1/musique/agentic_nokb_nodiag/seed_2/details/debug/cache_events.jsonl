@@ -1,0 +1,11 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "2ba83880f6f740d2", "tokens_credited": 1976615, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "cc070d19459d8e94", "tokens_credited": 1783246, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "e853834e44b90b05", "tokens_credited": 1782724, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 5, "cache_kind": "embeddings", "cache_key": "c3fa1bfcc8648228", "tokens_credited": 1886117, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "41878a9981b4cab7", "tokens_credited": 1973947, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "7974c9d46dc58b2b", "tokens_credited": 1888209, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 17, "cache_kind": "embeddings", "cache_key": "d58d2194d51e1774", "tokens_credited": 1782724, "embedding_model": "Snowflake/snowflake-arctic-embed-xs", "phase": "trial"}
+{"trial_number": 18, "cache_kind": "embeddings", "cache_key": "a46792a896395fa7", "tokens_credited": 1921330, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 21, "cache_kind": "embeddings", "cache_key": "9f381d265c451222", "tokens_credited": 1782724, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 25, "cache_kind": "embeddings", "cache_key": "4aaf1d19b000cd6c", "tokens_credited": 1976615, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "ce138b92fc7e0414", "tokens_credited": 1782724, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}

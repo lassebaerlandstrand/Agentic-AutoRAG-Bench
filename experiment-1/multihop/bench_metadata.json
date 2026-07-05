@@ -1,0 +1,30 @@
+{
+  "benchmark": {
+    "name": "multihop_rag",
+    "split": "MultiHopRAG",
+    "sample_size": 2000,
+    "prep_seed": 42
+  },
+  "project_config_path": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/configs/multihop_rag_paper_project.yaml",
+  "methods": [
+    "motpe_warm"
+  ],
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "max_trials": 30,
+  "checkpoints": {
+    "agentic_score": [
+      10,
+      20
+    ]
+  },
+  "agentic_autorag": {
+    "version": "0.1.0",
+    "commit": "2e9e4e82535526b39527afbae965d35bd6859beb",
+    "describe": "2e9e4e8",
+    "dirty": false
+  }
+}

@@ -8,7 +8,7 @@ project_config: ./musique_paper_project.yaml
 
 methods:
   - agentic_score      # full agentic: KB on, diagnosis on — method under test
-  - agentic_opro       # naive LLM proposer: compact (config→score) history, no KB, no diagnosis
+  - agentic_nokb_nodiag  # KB off, diagnosis off, compact (config→score) history proposer
   - motpe              # cold group-multivariate MO-TPE (syftr-class statistical search)
   - motpe_warm         # MO-TPE + free uncounted transfer prior from random (runs after random)
   - random             # exploration floor (also motpe_warm's transfer source)

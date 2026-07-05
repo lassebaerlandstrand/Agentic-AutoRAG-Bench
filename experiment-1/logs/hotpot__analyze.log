@@ -1,0 +1,5 @@
+
+==== attempt 1 2026-07-05T03:56:39Z :: /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/.venv/bin/python3 -m agentic_autorag_bench.cli analyze --results-dir /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/hotpot
+INFO: agentic_autorag_bench.run: wrote /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/hotpot/figures/Table_1.md
+INFO: agentic_autorag_bench.run: wrote /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/hotpot/figures/holdout_metrics.png
+INFO: agentic_autorag_bench.run: wrote /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/hotpot/figures/appendix/efficiency.png

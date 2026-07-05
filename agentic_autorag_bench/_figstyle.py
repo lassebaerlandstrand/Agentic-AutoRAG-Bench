@@ -23,7 +23,7 @@ METHOD_COLOR: dict[str, str] = {
     "agentic_cost": "#17becf",  # cyan
     "agentic_nokb": "#aec7e8",  # light blue (agentic ablation)
     "agentic_nodiag": "#c5b0d5",  # light purple (agentic ablation)
-    "agentic_opro": "#9467bd",  # purple (naive-LLM baseline)
+    "agentic_nokb_nodiag": "#9467bd",  # purple (KB+diagnosis ablation)
     "random": "#ff7f0e",  # orange
     "motpe": "#2ca02c",  # green
     "motpe_warm": "#bcbd22",  # olive (MO-TPE transfer warm-start)
@@ -38,7 +38,7 @@ _DISPLAY_LABEL: dict[str, str] = {
     "agentic_cost": "Agentic-Pareto (Ours)",
     "agentic_nokb": "Agentic (no KB)",
     "agentic_nodiag": "Agentic (no diagnosis)",
-    "agentic_opro": "OPRO (naive LLM)",
+    "agentic_nokb_nodiag": "Agentic (no KB, no diag)",
     "random": "Random",
     "motpe": "MO-TPE",
     "motpe_warm": "MO-TPE (transfer warm-start)",
@@ -68,8 +68,6 @@ def display_label(method: str) -> str:
     if "@" in method:
         base, k = method.split("@", 1)
         b = base_method(base)
-        if b == "agentic_opro":
-            return f"OPRO@{k}"
         if b.startswith("agentic"):
             return f"Agentic@{k}"
         return f"{display_label(base)}@{k}"
