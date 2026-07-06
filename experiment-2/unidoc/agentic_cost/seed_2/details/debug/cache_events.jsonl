@@ -1,0 +1,6 @@
+{"trial_number": null, "cache_kind": "exam", "cache_key": "exam_25b675afc407f161", "tokens_credited": 0, "phase": "exam_gen"}
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "1988a779242d54f2", "tokens_credited": 2706391, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 5, "cache_kind": "embeddings", "cache_key": "893af146af1472ae", "tokens_credited": 2470297, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "e8bbed93ba365d66", "tokens_credited": 2673832, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 24, "cache_kind": "embeddings", "cache_key": "f7a935ea90139cf4", "tokens_credited": 2788562, "embedding_model": "sentence-transformers/all-MiniLM-L6-v2", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "da7900398413c40c", "tokens_credited": 2519575, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}

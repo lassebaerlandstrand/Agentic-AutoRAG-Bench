@@ -1,0 +1,3 @@
+
+==== attempt 1 2026-07-06T15:41:08Z :: /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/.venv/bin/python3 -m agentic_autorag_bench.cli pareto -c /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/configs/unidoc_pareto.yaml --figure-only
+INFO: agentic_autorag_bench.run: Wrote /home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-2/unidoc/figures/pareto_comparison.png + hypervolume.json (shared cost_ref=0.01263; HV {'agentic_cost': 0.00962, 'random': 0.00921, 'motpe': 0.00844, 'motpe_warm': 0.00942})

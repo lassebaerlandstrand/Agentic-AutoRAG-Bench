@@ -89,7 +89,81 @@ retried with backoff (≤4 attempts).
 diagnosis off, compact score-history proposer) is the key `agentic_nokb_nodiag`;
 MO-TPE is `motpe`/`motpe_warm`; `kb_greedy` is the standalone `kb-greedy`
 subcommand, not a `-m` method. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
-Experiment 2 (UniDoc Pareto) is separate; run it via the `pareto` subcommand.
+Experiment 2 (UniDoc Pareto) is separate; run it via the `pareto` subcommand — see below.
+
+## Reproduce Experiment 2 (the cost–quality Pareto)
+
+Experiment 2 is the **cost-vs-accuracy Pareto** experiment on **UniDoc-Bench
+healthcare** (~230 biomedical PDFs + 20 PNGs). There is no labelled gold here, so
+the optimizer's **own self-generated exam is both the optimization target and the
+only score** (`answer_accuracy`), while every method *also* minimises per-query
+LLM cost (`mean_llm_cost_per_query_usd`) — a genuine two-objective run. It is a
+`(method × seed)` matrix: **4 methods** (`agentic_cost`, `random`, `motpe`,
+`motpe_warm`) × **3 seeds** at **30 trials** each. All output lands under
+`experiment-2/unidoc/`, and the finalize step emits the multi-frontier
+cost-vs-accuracy figures plus a shared-reference `hypervolume.json`.
+
+Unlike Experiment 1 this is **one self-contained command**. A 2-worker,
+resume-safe scheduler (`scripts/run_experiment2.py`) runs a single-writer setup
+unit (`pareto --setup-only` — download + Docling-parse the corpus, generate and
+freeze the self-exam, build the probe indexes), then the 12 `(method, seed)` cells
+(`pareto --methods <m> --seed <n> --resume`, ≤2 concurrent = the
+DeepSeek-endpoint-safe ceiling), gating each `motpe_warm/seed_N` after its paired
+`random/seed_N` completes (the free, uncounted transfer prior), then a finalize
+unit (`pareto --figure-only`). `bedrock/zai.glm-4.7` stays in the generator pool
+throughout — there is no manual comment/uncomment step.
+
+```bash
+# Inspect the DAG (setup -> 12 cells -> finalize, warm->random gates, argv) without running:
+uv run python scripts/run_experiment2.py --dry-run
+
+# Launch detached so it survives the shell closing (setup + 12 cells + finalize
+# was ~7 h with 2 workers on our run):
+mkdir -p experiment-2/logs
+setsid nohup uv run python scripts/run_experiment2.py --workers 2 \
+    > experiment-2/logs/nohup.out 2>&1 &
+
+# Monitor:
+tail -f experiment-2/logs/scheduler.log   # timestamped START/DONE/FAIL/RETRY lines
+cat experiment-2/logs/STATUS.json         # setup/cell/finalize state, per-unit rc, ETA
+```
+
+The default config is `configs/unidoc_pareto.yaml` (`--config` to override); its
+`methods:` / `seeds:` lists drive the matrix and can be narrowed with `--methods`
+/ `--seeds`. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
+
+**Resume / crash-safety.** Every cell runs with `--resume`; completion is judged
+by **disk state** (`<method>/seed_<n>/optimizer_meta.json` with
+`n_trials_completed >= 30`), never the exit code. If the scheduler dies, relaunch
+the identical command — finished cells are skipped, the frozen exam under
+`.shared_cache/` is reused, and only unfinished work runs. Transient API failures
+retry with exponential backoff (≤4 attempts).
+
+**Re-render the figures only** (no API, straight from the committed per-cell
+`history.jsonl`):
+
+```bash
+uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only
+```
+
+This rewrites `experiment-2/unidoc/figures/` — `pareto_comparison.png` (all four
+frontiers on one plot), `pareto_attainment.png` and `pareto_hv_convergence.png`
+(the seed-aggregated attainment band and anytime-hypervolume curves), and
+`pareto_agentic_cost.png` — plus `hypervolume.json` (per-method hypervolume
+against the shared cost reference).
+
+**Reproducibility note.** The committed tree ships the per-cell result artifacts
+(`<method>/seed_<n>/details/history.jsonl`, `search_result.json`,
+`optimizer_meta.json`) + figures + `hypervolume.json`, but **not** the ~1.6 GB
+`.shared_cache/` (corpus, embeddings, frozen exam). A from-scratch run therefore
+regenerates the self-exam, and — as with every run here — RAG evaluation and
+LLM-judging are non-deterministic, so a re-run reproduces the **finding** (frontier
+shape, method ordering, the cold→warm transfer gain) rather than byte-identical
+numbers. The exact optimizer code behind the shipped numbers is identified by the
+git commit of this results tree together with the framework version pinned through
+the path dependency (see [Framework dependency](#framework-dependency)); the
+`pareto` path does not emit the `output_root/bench_metadata.json` provenance
+sidecar that the Experiment-1 `run` path writes.
 
 ## Run one dataset
 
