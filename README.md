@@ -1,341 +1,171 @@
-# Agentic AutoRAG — Benchmark Suite
+# Agentic AutoRAG Benchmark Suite
 
-Reproducibility artifact for the EMNLP paper. Runs a `(method × seed) × trials`
-matrix on HotpotQA, MuSiQue, or MultiHop-RAG, then emits per-method figures and
-a held-out `Table_1.md`.
+This is the benchmark and reproduction code for the Agentic AutoRAG paper. It
+compares our reasoning-agent optimizer against random search and MO-TPE (the
+optimizer from syftr) on two experiments:
+
+- **Experiment 1 (accuracy):** each optimizer tunes a RAG pipeline on HotpotQA,
+  MuSiQue, and MultiHop-RAG, scored on a held-out slice of each dataset.
+- **Experiment 2 (cost and quality):** the optimizers tune for accuracy and
+  per-query cost together on UniDoc-Bench healthcare, producing a cost-quality
+  Pareto frontier.
 
 ## Methods
 
-| Key                | Strategy                                                          | Per-trial signal                       | Seeded |
-|--------------------|-------------------------------------------------------------------|----------------------------------------|--------|
-| `agentic_score`    | Reasoning loop (ours), score-only objective (`cost_aware=False`)  | Open-ended LLM-judged exam, end-to-end | ✓      |
-| `agentic_cost`     | Reasoning loop (ours), Pareto-aware objective (`cost_aware=True`) | Same exam                              | ✓      |
-| `agentic_nokb`     | Ours, KB-off ablation (cold reasoning)                            | Same exam                              | ✓      |
-| `agentic_nodiag`   | Ours, diagnosis-off ablation (registered; off the headline matrix)| Same exam                             | ✓      |
-| `motpe`            | Optuna group-decomposed multivariate MO-TPE (= syftr's optimizer) | Same exam                              | ✓      |
-| `motpe_warm`       | `motpe` + a free, uncounted transfer prior from this run's `random` | Same exam                            | ✓      |
-| `qlognehvi`        | Ax/BoTorch multi-objective GP-BO (Barker et al.); **needs `uv add ax-platform`** | Same exam                | ✓      |
-| `random`           | Random search                                                     | Same exam                              | ✓      |
+| Key | Description |
+|-----|-------------|
+| `agentic_score` | Our reasoning-loop optimizer, tuning for accuracy. |
+| `agentic_cost` | Our optimizer, tuning for accuracy and cost together. Used in Experiment 2. |
+| `agentic_nokb_nodiag` | Our optimizer stripped to score-only, with no knowledge base and no diagnosis. A rival baseline in Experiment 1. |
+| `agentic_nokb`, `agentic_nodiag` | Single-component ablations, with the knowledge base off or the diagnosis off. Hotpot only, run after the headline. |
+| `random` | Random search. Also seeds the warm-started MO-TPE. |
+| `motpe` | Optuna multivariate MO-TPE, the optimizer used by syftr. |
+| `motpe_warm` | The same MO-TPE, warm-started from this run's random trials. |
+| `qlognehvi` | A GP-BO reference (Barker et al.). Cited in the paper but not run. Needs `uv add ax-platform`. |
 
-All methods search the same `TrialConfig` space and are re-scored on the same
-held-out exam, so the final-score column in `Table_1.md` is directly comparable
-across rows (the YAHPO/HPOBench standard: fix the benchmark, swap the proposer).
-`agentic_*` share the same `AgenticOptimizer` class — they differ only in the
-`meta.cost_aware` flag and the `use_knowledge_base` / `use_diagnosis` ablation
-toggles passed to the framework. `motpe` / `motpe_warm` share the
-`MOTPESearch` class; `meta.cost_aware` switches it between single-objective
-(accuracy) and two-objective (accuracy ↑, per-query cost ↓) mode, mirroring the
-agentic flag. The MO-TPE sampler config (`multivariate, group, constant_liar`)
-matches syftr's published optimizer — asserted by a behavioral-equivalence test.
-
-`qlognehvi` is a **multi-objective** GP-BO degradation reference (accuracy ↑,
-per-query cost ↓) for the Pareto experiment — it refuses a single-objective
-(`cost_aware: false`) config. It is registered but kept out of every default
-`methods:` list because Ax pulls `botorch`/`gpytorch` and pins `torch`: run
-`uv add ax-platform` (and re-check the `torch` version your sentence-transformers
-embedders use) before listing it. Its encode/flatten-decode core is unit-tested;
-the Ax service loop is unverified until the dependency is added.
-
-The original Marker-Inc AutoRAG baseline (`autorag_our_exam`, `autorag_ragas`)
-was dropped from the active matrix on 2026-05-27; the code is preserved
-under `agentic_autorag_bench/_deprecated/autorag/` for possible resurrection
-(see that directory's README for the reasoning and the steps to re-enable).
+All methods search the same pipeline space and are scored the same way, so a
+results table compares them directly. The agentic methods share one optimizer
+class and differ only by config flags. The two MO-TPE methods share another
+class, with a flag selecting accuracy-only or accuracy-and-cost mode. The MO-TPE
+settings match syftr's published optimizer, checked by an equivalence test.
 
 ## Setup
 
 ```bash
 uv sync --extra dev
-# Bench reads .env (symlink the framework's) for AZURE_API_KEY, AZURE_API_BASE.
 ```
 
-## Reproduce Experiment 1 (the accuracy headline)
+The bench reads API credentials from a `.env` file (symlink the framework's). It
+needs `AZURE_API_KEY` and `AZURE_API_BASE`.
 
-Experiment 1 is a `(dataset × method × seed)` matrix: **3 datasets** (HotpotQA,
-MuSiQue, MultiHop-RAG) × **5 search methods** (`random`, `motpe`, `motpe_warm`,
-`agentic_nokb_nodiag`, `agentic_score`) × **3 seeds**, at **30 trials** each, plus a
-`kb_greedy` reference at 3 seeds per dataset. All output lands under a single
-`experiment-1/<dataset>/` tree (`output_root`/`output_dir` in the configs).
+## Experiment 1: accuracy
 
-A 2-worker, seed-major, dependency-gated scheduler (`scripts/run_experiment1.py`)
-runs one `(method, seed)` unit per subprocess with `--resume`, gates `motpe_warm`
-after its paired `random` cell, keeps at most 2 units running (the
-DeepSeek-endpoint-safe ceiling), and renders each dataset's `Table_1.md` with
-`analyze` at the end. Held-out variance comes from the **3 seeds** (one held-out
-eval per `(method, seed)`; `agentic_score` also emits `@10`/`@20` sample-efficiency
-checkpoints — no `replay-holdout`).
+The matrix is 3 datasets (HotpotQA, MuSiQue, MultiHop-RAG), 5 methods (`random`,
+`motpe`, `motpe_warm`, `agentic_nokb_nodiag`, `agentic_score`), and 3 seeds, at 30
+trials each, plus a `kb_greedy` reference at 3 seeds per dataset. Results land
+under `experiment-1/<dataset>/`.
+
+The scheduler `scripts/run_experiment1.py` runs each (method, seed) pair as its
+own subprocess, keeps at most 2 running at once, starts `motpe_warm` only after
+its matching `random` pair finishes, and writes each dataset's `Table_1.md` at
+the end. Variance comes from the 3 seeds. `agentic_score` also reports its result
+at 10 and 20 trials, for the sample-efficiency comparison.
 
 ```bash
-# Validate the plan without running anything (unit DAG, warm→random gates, argv):
+# Preview the plan without running anything:
 uv run python scripts/run_experiment1.py --dry-run --include-kb-greedy
 
-# Launch detached so it survives the shell/session closing (runs ~1–2 days):
+# Run in the background (the full matrix takes one to two days):
 mkdir -p experiment-1/logs
 setsid nohup uv run python scripts/run_experiment1.py --include-kb-greedy \
     > experiment-1/logs/nohup.out 2>&1 &
-echo $! > experiment-1/logs/scheduler.pid
 
-# Monitor:
-tail -f experiment-1/logs/scheduler.log        # timestamped START/DONE/FAIL/RETRY lines
-cat experiment-1/logs/STATUS.json              # counts, running units, per-dataset progress, ETA
+# Watch progress:
+tail -f experiment-1/logs/scheduler.log
+cat experiment-1/logs/STATUS.json
 ```
 
-**Resume / crash-safety.** Every unit runs with `--resume`; completion is judged
-by **disk state** (`benchmark_results.json` + `@k` sentinels), never the exit code
-(a single-unit `run` exits 0 even on an internal skip). If the scheduler dies, just
-relaunch the same command — finished units are skipped. Transient API failures are
-retried with backoff (≤4 attempts).
+Each pair runs with `--resume`, and whether it is finished is read from files on
+disk, not from exit codes. If the scheduler stops for any reason, run the same
+command again and it skips finished work. Do not set `--workers` above 2, which
+is the most the API endpoint handles reliably.
 
-**Method-key notes.** The KB+diagnosis ablation (agentic optimizer with KB off,
-diagnosis off, compact score-history proposer) is the key `agentic_nokb_nodiag`;
-MO-TPE is `motpe`/`motpe_warm`; `kb_greedy` is the standalone `kb-greedy`
-subcommand, not a `-m` method. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
-Experiment 2 (UniDoc Pareto) is separate; run it via the `pareto` subcommand — see below.
-
-## Reproduce Experiment 2 (the cost–quality Pareto)
-
-Experiment 2 is the **cost-vs-accuracy Pareto** experiment on **UniDoc-Bench
-healthcare** (~230 biomedical PDFs + 20 PNGs). There is no labelled gold here, so
-the optimizer's **own self-generated exam is both the optimization target and the
-only score** (`answer_accuracy`), while every method *also* minimises per-query
-LLM cost (`mean_llm_cost_per_query_usd`) — a genuine two-objective run. It is a
-`(method × seed)` matrix: **4 methods** (`agentic_cost`, `random`, `motpe`,
-`motpe_warm`) × **3 seeds** at **30 trials** each. All output lands under
-`experiment-2/unidoc/`, and the finalize step emits the multi-frontier
-cost-vs-accuracy figures plus a shared-reference `hypervolume.json`.
-
-Unlike Experiment 1 this is **one self-contained command**. A 2-worker,
-resume-safe scheduler (`scripts/run_experiment2.py`) runs a single-writer setup
-unit (`pareto --setup-only` — download + Docling-parse the corpus, generate and
-freeze the self-exam, build the probe indexes), then the 12 `(method, seed)` cells
-(`pareto --methods <m> --seed <n> --resume`, ≤2 concurrent = the
-DeepSeek-endpoint-safe ceiling), gating each `motpe_warm/seed_N` after its paired
-`random/seed_N` completes (the free, uncounted transfer prior), then a finalize
-unit (`pareto --figure-only`). `bedrock/zai.glm-4.7` stays in the generator pool
-throughout — there is no manual comment/uncomment step.
+You can also run one dataset directly:
 
 ```bash
-# Inspect the DAG (setup -> 12 cells -> finalize, warm->random gates, argv) without running:
-uv run python scripts/run_experiment2.py --dry-run
-
-# Launch detached so it survives the shell closing (setup + 12 cells + finalize
-# was ~7 h with 2 workers on our run):
-mkdir -p experiment-2/logs
-setsid nohup uv run python scripts/run_experiment2.py --workers 2 \
-    > experiment-2/logs/nohup.out 2>&1 &
-
-# Monitor:
-tail -f experiment-2/logs/scheduler.log   # timestamped START/DONE/FAIL/RETRY lines
-cat experiment-2/logs/STATUS.json         # setup/cell/finalize state, per-unit rc, ETA
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml                    # full matrix
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m agentic_score   # one method
+uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --resume           # continue after a stop
 ```
 
-The default config is `configs/unidoc_pareto.yaml` (`--config` to override); its
-`methods:` / `seeds:` lists drive the matrix and can be narrowed with `--methods`
-/ `--seeds`. Two workers is the endpoint-safe ceiling — do not raise `--workers`.
-
-**Resume / crash-safety.** Every cell runs with `--resume`; completion is judged
-by **disk state** (`<method>/seed_<n>/optimizer_meta.json` with
-`n_trials_completed >= 30`), never the exit code. If the scheduler dies, relaunch
-the identical command — finished cells are skipped, the frozen exam under
-`.shared_cache/` is reused, and only unfinished work runs. Transient API failures
-retry with exponential backoff (≤4 attempts).
-
-**Re-render the figures only** (no API, straight from the committed per-cell
-`history.jsonl`):
-
-```bash
-uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only
-```
-
-This rewrites `experiment-2/unidoc/figures/` — `pareto_comparison.png` (all four
-frontiers on one plot), `pareto_attainment.png` and `pareto_hv_convergence.png`
-(the seed-aggregated attainment band and anytime-hypervolume curves), and
-`pareto_agentic_cost.png` — plus `hypervolume.json` (per-method hypervolume
-against the shared cost reference).
-
-**Reproducibility note.** The committed tree ships the per-cell result artifacts
-(`<method>/seed_<n>/details/history.jsonl`, `search_result.json`,
-`optimizer_meta.json`) + figures + `hypervolume.json`, but **not** the ~1.6 GB
-`.shared_cache/` (corpus, embeddings, frozen exam). A from-scratch run therefore
-regenerates the self-exam, and — as with every run here — RAG evaluation and
-LLM-judging are non-deterministic, so a re-run reproduces the **finding** (frontier
-shape, method ordering, the cold→warm transfer gain) rather than byte-identical
-numbers. The exact optimizer code behind the shipped numbers is identified by the
-git commit of this results tree together with the framework version pinned through
-the path dependency (see [Framework dependency](#framework-dependency)); the
-`pareto` path does not emit the `output_root/bench_metadata.json` provenance
-sidecar that the Experiment-1 `run` path writes.
-
-## Run one dataset
-
-```bash
-# Full matrix on one dataset
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml
-uv run agentic-autorag-bench run --config configs/musique_paper.yaml
-uv run agentic-autorag-bench run --config configs/multihop_rag_paper.yaml
-
-# Specific methods — repeat -m for each
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m agentic_score
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml -m random -m motpe
-
-# Resume after a Ctrl+C / crash — --resume implies --no-clean and skips every
-# (method, seed) that already finished (search + hold-out + checkpoints on disk),
-# so it only pays for unfinished work.
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --resume
-
-# Deliberately wipe completed results and restart from scratch (a plain clean
-# run refuses to delete finished work without this).
-uv run agentic-autorag-bench run --config configs/hotpot_paper.yaml --force
-```
-
-The diagnosis/KB ablations (`agentic_nodiag`, `agentic_nokb`) are a Hotpot-only
-pass that runs AFTER the headline, reusing the same frozen exam under
-`results_hotpot/.shared_cache`:
+The KB and diagnosis ablations run on Hotpot only, after the headline, reusing
+the same frozen exam:
 
 ```bash
 uv run agentic-autorag-bench run --config configs/hotpot_ablation.yaml
 ```
 
-Method keys: `agentic_score`, `agentic_cost`, `agentic_nokb`, `agentic_nodiag`,
-`motpe`, `motpe_warm`, `random`. Each one passed via `-m` must also be
-declared in the config's `methods:` list.
+## Experiment 2: cost and quality
 
-Datasets are selected by config, not flag: each `configs/<dataset>_paper.yaml`
-points at its own `output_root` (`experiment-1/hotpot/`, `experiment-1/musique/`,
-`experiment-1/multihop/`) so the three runs don't collide.
+This runs on UniDoc-Bench healthcare, about 230 biomedical PDFs and 20 images.
+There is no gold answer set, so the optimizer generates its own exam and uses it
+as both the tuning target and the score. Every method also minimizes per-query
+LLM cost, which makes it a two-objective run. The matrix is 4 methods
+(`agentic_cost`, `random`, `motpe`, `motpe_warm`) and 3 seeds, at 30 trials each.
+Results land under `experiment-2/unidoc/`.
 
-**Scoped reset.** Each run wipes only the per-method dirs it's about to
-write (and any matching `<method>@<k>` checkpoint dirs). Method dirs not
-in this run, `.shared_cache/`, `bench_metadata.json`, and any user files
-at `output_root` survive. The cross-method `figures/` directory is NOT
-wiped at start-of-run — new matrix figures are rendered to a staging
-directory and atomically swapped at the very end, so the previous run's
-figures stay readable for the entire duration of a new run. A clean start
-**refuses to delete a method dir that already holds completed hold-out
-results** unless you pass `--force` — so an accidental re-launch of the
-plain `run` command after a crash can't destroy days of work. Pass
-`--resume` to continue instead (it implies `--no-clean` and skips finished
-(method, seed) pairs); `--no-clean` alone keeps prior files without resuming
-trial state.
+Unlike Experiment 1, this is a single command. The scheduler
+`scripts/run_experiment2.py` first builds the shared setup (download and parse
+the corpus, then generate and freeze the exam), then runs the 12 (method, seed)
+pairs with at most 2 at once and the same `motpe_warm` after `random` gating, and
+finally renders the figures and `hypervolume.json`.
 
-**Crash recovery.** Hold-out results are written atomically and the
-end-of-run union-exclusion + figure pass skips any unreadable file, so a
-kill mid-write never corrupts the tree or aborts the render. After any
-interruption, just re-run with `--resume` (or re-run the launcher, which
-adds `--resume` automatically) — completed work is skipped, only unfinished
-(method, seed) pairs run.
+```bash
+# Preview the plan:
+uv run python scripts/run_experiment2.py --dry-run
 
-**Abstention (`null_query`) scoring.** MultiHop-RAG's ~12% "Insufficient
-information." rows are **scored, not dropped**. Each carries a benchmark-verified
-unanswerable gold; the judge grades a system that likewise abstains as correct
-and one that hallucinates an answer as wrong. They flow into both the optimizer's
-validation exam and the held-out slice as their own `null_query` stratum. Note the
-deliberate **denominator asymmetry**: answer accuracy *includes* the abstention
-slice, while retrieval metrics (recall / MRR) *exclude* it — an unanswerable
-question has no gold documents to retrieve. The `hold_out.exclude_question_types`
-config knob remains as a general escape hatch for excising a broken question
-type, but the paper configs leave it empty.
+# Run in the background (about 7 hours with 2 workers):
+mkdir -p experiment-2/logs
+setsid nohup uv run python scripts/run_experiment2.py --workers 2 \
+    > experiment-2/logs/nohup.out 2>&1 &
 
-**Checkpoints.** Declare per-method early-stopping points in the bench
-config to evaluate `history[:k]`'s best on the held-out QA as a sibling
-`<method>@<k>/seed_<n>/` result directory:
-
-```yaml
-# configs/hotpot_paper.yaml
-checkpoints:
-  agentic_score: [10, 20]
-  agentic_cost:  [10, 20]
+# Watch progress:
+tail -f experiment-2/logs/scheduler.log
+cat experiment-2/logs/STATUS.json
 ```
 
-Each declared `k < max_trials` adds one extra held-out evaluation per
-seed. Lets the paper compare e.g. `agentic_score@20` vs. `motpe` at
-the full 40-trial budget without paying for extra search trials. The
-held-out judge caches per `(config_hash, question_id)`, so identical
-configs across checkpoints incur no extra cost.
+The default config is `configs/unidoc_pareto.yaml`. Resume works as in Experiment
+1: rerun the same command and finished pairs are skipped.
+
+To rebuild the figures from a finished run without calling any API:
+
+```bash
+uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only
+```
+
+This rewrites the figures in `experiment-2/unidoc/figures/` (the combined frontier
+plot, the seed-aggregated attainment band, the hypervolume-over-trials curve, and
+the agentic frontier) and `hypervolume.json`.
+
+The committed run keeps the per-pair results and figures but not the large
+`.shared_cache/` (corpus, embeddings, exam), so a fresh run regenerates the exam.
+Because RAG evaluation and LLM judging are not deterministic, a rerun reproduces
+the finding (the shape of the frontier, the ordering of the methods, and the gain
+from warm-starting) rather than the exact numbers.
 
 ## Output layout
 
 ```
-experiment-1/hotpot/                     # or experiment-1/musique / experiment-1/multihop
-  bench_metadata.json                    # dataset + methods + seeds + max_trials + checkpoints
-  filtered_questions.json                # held-out questions excluded across all runs (content-filter union)
-  .shared_cache/                         # corpus + exam + embedding ingredients (reused across methods + runs)
-    exam.json, exam_cost.json, cache_events.jsonl, ...
-  figures/                               # matrix-level (cross-method); only updated at end-of-run via staging swap
-    Table_1.md, score_per_trial.png, best_so_far.png, holdout_metrics.png,
-    cost_breakdown.png, token_breakdown.png, appendix/
-  <method>/                              # e.g. agentic_score, random, motpe
-    figures/                             # per-method (across seeds)
-    <seed_label>/
-      figures/                           # per-seed (score_per_trial, cost_per_trial)
-      benchmark_results.json             # held-out scoring on the best config
-      best_config.yaml, recommended.yaml
-      history.jsonl                      # per-trial config + score + tokens + eval_usd
-      search_result.json                 # full SearchResult dump
-      optimizer_meta.json                # roll-up: method, seed, totals, tokens, usd, wall-clock
-      trial_cost_ledger.jsonl            # per-trial bucket delta (agent_proposal, rag_eval, judge, embedding_build)
-      cache_events.jsonl                 # first-use cache-credit events (phase: exam_gen | trial)
-      cost_breakdown.json                # framework-side run-total ledger (agentic only)
-      bench_ledger.json                  # bench-side run-total ledger (non-agentic only)
-      frontier.json, frontier/<trial>.yaml
-      run.log
-  <method>@<k>/                          # checkpoint sibling: e.g. agentic_score@10, agentic_score@20
-    figures/                             # per-checkpoint (across seeds)
-    <seed_label>/                        # same file layout as <method>/<seed_label>/; cumulative cost truncated to k trials
+experiment-1/hotpot/
+  bench_metadata.json      dataset, methods, seeds, budget, optimizer version and commit
+  .shared_cache/           corpus, exam, and embeddings, reused across methods and runs
+  figures/                 cross-method figures and Table_1.md
+  <method>/<seed>/
+    benchmark_results.json held-out score of the best config
+    best_config.yaml       the selected pipeline
+    history.jsonl          per-trial config, score, tokens, and cost
+    optimizer_meta.json    totals for tokens, cost, and wall-clock
 ```
 
-Figures emit progressively: per-seed after each `(method, seed)` finishes its
-hold-out scoring; per-method after the method's seed loop closes; matrix-level
-after the full run.
+Experiment 2 uses the same per-pair layout under
+`experiment-2/unidoc/<method>/seed_<n>/`, with `history.jsonl` inside a
+`details/` folder.
 
-### Accounting model
+## Notes
 
-Token accounting is **cache-aware** and uses the first-use-per-(method, seed)
-rule: the first trial that touches a given cache key (embeddings, exam,
-chunks) pays the deterministic token cost in its own `trial_cost_ledger.jsonl`
-delta; later trials in the same run that hit the same key pay zero. This
-makes `sum(trial.tokens) == framework_run_total` reconcile exactly while
-preserving per-seed variance.
-
-**Fairness rule (exam-gen exclusion).** Only `agentic_*` generates its own
-exam; `random` / `motpe` reuse ours. Counting exam-gen cost would
-penalise the method that creates exams for work the others don't do, so
-the bench tally **excludes** exam-gen LLM and embedding tokens. The
-framework still records its own exam-gen cost in the `exam_generation`
-bucket for standalone (non-bench) runs; the bench's shared `.shared_cache/`
-generates the exam without an active ledger, so the exam-cost sidecar is
-zeros — correct under the rule. See `agentic_autorag_bench/types.py:TrialResult`
-and `run.py:_make_metered_evaluator` for the implementation.
-
-## Re-render figures from a committed tree
-
-```bash
-uv run agentic-autorag-bench analyze --results-dir results_hotpot/
+- **Cost accounting.** Only the agentic methods generate an exam. The others
+  reuse it. To keep the comparison fair, the cost tally excludes the tokens spent
+  generating the exam.
+- **Abstention.** MultiHop-RAG includes unanswerable questions, about 12% of the
+  set. A system that abstains is scored correct, and one that answers anyway is
+  scored wrong. These questions count toward answer accuracy but not retrieval
+  metrics, since there are no documents to retrieve.
+- **Provenance.** The optimizer lives at `../Agentic-AutoRAG` as a path dependency
+  and keeps changing after the runs, so each Experiment 1 result records the
+  optimizer version and commit in `bench_metadata.json`. Before the final runs,
+  tag that commit, for example `git -C ../Agentic-AutoRAG tag v0.1.0-paper`.
+  Experiment 2 does not write this file yet. For now its provenance is the git
+  commit of the results tree.
+- The earlier AutoRAG baseline was removed from the active matrix and is kept
+  under `agentic_autorag_bench/_deprecated/`.
 ```
-
-Regenerates the matrix-level figures + `Table_1.md` without re-running the
-matrix. Per-method and per-seed figures are already on disk from `run`.
-
-## Deprecated baselines
-
-The original Marker-Inc AutoRAG baseline lived under `methods/autorag/`
-and was wired into this matrix until 2026-05-27. The driver, translator,
-config-mirror, and setup script have been moved to
-`agentic_autorag_bench/_deprecated/autorag/` and `scripts/_deprecated/`
-respectively; the companion tests were deleted on decoupling and would
-need to be rewritten on resurrection. See
-`agentic_autorag_bench/_deprecated/README.md` for the reasoning, the
-original setup steps, and the wiring needed to re-enable.
-
-## Framework dependency
-
-Editable path dep on `../Agentic-AutoRAG` (see `[tool.uv.sources]`). The
-optimizer keeps evolving on `main` after the paper benchmarks run, so
-reproducibility rests on provenance, not a frozen checkout: every run stamps the
-optimizer's package version and git commit into `<output_root>/bench_metadata.json`
-(`run._optimizer_provenance`), so each results directory self-documents the exact
-code that produced it.
-
-Once, right before the final benchmark runs, tag the optimizer at the commit you
-run — a venue-neutral name, e.g. `git -C ../Agentic-AutoRAG tag v0.1.0-paper` —
-so the stamped `describe` resolves to that tag. Bump the suffix (`v0.1.1-paper`)
-if you re-run for a resubmission.

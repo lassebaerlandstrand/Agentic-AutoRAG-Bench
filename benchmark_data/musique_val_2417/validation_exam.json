@@ -1,0 +1,3696 @@
+[
+  {
+    "id": "2hop__104095_40502",
+    "question": "Before this emigration what was the population of Clara Peeters's country of citizenship?",
+    "canonical_answer": "2 million",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "clara_peeters",
+      "huguenots"
+    ],
+    "source_spans": [
+      "Clara Peeters (fl. 1607–1621) was a still-life painter who came from Antwerp and trained in the tradition of Flemish Baroque painting, but probably made her career mostly in the new Dutch Republic, as part of Dutch Golden Age painting.",
+      "A term used originally in derision, Huguenot has unclear origins."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        252
+      ],
+      [
+        13,
+        78
+      ]
+    ],
+    "supporting_doc_ids": [
+      "clara_peeters",
+      "huguenots"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__107690_124896",
+    "question": "Who was the father of The Portrait of George Dyer Talking's creator?",
+    "canonical_answer": "Nicholas Bacon",
+    "answer_variants": [
+      "Sir Nicholas Bacon"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "francis_bacon",
+      "portrait_of_george_dyer_talking"
+    ],
+    "source_spans": [
+      "Francis Bacon was born on 22 January 1561 at York House near the Strand in London, the son of Sir Nicholas Bacon (Lord Keeper of the Great Seal) by his second wife, Anne (Cooke) Bacon, the daughter of the noted humanist Anthony Cooke.",
+      "Portrait of George Dyer Talking is an oil painting by Francis Bacon executed in 1966."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        251
+      ],
+      [
+        35,
+        120
+      ]
+    ],
+    "supporting_doc_ids": [
+      "francis_bacon",
+      "portrait_of_george_dyer_talking"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__119423_779396",
+    "question": "Where was the designer of the Lap Engine educated?",
+    "canonical_answer": "University of Glasgow",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "lap_engine",
+      "james_watt"
+    ],
+    "source_spans": [
+      "The Lap Engine is a beam engine designed by James Watt, built by Boulton and Watt in 1788.",
+      "While working as an instrument maker at the University of Glasgow, Watt became interested in the technology of steam engines."
+    ],
+    "source_span_offsets": [
+      [
+        14,
+        104
+      ],
+      [
+        14,
+        139
+      ]
+    ],
+    "supporting_doc_ids": [
+      "lap_engine",
+      "james_watt"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__123166_47134",
+    "question": "What is the mascot of William J. Ripple's university?",
+    "canonical_answer": "Benny Beaver",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "william_j_ripple",
+      "benny_beaver"
+    ],
+    "source_spans": [
+      "William J. Ripple is a Distinguished Professor of Ecology at Oregon State University in the Department of Forest Ecosystems and Society.",
+      "Benny Beaver is the official mascot of Oregon State University and winner of the 2011 Capital One Mascot of the Year write - in campaign."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        157
+      ],
+      [
+        16,
+        153
+      ]
+    ],
+    "supporting_doc_ids": [
+      "william_j_ripple",
+      "benny_beaver"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__124932_278133",
+    "question": "Who was the father of Jujhar Singh's father?",
+    "canonical_answer": "Guru Tegh Bahadur",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "jujhar_singh",
+      "gurdwara_guru_ka_bagh"
+    ],
+    "source_spans": [
+      "Sahibzada Jujhar Singh (14 March 1691 – 22 December 1705), the second son of Guru Gobind Singh, was born to Mata Jito at Anandpur Sahib.",
+      "and where the sangat of Patna along with the young Guru Gobind Singh came out to receive him back from his four-year-long odyssey."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        152
+      ],
+      [
+        211,
+        341
+      ]
+    ],
+    "supporting_doc_ids": [
+      "jujhar_singh",
+      "gurdwara_guru_ka_bagh"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__126299_396277",
+    "question": "What other notable work did the person who illustrated Shrek work on?",
+    "canonical_answer": "Doctor De Soto",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "doctor_de_soto",
+      "shrek"
+    ],
+    "source_spans": [
+      "Doctor De Soto is a picture book for children written and illustrated by William Steig and first published in 1982.",
+      "Shrek! is a picture book published in 1990 by American book writer and cartoonist William Steig, about a repugnant and monstrous green creature who leaves home to see the world and ends up saving a princess."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        133
+      ],
+      [
+        10,
+        217
+      ]
+    ],
+    "supporting_doc_ids": [
+      "doctor_de_soto",
+      "shrek"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__130668_126089",
+    "question": "Who was in charge of the state where Graft-De Rijp is located?",
+    "canonical_answer": "Johan Remkes",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "north_holland",
+      "graft_de_rijp"
+    ],
+    "source_spans": [
+      "The King's Commissioner of North Holland is Johan Remkes, serving since 2010.",
+      "Graft-De Rijp () is a former municipality in the Netherlands, in the province of North Holland."
+    ],
+    "source_span_offsets": [
+      [
+        150,
+        227
+      ],
+      [
+        17,
+        112
+      ]
+    ],
+    "supporting_doc_ids": [
+      "north_holland",
+      "graft_de_rijp"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__136179_13529",
+    "question": "When was the player that Iglesia Maradoniana is named after signed by Barcelona?",
+    "canonical_answer": "June 1982",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "fc_barcelona",
+      "iglesia_maradoniana"
+    ],
+    "source_spans": [
+      "Barcelona's attacking trio of Messi, Suárez and Neymar, dubbed MSN, scored 122 goals in all competitions, the most in a season for an attacking trio in Spanish football history.",
+      "The Iglesia Maradoniana (; literally \"Maradonian Church\") is a religion, created by fans of the retired Argentine football player Diego Maradona, whom they believe to be the best player of all time."
+    ],
+    "source_span_offsets": [
+      [
+        580,
+        757
+      ],
+      [
+        23,
+        221
+      ]
+    ],
+    "supporting_doc_ids": [
+      "fc_barcelona",
+      "iglesia_maradoniana"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__145288_502838",
+    "question": "Which administrative territorial entity was Roger Franklin born in?",
+    "canonical_answer": "Dallas County",
+    "answer_variants": [
+      "Dallas County, Texas"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "duncanville_texas",
+      "roger_franklin"
+    ],
+    "source_spans": [
+      "Duncanville is a city in southern Dallas County, Texas, in the United States.",
+      "Roger Franklin (born September 7, 1990) is a professional basketball player who was born in Duncanville, Texas."
+    ],
+    "source_span_offsets": [
+      [
+        22,
+        99
+      ],
+      [
+        18,
+        129
+      ]
+    ],
+    "supporting_doc_ids": [
+      "duncanville_texas",
+      "roger_franklin"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__152052_141308",
+    "question": "What company is the label responsible for Don't Let Me Wait Too Long a part of?",
+    "canonical_answer": "Apple Corps",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "don_t_let_me_wait_too_long",
+      "apple_records"
+    ],
+    "source_spans": [
+      "Apple Records released \"Living in the Material World\" on 30 May 1973 in America.",
+      "Apple Records is a record label founded by the Beatles in 1968 as a division of Apple Corps Ltd."
+    ],
+    "source_span_offsets": [
+      [
+        30,
+        110
+      ],
+      [
+        17,
+        113
+      ]
+    ],
+    "supporting_doc_ids": [
+      "don_t_let_me_wait_too_long",
+      "apple_records"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__159146_120065",
+    "question": "What year did the region where Leuna was located come to an end?",
+    "canonical_answer": "1738",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "merseburg",
+      "german_revolution_of_1918_19"
+    ],
+    "source_spans": [
+      "From 1657 to 1738 Merseburg was the residence of the Dukes of Saxe-Merseburg, after which it fell to the Electorate of Saxony.",
+      "The councils deposed the management of the Leuna works, a giant chemical factory near Merseburg."
+    ],
+    "source_span_offsets": [
+      [
+        13,
+        139
+      ],
+      [
+        375,
+        471
+      ]
+    ],
+    "supporting_doc_ids": [
+      "merseburg",
+      "german_revolution_of_1918_19"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__159741_40169",
+    "question": "When did a storm disperse the fleet led by the English king who trusted William de Longchamp?",
+    "canonical_answer": "1191",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "normans",
+      "william_de_longchamp"
+    ],
+    "source_spans": [
+      "In April 1191 Richard the Lion-hearted left Messina with a large fleet in order to reach Acre. But a storm dispersed the fleet.",
+      "Longchamp first served Henry II's illegitimate son Geoffrey, but quickly transferred to the service of Richard I, Henry's heir."
+    ],
+    "source_span_offsets": [
+      [
+        11,
+        138
+      ],
+      [
+        328,
+        455
+      ]
+    ],
+    "supporting_doc_ids": [
+      "normans",
+      "william_de_longchamp"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__161273_92673",
+    "question": "Where is the pole the balloon was supposed to pass over located on the world map?",
+    "canonical_answer": "latitude 90 ° North",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "north_pole",
+      "andr_e_s_arctic_balloon_expedition"
+    ],
+    "source_spans": [
+      "It defines geodetic latitude 90 ° North, as well as the direction of true north.",
+      "Salomon August Andrée shared these enthusiasms, and proposed a plan for letting the wind propel a hydrogen balloon from Svalbard across the Arctic Sea to the Bering Strait, to fetch up in Alaska, Canada, or Russia, and passing near or even right over the North Pole on the way."
+    ],
+    "source_span_offsets": [
+      [
+        114,
+        194
+      ],
+      [
+        38,
+        315
+      ]
+    ],
+    "supporting_doc_ids": [
+      "north_pole",
+      "andr_e_s_arctic_balloon_expedition"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__189094_612080",
+    "question": "What league does the team that occupies the Rabat Ajax Football Ground belong to?",
+    "canonical_answer": "Maltese Premier League",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "malcolm_licari",
+      "rabat_ajax_football_ground"
+    ],
+    "source_spans": [
+      "Malcolm Licari (born 18 April 1978 in Pietà, Malta) is a retired professional footballer playing for Pietà Hotspurs, Marsaxlokk, Floriana, Balzan and Rabat Ajax in the Maltese Premier League, where he plays as a striker, and also occasionally as a defender.",
+      "The Rabat Ajax Football Ground is the training ground of Maltese football team Rabat Ajax F.C. and is located in the town of Mtarfa."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        275
+      ],
+      [
+        30,
+        162
+      ]
+    ],
+    "supporting_doc_ids": [
+      "malcolm_licari",
+      "rabat_ajax_football_ground"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__226204_69048",
+    "question": "Who is the chief judge of Friday Osanebi's birthplace?",
+    "canonical_answer": "Honorable Justice Abiodun Smith",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "friday_osanebi",
+      "rosaline_bozimo"
+    ],
+    "source_spans": [
+      "Friday Ossai Osanebi (born August 7, 1980) is a Nigerian and a member of the Delta State House of Assembly the Lawmaker representing Ndokwa East Local Government Constituency in the State House of Assembly.",
+      "She retired on 1 January 2011 and was succeeded by Honorable Justice Abiodun Smith."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        224
+      ],
+      [
+        174,
+        257
+      ]
+    ],
+    "supporting_doc_ids": [
+      "friday_osanebi",
+      "rosaline_bozimo"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__25797_25839",
+    "question": "What is the maximum amount of load that can be drawn by the device where 1.1 was the first widely used version?",
+    "canonical_answer": "five unit loads",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "usb"
+    ],
+    "source_spans": [
+      "The first widely used version of USB was 1.1, which was released in September 1998."
+    ],
+    "source_span_offsets": [
+      [
+        231,
+        314
+      ]
+    ],
+    "supporting_doc_ids": [
+      "usb"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__259228_793698",
+    "question": "Where is Ulrich Walter's employer headquartered?",
+    "canonical_answer": "Cologne",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "philae_spacecraft",
+      "ulrich_walter"
+    ],
+    "source_spans": [
+      "\"Philae\" was monitored and operated from DLR's Lander Control Center in Cologne, Germany.",
+      "From 1988 to 1990, he completed basic training at the German Aerospace Center, and was then nominated to be in the prime crew for the second German Spacelab mission."
+    ],
+    "source_span_offsets": [
+      [
+        181,
+        270
+      ],
+      [
+        218,
+        383
+      ]
+    ],
+    "supporting_doc_ids": [
+      "philae_spacecraft",
+      "ulrich_walter"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__29339_40482",
+    "question": "Who did the Huguenots in the state primary Edwards won outside of Georgia buy land from?",
+    "canonical_answer": "Edmund Bellinger",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "2004_united_states_presidential_election",
+      "huguenots"
+    ],
+    "source_spans": [
+      "On July 6, John Kerry selected John Edwards as his running mate, shortly before the 2004 Democratic National Convention in Boston, held later that month.",
+      "A term used originally in derision, Huguenot has unclear origins."
+    ],
+    "source_span_offsets": [
+      [
+        44,
+        197
+      ],
+      [
+        13,
+        78
+      ]
+    ],
+    "supporting_doc_ids": [
+      "2004_united_states_presidential_election",
+      "huguenots"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__30032_46621",
+    "question": "When was the celestial body that transforms nuclear potential energy to other forms of energy discovered to be the center of the solar system?",
+    "canonical_answer": "as early as the 3rd century BC",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "heliocentrism",
+      "energy"
+    ],
+    "source_spans": [
+      "The notion that the Earth revolves around the Sun had been proposed as early as the 3rd century BC by Aristarchus of Samos, but at least in the medieval world, Aristarchus's Heliocentrism attracted little attention -- possibly because of the loss of scientific works of the Hellenistic Era.",
+      "The Lagrangian is defined as the kinetic energy minus the potential energy."
+    ],
+    "source_span_offsets": [
+      [
+        240,
+        530
+      ],
+      [
+        327,
+        402
+      ]
+    ],
+    "supporting_doc_ids": [
+      "heliocentrism",
+      "energy"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__30905_213732",
+    "question": "Who is the child of the person who sponsored the resolution to reopen trade with Vietnam, along with Kerry?",
+    "canonical_answer": "Meghan McCain",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "dirty_sexy_politics",
+      "john_kerry"
+    ],
+    "source_spans": [
+      "Dirty Sexy Politics is a 2010 political memoir written by Meghan McCain, the daughter of Republican Senator John McCain, about the 2008 United States presidential election.",
+      "Kerry received his second Purple Heart for a wound received in action on the Bồ Đề River on February 20, 1969."
+    ],
+    "source_span_offsets": [
+      [
+        23,
+        195
+      ],
+      [
+        14,
+        124
+      ]
+    ],
+    "supporting_doc_ids": [
+      "dirty_sexy_politics",
+      "john_kerry"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__31124_31093",
+    "question": "What nationality was the notable subjective idealist?",
+    "canonical_answer": "Irish",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "empiricism",
+      "idealism"
+    ],
+    "source_spans": [
+      "The Latin translation of his philosophical novel, entitled Philosophus Autodidactus, published by Edward Pococke the Younger in 1671, had an influence on John Locke's formulation of tabula rasa in An Essay Concerning Human Understanding.",
+      "This turn toward the subjective anticipated empiricists such as George Berkeley, who revived idealism in 18th-century Europe by employing skeptical arguments against materialism."
+    ],
+    "source_span_offsets": [
+      [
+        455,
+        692
+      ],
+      [
+        496,
+        674
+      ]
+    ],
+    "supporting_doc_ids": [
+      "empiricism",
+      "idealism"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__358582_189042",
+    "question": "What is the record label of the Thrill of a Lifetime performer?",
+    "canonical_answer": "New Renaissance Records",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "thrill_of_a_lifetime_album",
+      "king_kobra_iii"
+    ],
+    "source_spans": [
+      "Thrill of a Lifetime is the second album (and the last to feature Mark Free on vocals) by the American hard rock band King Kobra, released in 1986 by Capitol Records.",
+      "King Kobra III, released in 1988 on New Renaissance Records, was the first and last album by the Edwards, Michael-Phillips, Northrup, Hart and Appice line-up of King Kobra."
+    ],
+    "source_span_offsets": [
+      [
+        32,
+        198
+      ],
+      [
+        18,
+        190
+      ]
+    ],
+    "supporting_doc_ids": [
+      "thrill_of_a_lifetime_album",
+      "king_kobra_iii"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__439614_349102",
+    "question": "What type of animal is Xiao Liwu's mother?",
+    "canonical_answer": "panda",
+    "answer_variants": [
+      "giant panda",
+      "Giant panda"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "xiao_liwu",
+      "bai_yun"
+    ],
+    "source_spans": [
+      "Xiao Liwu is the sixth cub born to his mother Bai Yun, and the fifth for his father Gao Gao.",
+      "Bai Yun (; born September 7, 1991) is a female giant panda sheltered at the San Diego Zoo."
+    ],
+    "source_span_offsets": [
+      [
+        13,
+        105
+      ],
+      [
+        11,
+        101
+      ]
+    ],
+    "supporting_doc_ids": [
+      "xiao_liwu",
+      "bai_yun"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__450608_373421",
+    "question": "What is the county where Ukmergė District Municipality is located one of?",
+    "canonical_answer": "counties of Lithuania",
+    "answer_variants": [
+      "lt",
+      "Lithuania"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "ukmerg_district_municipality",
+      "vilnius_county"
+    ],
+    "source_spans": [
+      "The Ukmergė District Municipality is a municipality in Vilnius County, Lithuania.",
+      "Vilnius County () is the largest of the 10 counties of Lithuania, located in the east of the country around the city Vilnius."
+    ],
+    "source_span_offsets": [
+      [
+        33,
+        114
+      ],
+      [
+        18,
+        143
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ukmerg_district_municipality",
+      "vilnius_county"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__45126_807969",
+    "question": "Which team is the highest goal scorer in EPL this season a member of?",
+    "canonical_answer": "Egypt national football team",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "list_of_top_premier_league_goal_scorers_by_season",
+      "ahmed_salah_hosny"
+    ],
+    "source_spans": [
+      "Mohamed Salah Liverpool 32",
+      "Ahmed Salah Mohammed Hosny Hassan (born 11 July 1979) is a footballer from Egypt who played for VfB Stuttgart and the Egypt national football team."
+    ],
+    "source_span_offsets": [
+      [
+        76,
+        102
+      ],
+      [
+        21,
+        168
+      ]
+    ],
+    "supporting_doc_ids": [
+      "list_of_top_premier_league_goal_scorers_by_season",
+      "ahmed_salah_hosny"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__485221_544917",
+    "question": "What body of water includes the terrain feature where Coffee Swamp is located?",
+    "canonical_answer": "Lake Superior",
+    "answer_variants": [
+      "Superior"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "washington_island_michigan",
+      "coffee_swamp"
+    ],
+    "source_spans": [
+      "Washington Island is an uninhabited island in Lake Superior.",
+      "Coffee Swamp is a two acre freshwater swamp located on the northern edge of Washington Island, in Door County Wisconsin and is a designated state natural area since 1994."
+    ],
+    "source_span_offsets": [
+      [
+        32,
+        92
+      ],
+      [
+        16,
+        186
+      ]
+    ],
+    "supporting_doc_ids": [
+      "washington_island_michigan",
+      "coffee_swamp"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__496792_392646",
+    "question": "A participant of the Battle of Brechin is an instance of?",
+    "canonical_answer": "Scottish clan",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "battle_of_brechin",
+      "clan_gordon"
+    ],
+    "source_spans": [
+      "A royalist army formed by the Clan Gordon and Clan Ogilvy, led by Alexander Gordon, 1st Earl of Huntly, defeated the rebel Alexander Lindsay, 4th Earl of Crawford, a leading ally of the Black Douglases.",
+      "Clan Gordon, also known as the House of Gordon, is a Scottish clan."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        223
+      ],
+      [
+        15,
+        82
+      ]
+    ],
+    "supporting_doc_ids": [
+      "battle_of_brechin",
+      "clan_gordon"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__498061_88622",
+    "question": "Who's the head of the owner of ThinThread?",
+    "canonical_answer": "ADM Michael S. Rogers",
+    "answer_variants": [
+      "Michael S. Rogers"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "director_of_the_national_security_agency",
+      "thinthread"
+    ],
+    "source_spans": [
+      "17 ADM Michael S. Rogers USN April 2, 2014 -- present Barack Obama Donald Trump",
+      "ThinThread is the name of a project that the United States National Security Agency (NSA) pursued during the 1990s, according to a May 17, 2006 article in \"The Baltimore Sun\"."
+    ],
+    "source_span_offsets": [
+      [
+        1180,
+        1259
+      ],
+      [
+        14,
+        189
+      ]
+    ],
+    "supporting_doc_ids": [
+      "director_of_the_national_security_agency",
+      "thinthread"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__50432_56873",
+    "question": "When did the team that won the 1959 fa cup final beating luton town 2-1 win the fa cup?",
+    "canonical_answer": "1898 and 1959",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "1959_fa_cup_final",
+      "nottingham_forest_f_c"
+    ],
+    "source_spans": [
+      "1959 FA Cup Final Event 1958 -- 59 FA Cup Nottingham Forest Luton Town Date 2 May 1959 Venue Wembley Stadium, London",
+      "Forest won the FA Cup in 1898 and 1959."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        137
+      ],
+      [
+        230,
+        269
+      ]
+    ],
+    "supporting_doc_ids": [
+      "1959_fa_cup_final",
+      "nottingham_forest_f_c"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__51074_75184",
+    "question": "Who plays Marty's girlfriend in Back to the Future?",
+    "canonical_answer": "Claudia Wells",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "list_of_back_to_the_future_characters",
+      "back_to_the_future"
+    ],
+    "source_spans": [
+      "George Douglas McFly (portrayed by Crispin Glover in Back to the Future and by Jeffrey Weissman in Back to the Future Part II and Back to the Future Part III and voiced by Michael X. Sommers in Back to the Future: The Game) is the father of Marty, Linda and Dave from the union with his wife Lorraine Baines McFly.",
+      "It stars Michael J. Fox as teenager Marty McFly, who is sent back in time to 1955, where he meets his future parents in high school and accidentally becomes his mother's romantic interest."
+    ],
+    "source_span_offsets": [
+      [
+        41,
+        355
+      ],
+      [
+        166,
+        354
+      ]
+    ],
+    "supporting_doc_ids": [
+      "list_of_back_to_the_future_characters",
+      "back_to_the_future"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__54651_169233",
+    "question": "What award did the singer of Never Had a Friend Like Me in Aladdin receive?",
+    "canonical_answer": "Academy Award for Best Supporting Actor",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "list_of_awards_and_nominations_received_by_robin_williams",
+      "friend_like_me"
+    ],
+    "source_spans": [
+      "Robin Williams (1951–2014) was an American actor and comedian who throughout the course of his career won numerous awards, including an Academy Award for Best Supporting Actor for his role in \"Good Will Hunting\" (1997).",
+      "The song was nominated for the Academy Award for Best Original Song at the 65th Academy Awards and the Golden Globe Award for Best Original Song at the 50th Golden Globe Awards in 1993."
+    ],
+    "source_span_offsets": [
+      [
+        61,
+        280
+      ],
+      [
+        143,
+        328
+      ]
+    ],
+    "supporting_doc_ids": [
+      "list_of_awards_and_nominations_received_by_robin_williams",
+      "friend_like_me"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__551235_310309",
+    "question": "Who is the child of the creator of A Distinguished Member of the Humane Society?",
+    "canonical_answer": "Edwin Landseer Lutyens",
+    "answer_variants": [
+      "Sir Edwin Landseer Lutyens",
+      "Edwin Lutyens"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "a_distinguished_member_of_the_humane_society",
+      "edwin_lutyens"
+    ],
+    "source_spans": [
+      "A Distinguished Member of the Humane Society is an 1831 oil on canvas work by English painter Sir Edwin Henry Landseer depicting a Newfoundland dog.",
+      "Sir Edwin Landseer Lutyens, (; ; 29 March 1869 – 1 January 1944) was an English architect known for imaginatively adapting traditional architectural styles to the requirements of his era."
+    ],
+    "source_span_offsets": [
+      [
+        48,
+        196
+      ],
+      [
+        17,
+        204
+      ]
+    ],
+    "supporting_doc_ids": [
+      "a_distinguished_member_of_the_humane_society",
+      "edwin_lutyens"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__55966_162341",
+    "question": "What kind of recognition did the actor who played the game maker in hunger games receive?",
+    "canonical_answer": "nominated for an Academy Award for Best Supporting Actor",
+    "answer_variants": [
+      "Academy Award for Best Supporting Actor"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "philip_seymour_hoffman",
+      "charlie_wilson_s_war_film"
+    ],
+    "source_spans": [
+      "Best known for his distinctive supporting and character roles -- typically lowlifes, eccentrics, bullies, and misfits -- Hoffman acted in many films from the early 1990s until his death at age 46.",
+      "Hoffman was nominated for an Academy Award for Best Supporting Actor."
+    ],
+    "source_span_offsets": [
+      [
+        132,
+        328
+      ],
+      [
+        490,
+        559
+      ]
+    ],
+    "supporting_doc_ids": [
+      "philip_seymour_hoffman",
+      "charlie_wilson_s_war_film"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__5658_161105",
+    "question": "By how many votes did the signer of the decree suspending the Communist Party of the Russian SFSR survive impeachment?",
+    "canonical_answer": "72",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "russian_soviet_federative_socialist_republic",
+      "1993_russian_constitutional_crisis"
+    ],
+    "source_spans": [
+      "On April 17, 1946, the Kaliningrad Oblast — the northern portion of the former German province of East Prussia—was annexed by the Soviet Union and made part of the Russian SFSR.",
+      "Yeltsin narrowly survived an impeachment vote on March 28, votes for impeachment falling 72 short of the 689 votes needed for a 2/3 majority."
+    ],
+    "source_span_offsets": [
+      [
+        48,
+        225
+      ],
+      [
+        363,
+        504
+      ]
+    ],
+    "supporting_doc_ids": [
+      "russian_soviet_federative_socialist_republic",
+      "1993_russian_constitutional_crisis"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__58691_192417",
+    "question": "The league playing in the Thursday night football game is a type of what?",
+    "canonical_answer": "sports league",
+    "answer_variants": [
+      "Sports league",
+      "league"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "thursday_night_football",
+      "sports_league_ranking"
+    ],
+    "source_spans": [
+      "Thursday Night Football (or simply TNF) is the branding used for broadcasts of National Football League (NFL) games that broadcast primarily on Thursday nights.",
+      "In a sports league, the ranking of a team is the place where it is within the division."
+    ],
+    "source_span_offsets": [
+      [
+        27,
+        187
+      ],
+      [
+        25,
+        112
+      ]
+    ],
+    "supporting_doc_ids": [
+      "thursday_night_football",
+      "sports_league_ranking"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__59133_512508",
+    "question": "What undertaking included the person who discovered that the number of protons in each element's atoms is unique?",
+    "canonical_answer": "Manhattan Project",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "atomic_number",
+      "james_chadwick"
+    ],
+    "source_spans": [
+      "After 1932, therefore, an element's atomic number Z was also realized to be identical to the proton number of its nuclei.",
+      "When the Quebec Agreement merged his project with the American Manhattan Project, he became part of the British Mission, and worked at the Los Alamos Laboratory and in Washington, D.C."
+    ],
+    "source_span_offsets": [
+      [
+        297,
+        418
+      ],
+      [
+        211,
+        395
+      ]
+    ],
+    "supporting_doc_ids": [
+      "atomic_number",
+      "james_chadwick"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__65202_712629",
+    "question": "Who is the spouse of the owner of the British Virgin Islands?",
+    "canonical_answer": "Philip Mountbatten",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "british_virgin_islands",
+      "wedding_dress_of_princess_elizabeth"
+    ],
+    "source_spans": [
+      "Monarch Elizabeth II",
+      "The wedding dress of Princess Elizabeth was worn by the future Queen Elizabeth II at her wedding to Philip Mountbatten, Duke of Edinburgh on 20 November 1947 in Westminster Abbey."
+    ],
+    "source_span_offsets": [
+      [
+        604,
+        624
+      ],
+      [
+        39,
+        218
+      ]
+    ],
+    "supporting_doc_ids": [
+      "british_virgin_islands",
+      "wedding_dress_of_princess_elizabeth"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__66708_573255",
+    "question": "Who was the spouse of the person the Bible says was the first king of Israel?",
+    "canonical_answer": "Ahinoam",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "ahinoam",
+      "saul"
+    ],
+    "source_spans": [
+      "Adherents of source criticism suggest that references to a woman called \"Ahinoam\" being Saul's wife belong to the account of the \"republican source\" of the Books of Samuel, while in the passages ascribed to the \"monarchial source\", the only mention of a woman called \"Ahinoam\" is the description of her as a wife of David.",
+      "Saul (/ sɔːl /; Hebrew: שָׁאוּל, Šāʼûl; ``asked for, prayed for ''; Latin: Saul; Arabic: طالوت ‎, Ṭālūt or Arabic: شاؤل ‎, Ša'ūl), according to the Hebrew Bible, was the first king of the Kingdom of Israel and Judah."
+    ],
+    "source_span_offsets": [
+      [
+        11,
+        333
+      ],
+      [
+        8,
+        224
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ahinoam",
+      "saul"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__66_59409",
+    "question": "Who was the artist that was featured in Beyonce's first solo album's lead single talking about in the song \"Cry\"?",
+    "canonical_answer": "three different relationships he had in the past",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "beyonc",
+      "song_cry"
+    ],
+    "source_spans": [
+      "The album's lead single,`` Crazy in Love'', featuring Jay - Z, became Beyoncé's first number - one single as a solo artist in the US.",
+      "three different relationships he had in the past"
+    ],
+    "source_span_offsets": [
+      [
+        463,
+        596
+      ],
+      [
+        100,
+        148
+      ]
+    ],
+    "supporting_doc_ids": [
+      "beyonc",
+      "song_cry"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__683203_72813",
+    "question": "Who does the performer of Don't Be Cruel play in the wire?",
+    "canonical_answer": "a Western District uniformed officer",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "police_of_the_wire",
+      "don_t_be_cruel_album"
+    ],
+    "source_spans": [
+      "Bobby Brown is a Western District uniformed officer.",
+      "Don't Be Cruel is the second studio album by American singer Bobby Brown."
+    ],
+    "source_span_offsets": [
+      [
+        22,
+        74
+      ],
+      [
+        26,
+        99
+      ]
+    ],
+    "supporting_doc_ids": [
+      "police_of_the_wire",
+      "don_t_be_cruel_album"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__68590_27619",
+    "question": "Where is the mission for the agency that controls the monetary policy of the EU found?",
+    "canonical_answer": "Article 2 of the Statute of the ECB",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "european_central_bank"
+    ],
+    "source_spans": [
+      "The Supervisory Board meets twice a month to discuss, plan and carry out the ECB’s supervisory tasks."
+    ],
+    "source_span_offsets": [
+      [
+        25,
+        126
+      ]
+    ],
+    "supporting_doc_ids": [
+      "european_central_bank"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__695432_18803",
+    "question": "The operator of Brent field announced it was in the process of doing what in April 2010?",
+    "canonical_answer": "trying to find a potential buyer for all of its operations in Finland",
+    "answer_variants": [
+      "FIN",
+      "fi",
+      "Finland"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "brent_spar",
+      "royal_dutch_shell"
+    ],
+    "source_spans": [
+      "Brent Spar, or Brent E, was a North Sea oil storage and tanker loading buoy in the Brent oilfield, operated by Shell UK.",
+      "In April 2010, Shell announced its intention to divest from downstream business of all African countries except South Africa and Egypt to Vitol and \"Helios\"."
+    ],
+    "source_span_offsets": [
+      [
+        14,
+        134
+      ],
+      [
+        21,
+        178
+      ]
+    ],
+    "supporting_doc_ids": [
+      "brent_spar",
+      "royal_dutch_shell"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__71715_50429",
+    "question": "What is the population of the state where Dukes of Hazzard took place?",
+    "canonical_answer": "10,310,371 (2016 est.)",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_dukes_of_hazzard",
+      "georgia_u_s_state"
+    ],
+    "source_spans": [
+      "Country of origin United States",
+      "Population Ranked 8th Total 10,310,371 (2016 est.)"
+    ],
+    "source_span_offsets": [
+      [
+        389,
+        420
+      ],
+      [
+        514,
+        564
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_dukes_of_hazzard",
+      "georgia_u_s_state"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__71755_463572",
+    "question": "What is the record label for the singer who originally sang You Belong To Me.",
+    "canonical_answer": "MGM Records",
+    "answer_variants": [
+      "MGM"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "you_belong_to_me_1952_song",
+      "let_there_be_love_1953_joni_james_album"
+    ],
+    "source_spans": [
+      "After she signed to MGM, it was reissued as her second single on that label on August 5, 1952, after Jo Stafford, Patti Page and Dean Martin had covered it.",
+      "Let There Be Love is Joni James debut album, recorded in 1953 and released by MGM Records at the end of the year."
+    ],
+    "source_span_offsets": [
+      [
+        295,
+        451
+      ],
+      [
+        45,
+        158
+      ]
+    ],
+    "supporting_doc_ids": [
+      "you_belong_to_me_1952_song",
+      "let_there_be_love_1953_joni_james_album"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__747667_52835",
+    "question": "Who wrote Turn Me On by the Thinking About You performer?",
+    "canonical_answer": "John D. Loudermilk",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "turn_me_on_mark_dinning_song",
+      "thinking_about_you_norah_jones_song"
+    ],
+    "source_spans": [
+      "Songwriter (s) John D. Loudermilk",
+      "\"Thinking About You\" is the first single from Norah Jones' third solo album, \"Not Too Late\" (2007)."
+    ],
+    "source_span_offsets": [
+      [
+        211,
+        244
+      ],
+      [
+        41,
+        140
+      ]
+    ],
+    "supporting_doc_ids": [
+      "turn_me_on_mark_dinning_song",
+      "thinking_about_you_norah_jones_song"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__802991_443552",
+    "question": "What is the capital of the county where Fort Deposit is located?",
+    "canonical_answer": "Hayneville",
+    "answer_variants": [
+      "Hayneville, Alabama"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "fort_deposit_alabama",
+      "hayneville_alabama"
+    ],
+    "source_spans": [
+      "Fort Deposit is a town in Lowndes County, Alabama, United States.",
+      "The city is the county seat of Lowndes County."
+    ],
+    "source_span_offsets": [
+      [
+        25,
+        90
+      ],
+      [
+        174,
+        220
+      ]
+    ],
+    "supporting_doc_ids": [
+      "fort_deposit_alabama",
+      "hayneville_alabama"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__80_59409",
+    "question": "Who was the artist who did a duet with Beyonce in the single \"Deja Vu\" talking about in the song \"Cry\"?",
+    "canonical_answer": "three different relationships he had in the past",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "song_cry",
+      "beyonc"
+    ],
+    "source_spans": [
+      "this song was actually inspired by three different relationships he had in the past",
+      "The album earned Beyoncé a then record - tying five awards at the 46th Annual Grammy Awards; Best Contemporary R&B Album, Best Female R&B Vocal Performance for`` Dangerously in Love 2'', Best R&B Song and Best Rap / Sung Collaboration for ``Crazy in Love '', and Best R&B Performance by a Duo or Group with Vocals for`` The Closer I Get to You'' with Luther Vandross."
+    ],
+    "source_span_offsets": [
+      [
+        65,
+        148
+      ],
+      [
+        732,
+        1099
+      ]
+    ],
+    "supporting_doc_ids": [
+      "song_cry",
+      "beyonc"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__814671_82341",
+    "question": "In what region of Florida is WMOP located?",
+    "canonical_answer": "in Northern Florida",
+    "answer_variants": [
+      "Northern Florida"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "wmop",
+      "ocala_florida"
+    ],
+    "source_spans": [
+      "WMOP is a commercial radio station in Ocala, Florida, broadcasting to the Gainesville-Ocala, Florida area on 900 AM.",
+      "Ocala (/ oʊ ˈkælə / oh - KAL - ə) is a city located in Northern Florida."
+    ],
+    "source_span_offsets": [
+      [
+        8,
+        124
+      ],
+      [
+        18,
+        90
+      ]
+    ],
+    "supporting_doc_ids": [
+      "wmop",
+      "ocala_florida"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__82051_7298",
+    "question": "Along with the subject of The One That Got Away, what notable pop artist started out his career on adult contemporary radio?",
+    "canonical_answer": "Michael Bublé",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_one_that_got_away_katy_perry_song",
+      "adult_contemporary_music"
+    ],
+    "source_spans": [
+      "In 2017, the singer revealed that ``The One That Got Away ''was about Josh Groban.",
+      "Artists contributing to this format include mainly soft rock/pop singers such as, Andy Williams, Johnny Mathis, Nana Mouskouri, Celine Dion, Julio Iglesias, Frank Sinatra, Barry Manilow, Engelbert Humperdinck, and Marc Anthony."
+    ],
+    "source_span_offsets": [
+      [
+        1186,
+        1268
+      ],
+      [
+        28,
+        255
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_one_that_got_away_katy_perry_song",
+      "adult_contemporary_music"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__84172_198548",
+    "question": "Who is the spouse of the person who does the voice for Smokey the Bear?",
+    "canonical_answer": "Katharine Ross",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "murder_in_texas",
+      "smokey_bear"
+    ],
+    "source_spans": [
+      "Murder in Texas is a 1981 television film starring Katharine Ross, Sam Elliott, Farrah Fawcett, and Andy Griffith.",
+      "Washington, D.C., radio station WMAL personality Jackson Weaver served as the primary voice representing Smokey until Weaver's death in October 1992."
+    ],
+    "source_span_offsets": [
+      [
+        19,
+        133
+      ],
+      [
+        15,
+        164
+      ]
+    ],
+    "supporting_doc_ids": [
+      "murder_in_texas",
+      "smokey_bear"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__89460_75184",
+    "question": "Who in Back To The Future played the girlfriend of the character played by the actor playing marty's daughter in back to the future 2?",
+    "canonical_answer": "Claudia Wells",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "list_of_back_to_the_future_characters"
+    ],
+    "source_spans": [
+      "George Douglas McFly (portrayed by Crispin Glover in Back to the Future and by Jeffrey Weissman in Back to the Future Part II and Back to the Future Part III and voiced by Michael X. Sommers in Back to the Future: The Game) is the father of Marty, Linda and Dave from the union with his wife Lorraine Baines McFly."
+    ],
+    "source_span_offsets": [
+      [
+        41,
+        355
+      ]
+    ],
+    "supporting_doc_ids": [
+      "list_of_back_to_the_future_characters"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "2hop__95878_88628",
+    "question": "Who did the actor in Advernture's End play in True Grit?",
+    "canonical_answer": "U.S. Marshal Rooster Cogburn",
+    "answer_variants": [
+      "U.S.",
+      "US",
+      "America"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "true_grit_1969_film",
+      "adventure_s_end"
+    ],
+    "source_spans": [
+      "The film was directed by Henry Hathaway and starred Kim Darby as Mattie Ross and John Wayne as U.S. Marshal Rooster Cogburn.",
+      "Adventure's End is a 1937 American adventure film from Universal Pictures, directed by Arthur Lubin and starring John Wayne and Diana Gibson."
+    ],
+    "source_span_offsets": [
+      [
+        198,
+        322
+      ],
+      [
+        19,
+        160
+      ]
+    ],
+    "supporting_doc_ids": [
+      "true_grit_1969_film",
+      "adventure_s_end"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__102087_214799_259594",
+    "question": "What is the three letter abbreviation for the country, which maintains border troops, that claims Bernd Baumgart as a citizen?",
+    "canonical_answer": "GDR",
+    "answer_variants": [
+      "German Democratic Republic",
+      "East Germany"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "bernd_baumgart",
+      "heinz_josef_gro_e",
+      "literature_of_east_germany"
+    ],
+    "source_spans": [
+      "Bernd Baumgart (born 3 July 1955) is a German rower who competed for East Germany in the 1976 Summer Olympics.",
+      "Heinz-Josef Große was a 34-year-old East German (GDR) construction worker who was shot and killed on 29 March 1982 by GDR border guards on the Inner German border at Schifflersgrund, near Bad Sooden-Allendorf.",
+      "German Democratic Republic (East Germany)"
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        128
+      ],
+      [
+        21,
+        230
+      ],
+      [
+        363,
+        404
+      ]
+    ],
+    "supporting_doc_ids": [
+      "bernd_baumgart",
+      "heinz_josef_gro_e",
+      "literature_of_east_germany"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__108833_720914_27537",
+    "question": "Why did Roncalli leave the place where artist who made The Bacchanal of the Andrians died?",
+    "canonical_answer": "for the conclave in Rome",
+    "answer_variants": [
+      "Rome",
+      "Roma"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_bacchanal_of_the_andrians",
+      "the_martyrdom_of_saint_lawrence_titian",
+      "pope_john_xxiii"
+    ],
+    "source_spans": [
+      "The Bacchanal of the Andrians is an oil painting by Titian.",
+      "The Martyrdom of Saint Lawrence is a 1558 painting by Titian, now in the church of I Gesuiti in Venice.",
+      "John XXIII's closing speech made subtle references to Pope Pius IX, and he had expressed the desire to see Pius IX beatified and eventually canonized."
+    ],
+    "source_span_offsets": [
+      [
+        33,
+        92
+      ],
+      [
+        44,
+        147
+      ],
+      [
+        197,
+        347
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_bacchanal_of_the_andrians",
+      "the_martyrdom_of_saint_lawrence_titian",
+      "pope_john_xxiii"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__136016_87694_124169",
+    "question": "On what date did Governor of the location where the basilica named after the same saint as Leeds Minster and the head of the catholic religion end?",
+    "canonical_answer": "1952",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "leeds_minster",
+      "st_peter_s_basilica",
+      "governor_of_vatican_city"
+    ],
+    "source_spans": [
+      "It is dedicated to Saint Peter and was the Parish Church of Leeds before becoming a Minster in 2012.",
+      "The Papal Basilica of St. Peter in the Vatican (Italian: Basilica Papale di San Pietro in Vaticano), or simply St. Peter's Basilica (Latin: Basilica Sancti Petri), is an Italian Renaissance church in Vatican City, the papal enclave within the city of Rome.",
+      "The post of Governor of Vatican City (Governatore dello Stato della Città del Vaticano in Italian) was held by Marchese Camillo Serafini from the foundation of the state in 1929 until his death in 1952."
+    ],
+    "source_span_offsets": [
+      [
+        391,
+        491
+      ],
+      [
+        24,
+        280
+      ],
+      [
+        28,
+        230
+      ]
+    ],
+    "supporting_doc_ids": [
+      "leeds_minster",
+      "st_peter_s_basilica",
+      "governor_of_vatican_city"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__140514_2053_5289",
+    "question": "What UK label was bought by the company which, along with ABC and the network which hosts Hero High, is the other major broadcaster based in NY?",
+    "canonical_answer": "Oriole Records.",
+    "answer_variants": [
+      "Oriole Records"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "sony_music",
+      "hero_high",
+      "new_york_city"
+    ],
+    "source_spans": [
+      "In 1929, ARC was founded through a merger of several smaller record companies, which, ultimately, transformed into one enterprise known as SME.",
+      "Hero High was a cartoon and live action series created by Filmation that aired as part of NBC's \"The Kid Super Power Hour with Shazam!\"",
+      "New York became the most populous urbanized area in the world in the early 1920s, overtaking London."
+    ],
+    "source_span_offsets": [
+      [
+        14,
+        157
+      ],
+      [
+        13,
+        148
+      ],
+      [
+        17,
+        117
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sony_music",
+      "hero_high",
+      "new_york_city"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__142044_538202_84283",
+    "question": "Who is the owner of the record label of the performer responsible for the album Just Got Started Lovin' You?",
+    "canonical_answer": "Warner Music Group",
+    "answer_variants": [
+      "Warner Music"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "just_got_started_lovin_you",
+      "sunset_man",
+      "warner_records"
+    ],
+    "source_spans": [
+      "\"Just Got Started Lovin' You\" is a song co-written and recorded by American country music artist James Otto.",
+      "Sunset Man is the second studio album from American country music singer James Otto, released April 8, 2008 on Warner Bros. Records.",
+      "Warner Bros. Records Parent company Warner Music Group"
+    ],
+    "source_span_offsets": [
+      [
+        31,
+        139
+      ],
+      [
+        14,
+        146
+      ],
+      [
+        18,
+        72
+      ]
+    ],
+    "supporting_doc_ids": [
+      "just_got_started_lovin_you",
+      "sunset_man",
+      "warner_records"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__145194_160545_62931",
+    "question": "The Beach was filmed in what location of the country that contains the birth city of Siddhi Savetsila?",
+    "canonical_answer": "island Koh Phi Phi",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "bang_bon_district",
+      "siddhi_savetsila",
+      "the_beach_film"
+    ],
+    "source_spans": [
+      "Bang Bon (Thai: บางบอน, pronounced [bāːŋ bɔ̄ːn]) is one of the 50 districts (khet) of Bangkok, Thailand.",
+      "Siddhi Savetsila was born in Bangkok.",
+      "Controversy arose during the making of the film due to 20th Century Fox's bulldozing and landscaping of the natural beach setting of Ko Phi Phi Leh to make it more ``paradise - like ''."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        125
+      ],
+      [
+        20,
+        57
+      ],
+      [
+        20,
+        205
+      ]
+    ],
+    "supporting_doc_ids": [
+      "bang_bon_district",
+      "siddhi_savetsila",
+      "the_beach_film"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__159737_160713_77246",
+    "question": "What is the meaning of the word that is also a majority religion in the area that became India when the country that withdrew its forces was created in the Arabic dictionary?",
+    "canonical_answer": "the country of India",
+    "answer_variants": [
+      "IND",
+      "IN",
+      "India",
+      "in",
+      "Hindustan"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "partition_of_india",
+      "indo_pakistani_war_of_1947_1948",
+      "hindus"
+    ],
+    "source_spans": [
+      "India and Pakistan",
+      "This required Pakistan to withdraw its forces, both regular and irregular, while allowing India to maintain minimum strength of its forces in the state to preserve law and order.",
+      "The Arabic equivalent Al - Hind likewise referred to the country of India."
+    ],
+    "source_span_offsets": [
+      [
+        148,
+        166
+      ],
+      [
+        267,
+        445
+      ],
+      [
+        921,
+        995
+      ]
+    ],
+    "supporting_doc_ids": [
+      "partition_of_india",
+      "indo_pakistani_war_of_1947_1948",
+      "hindus"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__169494_42197_18397",
+    "question": "Where did the arguer that Dmitry Okhotsimsky's country of citizenship had become an imperialist power declare he would intervene in the Korean conflict?",
+    "canonical_answer": "the Politburo",
+    "answer_variants": [
+      "Politburo"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "dmitry_okhotsimsky",
+      "korean_war",
+      "imperialism"
+    ],
+    "source_spans": [
+      "Dmitry Yevgenyevich Okhotsimsky () was a Soviet Russian aerospace engineer and scientist who was the pioneer of space ballistics in the USSR.",
+      "Twelve days after Chinese troops entered the war, Stalin allowed the Soviet Air Force to provide air cover, and supported more aid to China.",
+      "As a result of the Russo-Japanese War in 1905, Japan took part of Sakhalin Island from Russia."
+    ],
+    "source_span_offsets": [
+      [
+        22,
+        163
+      ],
+      [
+        291,
+        431
+      ],
+      [
+        82,
+        176
+      ]
+    ],
+    "supporting_doc_ids": [
+      "dmitry_okhotsimsky",
+      "korean_war",
+      "imperialism"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__208108_547811_80702",
+    "question": "What is the name of the famous bridge in the city where the composer of La Silvia was born?",
+    "canonical_answer": "Rialto Bridge",
+    "answer_variants": [
+      "Ponte di Rialto"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "orlando_furioso_vivaldi_1714",
+      "la_silvia",
+      "rialto_bridge"
+    ],
+    "source_spans": [
+      "Orlando furioso RV 819 (, Teatro San Angelo, Venice 1714) is a three-act opera surviving in manuscript in Antonio Vivaldi's personal library, only partly related to his better known Orlando furioso (RV 728) of 1727.",
+      "La Silvia (RV 734) is an \"dramma pastorale per musica\" in three acts by Antonio Vivaldi to an Italian libretto by Enrico Bissari.",
+      "The Rialto Bridge (Italian: Ponte di Rialto; Venetian: Ponte de Rialto) is the oldest of the four bridges spanning the Grand Canal in Venice, Italy."
+    ],
+    "source_span_offsets": [
+      [
+        35,
+        250
+      ],
+      [
+        13,
+        142
+      ],
+      [
+        17,
+        165
+      ]
+    ],
+    "supporting_doc_ids": [
+      "orlando_furioso_vivaldi_1714",
+      "la_silvia",
+      "rialto_bridge"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__346812_15840_36002",
+    "question": "What were the Genesis's advantages over the platform that plays Drac's Night Out?",
+    "canonical_answer": "built on 16-bit architectures and offered improved graphics and sound",
+    "answer_variants": [
+      "16-bit",
+      "16-bit architecture"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "nintendo_entertainment_system",
+      "drac_s_night_out",
+      "super_nintendo_entertainment_system"
+    ],
+    "source_spans": [
+      "In response to these hardware flaws, \"Nintendo Authorized Repair Centers\" sprang up across the U.S.",
+      "Drac's Night Out is the title of an unreleased video game developed by Mark Lesser and Rex Bradford of Microsmiths that was produced for the Nintendo Entertainment System.",
+      "Both systems were built on 16-bit architectures and offered improved graphics and sound over the 8-bit NES."
+    ],
+    "source_span_offsets": [
+      [
+        33,
+        132
+      ],
+      [
+        20,
+        191
+      ],
+      [
+        324,
+        431
+      ]
+    ],
+    "supporting_doc_ids": [
+      "nintendo_entertainment_system",
+      "drac_s_night_out",
+      "super_nintendo_entertainment_system"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__46571_87694_124169",
+    "question": "When did the Governor of the city where the Basilica named after the saint holding the knife in the Last Supper is located in end?",
+    "canonical_answer": "1952",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "st_peter_s_basilica",
+      "governor_of_vatican_city",
+      "the_last_supper_leonardo"
+    ],
+    "source_spans": [
+      "The Papal Basilica of St. Peter in the Vatican (Italian: Basilica Papale di San Pietro in Vaticano), or simply St. Peter's Basilica (Latin: Basilica Sancti Petri), is an Italian Renaissance church in Vatican City, the papal enclave within the city of Rome.",
+      "The post of Governor of Vatican City (Governatore dello Stato della Città del Vaticano in Italian) was held by Marchese Camillo Serafini from the foundation of the state in 1929 until his death in 1952.",
+      "Peter looks angry and is holding a knife pointed away from Christ, perhaps foreshadowing his violent reaction in Gethsemane during Jesus' arrest."
+    ],
+    "source_span_offsets": [
+      [
+        24,
+        280
+      ],
+      [
+        28,
+        230
+      ],
+      [
+        30,
+        175
+      ]
+    ],
+    "supporting_doc_ids": [
+      "st_peter_s_basilica",
+      "governor_of_vatican_city",
+      "the_last_supper_leonardo"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__469478_15840_36014",
+    "question": "What was Nintendo's limit on games per developer per year for the platform with an abbreviated name that had the game Sunman?",
+    "canonical_answer": "five",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "nintendo_entertainment_system",
+      "sunman_video_game",
+      "super_nintendo_entertainment_system"
+    ],
+    "source_spans": [
+      "Nintendo Entertainment System",
+      "Sunman is an unreleased action video game developed by EIM and planned to be published by Sunsoft for the Nintendo Entertainment System in 1992.",
+      "Both systems were built on 16-bit architectures and offered improved graphics and sound over the 8-bit NES."
+    ],
+    "source_span_offsets": [
+      [
+        2,
+        31
+      ],
+      [
+        23,
+        167
+      ],
+      [
+        324,
+        431
+      ]
+    ],
+    "supporting_doc_ids": [
+      "nintendo_entertainment_system",
+      "sunman_video_game",
+      "super_nintendo_entertainment_system"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__49236_89752_54221",
+    "question": "What time do alcohol sales begin in the largest state of the region where the fictional Gilead is located in The Handmaid's Tale?",
+    "canonical_answer": "5am",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "alcohol_laws_of_maine",
+      "the_handmaid_s_tale",
+      "new_england"
+    ],
+    "source_spans": [
+      "Alcohol may be sold between the hours of 5am and 1am each day of the week.",
+      "Set in a near - future New England, in a totalitarian, Christian theonomy that has overthrown the United States government, the novel explores themes of women in subjugation and the various means by which they gain individualism and independence.",
+      "Maine alone constitutes nearly one - half of the total area of New England, yet is only the 39th - largest state, slightly smaller than Indiana."
+    ],
+    "source_span_offsets": [
+      [
+        25,
+        99
+      ],
+      [
+        105,
+        351
+      ],
+      [
+        189,
+        333
+      ]
+    ],
+    "supporting_doc_ids": [
+      "alcohol_laws_of_maine",
+      "the_handmaid_s_tale",
+      "new_england"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__504362_443779_52195",
+    "question": "Who is the president of the new country that jointly established a Commission of Truth and Friendship with the country that Solor is a part of?",
+    "canonical_answer": "Francisco Guterres",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "east_timor",
+      "indonesia_timor_leste_commission_of_truth_and_friendship",
+      "solor"
+    ],
+    "source_spans": [
+      "President Francisco Guterres",
+      "After holding private hearings and document reviews, the commission handed in the final report on July 15, 2008 to the presidents of both nations, and was fully endorsed by Indonesian President Susilo Bambang Yudhoyono, providing the first acknowledgement by the government of Indonesia of the human rights violations committed by state institutions in Timor.",
+      "Solor is a volcanic island located off the eastern tip of Flores island in the Lesser Sunda Islands of Indonesia, in the Solor Archipelago."
+    ],
+    "source_span_offsets": [
+      [
+        878,
+        906
+      ],
+      [
+        434,
+        793
+      ],
+      [
+        9,
+        148
+      ]
+    ],
+    "supporting_doc_ids": [
+      "east_timor",
+      "indonesia_timor_leste_commission_of_truth_and_friendship",
+      "solor"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__640171_228453_10972",
+    "question": "When did the headquarters city of the Blanton's manufacturer elect its first black mayor?",
+    "canonical_answer": "1970s",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "black_people",
+      "sazerac",
+      "blanton_s"
+    ],
+    "source_spans": [
+      "Historians estimate that between the advent of Islam in 650CE and the abolition of slavery in the Arabian Peninsula in the mid-20th century, 10 to 18 million sub-Saharan Black Africans were enslaved by Arab slave traders and transported to the Arabian Peninsula and neighboring countries.",
+      "The Sazerac is a local New Orleans variation of a cognac or whiskey cocktail, named for the \"Sazerac de Forge et Fils\" brand of cognac brandy that served as its original main ingredient.",
+      "It is distilled in Frankfort, Kentucky at the Buffalo Trace Distillery."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        304
+      ],
+      [
+        11,
+        197
+      ],
+      [
+        99,
+        170
+      ]
+    ],
+    "supporting_doc_ids": [
+      "black_people",
+      "sazerac",
+      "blanton_s"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__786067_228453_86925",
+    "question": "What is the symbol of the Saints from the city where the headquarters of the manufacturer of McAfee's Benchmark called?",
+    "canonical_answer": "fleur - de-lis",
+    "answer_variants": [
+      "Fleur-de-lis",
+      "fleur-de-lis"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "sazerac",
+      "fleur_de_lis",
+      "mcafee_s_benchmark"
+    ],
+    "source_spans": [
+      "The Sazerac is a local New Orleans variation of a cognac or whiskey cocktail, named for the \"Sazerac de Forge et Fils\" brand of cognac brandy that served as its original main ingredient.",
+      "the sports teams of New Orleans, Louisiana in the NFL, NBA and the Pacific Coast League",
+      "McAfee's Benchmark is a brand of Kentucky Straight Bourbon Whiskey produced by the Sazerac Company at its Buffalo Trace Distillery in Frankfort, Kentucky."
+    ],
+    "source_span_offsets": [
+      [
+        11,
+        197
+      ],
+      [
+        401,
+        488
+      ],
+      [
+        22,
+        176
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sazerac",
+      "fleur_de_lis",
+      "mcafee_s_benchmark"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__797496_831637_91775",
+    "question": "What does seal stand for in the operator of the list of destroyer classes of the operator of the USS Acme seals?",
+    "canonical_answer": "Sea, Air, and Land",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "united_states_navy_seals",
+      "list_of_destroyer_classes_of_the_united_states_navy",
+      "uss_acme_mso_508"
+    ],
+    "source_spans": [
+      "These units would be able to operate from sea, air or land.",
+      "The first major warship produced by the U.S. Navy after World War II (and in the Cold War) were \"frigates\"—the ships were originally designated destroyer leaders but reclassified in 1975 as guided missile cruisers (except the became guided missile destroyers).",
+      "USS \"Acme\" (MSO-508) was an acquired by the United States Navy for the task of removing mines that had been placed in the water to prevent the safe passage of ships."
+    ],
+    "source_span_offsets": [
+      [
+        244,
+        303
+      ],
+      [
+        55,
+        315
+      ],
+      [
+        22,
+        187
+      ]
+    ],
+    "supporting_doc_ids": [
+      "united_states_navy_seals",
+      "list_of_destroyer_classes_of_the_united_states_navy",
+      "uss_acme_mso_508"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__823336_228453_10972",
+    "question": "When did the city where the manufacturer of Ten High is headquartered elect its first black mayor?",
+    "canonical_answer": "1970s",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "ten_high",
+      "black_people",
+      "sazerac"
+    ],
+    "source_spans": [
+      "Ten High is a brand of American whiskey first introduced in the 1930s by Hiram Walker & Sons, now produced by the Barton Brands division of the Sazerac Company.",
+      "Historians estimate that between the advent of Islam in 650CE and the abolition of slavery in the Arabian Peninsula in the mid-20th century, 10 to 18 million sub-Saharan Black Africans were enslaved by Arab slave traders and transported to the Arabian Peninsula and neighboring countries.",
+      "The Sazerac is a local New Orleans variation of a cognac or whiskey cocktail, named for the \"Sazerac de Forge et Fils\" brand of cognac brandy that served as its original main ingredient."
+    ],
+    "source_span_offsets": [
+      [
+        12,
+        172
+      ],
+      [
+        16,
+        304
+      ],
+      [
+        11,
+        197
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ten_high",
+      "black_people",
+      "sazerac"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__857_846_7794",
+    "question": "In 2010, what was the population of the city where the Yongle emperor greeted the person to whom the edict was addressed?",
+    "canonical_answer": "8.005 million",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "sino_tibetan_relations_during_the_ming_dynasty",
+      "nanjing"
+    ],
+    "source_spans": [
+      "China's intervening Ming dynasty ... had no control over Tibet.",
+      "In recent years, Nanjing has been developing its economy, commerce, industry, as well as city construction."
+    ],
+    "source_span_offsets": [
+      [
+        757,
+        820
+      ],
+      [
+        11,
+        118
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sino_tibetan_relations_during_the_ming_dynasty",
+      "nanjing"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop1__857_846_7877",
+    "question": "Who many major sports centers are located in where the Yongle Emporer did great who the edict was addressed to?",
+    "canonical_answer": "two",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "sino_tibetan_relations_during_the_ming_dynasty",
+      "nanjing"
+    ],
+    "source_spans": [
+      "Tibet was ruled as such, within the empires of the Mongols and the Manchus",
+      "Nanjing"
+    ],
+    "source_span_offsets": [
+      [
+        666,
+        740
+      ],
+      [
+        2,
+        9
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sino_tibetan_relations_during_the_ming_dynasty",
+      "nanjing"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__125104_90098_10557",
+    "question": "What was where the last name sylvester comes from of who was Rotrude's father's era later known as?",
+    "canonical_answer": "Medieval Latin",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "middle_ages",
+      "rotrude",
+      "sylvester"
+    ],
+    "source_spans": [
+      "The medieval period is frequently caricatured as a \"time of ignorance and superstition\" that placed \"the word of religious authorities over personal experience and rational activity.\"",
+      "Rotrude (or sometimes referred to as Hruodrud/Hruodhaid) (775/778 – 6 June 810) was a Frankish princess, the second daughter of Charlemagne from his marriage to Hildegard.",
+      "After the Classical period y came to be pronounced as i."
+    ],
+    "source_span_offsets": [
+      [
+        15,
+        198
+      ],
+      [
+        11,
+        182
+      ],
+      [
+        343,
+        399
+      ]
+    ],
+    "supporting_doc_ids": [
+      "middle_ages",
+      "rotrude",
+      "sylvester"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__132957_433432_40768",
+    "question": "When did the maker of Acura Legend, the manufacturer of Lexus RX and Nissan open US assembly plants?",
+    "canonical_answer": "1981",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "shigeyuki_hori",
+      "acura_legend",
+      "1973_oil_crisis"
+    ],
+    "source_spans": [
+      "Shigeyuki Hori is the principal designer of Toyota's acclaimed Hybrid Synergy Drive hybrid motor system which is in use by several vehicles including the Prius and Lexus RX Hybrid.",
+      "The Acura Legend is a mid-size luxury/executive car manufactured by Honda.",
+      "Japanese imports, primarily the Toyota Corona, the Toyota Corolla, the Datsun B210, the Datsun 510, the Honda Civic, the Mitsubishi Galant (a captive import from Chrysler sold as the Dodge Colt), the Subaru DL, and later the Honda Accord all had four cylinder engines that were more fuel efficient than the typical American V8 and six cylinder engines."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        198
+      ],
+      [
+        16,
+        90
+      ],
+      [
+        65,
+        417
+      ]
+    ],
+    "supporting_doc_ids": [
+      "shigeyuki_hori",
+      "acura_legend",
+      "1973_oil_crisis"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__14253_76873_64554",
+    "question": "Following the conflict that's the setting for Memoirs of a Geisha, the struggle in which some airfield runways were painted green, developed between the U.S. and what nation?",
+    "canonical_answer": "Union of Soviet Socialist Republics",
+    "answer_variants": [
+      "the Soviet Union",
+      "Soviet Union",
+      "SU",
+      "the Union of Soviet Socialist Republics"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "soviet_union_united_states_relations",
+      "anti_aircraft_warfare",
+      "memoirs_of_a_geisha"
+    ],
+    "source_spans": [
+      "The relations between the United States of America and the Union of Soviet Socialist Republics (1922 -- 1991) succeeded the previous relations from 1776 to 1917 and predate today's relations that began in 1992.",
+      "The US ended World War I with two 3-inch AA guns and improvements were developed throughout the inter-war period.",
+      "before and after World War II."
+    ],
+    "source_span_offsets": [
+      [
+        40,
+        250
+      ],
+      [
+        25,
+        138
+      ],
+      [
+        226,
+        256
+      ]
+    ],
+    "supporting_doc_ids": [
+      "soviet_union_united_states_relations",
+      "anti_aircraft_warfare",
+      "memoirs_of_a_geisha"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__222979_132477_40768",
+    "question": "When did the maker of the Acura RLX, the owner of Scion, and Nissan open US assembly plants?",
+    "canonical_answer": "1981",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "scion_automobile",
+      "acura_rlx",
+      "1973_oil_crisis"
+    ],
+    "source_spans": [
+      "Scion is a discontinued marque of Toyota that started in 2003.",
+      "The Acura RLX is a full-size luxury sedan manufactured by Honda and sold under their Acura division, released in 2013.",
+      "Japanese imports, primarily the Toyota Corona, the Toyota Corolla, the Datsun B210, the Datsun 510, the Honda Civic, the Mitsubishi Galant (a captive import from Chrysler sold as the Dodge Colt), the Subaru DL, and later the Honda Accord all had four cylinder engines that were more fuel efficient than the typical American V8 and six cylinder engines."
+    ],
+    "source_span_offsets": [
+      [
+        22,
+        84
+      ],
+      [
+        13,
+        131
+      ],
+      [
+        65,
+        417
+      ]
+    ],
+    "supporting_doc_ids": [
+      "scion_automobile",
+      "acura_rlx",
+      "1973_oil_crisis"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__222979_133099_40768",
+    "question": "When did Nissan along with the company that makes the Comstar wheel and the company that makes the Scion open US assembly plants?",
+    "canonical_answer": "1981",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "comstar_wheel",
+      "1973_oil_crisis",
+      "scion_automobile"
+    ],
+    "source_spans": [
+      "The Comstar wheel, sometimes referred to as Com-stars or stylised as ComStar, was a composite motorcycle wheel that Honda fitted to many of its motorcycles from 1977 to the mid 1980s.",
+      "Japanese imports, primarily the Toyota Corona, the Toyota Corolla, the Datsun B210, the Datsun 510, the Honda Civic, the Mitsubishi Galant (a captive import from Chrysler sold as the Dodge Colt), the Subaru DL, and later the Honda Accord all had four cylinder engines that were more fuel efficient than the typical American V8 and six cylinder engines.",
+      "The brand first soft launched in the United States at selected Toyota dealers in the state of California in June 2003, before expanding nationwide by February 2004."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        200
+      ],
+      [
+        65,
+        417
+      ],
+      [
+        619,
+        783
+      ]
+    ],
+    "supporting_doc_ids": [
+      "comstar_wheel",
+      "1973_oil_crisis",
+      "scion_automobile"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__222979_133154_40768",
+    "question": "When did the maker of the Acura EL, the company that owns Scion, and Nissan, open US assembly plants?",
+    "canonical_answer": "1981",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "acura_el",
+      "1973_oil_crisis",
+      "scion_automobile"
+    ],
+    "source_spans": [
+      "The Acura EL is a subcompact executive car that was built at Honda's Alliston, Ontario, plant, and also the first Acura built in Canada.",
+      "Japanese imports, primarily the Toyota Corona, the Toyota Corolla, the Datsun B210, the Datsun 510, the Honda Civic, the Mitsubishi Galant (a captive import from Chrysler sold as the Dodge Colt), the Subaru DL, and later the Honda Accord all had four cylinder engines that were more fuel efficient than the typical American V8 and six cylinder engines.",
+      "Scion is a discontinued marque of Toyota that started in 2003."
+    ],
+    "source_span_offsets": [
+      [
+        12,
+        148
+      ],
+      [
+        65,
+        417
+      ],
+      [
+        22,
+        84
+      ]
+    ],
+    "supporting_doc_ids": [
+      "acura_el",
+      "1973_oil_crisis",
+      "scion_automobile"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__326964_851134_7713",
+    "question": "How long had Pfrang Association's headquarters location been the capitol city of Yaxing Coach's headquarters location?",
+    "canonical_answer": "about 400 years",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "nanjing",
+      "pfrang_association",
+      "yaxing_coach"
+    ],
+    "source_spans": [
+      "In recent years, Nanjing has been developing its economy, commerce, industry, as well as city construction.",
+      "Pfrang Association (also known as Pfrang) is a charitable organization based in Nanjing, China which raises money to assist with the education of children in the poor and rural regions of Jiangsu Province.",
+      "Yaxing Coach (Yangzhou Yaxing Motor Coach Co., Ltd) is a bus manufacturer based in Yangzhou, Jiangsu, China."
+    ],
+    "source_span_offsets": [
+      [
+        11,
+        118
+      ],
+      [
+        22,
+        227
+      ],
+      [
+        16,
+        124
+      ]
+    ],
+    "supporting_doc_ids": [
+      "nanjing",
+      "pfrang_association",
+      "yaxing_coach"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__49541_140875_51068",
+    "question": "Who is the actress who plays the Queen of England in 1890 on the station that aired High Feather?",
+    "canonical_answer": "Jenna - Louise Coleman",
+    "answer_variants": [
+      "Jenna Coleman"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "high_feather",
+      "queen_victoria",
+      "jenna_coleman"
+    ],
+    "source_spans": [
+      "High Feather is a 10-episode educational television show which ran on PBS in the 1980s; each episode was 30 minutes long.",
+      "Through Victoria's reign, the gradual establishment of a modern constitutional monarchy in Britain continued.",
+      "Jenna - Louise Coleman (born 27 April 1986), professionally known as Jenna Coleman, is an English actress."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        137
+      ],
+      [
+        18,
+        127
+      ],
+      [
+        17,
+        123
+      ]
+    ],
+    "supporting_doc_ids": [
+      "high_feather",
+      "queen_victoria",
+      "jenna_coleman"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__781093_467331_162182",
+    "question": "In what region of the country where Lam Thao is located is the city where the Zone 5 Military Museum can be found?",
+    "canonical_answer": "South Central Coast",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "south_central_coast",
+      "zone_5_military_museum_danang",
+      "l_m_thao_district"
+    ],
+    "source_spans": [
+      "South Central Coast (Vietnamese: Duyên hải Nam Trung Bộ) is one of the regions of Vietnam.",
+      "The Zone 5 Military Museum (Bao Tang Khu 5) is a military museum located at 3 Duy Tân, Da Nang, Vietnam.",
+      "Lâm Thao is a rural district of Phú Thọ Province in the Northeast region of Vietnam."
+    ],
+    "source_span_offsets": [
+      [
+        23,
+        113
+      ],
+      [
+        34,
+        138
+      ],
+      [
+        21,
+        105
+      ]
+    ],
+    "supporting_doc_ids": [
+      "south_central_coast",
+      "zone_5_military_museum_danang",
+      "l_m_thao_district"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__90098_125104_10557",
+    "question": "What was the form of the language that the last name Sylvester comes from, used in the era of Rotrude's father, later known as?",
+    "canonical_answer": "Medieval Latin",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "rotrude",
+      "sylvester",
+      "middle_ages"
+    ],
+    "source_spans": [
+      "Rotrude (or sometimes referred to as Hruodrud/Hruodhaid) (775/778 – 6 June 810) was a Frankish princess, the second daughter of Charlemagne from his marriage to Hildegard.",
+      "Sylvester is a name derived from the Latin adjective silvestris meaning ``wooded ''or`` wild'', which derives from the noun silva meaning ``woodland ''.",
+      "The medieval period is frequently caricatured as a \"time of ignorance and superstition\" that placed \"the word of religious authorities over personal experience and rational activity.\""
+    ],
+    "source_span_offsets": [
+      [
+        11,
+        182
+      ],
+      [
+        13,
+        165
+      ],
+      [
+        15,
+        198
+      ]
+    ],
+    "supporting_doc_ids": [
+      "rotrude",
+      "sylvester",
+      "middle_ages"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "3hop2__93066_88342_47738",
+    "question": "When did the team that won the AL East in 2017 last play in the series of games that the MLB MVP award is given after?",
+    "canonical_answer": "the 2009 season",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "2017_american_league_championship_series",
+      "major_league_baseball_most_valuable_player_award",
+      "new_york_yankees"
+    ],
+    "source_spans": [
+      "Their last ALCS appearance came in the 2012 American League Championship Series where they got swept by the Detroit Tigers.",
+      "MVP voting takes place before the postseason, but the results are not announced until after the World Series.",
+      "The Yankees compete in Major League Baseball (MLB) as a member club of the American League (AL) East division."
+    ],
+    "source_span_offsets": [
+      [
+        216,
+        339
+      ],
+      [
+        52,
+        161
+      ],
+      [
+        133,
+        243
+      ]
+    ],
+    "supporting_doc_ids": [
+      "2017_american_league_championship_series",
+      "major_league_baseball_most_valuable_player_award",
+      "new_york_yankees"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__152146_5274_458768_33637",
+    "question": "How many ethnic minorities were looked at differently in the city where the headquarters of the only group larger than Långa nätter's record label is located?",
+    "canonical_answer": "two",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_right_stuff_records",
+      "santa_monica_california",
+      "sony_music",
+      "l_nga_n_tter"
+    ],
+    "source_spans": [
+      "The Right Stuff Records is a reissue record label that was part of EMI, which is now owned by Universal Music Group and is based out of Santa Monica, California.",
+      "Santa Monica, California",
+      "In the depths of the Great Depression, the Columbia Phonograph Company (founded in 1888) in the U.S. (including its Okeh Records subsidiary) was acquired by ARC in 1934.",
+      "Långa nätter is the debut album by singer-songwriter Melissa Horn, released April 30, 2008, on Sony Music Entertainment."
+    ],
+    "source_span_offsets": [
+      [
+        27,
+        188
+      ],
+      [
+        2,
+        26
+      ],
+      [
+        158,
+        327
+      ],
+      [
+        16,
+        136
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_right_stuff_records",
+      "santa_monica_california",
+      "sony_music",
+      "l_nga_n_tter"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__161765_53706_795904_580996",
+    "question": "What city shares a border with the city where the person who went to the state where Englebart died during the gold rush works?",
+    "canonical_answer": "Rio Linda",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "history_of_sacramento_california",
+      "rio_linda_high_school",
+      "california_gold_rush",
+      "douglas_engelbart"
+    ],
+    "source_spans": [
+      "Sacramento, California",
+      "Rio Linda High School is a high school located in Rio Linda, Sacramento, CA.",
+      "California Gold Rush",
+      "Engelbart died at his home in Atherton, California on July 2, 2013."
+    ],
+    "source_span_offsets": [
+      [
+        13,
+        35
+      ],
+      [
+        25,
+        101
+      ],
+      [
+        2,
+        22
+      ],
+      [
+        577,
+        644
+      ]
+    ],
+    "supporting_doc_ids": [
+      "history_of_sacramento_california",
+      "rio_linda_high_school",
+      "california_gold_rush",
+      "douglas_engelbart"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__40316_497223_15840_36002",
+    "question": "What were the Genesis's advantages over the game system with a 3 letter abbreviation, featuring a game named after the football league that the Los Angeles Rams are representative of?",
+    "canonical_answer": "built on 16-bit architectures and offered improved graphics and sound",
+    "answer_variants": [
+      "16-bit",
+      "16-bit architecture"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "super_nintendo_entertainment_system",
+      "nfl_video_game",
+      "southern_california",
+      "nintendo_entertainment_system"
+    ],
+    "source_spans": [
+      "Both systems were built on 16-bit architectures and offered improved graphics and sound over the 8-bit NES.",
+      "NFL is a 1989 football video game, developed by Atlus and published by LJN exclusively for the Nintendo Entertainment System.",
+      "Southern California includes the heavily built-up urban area stretching along the Pacific coast from Ventura, through the Greater Los Angeles Area and the Inland Empire, and down to Greater San Diego.",
+      "Nintendo Entertainment System"
+    ],
+    "source_span_offsets": [
+      [
+        324,
+        431
+      ],
+      [
+        20,
+        145
+      ],
+      [
+        23,
+        223
+      ],
+      [
+        2,
+        31
+      ]
+    ],
+    "supporting_doc_ids": [
+      "super_nintendo_entertainment_system",
+      "nfl_video_game",
+      "southern_california",
+      "nintendo_entertainment_system"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__51465_53706_795904_580996",
+    "question": "What shares a border with the city where the person who went to the state where most billionaires in America live during the gold rush works?",
+    "canonical_answer": "Rio Linda",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "rio_linda_high_school",
+      "list_of_u_s_states_by_the_number_of_billionaires",
+      "history_of_sacramento_california",
+      "california_gold_rush"
+    ],
+    "source_spans": [
+      "Rio Linda High School is a high school located in Rio Linda, Sacramento, CA.",
+      "California 124",
+      "The history of Sacramento, California, began with its founding by Samuel Brannan and John Augustus Sutter, Jr. in 1848 around an embarcadero that his father, John Sutter, Sr. constructed at the confluence of the American and Sacramento Rivers a few years prior.",
+      "Brannan hurriedly set up a store to sell gold prospecting supplies, and walked through the streets of San Francisco, holding aloft a vial of gold, shouting ``Gold! Gold! Gold from the American River! ''"
+    ],
+    "source_span_offsets": [
+      [
+        25,
+        101
+      ],
+      [
+        96,
+        110
+      ],
+      [
+        37,
+        298
+      ],
+      [
+        151,
+        353
+      ]
+    ],
+    "supporting_doc_ids": [
+      "rio_linda_high_school",
+      "list_of_u_s_states_by_the_number_of_billionaires",
+      "history_of_sacramento_california",
+      "california_gold_rush"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__813171_153080_159767_81096",
+    "question": "Who won the Indy car race in the largest city and capitol of the state where the Changes Two performer is from?",
+    "canonical_answer": "Mario Andretti",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "arizona",
+      "desert_diamond_west_valley_phoenix_grand_prix",
+      "charles_mingus",
+      "changes_two"
+    ],
+    "source_spans": [
+      "Its capital and largest city is Phoenix.",
+      "and the final career victory for Indy legend Mario Andretti (1993).",
+      "Charles Mingus was born in Nogales, Arizona.",
+      "Changes Two is an album by Charles Mingus."
+    ],
+    "source_span_offsets": [
+      [
+        343,
+        383
+      ],
+      [
+        345,
+        412
+      ],
+      [
+        18,
+        62
+      ],
+      [
+        15,
+        57
+      ]
+    ],
+    "supporting_doc_ids": [
+      "arizona",
+      "desert_diamond_west_valley_phoenix_grand_prix",
+      "charles_mingus",
+      "changes_two"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__88342_49853_128008_86588",
+    "question": "What's the longest homer in the history of the league where the team with the most titles from the event after which they give out the MLB MVP award plays?",
+    "canonical_answer": "582 feet (177 m)",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "home_run",
+      "new_york_yankees",
+      "world_series",
+      "major_league_baseball_most_valuable_player_award"
+    ],
+    "source_spans": [
+      "The home run was measured at a distance of 582 feet (177 m) and was hit inside Denver's Mile High Stadium.",
+      "The Yankees compete in Major League Baseball (MLB) as a member club of the American League (AL) East division.",
+      "In the American League, the New York Yankees have played in 40 World Series and won 27, the Philadelphia / Kansas City / Oakland Athletics have played in 14 and won 9, and the Boston Red Sox have played in 12 and won 8, including the first World Series.",
+      "MVP voting takes place before the postseason, but the results are not announced until after the World Series."
+    ],
+    "source_span_offsets": [
+      [
+        568,
+        674
+      ],
+      [
+        133,
+        243
+      ],
+      [
+        16,
+        269
+      ],
+      [
+        52,
+        161
+      ]
+    ],
+    "supporting_doc_ids": [
+      "home_run",
+      "new_york_yankees",
+      "world_series",
+      "major_league_baseball_most_valuable_player_award"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__88342_75218_128008_67954",
+    "question": "Who won the All-Star MVP for the league that the team that has attended the competition where they give out the MLB MVP award after the most?",
+    "canonical_answer": "Alex Bregman",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "major_league_baseball_all_star_game_most_valuable_player_award",
+      "major_league_baseball_most_valuable_player_award",
+      "new_york_yankees",
+      "world_series"
+    ],
+    "source_spans": [
+      "Alex Bregman of the Houston Astros is the most recent MLB All - Star Game MVP, winning the award in 2018.",
+      "Major League Baseball Most Valuable Player Award",
+      "The Yankees compete in Major League Baseball (MLB) as a member club of the American League (AL) East division.",
+      "In the American League, the New York Yankees have played in 40 World Series and won 27, the Philadelphia / Kansas City / Oakland Athletics have played in 14 and won 9, and the Boston Red Sox have played in 12 and won 8, including the first World Series."
+    ],
+    "source_span_offsets": [
+      [
+        1210,
+        1315
+      ],
+      [
+        2,
+        50
+      ],
+      [
+        133,
+        243
+      ],
+      [
+        16,
+        269
+      ]
+    ],
+    "supporting_doc_ids": [
+      "major_league_baseball_all_star_game_most_valuable_player_award",
+      "major_league_baseball_most_valuable_player_award",
+      "new_york_yankees",
+      "world_series"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop1__93963_170667_443779_52195",
+    "question": "Who is the president of the newly declared independent country, that established the Timor Leste Commission of Truth and Friendship, with the country containing the airport that includes Lion Air?",
+    "canonical_answer": "Francisco Guterres",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "cathay_pacific_flight_780",
+      "east_timor",
+      "lion_air",
+      "indonesia_timor_leste_commission_of_truth_and_friendship"
+    ],
+    "source_spans": [
+      "Surabaya Juanda International Airport in Indonesia",
+      "President Francisco Guterres",
+      "On 4 March 2006, Lion Air Flight 8987, a McDonnell Douglas MD-82, crashed after landing at Juanda International Airport.",
+      "The Indonesia–Timor Leste Commission on Truth and Friendship was a truth commission established jointly by the governments of Indonesia and East Timor in August 2005."
+    ],
+    "source_span_offsets": [
+      [
+        73,
+        123
+      ],
+      [
+        878,
+        906
+      ],
+      [
+        24,
+        144
+      ],
+      [
+        60,
+        226
+      ]
+    ],
+    "supporting_doc_ids": [
+      "cathay_pacific_flight_780",
+      "east_timor",
+      "lion_air",
+      "indonesia_timor_leste_commission_of_truth_and_friendship"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop2__160585_39078_8987_8974",
+    "question": "Hana Mandlikova was born in Country A that invaded Country B because the military branch that helped Old West's local police was unprepared. Country B was the only communist country to have an embassy where?",
+    "canonical_answer": "Alfredo Stroessner's Paraguay",
+    "answer_variants": [
+      "Alfredo Stroessner"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "police",
+      "josip_broz_tito",
+      "czechoslovakia"
+    ],
+    "source_spans": [
+      "Michel Foucault claims that the contemporary concept of police as a paid and funded functionary of the state was developed by German and French legal scholars and practitioners in Public administration and Statistics in the 17th and early 18th centuries, most notably with Nicolas Delamare's Traité de la Police (\"Treatise on the Police\"), first published in 1705.",
+      "Josip Broz Tito",
+      "Several accomplished professional tennis players including Ivan Lendl, Jan Kodeš, Miloslav Mečíř, Hana Mandlíková, Martina Hingis, Martina Navratilova, Jana Novotna, Petra Kvitová and Daniela Hantuchová were born in Czechoslovakia."
+    ],
+    "source_span_offsets": [
+      [
+        10,
+        374
+      ],
+      [
+        2,
+        17
+      ],
+      [
+        18,
+        249
+      ]
+    ],
+    "supporting_doc_ids": [
+      "police",
+      "josip_broz_tito",
+      "czechoslovakia"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop2__567956_14670_8987_8529",
+    "question": "Normalization occurred in Country A that invaded Country B because the military branch that Air Defense Artillery is part of was unprepared. when was the word \"Slavs\" used in the national anthem of Country B?",
+    "canonical_answer": "1943–1992",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "slavs",
+      "josip_broz_tito",
+      "prague_underground_culture",
+      "united_states_army"
+    ],
+    "source_spans": [
+      "Slavs",
+      "Tito has also been named as responsible for systematic eradication of the ethnic German (Danube Swabian) population in Vojvodina by expulsions and mass executions following the collapse of the German occupation of Yugoslavia at the end of World War II, in contrast to his inclusive attitude towards other Yugoslav nationalities.",
+      "Prague underground was an underground culture developed in Prague, Czechoslovakia in the late 1960s and 1970s during the Normalization period.",
+      "The task of organizing the U.S. Army commenced in 1775."
+    ],
+    "source_span_offsets": [
+      [
+        2,
+        7
+      ],
+      [
+        19,
+        347
+      ],
+      [
+        32,
+        174
+      ],
+      [
+        22,
+        77
+      ]
+    ],
+    "supporting_doc_ids": [
+      "slavs",
+      "josip_broz_tito",
+      "prague_underground_culture",
+      "united_states_army"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop2__71753_158279_70784_61381",
+    "question": "When was the region immediately north of the region where Israel is located and the final destination for the export crops established?",
+    "canonical_answer": "1932",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "saudi_arabia",
+      "shiraz",
+      "israel",
+      "geography_of_saudi_arabia"
+    ],
+    "source_spans": [
+      "The Kingdom of Saudi Arabia was founded in 1932 by Ibn Saud.",
+      "Many of these export crops passed through Shiraz on their way to the Persian Gulf.",
+      "Israel operates under a parliamentary system as a democratic republic with universal suffrage.",
+      "The Kingdom of Saudi Arabia is a country situated in Southwest Asia, the largest country of Arabia, bordering the Persian Gulf and the Red Sea, north of Yemen."
+    ],
+    "source_span_offsets": [
+      [
+        180,
+        240
+      ],
+      [
+        451,
+        533
+      ],
+      [
+        10,
+        104
+      ],
+      [
+        29,
+        188
+      ]
+    ],
+    "supporting_doc_ids": [
+      "saudi_arabia",
+      "shiraz",
+      "israel",
+      "geography_of_saudi_arabia"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop2__71753_648517_70784_61381",
+    "question": "When was the region that lies to the north of the region Israel is located and where the Battle of Qurah and Umm al Maradim is took place established?",
+    "canonical_answer": "1932",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "geography_of_saudi_arabia",
+      "battle_of_qurah_and_umm_al_maradim",
+      "saudi_arabia",
+      "israel"
+    ],
+    "source_spans": [
+      "The Kingdom of Saudi Arabia is a country situated in Southwest Asia, the largest country of Arabia, bordering the Persian Gulf and the Red Sea, north of Yemen.",
+      "The Battle for Qurah and Umm al Maradim, were several naval and land battles for control over the islands off the coast of Kuwait in the Persian Gulf, mainly the islands of Qurah and Umm al Maradim.",
+      "The Kingdom of Saudi Arabia was founded in 1932 by Ibn Saud.",
+      "Israel operates under a parliamentary system as a democratic republic with universal suffrage."
+    ],
+    "source_span_offsets": [
+      [
+        29,
+        188
+      ],
+      [
+        38,
+        236
+      ],
+      [
+        180,
+        240
+      ],
+      [
+        10,
+        104
+      ]
+    ],
+    "supporting_doc_ids": [
+      "geography_of_saudi_arabia",
+      "battle_of_qurah_and_umm_al_maradim",
+      "saudi_arabia",
+      "israel"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop3__129754_29339_508306_70744",
+    "question": "Who has more national championships than the school with Fort Hill or the facility in the location Edwards won the primary, but not the state with the 404 area code?",
+    "canonical_answer": "University of South Carolina",
+    "answer_variants": [
+      "USC",
+      "SC"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "area_code_404",
+      "fort_hill_clemson_south_carolina",
+      "clemson_south_carolina_rivalry",
+      "2004_united_states_presidential_election"
+    ],
+    "source_spans": [
+      "Area code 404 of the North American Numbering Plan (NANP) identifies a numbering plan area (NPA) that covers Atlanta, Georgia and its closest suburbs, roughly the area encircled by Interstate 285.",
+      "Fort Hill, also known as the John C. Calhoun Mansion and Library, is a National Historic Landmark on the Clemson University campus in Clemson, South Carolina.",
+      "National Championships 5 10",
+      "On July 6, John Kerry selected John Edwards as his running mate, shortly before the 2004 Democratic National Convention in Boston, held later that month."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        213
+      ],
+      [
+        39,
+        197
+      ],
+      [
+        275,
+        302
+      ],
+      [
+        44,
+        197
+      ]
+    ],
+    "supporting_doc_ids": [
+      "area_code_404",
+      "fort_hill_clemson_south_carolina",
+      "clemson_south_carolina_rivalry",
+      "2004_united_states_presidential_election"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop3__130276_29339_508306_70744",
+    "question": "Who won more national championships between the university featuring Fort Hill and the university of the state where Edwards won the primary besides the state containing Redan High School?",
+    "canonical_answer": "University of South Carolina",
+    "answer_variants": [
+      "SC"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "redan_high_school",
+      "clemson_south_carolina_rivalry",
+      "2004_united_states_presidential_election",
+      "fort_hill_clemson_south_carolina"
+    ],
+    "source_spans": [
+      "Redan High School is a public secondary school of the DeKalb County School District located in unincorporated DeKalb County, Georgia, United States.",
+      "National Championships 5 10",
+      "On July 6, John Kerry selected John Edwards as his running mate, shortly before the 2004 Democratic National Convention in Boston, held later that month.",
+      "Fort Hill, also known as the John C. Calhoun Mansion and Library, is a National Historic Landmark on the Clemson University campus in Clemson, South Carolina."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        169
+      ],
+      [
+        275,
+        302
+      ],
+      [
+        44,
+        197
+      ],
+      [
+        39,
+        197
+      ]
+    ],
+    "supporting_doc_ids": [
+      "redan_high_school",
+      "clemson_south_carolina_rivalry",
+      "2004_united_states_presidential_election",
+      "fort_hill_clemson_south_carolina"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop3__31333_29339_508306_70744",
+    "question": "Edwards won the primary in a state excluding the state that sent the most tourists in to Tennessee in 2013. Who has the most national championships between that state's university and Fort Hill's city's university?",
+    "canonical_answer": "University of South Carolina",
+    "answer_variants": [
+      "SC"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "tennessee",
+      "fort_hill_clemson_south_carolina",
+      "2004_united_states_presidential_election",
+      "clemson_south_carolina_rivalry"
+    ],
+    "source_spans": [
+      "Tennessee is known as the \"Volunteer State\", a nickname some claimed was earned during the War of 1812 because of the prominent role played by volunteer soldiers from Tennessee, especially during the Battle of New Orleans.",
+      "Fort Hill, also known as the John C. Calhoun Mansion and Library, is a National Historic Landmark on the Clemson University campus in Clemson, South Carolina.",
+      "On July 6, John Kerry selected John Edwards as his running mate, shortly before the 2004 Democratic National Convention in Boston, held later that month.",
+      "National Championships 5 10"
+    ],
+    "source_span_offsets": [
+      [
+        13,
+        235
+      ],
+      [
+        39,
+        197
+      ],
+      [
+        44,
+        197
+      ],
+      [
+        275,
+        302
+      ]
+    ],
+    "supporting_doc_ids": [
+      "tennessee",
+      "fort_hill_clemson_south_carolina",
+      "2004_united_states_presidential_election",
+      "clemson_south_carolina_rivalry"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop3__678814_466199_695123_72134",
+    "question": "When did the town WIZE is licensed in become capitol of the state where Stoney Creek Township is located?",
+    "canonical_answer": "1839",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "wize",
+      "springfield_illinois",
+      "stoney_creek_township_randolph_county_indiana",
+      "randolph_county_illinois"
+    ],
+    "source_spans": [
+      "WIZE (1340 AM) — branded WIZE AM 1340 — is a commercial radio station in Springfield, Ohio owned by iHeartMedia, Inc. as part of their Dayton cluster.",
+      "Springfield became the third and current capital of Illinois in 1839.",
+      "Stoney Creek Township is one of eleven townships in Randolph County, Indiana.",
+      "It contains the historically important village of Kaskaskia, Illinois's first capital."
+    ],
+    "source_span_offsets": [
+      [
+        8,
+        158
+      ],
+      [
+        1346,
+        1415
+      ],
+      [
+        51,
+        128
+      ],
+      [
+        115,
+        201
+      ]
+    ],
+    "supporting_doc_ids": [
+      "wize",
+      "springfield_illinois",
+      "stoney_creek_township_randolph_county_indiana",
+      "randolph_county_illinois"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "4hop3__800262_466199_695123_72134",
+    "question": "When did the town WIZE is licensed in become capitol of the state where Green Township is located?",
+    "canonical_answer": "1839",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "springfield_illinois",
+      "wize",
+      "green_township_randolph_county_indiana",
+      "randolph_county_illinois"
+    ],
+    "source_spans": [
+      "Springfield became the third and current capital of Illinois in 1839.",
+      "WIZE (1340 AM) — branded WIZE AM 1340 — is a commercial radio station in Springfield, Ohio owned by iHeartMedia, Inc. as part of their Dayton cluster.",
+      "Green Township is one of eleven townships in Randolph County, Indiana.",
+      "It contains the historically important village of Kaskaskia, Illinois's first capital."
+    ],
+    "source_span_offsets": [
+      [
+        1346,
+        1415
+      ],
+      [
+        8,
+        158
+      ],
+      [
+        44,
+        114
+      ],
+      [
+        115,
+        201
+      ]
+    ],
+    "supporting_doc_ids": [
+      "springfield_illinois",
+      "wize",
+      "green_township_randolph_county_indiana",
+      "randolph_county_illinois"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  }
+]
