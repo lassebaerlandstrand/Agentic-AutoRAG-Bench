@@ -1,0 +1,3535 @@
+[
+  {
+    "id": "Q001",
+    "question": "What two consecutive intervention modules in the Smoke-free Kids program address protecting children from both active and passive smoking exposure?",
+    "canonical_answer": "rules about smoking and creating a smoke-free environment",
+    "answer_variants": [
+      "Modules 3 and 4 focusing on rules and smoke-free environment",
+      "setting household rules and creating a smoke-free home"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_0921739",
+      "healthcare_0921739"
+    ],
+    "source_spans": [
+      "Module 3 focuses on setting rules about smoking to protect their child from experimentation with tobacco.",
+      "Module 4 is an extension of module 3 and involves creating a smoke-free house and -environment to keep the child away from second hand smoking."
+    ],
+    "source_span_offsets": [
+      [
+        21392,
+        21506
+      ],
+      [
+        21507,
+        21650
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q002",
+    "question": "In the COTS-DVFS system, how does the time to change operating frequency compare to the time required for I2C communication to adjust the supply voltage?",
+    "canonical_answer": "frequency changes are about 250 times faster",
+    "answer_variants": [
+      "frequency change is ~10 \u00b5s vs ~2.5 ms for voltage adjustment",
+      "frequency changes occur in microseconds while voltage changes require milliseconds"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_0717690",
+      "healthcare_0717690"
+    ],
+    "source_spans": [
+      "The actual change in clock frequency occurs within approximately 10 \u00b5s.",
+      "The data bits are on the top and the clock signal is on the bottom. The entire communication takes slightly over 2.5 ms and must be kept below a maximum bit rate determined by RC constants of the external circuitry."
+    ],
+    "source_span_offsets": [
+      [
+        10738,
+        10818
+      ],
+      [
+        16320,
+        16535
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "2.5 / 0.01",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q003",
+    "question": "In which clinical scenario did the reviewers resort to rolling dice to select the outcome for the meta-analysis?",
+    "canonical_answer": "multiple outcome measures",
+    "answer_variants": [
+      "when there were multiple outcome measures",
+      "trials with multiple outcome measures",
+      "disagreement due to multiple outcomes"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_1046368",
+      "healthcare_1046368"
+    ],
+    "source_spans": [
+      "In a few studies where no clear outcome measure could be identified, outcomes were assigned to numbers on dice (2-12) which were then rolled to randomly select the outcome included in the meta-analysis.",
+      "In only four trials did disagreement in selection of the outcome measure have relevance to the effect-size estimate. In two of these trials, disagreement was because of multiple outcome-measures, so we threw dice to select the outcome for the meta-analysis."
+    ],
+    "source_span_offsets": [
+      [
+        15284,
+        15504
+      ],
+      [
+        47190,
+        47468
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q004",
+    "question": "What is the approximate molecular weight of the FIPfve homodimer from Flammulina velutipes?",
+    "canonical_answer": "26 kDa",
+    "answer_variants": [
+      "26 kDa",
+      "26 kDa protein"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_6910242"
+    ],
+    "source_spans": [
+      "FIPfve is a non-covalently linked homodimer, each subunit being 114 amino acid residues in length. Hence the true molecular size of FIPfve is equivalent to a 26 kDa MW protein."
+    ],
+    "source_span_offsets": [
+      [
+        11806,
+        11983
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q005",
+    "question": "What homeopathic remedies were used in the Aulagnier trial for postoperative ileus?",
+    "canonical_answer": "Opium C9, Arnica C9, Raph. C9",
+    "answer_variants": [
+      "Opium C9, Arnica C9, Raph. C9",
+      "Opium C9, Arnica C9 and Raph. C9"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_1046368"
+    ],
+    "source_spans": [
+      "Aulagnier 39, Treatment. = Opium C9, Arnica C9, Raph. C9. Aulagnier 39, Scores method (Jadad/ internal-validity). = 40/64."
+    ],
+    "source_span_offsets": [
+      [
+        55812,
+        55934
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q006",
+    "question": "What type of home health capability does Allina Health utilize for its program treating COPD, CHF, sepsis, and cardiovascular conditions?",
+    "canonical_answer": "an internal home health agency",
+    "answer_variants": [
+      "an internal (in-house) home health agency",
+      "a home health agency within the health system"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_2018209",
+      "healthcare_2018209"
+    ],
+    "source_spans": [
+      "Allina has expanded the program to assist patients with conditions beyond COVID-19 , such as: COPD , CHF , sepsis , post-surgical , and cardiovascular conditions .",
+      "Allina Health has a robust home health agency within the health system that is responsible for the day-to-day care of patients."
+    ],
+    "source_span_offsets": [
+      [
+        2340,
+        2480
+      ],
+      [
+        9607,
+        9734
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q007",
+    "question": "What is the discrepancy between the general system setup description and the specific experimental equipment used in the EM tracking study for endoscope navigation?",
+    "canonical_answer": "working volume differs: 50\u00b3 vs 30\u00b3 cm\u00b3",
+    "answer_variants": [
+      "the working volume is 50\u00d750\u00d750cm\u00b3 in setup but 30\u00d730\u00d730cm\u00b3 in the experiments",
+      "system mentions 50\u00b3 but experiments use 30\u00b3 cm\u00b3"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3046138",
+      "healthcare_3046138"
+    ],
+    "source_spans": [
+      "For the purposes of the experiments we used a NDI c \u00a9 Aurora EMTS (accuracy of 0.5mm in a working volume of 30 \u00d7 30 \u00d7 30 cm 3 ).",
+      "The system setup consists of an EM field generator with a working volume of 50 \u00d7 50 \u00d7 50cm 3 , which is placed roughly above the chest of the patient and fixed in position using a titanium arm, as shown in Fig. 1. A 6dof EM sensor is inserted into the working channel of the endoscope and fixed at the tip of the endoscope (Fig. 1b)."
+    ],
+    "source_span_offsets": [
+      [
+        11857,
+        11985
+      ],
+      [
+        6895,
+        7228
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q008",
+    "question": "What is the upper limit of normal intra-abdominal pressure in healthy individuals expressed in cm H2O?",
+    "canonical_answer": "9.52 cm H2O",
+    "answer_variants": [
+      "approximately 9.5 cm H2O",
+      "9.52 cm water column"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_3085029",
+      "healthcare_3085029"
+    ],
+    "source_spans": [
+      "Reporting of IAP in mm Hg (1 mm Hg \u00bc 1.36 cm H2O) is recommended for standardization",
+      "Normal IAP in healthy individuals has been described as ranging between subatmospheric to 5 to 7 mm Hg, with higher levels found in obese individuals."
+    ],
+    "source_span_offsets": [
+      [
+        12252,
+        12336
+      ],
+      [
+        6525,
+        6675
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "7 * 1.36",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q009",
+    "question": "How does the three-finger toxin composition of the common krait compare with the toxicity of the newly discovered species from Karnataka that is six times more potent?",
+    "canonical_answer": "B. caeruleus is 65% 3FTx; B. romulusi LD50 is 0.045 mg/kg",
+    "answer_variants": [
+      "common krait has 65% 3FTx; the Karnataka species has 0.045 mg/kg LD50",
+      "65% vs 0.045 mg/kg"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3101739",
+      "healthcare_3101739"
+    ],
+    "source_spans": [
+      "the venom proteome of B. caeruleus was enriched with various subtypes of neurotoxic 3FTxs (65%)",
+      "the newly discovered B. romulusi exhibited six times more toxicity (0.045 mg/kg)"
+    ],
+    "source_span_offsets": [
+      [
+        15460,
+        15555
+      ],
+      [
+        24660,
+        24740
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q010",
+    "question": "How did particle concentration change when antibodies were added without magnetic beads, compared to when uncoated beads were used?",
+    "canonical_answer": "increased by 105% versus no change",
+    "answer_variants": [
+      "105% increase versus no change",
+      "rose by 105% versus unchanged"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3163390",
+      "healthcare_3163390"
+    ],
+    "source_spans": [
+      "We applied an identical bead procedure, except that we abstained from coating the beads with anti-ApoB antibodies prior to the incubation with the diluted PFP sample. This resulted in no changes in particle concentration and size distribution curve.",
+      "we conducted a parallel experiment with a two-hour incubation of diluted PFP with 10 \u00b5g of anti-ApoB antibodies that had not been attached to magnetic beads, which resulted in an increase in particle concentration by 105% as well as a notable shift of the size distribution curve to the right"
+    ],
+    "source_span_offsets": [
+      [
+        15718,
+        15966
+      ],
+      [
+        15996,
+        16288
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q011",
+    "question": "Which lipoprotein isolate had the higher cholesterol concentration, VLDL or LDL?",
+    "canonical_answer": "LDL",
+    "answer_variants": [
+      "LDL isolate",
+      "the LDL isolate"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3163390"
+    ],
+    "source_spans": [
+      "In the undiluted LDL isolate the cholesterol and TG concentrations were 22.0 mmol/L and 1.5 mmol/L, respectively. The undiluted VLDL contained 2.5 mmol/L of cholesterol and 2.2 mmol/L of TG."
+    ],
+    "source_span_offsets": [
+      [
+        12840,
+        13030
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q012",
+    "question": "What percentage of the microscope field must show ossicle lysis or necrosis to qualify as severe histology lesions in experimentally reproduced sea star wasting?",
+    "canonical_answer": "more than 30%",
+    "answer_variants": [
+      ">30%",
+      "over 30%"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_3261937",
+      "healthcare_3261937"
+    ],
+    "source_spans": [
+      "(F) Lysis of ossicles; note large pleomorphic cavities (*) lined by coelomocytes. (G) Detail of F; note collapse of stereom with aggregates of coelomocytes (arrow) lining lytic cavity and loss of collagen fibrils in stereom leading to clear spaces (arrowhead). (H) Necrosis of ossicles; note clumps of cell debris (black arrow) adjacent to lytic cavity, cellular infiltrates (white arrow), and detachment of MCT from ossicle (arrowhead).",
+      "3, Histology description = Severe: covering >30% of microscope field."
+    ],
+    "source_span_offsets": [
+      [
+        29208,
+        29645
+      ],
+      [
+        14037,
+        14106
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q013",
+    "question": "How does RNA polymerase direction relative to the Cas9 target site affect whether DNA repair machinery can access the double-strand break?",
+    "canonical_answer": "Translocating toward Cas9 from the template strand dislodges it, allowing repair",
+    "answer_variants": [
+      "only polymerases approaching from the template strand direction can dislodge Cas9",
+      "polymerase approaching from the template strand enables repair access"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_3335169",
+      "healthcare_3335169",
+      "healthcare_3335169"
+    ],
+    "source_spans": [
+      "RNA polymerase can dislodge Cas9 from DNA breaks in a highly strand-biased manner",
+      "persistent Cas9 binding blocks access to the DSB by repair enzymes, reducing genome editing efficiency",
+      "six of the seven poorly performing sgRNAs annealed to the DNA strand that was not used by RNA polymerase II (Pol II) as the template for transcription"
+    ],
+    "source_span_offsets": [
+      [
+        96,
+        177
+      ],
+      [
+        2082,
+        2184
+      ],
+      [
+        9001,
+        9151
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q014",
+    "question": "By how many millivolts does the reduction midpoint potential elevation caused by the Q69E mutation exceed that caused by the Q69H mutation in FeSOD?",
+    "canonical_answer": "over 440 mV greater",
+    "answer_variants": [
+      "at least 440 mV more",
+      "exceeds Q69H by more than 440 mV",
+      "approximately 440+ mV higher"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3496061",
+      "healthcare_3496061"
+    ],
+    "source_spans": [
+      "we found that when Gln69 in FeSOD was mutated to His, the E m rose some 220 mV. The Q69H mutant nonetheless retained 30% of WT activity on a per-Fe basis.",
+      "However, this mutant displayed less than 1% of WT activity and an apparent elevation of its E m by over 660 mV."
+    ],
+    "source_span_offsets": [
+      [
+        12712,
+        12866
+      ],
+      [
+        13048,
+        13159
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "660 - 220",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q015",
+    "question": "By what percentage did the chance of remaining recurrence-free decline from year 1 to year 5 in patients treated with salvage focused ultrasound for vesicourethral anastomosis recurrence?",
+    "canonical_answer": "18.7 percentage points",
+    "answer_variants": [
+      "decreased by 18.7 percentage points",
+      "dropped by 18.7 points"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3409745"
+    ],
+    "source_spans": [
+      "The RFS rates of 1, 2, 3 and 5 year were 50%, 37.5%, 31.3% and 31.3%."
+    ],
+    "source_span_offsets": [
+      [
+        13398,
+        13467
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "50 - 31.3",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q016",
+    "question": "How does the mean absolute error of DeepPhys on the evaluation database at 60 seconds compare to its published error on the Mahnob-HCI database?",
+    "canonical_answer": "0.37 bpm lower",
+    "answer_variants": [
+      "lower by 0.37 bpm",
+      "slightly lower",
+      "4.20 is 0.37 lower than 4.57"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3415784",
+      "healthcare_3415784"
+    ],
+    "source_spans": [
+      "Chen et al. 2018 [13] (COHFACE), 60 s = 4.20",
+      "In [13] the authors trained their DeepPhys model with videos from the Mahnob-HCI database [18] with a duration of 30 seconds, achieving a MAE value of 4 . 57 bpm"
+    ],
+    "source_span_offsets": [
+      [
+        10761,
+        10805
+      ],
+      [
+        16904,
+        17061
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q017",
+    "question": "What acquisition condition distinguishes the videos that achieved the highest accuracy from those with the lowest accuracy in the experiments?",
+    "canonical_answer": "illumination control",
+    "answer_variants": [
+      "controlled vs uncontrolled lighting",
+      "illumination conditions",
+      "whether lighting was controlled"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3415784",
+      "healthcare_3415784"
+    ],
+    "source_spans": [
+      "We have selected the videos that obtain the highest and the lowest accuracy for both methods. The performance is higher (lower MAE) when dealing with videos with controlled illumination and low movement (left column).",
+      "For both methods, the videos with the best accuracy for heart rate estimation belong to the controlled illumination scenario. On the other hand, the worst results are obtained in videos with uncontrolled illumination."
+    ],
+    "source_span_offsets": [
+      [
+        16573,
+        16790
+      ],
+      [
+        17922,
+        18139
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q018",
+    "question": "What was the highest signal-to-noise ratio observed in the lung tissue measurements?",
+    "canonical_answer": "9.91",
+    "answer_variants": [
+      "9.91",
+      "approximately 9.9"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_3644189"
+    ],
+    "source_spans": [
+      "while the lung data instead show SNR = 3.6 (2.3; 5.5) 0.50-9.91"
+    ],
+    "source_span_offsets": [
+      [
+        10144,
+        10207
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q019",
+    "question": "How much higher was the specificity of the highest-accuracy algorithm compared to the CART algorithm?",
+    "canonical_answer": "34.2 percentage points",
+    "answer_variants": [
+      "34.2 percentage points higher",
+      "approximately 34.2 percentage points",
+      "about 34.2% higher"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_4184795",
+      "healthcare_4184795"
+    ],
+    "source_spans": [
+      "The specificity for this model was 65.6% and the sensitivity of this model was 9.2%. The accuracy of this model is 76.2%. Of all the 93478 attributes, 71268 were classified correctly and the remaining 22210 was classified incorrectly.",
+      "it was found, using the formulas of accuracy that, this algorithm has an accuracy of 77%. The sensitivity is 3.62% and the specificity is 99.8%."
+    ],
+    "source_span_offsets": [
+      [
+        22017,
+        22271
+      ],
+      [
+        18776,
+        18926
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "99.8 - 65.6",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q020",
+    "question": "What architectural change was made to the v-net architecture in the 3D CNN designed for atrial segmentation?",
+    "canonical_answer": "avoiding max-pooling operations",
+    "answer_variants": [
+      "removed max-pooling",
+      "max-pooling was omitted",
+      "no max-pooling"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_4801708",
+      "healthcare_4801708"
+    ],
+    "source_spans": [
+      "The first idea followed in this work is the use of 3D CNNs as the effective solution for the segmentation of the 3D LGE datasets. The starting point is the v-net [9], which takes in consideration the spatial redundancy naturally present on the entire volumetric stack with 3D-kernels",
+      "Firstly, the use of max-pooling operations is avoided in order to prevent the loss of spatial resolution (i.e if pools do not overlap well, pooling operation loses appreciable information where the objects are located in the image)."
+    ],
+    "source_span_offsets": [
+      [
+        2912,
+        3195
+      ],
+      [
+        5953,
+        6185
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q021",
+    "question": "What aspect of the couple's communication does the 22% critical scale score measure \u2014 their own communication or their perception of their partner's?",
+    "canonical_answer": "both own and partner's ability",
+    "answer_variants": [
+      "both own and partner's ability",
+      "own and partner's communication",
+      "the individual's perception of both self and partner"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_4944906",
+      "healthcare_4944906"
+    ],
+    "source_spans": [
+      "CRITICAL SCALE SCORE, Name:.Partner #1.1: John Doe.1A = 22%. CRITICAL SCALE SCORE, 1: John Doe.Partner #1.2: Jane Doe.2A = 22%. CRITICAL SCALE SCORE, ID#..3A = 22%",
+      "This section of the CCES is the overall critical score based on the critical questions answered by the individual. These scores are used to identify how the individual perceives his/her ability and his/her partner's ability to communicate without using more extreme negative styles of communication which would place the relationship substantially at a higher risk of damage."
+    ],
+    "source_span_offsets": [
+      [
+        14616,
+        14779
+      ],
+      [
+        40715,
+        41091
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      1,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q022",
+    "question": "Why does the predictive power for visual acuity after one year shift from baseline features to features at weeks 12 and 24?",
+    "canonical_answer": "because segmentation accuracy improves as IRC resolves",
+    "answer_variants": [
+      "segmentation becomes more reliable as IRC fluid decreases",
+      "IRC fluid shrinks making segmentation more accurate",
+      "fluid and layer segmentation improve when IRC decreases"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_5144512",
+      "healthcare_5144512"
+    ],
+    "source_spans": [
+      "Preliminarily, IRC in the outer nuclear layer in the 3-mm area around the fovea seemed to have the greatest predictive value for BCVA at baseline",
+      "The explanation of the pitfalls in interpreting the baseline features easily accounts for why the later timepoints were overrepresented for prediction of BCVA after one year. The layer segmentation as well as the fluid segmentation will be more robust once the IRC spaces get smaller"
+    ],
+    "source_span_offsets": [
+      [
+        3004,
+        3149
+      ],
+      [
+        20679,
+        20962
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q023",
+    "question": "For predicting visual acuity after one year of anti-VEGF therapy in diabetic macular edema, what does high total retinal thickness at week 24 likely indicate when it appears as the top predictive feature?",
+    "canonical_answer": "IRC has resolved with near-zero fluid volume",
+    "answer_variants": [
+      "resolution of intraretinal cystoid fluid",
+      "cases where IRC has disappeared",
+      "fluid resolution with near-zero IRC volume"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_5144512",
+      "healthcare_5144512"
+    ],
+    "source_spans": [
+      "The highest ranked feature was TRT in the central 3-mm circle around the fovea at week 24.",
+      "The representation of IRC at weeks 12 and 24 in this ranking is high. This could emphasize the importance of IRC behavior (response or non-response) to anti-VEGF therapy; the high representation of total retinal thickness could mirror cases where IRC has gone and the IRC area and volume is close to zero."
+    ],
+    "source_span_offsets": [
+      [
+        14148,
+        14238
+      ],
+      [
+        21520,
+        21824
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q024",
+    "question": "What was the highest flow rate tested in the experiments that demonstrated reduced ice growth inhibition in flowing solutions?",
+    "canonical_answer": "40 \u00b5L/min",
+    "answer_variants": [
+      "40 \u00b5L/min",
+      "40 microliters per minute"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_5875414",
+      "healthcare_5875414"
+    ],
+    "source_spans": [
+      "The flow rate of slurry was set at 0, 20 and 40 \u03bc L/min.",
+      "(1) The ice growth inhibition by the antifreeze protein decreased in flowing solutions compared with that in quiescent solutions. This is because the slurry flow carried HPLC6 and the latent heat away from the surfaces of ice particles locally."
+    ],
+    "source_span_offsets": [
+      [
+        14746,
+        14802
+      ],
+      [
+        46706,
+        46950
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q025",
+    "question": "Which of the three main inflammatory biomarkers was found to be most useful for sepsis diagnosis according to the clinical study cited?",
+    "canonical_answer": "procalcitonin",
+    "answer_variants": [
+      "procalcitonin (PCT)"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_5326488"
+    ],
+    "source_spans": [
+      "Nors yra daug u\u017edegiminio proceso \u017eymen\u0173, ta\u010diau i\u0161skiriami trys pagrindiniai, kurie turi svarbi\u0105 klinikin\u0119 reik\u0161m\u0119 ir yra prieinami klinikin\u0117je praktikoje: C reaktyvinis baltymas (CRB), serumo laktatas bei prokalcitoninas (PCT). Atlikus klinikin\u012f tyrim\u0105, kuriame buvo retrospektyviai nagrin\u0117jami sepsiu sirgusi\u0173 pacient\u0173 tyrim\u0173 duomenys bei gydymo i\u0161eitys, buvo nustatyta, kad i\u0161 trij\u0173 min\u0117t\u0173 biologini\u0173 \u017eymen\u0173, b\u016btent prokalcitoninas yra pats naudingiausias, kadangi tiksliausiai atspindi bakteriemij\u0105 (ypatingai sukelt\u0105 Gram-neigiam\u0173 suk\u0117l\u0117j\u0173)"
+    ],
+    "source_span_offsets": [
+      [
+        15015,
+        15578
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q026",
+    "question": "What parameter defines cardiovascular dysfunction in pediatric sepsis according to the organ dysfunction criteria?",
+    "canonical_answer": "need for vasoactive drugs",
+    "answer_variants": [
+      "requirement for vasoactive medications",
+      "need for vasoactive preparations to maintain blood pressure"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_5326488"
+    ],
+    "source_spans": [
+      "Kardiovaskulin\u0117 sistema (nepaisant izotonini\u0173 skys\u010di\u0173 bolius\u0173 > 40 ml/kg/val., i\u0161lieka bent vienas i\u0161 kriterij\u0173):, 2 = Reikia vazoaktyvi\u0173 preparat\u0173 (pvz.: dopamino (>5mg/kg/min), dobutamino, noradrenalino ar adrenalino (bet kokia doze)) normaliam AKS palaikyti."
+    ],
+    "source_span_offsets": [
+      [
+        15893,
+        16154
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q027",
+    "question": "How did the rank-1 accuracy of the 2009 method compare to the 2013 method when both used the same five body locations?",
+    "canonical_answer": "0.9 percentage points higher",
+    "answer_variants": [
+      "96.7% vs 95.8%",
+      "the 2009 method was slightly higher by 0.9%"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_6311163",
+      "healthcare_6311163"
+    ],
+    "source_spans": [
+      "Methods without cycle comparison, Year = 2009. Methods without cycle comparison, Studies = Pan et al. [21]. Methods without cycle comparison, Locations = Wrist, upper arm, hip, knee, ankle. Methods without cycle comparison, RR = 96.7%. Methods without cycle comparison, EER = /. Methods without cycle comparison, #Subj. = 30.",
+      "Methods without cycle comparison, Year = 2013. Methods without cycle comparison, Studies = This paper. Methods without cycle comparison, Locations = Wrist, upper arm, hip, knee, ankle. Methods without cycle comparison, RR = 95.8%. Methods without cycle comparison, EER = 2.2%. Methods without cycle comparison, #Subj. = 175."
+    ],
+    "source_span_offsets": [
+      [
+        18920,
+        19242
+      ],
+      [
+        19692,
+        20016
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q028",
+    "question": "Which rescue treatment showed a larger odds ratio for improving abstinence outcomes when baseline nicotine dependence was equivalent across treatment arms?",
+    "canonical_answer": "varenicline at 6 months",
+    "answer_variants": [
+      "varenicline",
+      "the varenicline group",
+      "switching to varenicline"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_6250058",
+      "healthcare_6250058"
+    ],
+    "source_spans": [
+      "Smokers who did not respond adequately to precessation nicotine patch benefi ted from bupropion augmentation; abstinence rates at end of treatment were 16% with nicotine patch alone and 28% with bupropion augmentation (odds ratio=2.04, 95% CI=1.03 -4.01). Switching to varenicline produced less robust effects, but point abstinence at 6 months was 6.6% with the patch alone and 16.5% with a switch to varenicline (odds ratio=2.80, 95% CI=1.11 -7.06).",
+      "Fagerstr\u00f6m Test for Nicotine Dependence score, Pre- and Postcessation Study Conditions.Randomized, Double-Blind Precessation Conditions.Nicotine Patch (N=106).N = 5.8. Fagerstr\u00f6m Test for Nicotine Dependence score, Pre- and Postcessation Study Conditions.Randomized, Double-Blind Precessation Conditions.Nicotine Patch (N=106).% = 2.0. Fagerstr\u00f6m Test for Nicotine Dependence score, Pre- and Postcessation Study Conditions.Randomized, Double-Blind Precessation Conditions.Bupropion Plus Nicotine Patch (N=99).N = 5.8. Fagerstr\u00f6m Test for Nicotine Dependence score, Pre- and Postcessation Study Conditions.Randomized, Double-Blind Precessation Conditions.Bupropion Plus Nicotine Patch (N=99).% = 2.0. Fagerstr\u00f6m Test for Nicotine Dependence score, Pre- and Postcessation Study Conditions.Randomized, Double-Blind Precessation Conditions.Varenicline (N=103).N = 5.8."
+    ],
+    "source_span_offsets": [
+      [
+        1153,
+        1603
+      ],
+      [
+        23973,
+        24837
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q029",
+    "question": "What was the maximum average stress recorded on the annulus fibrosus fibers at the motion segment where a case of VAX-D-induced disc protrusion was reported?",
+    "canonical_answer": "1.31 MPa",
+    "answer_variants": [
+      "1.31 MPa"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_6354564",
+      "healthcare_6354564"
+    ],
+    "source_spans": [
+      "Deen et al. (2003) described a case of disc protrusion in the posterior direction at the L5 e S1 MSU during axial traction therapy with VAX-D.",
+      "At the other MSUs, the highest average stresses were shown in the posterior region, and the values at L2 e L3, L3 e L4, L4 e L5 and L5 e S1 MSUs were 0.75 MPa, 0.46 MPa, 1.07 MPa, and 1.31 MPa, respectively."
+    ],
+    "source_span_offsets": [
+      [
+        18185,
+        18327
+      ],
+      [
+        15197,
+        15404
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q030",
+    "question": "What was the residual standard deviation for laboratory 9's LC-MS/MS measurements of 8-oxodG in the urine samples from the 26 healthy individuals?",
+    "canonical_answer": "1.55 nM",
+    "answer_variants": [
+      "1.55 n M",
+      "1.55"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_4087498",
+      "healthcare_4087498"
+    ],
+    "source_spans": [
+      "Table 4 contains some demographic and 8-oxodG data for the study population of 26 healthy individuals participating in the study of 'human variability'",
+      "Lab 9 (LC-MS/MS), Results from 8-oxodG spiked urine samples.SD res (n M ) = 1.55"
+    ],
+    "source_span_offsets": [
+      [
+        46230,
+        46381
+      ],
+      [
+        19174,
+        19254
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q031",
+    "question": "For the treatment comparison that showed a statistically significant difference in adverse reactions (p<0.001), what was the male-to-female ratio in each arm?",
+    "canonical_answer": "59:7",
+    "answer_variants": [
+      "59/7",
+      "59 to 7"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_6248809",
+      "healthcare_6248809"
+    ],
+    "source_spans": [
+      "Male/female ratio, Group I (Budesonide 400 mcg plus Formoterol 6 mcg) = 59/7. Male/female ratio, Group II (Tiotropium 18 mcg plus Formoterol 12 mcg) = 59/7.",
+      "In group I, following adverse drug reactions were observed; sore throat, hoarseness of voice, oral ulcers, tremors, 2 patients showed acute exacerbation and 1 had pneumonitis. In group II, following adverse drug reactions were observed; dryness of mouth, palpitations, tremors and 2 patients developed urinary retention. After that we have done Fisher's exact test and we observed that there is statistically significant difference (p<0.001) between group I and group II."
+    ],
+    "source_span_offsets": [
+      [
+        10691,
+        10847
+      ],
+      [
+        15825,
+        16312
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q032",
+    "question": "How many times greater is the risk of developing metabolic syndrome for female CKD patients compared to male CKD patients, relative to the overall CKD-versus-control risk?",
+    "canonical_answer": "threefold higher",
+    "answer_variants": [
+      "three times greater",
+      "3x greater",
+      "threefold"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_6665173",
+      "healthcare_6665173"
+    ],
+    "source_spans": [
+      "The CKD group are about 3 times at risk of developing MetS as compared to the control group (95% CI=0.9-8.8).",
+      "Female participants with CKD are 9 fold at risk of developing MetS as compared to the male counterparts (95% CI=1.7-47.9)."
+    ],
+    "source_span_offsets": [
+      [
+        1583,
+        1701
+      ],
+      [
+        1703,
+        1827
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q033",
+    "question": "Based on the Canadian data, which psychiatric care setting shows the strongest association with psychotic symptoms (odds ratio exceeding 21), and what is the implication for patients who survive their psychiatric conditions into later life?",
+    "canonical_answer": "emergency psychiatric services; they face greater frailty in later life",
+    "answer_variants": [
+      "ESP; greater frailty in later life",
+      "emergency settings; increased frailty with aging",
+      "the highest-odds setting (ESP) leads to frailty in aging survivors"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_6827574",
+      "healthcare_6827574"
+    ],
+    "source_spans": [
+      "psychotic disorders, ESP (n = 5, 235).Odds Ratio = 21.58 (16.97 - 27.44). , ESP (n = 5, 235).c = .84. , CMH (n = 11, 641).Odds Ratio = 5.64 (4.20 - 7.57). , CMH (n = 11, 641).c = . , MH (n = 230, 790).Odds Ratio = 14.77 (14.34 - 15.22). , MH (n = 230, 790).c = .",
+      "Persons with psychiatric diagnoses who do survive to later life have greater odds of being the most frail."
+    ],
+    "source_span_offsets": [
+      [
+        95532,
+        95752
+      ],
+      [
+        10570,
+        10675
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q034",
+    "question": "With approximately 20% of Canadians experiencing mental health or addiction issues annually and half by age 40, what problem does the healthcare system face in identifying these conditions?",
+    "canonical_answer": "under-detection",
+    "answer_variants": [
+      "under-detection",
+      "failure to detect",
+      "inadequate identification",
+      "detection gaps"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_6827574",
+      "healthcare_6827574"
+    ],
+    "source_spans": [
+      "Under-detection of issues like pain, depression and dyspnea is an important problem throughout the health care system.",
+      "About 20% of the Canadian population experiences problems with mental health or addictions annually and about half will face mental health problems by age 40."
+    ],
+    "source_span_offsets": [
+      [
+        22191,
+        22308
+      ],
+      [
+        8992,
+        9149
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q035",
+    "question": "What is the CAS number of the nucleoside analog reverse transcriptase inhibitor predicted to bind to four SARS-CoV-2 proteins?",
+    "canonical_answer": "188062-50-2",
+    "answer_variants": [
+      "CAS 188062-50-2"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_6818787",
+      "healthcare_6818787"
+    ],
+    "source_spans": [
+      "The results show that abacavir, a powerful nucleoside analog reverse transcriptase inhibitor used to treat HIV, is predicted to have high binding affinity with several proteins of SARS-CoV-2.",
+      "Abacavir (sulfate), CAS = 188062-50-2. Abacavir (sulfate), Target = 3C-like proteinase Papain-like protease RdRp helicase. Abacavir (sulfate), Affinity(nM) = 28.42 22.90 3.03 3.06."
+    ],
+    "source_span_offsets": [
+      [
+        918,
+        1104
+      ],
+      [
+        9663,
+        9843
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q036",
+    "question": "What is the ratio of items to care-plan domains in the interRAI Mental Health assessment?",
+    "canonical_answer": "19.8 items per domain",
+    "answer_variants": [
+      "approximately 20 items per domain",
+      "19.8:1",
+      "396 to 20"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_6827574",
+      "healthcare_6827574"
+    ],
+    "source_spans": [
+      "The interRAI Mental Health (MH) assessment (157, 158) supports care plan development in 20 domains, and is used in in-patient mental health settings",
+      "The assessment is comprised of 396 items in several domains (see Table 1)."
+    ],
+    "source_span_offsets": [
+      [
+        26439,
+        26587
+      ],
+      [
+        27920,
+        27992
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "396 / 20",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q037",
+    "question": "According to the clinical risk assessment framework described, how many questions must the assessment of key risk areas answer?",
+    "canonical_answer": "seven questions",
+    "answer_variants": [
+      "7 questions",
+      "seven"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3376269",
+      "healthcare_3376269"
+    ],
+    "source_spans": [
+      "A clinical risk assessment will be recorded in the appropriate place for the service concerned and make reference to the following six elements: 1. Known history or current concern of a key risk behaviour 2. A clear statement about the nature of the harmful outcome to be prevented",
+      "- Is there a risk of harm? - Is there a history of this risk? - What sort of harm and of what likely degree? - What is the immediacy or imminence? - How long may the risk last? - What contributory factors relate to the level of risk? - How can the contributory factors be modified or managed? Are there any protective or mitigating factors?"
+    ],
+    "source_span_offsets": [
+      [
+        17139,
+        17420
+      ],
+      [
+        16798,
+        17138
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q038",
+    "question": "How does the recommended wait after B-cell targeted therapy compare to the wait after stem cell transplant before considering COVID-19 vaccination?",
+    "canonical_answer": "6-9 months vs over 3 months",
+    "answer_variants": [
+      "longer after B-cell therapy",
+      "B-cell therapy requires longer wait (6-9 months versus >3 months for HSCT)",
+      "the B-cell targeted therapy wait is extended compared to HSCT"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_7083619",
+      "healthcare_7083619"
+    ],
+    "source_spans": [
+      "Therapies targeting B-cells including anti-CD20 (e.g. rituximab), CD19 (i.e. blinatumomab), CD22 (i.e. inotuzumab) targeting antibodies, BiTEs (e.g. blinatumomab) or CAR-T cell therapy: Patients receiving these agents may have a reduced immune response to vaccines in general that can extend to up to 6-9 months following treatment completion.",
+      "Autologous HSCT %&, 1 = Pre-HSCT: > 2 weeks prior to starting conditioning chemotherapy Post-HSCT: > 3 months post-HSCT. Allogenic HSCT %&, 1 = Pre-HSCT: > 2 weeks prior to starting conditioning chemotherapy Post-HSCT: > 3 months post-HSCT $."
+    ],
+    "source_span_offsets": [
+      [
+        5155,
+        5498
+      ],
+      [
+        9540,
+        9782
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q039",
+    "question": "Is the platelet count threshold recommended for COVID-19 vaccination in cancer patients the same as that specified for aplastic anemia patients?",
+    "canonical_answer": "yes - both use greater than 20 x 10^9/L",
+    "answer_variants": [
+      "yes",
+      "same",
+      "both specify greater than 20 x 10^9/L"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_7083619",
+      "healthcare_7083619"
+    ],
+    "source_spans": [
+      "There is no consensus on an adequate platelet count for IM injections. Still, practical suggestions include using a platelet threshold of greater than 20 x 10 9 /L, administering the vaccine after platelet transfusion if receiving regular transfusions, and applying firm pressure at the injection site for at least 5 minutes.",
+      "Aplastic Anemia, 1 = Not on therapy or completed therapy with ANC approaching 0.75 x 10 9 /L and platelet count greater than 20 x 10 9 /L: No specific timing required."
+    ],
+    "source_span_offsets": [
+      [
+        4143,
+        4468
+      ],
+      [
+        9783,
+        9950
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q040",
+    "question": "The subject who participated in both a dyad with a statistically significant back-channel-to-blink association and a dyad with a non-significant association \u2014 in which pair did that subject have more blinks?",
+    "canonical_answer": "Pair 2",
+    "answer_variants": [
+      "in Pair 2",
+      "the first pair (Pair 2)",
+      "Pair 2 versus Pair 4"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_7767846",
+      "healthcare_7767846"
+    ],
+    "source_spans": [
+      "C, Pair = 2. C, n Back channels = 106. C, n Blinks = 20. C, p = ***. C, Pair = 4. C, n Back channels = 53. C, n Blinks = 3. C, p = ns.",
+      "2/4, Subject = C. 2/4, Sex = M. 2/4, Age = 29."
+    ],
+    "source_span_offsets": [
+      [
+        50656,
+        50790
+      ],
+      [
+        21080,
+        21126
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q041",
+    "question": "What is the age of the female subject who produced the fewest blinks in the dyadic conversation study?",
+    "canonical_answer": "30",
+    "answer_variants": [
+      "30",
+      "thirty"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_7767846",
+      "healthcare_7767846"
+    ],
+    "source_spans": [
+      "Subject B, who produces least blinks overall (164 in Pair 1), is paired first with the most prolific blinker, A, (812 blinks), and then (Pair 7) with the subject who blinks least after herself (Subject J, 175 blinks in total).",
+      "1/7, Subject = B. 1/7, Sex = F. 1/7, Age = 30."
+    ],
+    "source_span_offsets": [
+      [
+        29744,
+        29970
+      ],
+      [
+        21033,
+        21079
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q042",
+    "question": "What is the total number of test samples across all specialties in the CM-NER corpus?",
+    "canonical_answer": "1698",
+    "answer_variants": [],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_0038629"
+    ],
+    "source_spans": [
+      "Sum, # Train = 8,478. Sum, # Dev = 1,696. Sum, # Test = 1,698"
+    ],
+    "source_span_offsets": [
+      [
+        23659,
+        23720
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "1698",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q043",
+    "question": "Compared to sTNF-R1 and sTNF-R2, which receptor showed the greatest percentage reduction after immune adsorption treatment?",
+    "canonical_answer": "sIL2-R (soluble interleukin-2 receptor)",
+    "answer_variants": [
+      "sIL2-R",
+      "soluble interleukin-2 receptor",
+      "the sIL2-R receptor"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_0469327"
+    ],
+    "source_spans": [
+      "TABLE 2. Averaged patient plasma levels of soluble tumour necrosis factor receptors 1 and 2 (sTNF-R1 and sTNF-R2) and soluble interleukin-2 receptor (sIL2-R) for treatments 3-12 with the Oncosorb immune adsorption column ( n = 149)\n\nsTNF-R1 (pg/mL), Before treatment = 1944 \u00b1 794. sTNF-R1 (pg/mL), After treatment = 1003 \u00b1 431. sTNF-R1 (pg/mL), P = < 0.001. sTNF-R1 (pg/mL), % = - 48.4. sTNF-R2 (pg/mL), Before treatment = 3187 \u00b1 1161. sTNF-R2 (pg/mL), After treatment = 1424 \u00b1 830. sTNF-R2 (pg/mL), P = < 0.001. sTNF-R2 (pg/mL), % = - 55.3. sIL2-R (pg/mL), Before treatment = 4978 \u00b1 2637. sIL2-R (pg/mL), After treatment = 1406 \u00b1 1176. sIL2-R (pg/mL), P = < 0.001. sIL2-R (pg/mL), % = - 71.8"
+    ],
+    "source_span_offsets": [
+      [
+        17740,
+        18432
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q044",
+    "question": "What component with a typical quiescent current of 12 microamps contributes to the external circuitry overhead measured at 0.55 mW when the processor is disconnected?",
+    "canonical_answer": "adjustable voltage regulator",
+    "answer_variants": [
+      "TPS76901 voltage regulator",
+      "the TPS76901 regulator",
+      "voltage regulator"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_0717690",
+      "healthcare_0717690"
+    ],
+    "source_spans": [
+      "In addition to the measurements displayed in Figure 8, the processor was disconnected from the power supply and power consumption was measured once again to get an estimate of 0.55 mW for the external circuitry overhead.",
+      "The TPS76901 from Texas Instruments is an adjustable voltage regulator with a low quiescent current of 12 \u00b5A typical. Note that this is two orders of magnitude lower than the current consumption of the microcontroller in the range of frequency and voltage that we are considering."
+    ],
+    "source_span_offsets": [
+      [
+        20214,
+        20456
+      ],
+      [
+        14548,
+        14836
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q045",
+    "question": "How many studies with adequate data for the meta-analysis did NOT meet the high-quality criteria?",
+    "canonical_answer": "63 studies",
+    "answer_variants": [],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_1046368",
+      "healthcare_1046368"
+    ],
+    "source_spans": [
+      "Our review of 186 trials identified 119 that met the inclusion criteria. 89 had adequate data for meta-analysis",
+      "26 (29%) trials met our predefined criteria for high quality. 40 (45%) of the trials received a score of 3 or greater on the Jadad scale and 34 (38%) received a score of 5 or greater on our internal-validity scale."
+    ],
+    "source_span_offsets": [
+      [
+        683,
+        802
+      ],
+      [
+        46337,
+        46570
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "89 - 26",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q046",
+    "question": "What is the typical binding capacity of the 5 ml HiFliQ GST FPLC column for affinity purification of GST-tagged proteins?",
+    "canonical_answer": "50 mg",
+    "answer_variants": [
+      "50 mg",
+      "50 milligrams"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_1011958"
+    ],
+    "source_spans": [
+      "Typical Binding Capacity:, HiFliQ5-GST = 50 mg."
+    ],
+    "source_span_offsets": [
+      [
+        2571,
+        2618
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q047",
+    "question": "How does the rate of cerebrovascular accident differ between Zone 0 and Zone 2 FET procedures based on the reported data?",
+    "canonical_answer": "21% in Z-2-FET versus 0% in Z-0-FET",
+    "answer_variants": [
+      "zero in Z-0-FET versus 21% in Z-2-FET",
+      "21 percentage points higher in Z-2-FET"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_1541169",
+      "healthcare_1541169"
+    ],
+    "source_spans": [
+      "Intriguingly, Yamamoto and colleagues reported no cases of SCI or CVA following Z-0-FET, while the single mortality in Jakob and colleagues' report was attributed to cerebrovascular insufficiency.",
+      "In contrast, Beckmann and colleagues reported a 21% (n=20) and 26% (n=25) incidence of new-onset stroke and delirium following Z-2-FET respectively"
+    ],
+    "source_span_offsets": [
+      [
+        24014,
+        24210
+      ],
+      [
+        24353,
+        24500
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q048",
+    "question": "What is the difference between Zone 0 FET in-hospital mortality and the lower bound of Zone 2 FET in-hospital mortality as reported in the literature?",
+    "canonical_answer": "4.5 percentage points",
+    "answer_variants": [
+      "4.5% lower",
+      "approximately 4.5 percentage points lower"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_1541169",
+      "healthcare_1541169"
+    ],
+    "source_spans": [
+      "Yamamoto and colleagues report a 6.5% (n=7) rate of in-hospital mortality, attributable to multisystem failure (n=3), heart failure (n=1), exacerbation of pre-existing cerebral infarct (n=1), pneumonia (n=1), and left ventricular rupture (n=1).",
+      "In contrast, Z-2-FET seems to be associated with in-hospital mortality rates between 11% and 20%, attributable to factors including cardiogenic shock, heart failure, aortic rupture, pulmonary failure, pulmonary embolism, and ischaemic cerebrovascular accident."
+    ],
+    "source_span_offsets": [
+      [
+        22265,
+        22509
+      ],
+      [
+        22655,
+        22915
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "11 - 6.5",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q049",
+    "question": "By what percentage did the median completion time decrease between the first 10 procedures and procedures performed after more than 30 interventions in this ureteral stenting training?",
+    "canonical_answer": "50%",
+    "answer_variants": [
+      "50%",
+      "a 50% reduction",
+      "halved"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_1476712",
+      "healthcare_1476712"
+    ],
+    "source_spans": [
+      "The initial phase of the supervised learning curve consisted of the first 10 successful procedures, for which the median completion time was 12 minutes (Fig. 3).",
+      "When we investigated the learning curve of this procedure, we found that operative time during the training of a set of registrars improved significantly, being halved from a median of 12 minutes for the initial set of 10 interventions to 6 minutes after successful completion of >30 interventions."
+    ],
+    "source_span_offsets": [
+      [
+        10190,
+        10360
+      ],
+      [
+        24663,
+        24961
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "((12 - 6) / 12) * 100",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q050",
+    "question": "What was the difference in median age between patients with successful versus failed procedures in this ureteral stenting study?",
+    "canonical_answer": "6 years",
+    "answer_variants": [
+      "6 years"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_1476712"
+    ],
+    "source_spans": [
+      "Age (yr), median (IQR) \u2021, Success = 48 (38 - 58). Age (yr), median (IQR) \u2021, Failure = 42 (34 - 57)."
+    ],
+    "source_span_offsets": [
+      [
+        13040,
+        13139
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "48 - 42",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q051",
+    "question": "What fraction of European American haplotypes in the registry are represented by only one individual?",
+    "canonical_answer": "44.65%",
+    "answer_variants": [
+      "44.65%",
+      "44.65 percent"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_1949958"
+    ],
+    "source_spans": [
+      "Application of our estimator to 6.59 million donors in the Be The Match Registry revealed that haplotypes follow a heavy tail distribution across all ethnicities: for example, 44.65% of the European American haplotypes are represented by only 1 individual."
+    ],
+    "source_span_offsets": [
+      [
+        1321,
+        1577
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q052",
+    "question": "What alternative pediatric ART regimen is recommended for children and adolescents weighing 30 kilograms or more, besides the dolutegravir-based combination?",
+    "canonical_answer": "AZT + 3TC + LPV/r",
+    "answer_variants": [
+      "azidothymidine + lamivudine + lopinavir/ritonavir",
+      "AZT + 3TC + LPV/r"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_1723432"
+    ],
+    "source_spans": [
+      "Children (<20 kg): ABC + 3TC + LPV/r\nChildren (20-30 kg): ABC + 3TC + DTG\nChildren/Adolescents (30 kg and higher):  TDF + 3TC + DTG\n\nChildren (<20 kg): AZT + 3TC + RAL\nChildren (20-30 kg): AZT + 3TC + LPV/r\nChildren/Adolescents (30 kg and higher): AZT + 3TC + LPV/r"
+    ],
+    "source_span_offsets": [
+      [
+        20197,
+        20462
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q053",
+    "question": "In both the in vivo mouse model and in vitro N2a cell model of ischemia, morphine pretreatment reduced cleaved caspase-3. Which model showed a larger relative reduction (as a percentage of the ischemic baseline)?",
+    "canonical_answer": "the in vivo model",
+    "answer_variants": [
+      "in vivo",
+      "the in vivo mouse model",
+      "the mouse model"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_1971795",
+      "healthcare_1971795"
+    ],
+    "source_spans": [
+      "compared with the ischemia group, the protein expression level of cleaved caspase-3 in the peri-ischemic region was significantly decreased in the MP group (ischemia 19.6\u00b12.7% vs. MP 1.4\u00b10.3%).",
+      "MP treatment significantly decreased the number of cleaved caspase-3-positive OGD N2a cells (OGD 24.5\u00b12.6% vs. Mor + OGD 3.7\u00b10.7%)."
+    ],
+    "source_span_offsets": [
+      [
+        24105,
+        24304
+      ],
+      [
+        25044,
+        25175
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      1,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q054",
+    "question": "What percentage of subjects in the orthodontic perception study rated themselves as having either little/no need or definite need for treatment combined?",
+    "canonical_answer": "64.46%",
+    "answer_variants": [],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_1858711"
+    ],
+    "source_spans": [
+      "About 47.36% subjects graded themselves as mild requiring little or no treatment. About 35.52% subjects considered themselves borderline and 17.10% subjects graded themselves as severe requiring definite treatment."
+    ],
+    "source_span_offsets": [
+      [
+        7194,
+        7406
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "47.36 + 17.10",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q055",
+    "question": "Which organization funded this research on power laws for heavy-tailed distributions in HLA diversity?",
+    "canonical_answer": "Office of Naval Research",
+    "answer_variants": [
+      "the Office of Naval Research",
+      "ONR"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_1949958"
+    ],
+    "source_spans": [
+      "MA, MM, LG, AC were funded by a grant from the Office of Naval Research (Grant number N00014-13-1-0039)."
+    ],
+    "source_span_offsets": [
+      [
+        3766,
+        3870
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q056",
+    "question": "What is the average CK-MB value across both cattle cases with tropical theileriosis?",
+    "canonical_answer": "362.5 U/L",
+    "answer_variants": [],
+    "reasoning_type": "numeric_single",
+    "source_doc_ids": [
+      "healthcare_2124092"
+    ],
+    "source_spans": [
+      "CK-MB, Table 2. Biochemical findings of two cases.Unit = (U/L). CK-MB, Case-1 = 344. CK-MB, Case-2 = 381. CK-MB, Referance Range* = 189-235 **."
+    ],
+    "source_span_offsets": [
+      [
+        11489,
+        11632
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "(344 + 381) / 2",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q057",
+    "question": "What is the population coverage percentage for European Americans in the Be The Match Registry?",
+    "canonical_answer": "99.4%",
+    "answer_variants": [
+      "99.4 percent",
+      "99.4%"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_1949958"
+    ],
+    "source_spans": [
+      "Indeed, our discovery rate of all U.S. European American haplotypes is estimated at 23.45% based upon sampling 3.97% of the population, leaving a large number of unobserved haplotypes. Population coverage, however, is much higher at 99.4% given that 90% of European Americans carry one of the 4.5% most frequent haplotypes."
+    ],
+    "source_span_offsets": [
+      [
+        1578,
+        1901
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q058",
+    "question": "What discovery approach caused a single laboratory submission to increase observed alleles by 30%?",
+    "canonical_answer": "sequencing-based typing (SBT)",
+    "answer_variants": [
+      "sequencing-based typing",
+      "SBT"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_1949958",
+      "healthcare_1949958"
+    ],
+    "source_spans": [
+      "For example, a recent data submission from a single SBT laboratory resulted in a 30% increase in the number of observed alleles.",
+      "the transition to sequencing-based typing (SBT) changed the fundamental nature of allele definitions and improved capacity for allele discovery"
+    ],
+    "source_span_offsets": [
+      [
+        50626,
+        50753
+      ],
+      [
+        50239,
+        50382
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q059",
+    "question": "Which certificate authority issued the TLS certificate for the German contact tracing system's server versus the Italian system's server?",
+    "canonical_answer": "DigiCert Inc vs Actalis S.p.A.",
+    "answer_variants": [
+      "DigiCert for Germany, Actalis for Italy",
+      "DigiCert Inc issued Germany's, Actalis S.p.A. issued Italy's"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_2161645",
+      "healthcare_2161645"
+    ],
+    "source_spans": [
+      "The files hosted on this server can only be retrieved via TLS, and the corresponding certificate is issued by DigiCert Inc to Deutsche Telekom AG.",
+      "Both files are made available through TLS only and the certificate is issued by Actalis S.p.A./03358520967 to Sogei S.p.A."
+    ],
+    "source_span_offsets": [
+      [
+        18173,
+        18317
+      ],
+      [
+        13688,
+        13810
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q060",
+    "question": "What was the consequence of the pelvic kidney that led to the unnecessary surgical procedure in the 29-year-old patient who had three cesarean deliveries?",
+    "canonical_answer": "mechanical obstructed labor",
+    "answer_variants": [
+      "mechanical dystocia",
+      "obstructed labor",
+      "mechanical obstruction during labor"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_2456960",
+      "healthcare_2456960"
+    ],
+    "source_spans": [
+      "Madam X, 29, a mother of three living children, all cesarean delivery. At the third cesarean, she has undergone a tubal sterilization.",
+      "The patient of observation n\u00b01 underwent three iterative caesarean section for obstructed labor with, third, the tubal sterilization. We believe this tubal sterilization was not justified. This obstructed labor is due to the presence of pelvic kidney which constitutes a mechanical obstacle."
+    ],
+    "source_span_offsets": [
+      [
+        3769,
+        3903
+      ],
+      [
+        12681,
+        12972
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q061",
+    "question": "What data structure was proposed for efficiently implementing the area opening algorithm?",
+    "canonical_answer": "pixel heap (priority queue)",
+    "answer_variants": [
+      "pixel heap",
+      "priority queue / heap",
+      "a balanced binary tree of pixel pointers"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_2168076"
+    ],
+    "source_spans": [
+      "Instead, we propose to use data structures that have classically been used in sorting and searching algorithms, namely priority queues or heaps [3]. A pixel heap is basically a balanced binary tree of pixel pointers which satisfies the heap condition: the grayscale value of any heap pixel is larger than the value of its children."
+    ],
+    "source_span_offsets": [
+      [
+        13540,
+        13871
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q062",
+    "question": "What accuracy does the EM tracking system used for endoscopic biopsy site re-localization achieve, and what is the standard biopsy protocol in Barrett's esophagus surveillance?",
+    "canonical_answer": "0.5mm accuracy; four quadrant biopsies every 2cm",
+    "answer_variants": [
+      "0.5mm, with four quadrant biopsies every 2cm",
+      "the system achieves 0.5mm accuracy, and surveillance involves four quadrant biopsies every 2cm"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_3046138",
+      "healthcare_3046138"
+    ],
+    "source_spans": [
+      "For the purposes of the experiments we used a NDI c \u00a9 Aurora EMTS (accuracy of 0.5mm in a working volume of 30 \u00d7 30 \u00d7 30 cm 3 ). The proposed approach was tested on three sets of in-vivo sequences on different porcines, with each set consisting of four recordings.",
+      "The guidelines [1] prescribe different levels of surveillance intervals depending on the degree of dysplasia with a minimum of two biopsies per year. A typical surveillance procedure involves taking four quadrant biopsies every 2cms towards the distal end of the esophagus and in suspicious regions."
+    ],
+    "source_span_offsets": [
+      [
+        11857,
+        12121
+      ],
+      [
+        2480,
+        2779
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q063",
+    "question": "How does the synchronization phase constrain the search space for matching current sensor positions to previous intervention images, and what clinical problem does this address?",
+    "canonical_answer": "constrained to \u0394z \u2248 2mm; addresses re-localization of biopsy sites during follow-up",
+    "answer_variants": [
+      "search limited to ~2mm along z-axis; solves the biopsy site re-localization problem",
+      "within 2mm; provides guided-view for re-localizing previously biopsied locations"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_3046138",
+      "healthcare_3046138"
+    ],
+    "source_spans": [
+      "Since the trajectories have been aligned along \u02c6 z , the search space is constrained to lie within \u2206z ( \u2248 2mm). The closest neighbour gives the corresponding best matching image of the region in the oesophagus taken during the previous procedure. In particular, the matched images that were tagged to contain locations of biopsy sites, provide the GI specialist a more localized region for review.",
+      "In each of these cases, during a follow-up inspection, the gastrointestinal (GI) specialist is required to locate the previously biopsied or surveyed location. This problem in the literature has been termed as the re-localization issue."
+    ],
+    "source_span_offsets": [
+      [
+        11212,
+        11609
+      ],
+      [
+        3168,
+        3404
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      1,
+      0,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q064",
+    "question": "What intra-abdominal pressure threshold defines intra-abdominal hypertension in critically ill patients?",
+    "canonical_answer": "12 mm Hg",
+    "answer_variants": [
+      "greater than 12 mm Hg",
+      "above 12 mm Hg"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_3085029"
+    ],
+    "source_spans": [
+      "Pressures > 12 mm Hg are considered to represent IAH, and pressures > 20 mm Hg in the context of new organ dysfunction is considered to be ACS"
+    ],
+    "source_span_offsets": [
+      [
+        6678,
+        6820
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q065",
+    "question": "What is the recommended frequency for intermittent intra-abdominal pressure monitoring in critically ill patients at risk for compartment syndrome?",
+    "canonical_answer": "every 4 to 6 hours",
+    "answer_variants": [
+      "every 4-6 hours",
+      "4 to 6 hour intervals"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_3085029"
+    ],
+    "source_spans": [
+      "measurement of IAP every 4 to 6 hours is probably adequate in critically ill patients deemed at risk of the development of IAH or ACS"
+    ],
+    "source_span_offsets": [
+      [
+        8599,
+        8732
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q066",
+    "question": "For the species whose Maharashtra population exhibited an LD50 of 0.02 mg/kg, what is the PSVPL antivenom neutralization potency against its venom?",
+    "canonical_answer": "0.15 mg/mL",
+    "answer_variants": [
+      "0.15 mg/mL",
+      "0.15 mg per mL"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3101739",
+      "healthcare_3101739"
+    ],
+    "source_spans": [
+      "B. sindanus from Maharashtra was characterised with an LD50 of 0.02 mg/kg",
+      "it was characterised with alarmingly inefficient neutralisation potencies against both B. sindanus (0.15 mg/mL) and B. romulusi (0.13 mg/mL)"
+    ],
+    "source_span_offsets": [
+      [
+        24978,
+        25051
+      ],
+      [
+        30079,
+        30219
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q067",
+    "question": "The Maharashtra population of which krait species showed the lowest LD50 value, and what is the PSVPL antivenom neutralization against that species?",
+    "canonical_answer": "B. sindanus; 0.15 mg/mL",
+    "answer_variants": [
+      "B. sindanus; 0.15 mg/mL",
+      "B. sindanus from Maharashtra, 0.15 mg/mL"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3101739",
+      "healthcare_3101739"
+    ],
+    "source_spans": [
+      "B. sindanus from Maharashtra was characterised with an LD50 of 0.02 mg/kg",
+      "it was characterised with alarmingly inefficient neutralisation potencies against both B. sindanus (0.15 mg/mL) and B. romulusi (0.13 mg/mL)"
+    ],
+    "source_span_offsets": [
+      [
+        24978,
+        25051
+      ],
+      [
+        30079,
+        30219
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q068",
+    "question": "How much higher is the PSVPL antivenom neutralization potency against the common krait compared to the average neutralization against the two less-recognized species?",
+    "canonical_answer": "approximately 0.60 mg/mL higher",
+    "answer_variants": [
+      "about 0.60 mg/mL higher",
+      "approximately 0.6 mg/mL greater",
+      "0.60 mg/mL more"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3101739"
+    ],
+    "source_spans": [
+      "the tested antivenom (PSVPL) exhibited relatively better performance against B. caeruleus from Maharashtra (0.744 mg/mL) than the marketed value (0.45 mg/mL), it was characterised with alarmingly inefficient neutralisation potencies against both B. sindanus (0.15 mg/mL) and B. romulusi (0.13 mg/mL)"
+    ],
+    "source_span_offsets": [
+      [
+        30974,
+        31273
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "0.744 - ((0.15 + 0.13) / 2)",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "id": "Q069",
+    "question": "Why does the ubiquitination-defective K224R mutant fail to undergo degradation after dsDNA treatment?",
+    "canonical_answer": "trafficking to lysosomal compartments is prevented",
+    "answer_variants": [
+      "it cannot traffic to lysosomes for degradation",
+      "blocked trafficking prevents lysosomal degradation"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3206982",
+      "healthcare_3206982"
+    ],
+    "source_spans": [
+      "STING degradation occurs after translocation",
+      "The K224R STING variant did not appear to undergo significant degradation after dsDNA treatment, presumably since subsequent phosphorylation events are hindered and trafficking to lysosomal compartments for degradation are prevented"
+    ],
+    "source_span_offsets": [
+      [
+        14063,
+        14107
+      ],
+      [
+        16452,
+        16684
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q070",
+    "question": "In the United States, does the annual number of cellulitis cases exceed the total annual cases of appendicitis plus non-appendiceal intra-abdominal infections combined?",
+    "canonical_answer": "yes",
+    "answer_variants": [
+      "yes, it exceeds",
+      "Cellulitis cases are more numerous"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3321078",
+      "healthcare_1913507"
+    ],
+    "source_spans": [
+      "In the United States, an estimated 14.5 million cases annually of cellulitis account for $3.7 billion in ambulatory care costs alone.",
+      "Approximately 300,000 cases of appendicitis occur each year in the United States, 1 and at least twice that many cases of non-appendiceal infection require management."
+    ],
+    "source_span_offsets": [
+      [
+        331,
+        464
+      ],
+      [
+        12813,
+        12980
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q071",
+    "question": "For a patient who develops cellulitis following an aquatic injury at the beach, which uncommon pathogen should be empirically covered that would NOT be covered by standard MRSA-expanded antibiotic therapy?",
+    "canonical_answer": "Vibrio species",
+    "answer_variants": [
+      "Vibrio species",
+      "Vibrio spp",
+      "Vibrio"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3321078",
+      "healthcare_3321078"
+    ],
+    "source_spans": [
+      "Treatment of primary and recurrent cellulitis should initially cover Streptococcus and methicillin-sensitive S aureus, with expansion for methicillin-resistant S aureus (MRSA) in cases of cellulitis associated with specific risk factors, such as athletes, children, men who have sex with men, prisoners, military recruits, residents of long-term care facilities, those with prior MRSA exposure, and intravenous drug users.",
+      "Aquatic soft tissue injury Vibrio spp 36"
+    ],
+    "source_span_offsets": [
+      [
+        797,
+        1213
+      ],
+      [
+        12908,
+        12948
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q072",
+    "question": "Which committee does the individual responsible for developing the clinical risk strategy of the mental health trust chair?",
+    "canonical_answer": "Integrated Clinical Risk Committee",
+    "answer_variants": [
+      "the Integrated Clinical Risk Committee"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_3376269"
+    ],
+    "source_spans": [
+      "The Medical Director is responsible for the development of this strategy and for ensuring the effective management of clinical risk within BSMHFT. The Medical Director is the Chair of the Integrated Clinical Risk Committee."
+    ],
+    "source_span_offsets": [
+      [
+        30716,
+        30939
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q073",
+    "question": "What is the median follow-up duration in months for the cohort of patients who received salvage focused ultrasound treatment for recurrence at the vesicourethral anastomosis?",
+    "canonical_answer": "46.5 months",
+    "answer_variants": [
+      "46.5"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_3409745",
+      "healthcare_3409745"
+    ],
+    "source_spans": [
+      "Sixteen patients with suspected local recurrence of a VUA after prostatectomy were treated with HIFU.",
+      "The median follow-up period of this study was 46.5 months (range; 7 - 159)."
+    ],
+    "source_span_offsets": [
+      [
+        1509,
+        1621
+      ],
+      [
+        13028,
+        13103
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q074",
+    "question": "What happened to the activity of the FeSOD mutant whose reduction midpoint potential was elevated by more than 660 mV?",
+    "canonical_answer": "less than 1% of wild-type activity",
+    "answer_variants": [
+      "dropped to less than 1% of WT activity",
+      "reduced to under 1% of wild-type",
+      "virtually inactive"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3496061",
+      "healthcare_3496061"
+    ],
+    "source_spans": [
+      "Mutation of this Gln to His or Glu resulted in elevation of the Em by 220 mV and more than 660 mV, respectively",
+      "Q69E-FeSOD was much more stable and bound Fe in more than 95% of the sites, but had less than 1% of WT activity."
+    ],
+    "source_span_offsets": [
+      [
+        1130,
+        1241
+      ],
+      [
+        14957,
+        15069
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q075",
+    "question": "By approximately how many millivolts greater is the reduction midpoint potential elevation caused by mutating Gln69 to Glu compared to mutating it to His?",
+    "canonical_answer": "approximately 440 mV",
+    "answer_variants": [],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_3496061"
+    ],
+    "source_spans": [
+      "Mutation of this Gln to His or Glu resulted in elevation of the Em by 220 mV and more than 660 mV, respectively"
+    ],
+    "source_span_offsets": [
+      [
+        1130,
+        1241
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "660 - 220",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q076",
+    "question": "How many subjects from the 40-person database were reserved for testing the heart rate estimation methods?",
+    "canonical_answer": "9 subjects",
+    "answer_variants": [
+      "9",
+      "nine",
+      "nine subjects"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_3415784"
+    ],
+    "source_spans": [
+      "Of the 40 subjects in the database, 30 have been used for training, 1 has been used for validation and the remaining 9 have been used for testing."
+    ],
+    "source_span_offsets": [
+      [
+        12117,
+        12263
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q077",
+    "question": "According to the experimental results, which two additional factors beyond illumination and movement cause reduced accuracy for the deep learning model specifically?",
+    "canonical_answer": "glasses and dark skin tone",
+    "answer_variants": [
+      "wearing glasses and skin tone",
+      "glasses and dark skin tones",
+      "eyewear and complexion"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3415784",
+      "healthcare_3415784"
+    ],
+    "source_spans": [
+      "We have found that both methods obtain inaccurate results when the videos contain a high amount of movement, when the person blinks with excessive strength, or when he/she does any type of unwitting movement.",
+      "the drop in the accuracy of the deep learning approach is not so intimately related with the illumination conditions, but with other factors like if the users are wearing complements (e.g. glasses) or their skin tone."
+    ],
+    "source_span_offsets": [
+      [
+        17713,
+        17921
+      ],
+      [
+        19637,
+        19854
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      1,
+      0
+    ]
+  },
+  {
+    "id": "Q078",
+    "question": "By how much did the median signal-to-noise ratio in lung tissue exceed that in skeletal muscle tissue?",
+    "canonical_answer": "2.2",
+    "answer_variants": [
+      "2.2",
+      "approximately 2.2"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_3644189"
+    ],
+    "source_spans": [
+      "Except for one outlier, the forearm data show a SNR <3, with a value of SNR = 1.4 (0.92; 1.7) 0.35-2.9 (i.e., median (first and third quartiles) range), while the lung data instead show SNR = 3.6 (2.3; 5.5) 0.50-9.91."
+    ],
+    "source_span_offsets": [
+      [
+        9982,
+        10208
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "3.6 - 1.4",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q079",
+    "question": "What advancement enabled oxygen detection in the lighter infants that the earlier pilot study could not achieve?",
+    "canonical_answer": "increased laser power",
+    "answer_variants": [
+      "increased laser power to around 30 mW",
+      "higher diode laser power",
+      "revised system with increased power"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3644189",
+      "healthcare_3644189"
+    ],
+    "source_spans": [
+      "In a pilot in vivo study, we showed that water vapor was detectable with GASMAS in the lungs and in the gastrointestinal tract of three full-term infants weighing 4,000-5,000 g",
+      "our results show that the revised system is capable of detecting oxygen, the gas of main interest, in the lungs of infants ranging from <3,000 g up to almost 4,000 g"
+    ],
+    "source_span_offsets": [
+      [
+        5857,
+        6042
+      ],
+      [
+        17698,
+        17864
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q080",
+    "question": "In which growth condition was phosphate completely depleted, given that the study found complete phosphate depletion triggers nutritional stress for clavulanic acid production?",
+    "canonical_answer": "GSPG (defined minimal medium)",
+    "answer_variants": [
+      "GSPG",
+      "the defined medium",
+      "the chemically-defined media GSPG"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3738282",
+      "healthcare_3738282"
+    ],
+    "source_spans": [
+      "Likewise, the presence of phosphate, at the end, remained in the margins of restrictive concentration thus favoring antibiotic biosynthesis [21]. Interestingly, we observed that decrease in growth rate, complemented by depletion of the carbon source, induces the necessary nutritional stress for triggering CA biosynthesis.",
+      "As observed, the phosphate source was completely depleted at 75 h in GSPG; meanwhile, in SB-M, the phosphate consumption was slower, rendering a residual concentration of 0.82 g / L at 114 h."
+    ],
+    "source_span_offsets": [
+      [
+        35341,
+        35664
+      ],
+      [
+        8759,
+        8950
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q081",
+    "question": "For which cancer type did the study analyze data from the U.S. government's SEER database covering years 2009 to 2013?",
+    "canonical_answer": "respiratory cancer",
+    "answer_variants": [
+      "respiratory cancer",
+      "respiratory cancer data",
+      "respiratory cancer incidence"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_4184795",
+      "healthcare_4184795"
+    ],
+    "source_spans": [
+      "the data was obtained from the SEER Cancer Incidence PublicUse Database (National Cancer Institute, 2014).",
+      "the decision is to conduct the study on data for the years 2009 to 2013. Hence there is a focus on the most recent 5 years."
+    ],
+    "source_span_offsets": [
+      [
+        10430,
+        10538
+      ],
+      [
+        14817,
+        14940
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q082",
+    "question": "How many volunteers provided blood and saliva samples for this laboratory study on hemoglobin measurement?",
+    "canonical_answer": "six volunteers",
+    "answer_variants": [
+      "six",
+      "6"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_4269933"
+    ],
+    "source_spans": [
+      "Blood and saliva were collected from six healthy volunteers (donor 1 - 6), two males and four females, aged from 26 to 64."
+    ],
+    "source_span_offsets": [
+      [
+        5685,
+        5817
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q083",
+    "question": "According to the study methodology, what specific heat capacity value was used for calculating heat storage in the athletes?",
+    "canonical_answer": "3.49 J \u00d7 g-1 \u00d7 \u00b0C-1",
+    "answer_variants": [
+      "3.49J \u00d7 g-1 \u00d7 \u00b0C-1",
+      "3.49 J g-1 \u00b0C-1",
+      "3.49 joules per gram per degree celsius"
+    ],
+    "reasoning_type": "extraction",
+    "source_doc_ids": [
+      "healthcare_4166712"
+    ],
+    "source_spans": [
+      "Heat storage = (0.8\u2206 T rec or Tes + 0.2\u2206 T skin) x Cb, where Cb is the specific heat capacity of body tissue (3.49J x g -1 x \u02daC -1 )."
+    ],
+    "source_span_offsets": [
+      [
+        13838,
+        13971
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q084",
+    "question": "How did the average number of prescription medications compare between the Alzheimer's disease cohort and the control group in the Le\u00f3n study?",
+    "canonical_answer": "same average",
+    "answer_variants": [
+      "the same",
+      "equal",
+      "both averaged seven medications",
+      "7"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_0491062"
+    ],
+    "source_spans": [
+      "The number of medications taken by individuals from both study populations shows an average number of seven for each group, with the most abundant range being 6-10 medications. Figure 4 shows that individuals in the control group took a larger number of drugs as compared with the AD group, with no one in the AD group taking > 15 drugs. Nonetheless, the average number of drugs taken by each individual is the same (n = 7) in both groups."
+    ],
+    "source_span_offsets": [
+      [
+        24426,
+        24873
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q085",
+    "question": "What optimization method is used to train the label-aware double transfer learning framework, and why must each mini-batch contain samples from both domains?",
+    "canonical_answer": "mini-batch AdaGrad; to enable La-MMD computation",
+    "answer_variants": [
+      "mini-batch AdaGrad because La-MMD requires samples from both domains"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_0038629",
+      "healthcare_0038629"
+    ],
+    "source_spans": [
+      "We train La-DTL in an end-to-end manner with mini-batch AdaGrad (Duchi et al., 2011).",
+      "One mini-batch contains training samples from both domains, otherwise the computation of L La-MMD can not be performed."
+    ],
+    "source_span_offsets": [
+      [
+        22820,
+        22905
+      ],
+      [
+        22906,
+        23025
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q086",
+    "question": "During the Oncosorb immune adsorption procedures, which adverse event was more common: tumor pain increase or flu-like symptoms?",
+    "canonical_answer": "flu-like symptoms",
+    "answer_variants": [
+      "flu-like symptoms",
+      "flu-like symptoms (50% vs 37.3%)"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_0469327"
+    ],
+    "source_spans": [
+      "tumor pain increased over baseline pain in 56 of 167 procedures (37.3%), transient nausea in 34 of 167 procedures (22.7%), fever in 12 of 167 procedures (8.0%), flu-like symptoms in 84 of 167 procedures (50%), and vomiting in 10 of 167 procedures (6.7%)"
+    ],
+    "source_span_offsets": [
+      [
+        22198,
+        22451
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q087",
+    "question": "What did the human crossover study demonstrate about consuming fermented milk before complex carbohydrates compared to non-fermented milk?",
+    "canonical_answer": "slower rise in glucose and insulin from fasting to peak",
+    "answer_variants": [
+      "lower glycemic and insulinemic responses",
+      "more gradual increase in postprandial glucose and insulin"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_0572277",
+      "healthcare_0572277"
+    ],
+    "source_spans": [
+      "For three tests, the combinations of meals were milk and Trelan (M/T), milk and a rice ball (M/R) and fermented milk and a rice ball (F/R).",
+      "The human study confirmed firstly lower glycemic and insulinemic responses after the rice intake with milk than after the ingestion of glucose solution used in oral glucose tolerance test with milk despite the equivalent carbohydrate content, and secondly that plasma glucose level as well as insulin level increased more slowly from fasting to peak following rice consumption after fermented milk intake than after the non-fermented milk."
+    ],
+    "source_span_offsets": [
+      [
+        11531,
+        11684
+      ],
+      [
+        14764,
+        15217
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      1,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q088",
+    "question": "Compared to Economy Mode, what triggers heating in Standard Operating Mode\u2014does it require a filter cycle to be running?",
+    "canonical_answer": "no \u2014 it heats when temperature falls a few degrees below",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_0625814",
+      "healthcare_0625814"
+    ],
+    "source_spans": [
+      "In Standard Operating Mode, the spa automatically begins heating when the water temperature falls a couple of degrees.",
+      "In Economy Mode the water heats to the programmed temperature only during filter cycles."
+    ],
+    "source_span_offsets": [
+      [
+        9657,
+        9775
+      ],
+      [
+        9776,
+        9864
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      1,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "Q089",
+    "question": "What is the lowest water temperature the spa can reach in Economy Mode when set to its minimum programmable temperature?",
+    "canonical_answer": "60\u00b0F",
+    "answer_variants": [],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_0625814",
+      "healthcare_0625814"
+    ],
+    "source_spans": [
+      "The spa will start in Standard Operating Mode. The temperature is pre-programmed to 100\u00b0 F. The minimum programmable temperature is 80\u00ba F, the maximum is 104\u00ba F",
+      "The water heats to 20 \u030aF below the pre-programmed temperature setting. The water heats during filtration cycles only 'SL' is displayed on the topside controls"
+    ],
+    "source_span_offsets": [
+      [
+        2397,
+        2557
+      ],
+      [
+        10279,
+        10436
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "80 - 20",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q090",
+    "question": "What is the difference in meaning between the 'HH' and 'OH' spa error codes?",
+    "canonical_answer": "HH indicates excessively high temperature",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_0625814",
+      "healthcare_0625814"
+    ],
+    "source_spans": [
+      "HH, Meaning = OVERHEAT - Spa shut down to protect against excessively high water temperature in heater chamber at sensor.",
+      "OH, Meaning = OVERHEAT - Spa has shut down to protect against high water temperatures in heater chamber at sensor."
+    ],
+    "source_span_offsets": [
+      [
+        12671,
+        12792
+      ],
+      [
+        13086,
+        13200
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q091",
+    "question": "In the systematic review of dual-antiplatelet therapy duration after drug-eluting stent placement, how does the effect on mortality compare to the effect on stroke or TIA?",
+    "canonical_answer": "mortality increased; stroke/TIA unchanged",
+    "answer_variants": [
+      "mortality higher, stroke/TIA no difference",
+      "increased mortality vs no effect on stroke/TIA"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_1244716",
+      "healthcare_1244716"
+    ],
+    "source_spans": [
+      "Stroke or TIA, Relative Risk (95% CI). = 0.99 (0.71-1.37)",
+      "Total mortality, Table. GRADE Assessment of Confidence in Estimates of Effect.Risk Ratio (95% CI) = 1.19 (1.04-1.36). Total mortality, Table. GRADE Assessment of Confidence in Estimates of Effect.Absolute Effect of Longer DAPT per 1000 Patients Treated per Year (95% CI)* = 2 more events (0 more to 4 more events)"
+    ],
+    "source_span_offsets": [
+      [
+        91041,
+        91085
+      ],
+      [
+        14124,
+        14437
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q092",
+    "question": "By how much did correction for publication bias reduce the odds ratio in the meta-analysis of homeopathic trials?",
+    "canonical_answer": "0.67",
+    "answer_variants": [
+      "0.67",
+      "2.45 - 1.78 = 0.67"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_1046368",
+      "healthcare_1046368"
+    ],
+    "source_spans": [
+      "The combined odds ratio for the 89 studies entered into the main meta-analysis was 2\u00b745 (95% CI 2\u00b705, 2\u00b793) in favour of homoeopathy.",
+      "and that corrected for publication bias was 1\u00b778 (1\u00b703, 3\u00b710)"
+    ],
+    "source_span_offsets": [
+      [
+        1061,
+        1209
+      ],
+      [
+        1287,
+        1349
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "2.45 - 1.78",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q093",
+    "question": "What was the approximate ratio of donors to unique haplotypes in the Be The Match Registry (in thousands): for every how many donors was there approximately one unique haplotype?",
+    "canonical_answer": "~41",
+    "answer_variants": [
+      "approximately 41"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_1949958",
+      "healthcare_1949958"
+    ],
+    "source_spans": [
+      "Application of our estimator to 6.59 million donors in the Be The Match Registry revealed that haplotypes follow a heavy tail distribution across all ethnicities",
+      "For example, estimates of H within the United States population in 2013 identified over 160,000 unique 6-locus haplotypes in the Be The Match Registry"
+    ],
+    "source_span_offsets": [
+      [
+        1321,
+        1482
+      ],
+      [
+        12393,
+        12543
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "6590000 / 160000",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q094",
+    "question": "How does the technology platform used for remote patient monitoring at Michigan Medicine and Allina Health compare to the solution implemented at Inova Kellar Center?",
+    "canonical_answer": "different platforms",
+    "answer_variants": [
+      "different solutions",
+      "different vendors",
+      "PatientConnect versus Owl Insights"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_2018209",
+      "healthcare_2578281"
+    ],
+    "source_spans": [
+      "To deploy a telehealth and remote patient monitoring program, both Michigan Medicine and Allina Health leverage HRS' technology solution, PatientConnect .",
+      "Inova Kellar Center selected Owl Insights as its MBC solution to help screen, administer, score, and report on outcomes for a range of behavioral health conditions."
+    ],
+    "source_span_offsets": [
+      [
+        10638,
+        10801
+      ],
+      [
+        2418,
+        2582
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q095",
+    "question": "What are the three distinct approaches to KeyFile discovery used across the analyzed GAEN-based contact tracing systems?",
+    "canonical_answer": "JSON range (Immuni), text list (Apturi Covid), timestamp-based (SwissCovid)",
+    "answer_variants": [
+      "JSON integers, plain text list, and timestamp-based",
+      "JSON range, text list, no index file"
+    ],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "healthcare_2161645",
+      "healthcare_2161645",
+      "healthcare_2161645"
+    ],
+    "source_spans": [
+      "Apturi Covid also uses an index file but instead of using a JSON format, the paths to KeyFiles are given as a simple list of text. It follows the format /dkfs/v1/index.txt.",
+      "The index file https://get.immuni.gov.it/v1/keys/index is a JSON file with two integers, oldest and newest, designating a range of identifiers corresponding to key files.",
+      "The SwissCovid system does not use an index file. Rather, it relies on the current date to identify the relevant KeyFiles that are identified by a timestamp."
+    ],
+    "source_span_offsets": [
+      [
+        20871,
+        21042
+      ],
+      [
+        13840,
+        14004
+      ],
+      [
+        16300,
+        16457
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q096",
+    "question": "Why are area openings and closings particularly suited for filtering thin and elongated structures like fibers?",
+    "canonical_answer": "they filter by area rather than shape, preserving elongated structures",
+    "answer_variants": [
+      "because they filter by pixel count not shape",
+      "they preserve non-boxy shapes and adapt to structure",
+      "area-based filtering doesn't remove thin structures if they exceed the size threshold"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_2168076",
+      "healthcare_2168076"
+    ],
+    "source_spans": [
+      "grayscale area openings remove from an image all the light structures that are 'smaller' than the size parameter, i.e., based on their area (number of pixels). Area closings have the same effect on dark structures.",
+      "In summary, grayscale area openings and closings are particularly suited to filtering tasks where thin and elongated image structures have to be preserved."
+    ],
+    "source_span_offsets": [
+      [
+        4621,
+        4835
+      ],
+      [
+        17513,
+        17668
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q097",
+    "question": "Why does the commercial Indian antivenom show limited efficacy against the newly discovered krait species from Southern India?",
+    "canonical_answer": "antivenom is manufactured from B. caeruleus venom, not from the new species",
+    "answer_variants": [
+      "because it is made from B. caeruleus venom",
+      "the antivenom uses B. caeruleus venom for manufacturing",
+      "because the antivenom is produced using only B. caeruleus venom"
+    ],
+    "reasoning_type": "inference",
+    "source_doc_ids": [
+      "healthcare_3101739",
+      "healthcare_3101739"
+    ],
+    "source_spans": [
+      "Considering the near countrywide distribution of this clinically important snake, B. caeruleus venoms are used for the manufacture of commercial Indian polyvalent antivenoms.",
+      "While both antivenoms recognised the venoms of B. caeruleus (titre: 1:500; PSVPL: 1.02 Optical Density (OD); Haffkine: 0.89 OD) and B. sindanus (titre: 1:500; PSVPL: 0.89 OD; Haffkine: 0.76 OD) relatively well, they exhibited limited to poor recognition potential against the venom of B. romulusi (titre: 1:500; PSVPL: 0.24 OD; Haffkine: 0.25 OD)."
+    ],
+    "source_span_offsets": [
+      [
+        3141,
+        3315
+      ],
+      [
+        23050,
+        23396
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q098",
+    "question": "For anterior acquisitions, how does the target registration error of the initialized method compare to standard ICP?",
+    "canonical_answer": "0.08 mm lower",
+    "answer_variants": [
+      "lower by 0.08 mm",
+      "decreases by 0.08 mm",
+      "reduced by 0.08 mm"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_3195004"
+    ],
+    "source_spans": [
+      "Mean (A), Mean TRE (mm).ICP = 0.30. Mean (A), Mean TRE (mm).I-ICP = 0.22"
+    ],
+    "source_span_offsets": [
+      [
+        19250,
+        19322
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "0.30 - 0.22",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q099",
+    "question": "By how much did nitric oxide levels increase in the sensitized asthmatic rats compared to the unsensitized control?",
+    "canonical_answer": "0.78 \u03bcg/ml",
+    "answer_variants": [
+      "0.78 \u03bcg/ml",
+      "0.78 \u03bcg/ml nitrite"
+    ],
+    "reasoning_type": "numeric",
+    "source_doc_ids": [
+      "healthcare_3520878"
+    ],
+    "source_spans": [
+      "NO ( \u03bc g/ml nitrite), Treatment Groups.Con = 0.71 \u00b1 0.06. NO ( \u03bc g/ml nitrite), Treatment Groups.Sens = 1.49 \u00b1 0.25*."
+    ],
+    "source_span_offsets": [
+      [
+        24520,
+        24637
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": "1.49 - 0.71",
+    "formula_kind": "arithmetic",
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "Q100",
+    "question": "How does the lethality of the NS1-deletion mutant compare to wild-type influenza virus in chicken embryos?",
+    "canonical_answer": "the delNS1 mutant is about 100 times more lethal",
+    "answer_variants": [
+      "delNS1 is approximately 100-fold more lethal",
+      "100 times more lethal"
+    ],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "healthcare_4641123",
+      "healthcare_4641123"
+    ],
+    "source_spans": [
+      "As a consequence, delNS1 virus was also more lethal for chicken embryos than WT virus.",
+      "WT virus grows to titers about 10 times higher in the chorioallantoic membrane, although it is about 100 times less lethal for the embryo than delNS1 virus (Fig. 4)."
+    ],
+    "source_span_offsets": [
+      [
+        944,
+        1030
+      ],
+      [
+        21264,
+        21429
+      ]
+    ],
+    "supporting_doc_ids": [],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+]

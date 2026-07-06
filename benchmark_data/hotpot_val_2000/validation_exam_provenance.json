@@ -1,0 +1,23 @@
+{
+  "n_pool": 1700,
+  "exam_size": 100,
+  "all_tier_c": true,
+  "n_abstention": 0,
+  "extractor_model": "gemini/gemini-2.5-flash-lite",
+  "fuzzy_threshold": 0.9,
+  "stratify_key": "type",
+  "seed": 42,
+  "qa_sha256": "1ebc9c3f023d3393f6a5fde2b610710683a46d57bb4e5fe4e829ed11ec832f88",
+  "target_distribution": {
+    "bridge": 79,
+    "comparison": 21
+  },
+  "exam_distribution": {
+    "bridge": 79,
+    "comparison": 21
+  },
+  "per_stratum_extracted": {
+    "bridge": 82,
+    "comparison": 21
+  }
+}
