@@ -31,12 +31,17 @@ import yaml
 # Pareto figures live in the shared ``plots`` module (all benchmark figures in
 # one place); the command below just drives them.
 from agentic_autorag_bench.plots import (
+    _load_method_seed_points,
     _load_trial_points,
     compute_pareto_hypervolumes,
     make_pareto_attainment_figure,
+    make_pareto_attainment_median_figure,
     make_pareto_comparison_figure,
+    make_pareto_cost_and_embeddings_figure,
     make_pareto_figure,
+    make_pareto_frontier_annotated_figure,
     make_pareto_hv_convergence_figure,
+    make_pareto_median_hv_combined_figure,
 )
 
 logger = logging.getLogger("agentic_autorag_bench.run")
@@ -105,6 +110,40 @@ def _read_shared_cache_dir(project_config_path: Path) -> Path:
     writes (corpus parse, ``exam.json``, probe indexes). Resolved like the orchestrator."""
     raw = yaml.safe_load(Path(project_config_path).read_text(encoding="utf-8"))
     return Path(raw["meta"]["output_dir"]).resolve()
+
+
+# The search space caps input context (top_k x chunk size) but not output length,
+# so the answer is bounded here, set above the longest answer any run produced.
+MAX_ANSWER_TOKENS = 2048
+
+
+def space_derived_cost_reference(project_config_path: Path) -> float:
+    """Hypervolume cost-axis reference: the maximum per-query LLM cost the search
+    space can express.
+
+    The priciest generator in the pool answers the largest retrieval context the
+    space allows (``top_k`` max x ``chunk_token_size`` max tokens) plus a
+    full-length answer. This is a property of the space and the price catalogue,
+    not of which configs a run happened to sample, so it is reproducible and shared
+    across every method. Prices come from litellm — the same catalogue that priced
+    the trials — so the reference and the measured costs sit on one scale.
+    """
+    import litellm
+
+    space = yaml.safe_load(Path(project_config_path).read_text(encoding="utf-8"))["search_space"]
+    max_context = space["retrieval"]["top_k"]["max"] * max(space["chunking"]["chunk_token_size"]["values"])
+    max_in = 0.0
+    max_out = 0.0
+    for model in space["generator"]["models"]:
+        try:
+            info = litellm.get_model_info(model)
+        except Exception:
+            continue
+        max_in = max(max_in, info.get("input_cost_per_token") or 0.0)
+        max_out = max(max_out, info.get("output_cost_per_token") or 0.0)
+    if max_in <= 0.0 and max_out <= 0.0:
+        raise ValueError("no generator model in the pool has a litellm price; cannot derive a cost reference")
+    return max_context * max_in + MAX_ANSWER_TOKENS * max_out
 
 
 SETUP_MARKER = ".setup_complete"
@@ -409,29 +448,59 @@ async def run_pareto(
         logger.warning("No plottable trials for any method; skipping comparison figure + hypervolume.json")
         return
 
-    hv_info = compute_pareto_hypervolumes(method_points)
+    cost_ref = space_derived_cost_reference(cfg.project_config_path)
+    hv_info = compute_pareto_hypervolumes(_load_method_seed_points(cfg.output_root), cost_ref)
     (cfg.output_root / "hypervolume.json").write_text(json.dumps(hv_info, indent=2), encoding="utf-8")
     make_pareto_comparison_figure(
-        method_points, hv_info, figures_dir / "pareto_comparison.png", domain=cfg.corpus_domain
+        method_points, figures_dir / "pareto_comparison.png", domain=cfg.corpus_domain
     )
     logger.info(
-        "Wrote %s + hypervolume.json (shared cost_ref=%.5f; HV %s)",
+        "Wrote %s + hypervolume.json (space-derived cost_ref=%.5f; normalized HV mean %s)",
         figures_dir / "pareto_comparison.png",
         hv_info["cost_reference"],
-        {m: round(d["hypervolume"], 5) for m, d in hv_info["methods"].items()},
+        {m: round(d["hypervolume_mean"], 4) for m, d in hv_info["methods"].items()},
     )
 
     # Multi-seed figures (read every seed, show the seed spread as a band).
     # Best-effort: a failure here must not discard the hypervolume.json /
     # comparison figure already written above.
-    for name, render in (
-        ("pareto_attainment", make_pareto_attainment_figure),
-        ("pareto_hv_convergence", make_pareto_hv_convergence_figure),
-    ):
-        try:
-            render(cfg.output_root, figures_dir / f"{name}.png", domain=cfg.corpus_domain)
-        except Exception:
-            logger.warning("Multi-seed figure %s failed", name, exc_info=True)
+    try:
+        make_pareto_attainment_figure(
+            cfg.output_root, figures_dir / "pareto_cost_accuracy.png", domain=cfg.corpus_domain
+        )
+    except Exception:
+        logger.warning("cost-accuracy figure failed", exc_info=True)
+    try:
+        make_pareto_attainment_median_figure(
+            cfg.output_root, figures_dir / "pareto_cost_accuracy_median.png", domain=cfg.corpus_domain
+        )
+    except Exception:
+        logger.warning("cost-accuracy median figure failed", exc_info=True)
+    try:
+        make_pareto_frontier_annotated_figure(
+            cfg.output_root, figures_dir / "pareto_frontier_configs.png", domain=cfg.corpus_domain
+        )
+    except Exception:
+        logger.warning("annotated frontier figure failed", exc_info=True)
+    try:
+        make_pareto_cost_and_embeddings_figure(
+            cfg.output_root, figures_dir / "cost_and_embeddings.png", domain=cfg.corpus_domain
+        )
+    except Exception:
+        logger.warning("cost_and_embeddings figure failed", exc_info=True)
+    try:
+        make_pareto_hv_convergence_figure(
+            cfg.output_root, figures_dir / "pareto_hypervolume.png", domain=cfg.corpus_domain, cost_ref=cost_ref
+        )
+    except Exception:
+        logger.warning("hypervolume figure failed", exc_info=True)
+    try:
+        make_pareto_median_hv_combined_figure(
+            cfg.output_root, figures_dir / "pareto_median_and_hypervolume.png",
+            domain=cfg.corpus_domain, cost_ref=cost_ref,
+        )
+    except Exception:
+        logger.warning("combined median+HV figure failed", exc_info=True)
 
 
 def pareto_cli(

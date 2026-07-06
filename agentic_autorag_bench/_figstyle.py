@@ -16,26 +16,31 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.container import BarContainer
 
-# One stable color per BASE method (matplotlib tab10); ``@k`` checkpoint
-# variants inherit their base method's color via ``color_for``.
+# Standard matplotlib tab10 colours (dropping brown, which looks muddy, and
+# olive, which reads too close to green). Assigned so the set that co-occurs in
+# nearly every chart -- {agentic, MO-TPE cold, MO-TPE warm, random} -- lands on
+# four well-separated, high-contrast hues: blue, green, purple, orange. Agentic
+# (Ours) is the tab blue (the "darker blue"), shared by score/cost so it reads
+# the same in every experiment. ``@k`` checkpoint variants inherit their base
+# method's colour via ``color_for``.
 METHOD_COLOR: dict[str, str] = {
-    "agentic_score": "#1f77b4",  # blue
-    "agentic_cost": "#17becf",  # cyan
-    "agentic_nokb": "#aec7e8",  # light blue (agentic ablation)
-    "agentic_nodiag": "#c5b0d5",  # light purple (agentic ablation)
-    "agentic_nokb_nodiag": "#9467bd",  # purple (KB+diagnosis ablation)
+    "agentic_score": "#1f77b4",  # blue — "Agentic (Ours)"
+    "agentic_cost": "#1f77b4",  # same blue — consistent "Ours" across experiments
+    "agentic_nokb": "#17becf",  # cyan (agentic ablation: KB off)
+    "agentic_nodiag": "#d62728",  # red (agentic ablation: diagnosis off)
+    "agentic_nokb_nodiag": "#e377c2",  # pink (maximally ablated agentic baseline)
     "random": "#ff7f0e",  # orange
-    "motpe": "#2ca02c",  # green
-    "motpe_warm": "#bcbd22",  # olive (MO-TPE transfer warm-start)
-    "qlognehvi": "#d62728",  # red (GP-BO degradation reference)
+    "motpe": "#2ca02c",  # green (MO-TPE cold)
+    "motpe_warm": "#9467bd",  # purple (MO-TPE warm)
+    "qlognehvi": "#7f7f7f",  # gray (GP-BO reference; cite-only)
 }
-_FALLBACK_COLOR = "#888888"
+_FALLBACK_COLOR = "#888888"  # kb_greedy and any unlisted method (neutral gray)
 
 # Paper-facing display names (display-only). The internal method keys, config
 # YAML, and on-disk ``results_*/<method>/`` directories are unchanged.
 _DISPLAY_LABEL: dict[str, str] = {
     "agentic_score": "Agentic (Ours)",
-    "agentic_cost": "Agentic-Pareto (Ours)",
+    "agentic_cost": "Agentic (Ours)",
     "agentic_nokb": "Agentic (no KB)",
     "agentic_nodiag": "Agentic (no diagnosis)",
     "agentic_nokb_nodiag": "Agentic (no KB, no diag)",

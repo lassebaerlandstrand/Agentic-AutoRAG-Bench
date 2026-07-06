@@ -123,12 +123,23 @@ To rebuild the figures from a finished run without calling any API:
 uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only
 ```
 
-This rewrites the figures in `experiment-2/unidoc/figures/` (the combined frontier
-plot, the seed-aggregated attainment band, the hypervolume-over-trials curve, and
-the agentic frontier) and `hypervolume.json`.
+This rewrites the figures in `experiment-2/unidoc/figures/` and `hypervolume.json`.
+The two used in the paper are `pareto_cost_accuracy.png` (each method's
+cost-accuracy frontier, best across seeds, with a min-max band where all seeds
+cover) and `pareto_frontier_configs.png` (the same view with our frontier's actual
+configurations labelled). The rest are supporting views:
+`pareto_cost_accuracy_median.png` (the same frontier view but the line is the
+median seed rather than the best, a typical-run rather than best-case reading),
+`cost_and_embeddings.png` (search cost and embedding tokens per method, with seed
+error bars), `pareto_agentic_cost.png` (a single agentic run's frontier),
+`pareto_comparison.png` (one seed per method), `pareto_hypervolume.png`
+(hypervolume over trials), and `pareto_median_and_hypervolume.png` (a wide
+landscape pairing the median frontier and the hypervolume curve side by side).
 
-The committed run keeps the per-pair results and figures but not the large
-`.shared_cache/` (corpus, embeddings, exam), so a fresh run regenerates the exam.
+The committed run keeps the per-pair results, the figures, and the frozen
+`.shared_cache/exam.json` (the optimization target and score), dropping only the
+large regeneratable rest of `.shared_cache/` (parsed corpus, embeddings, probe
+indexes), so a fresh run reuses the committed exam rather than regenerating it.
 Because RAG evaluation and LLM judging are not deterministic, a rerun reproduces
 the finding (the shape of the frontier, the ordering of the methods, and the gain
 from warm-starting) rather than the exact numbers.
@@ -138,7 +149,7 @@ from warm-starting) rather than the exact numbers.
 ```
 experiment-1/hotpot/
   bench_metadata.json      dataset, methods, seeds, budget, optimizer version and commit
-  .shared_cache/           corpus, exam, and embeddings, reused across methods and runs
+  .shared_cache/           parsed corpus, chunks, and embeddings, reused across methods and runs
   figures/                 cross-method figures and Table_1.md
   <method>/<seed>/
     benchmark_results.json held-out score of the best config

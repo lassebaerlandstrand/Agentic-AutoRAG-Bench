@@ -1037,8 +1037,26 @@ def _matrix_cost_and_embeddings(out_path: Path, stats: dict[str, dict]) -> None:
 # hypervolumes are comparable. X-axis is deploy-time cost **per query**.
 # =====================================================================
 
-_FRONTIER_COLORMAP = "tab10"
-_FRONTIER_COLORMAP_LARGE = "tab20"
+# Distinct index colours for the numbered frontier-config markers (these encode a
+# config's rank on the frontier, NOT a method identity). Standard matplotlib
+# tab10, dropping brown; blue is last since the markers sit on the blue Agentic
+# line. Cycled if a frontier has more points than colours.
+_FRONTIER_COLORS = [
+    "#ff7f0e",  # orange
+    "#2ca02c",  # green
+    "#d62728",  # red
+    "#9467bd",  # purple
+    "#e377c2",  # pink
+    "#17becf",  # cyan
+    "#bcbd22",  # olive
+    "#7f7f7f",  # gray
+    "#1f77b4",  # blue
+]
+
+
+def _frontier_color(i: int):
+    """Colour for the ``i``-th (1-based) numbered frontier marker."""
+    return _FRONTIER_COLORS[(i - 1) % len(_FRONTIER_COLORS)]
 
 _CHUNKING_LABELS = {"recursive": "Recursive Splitting", "fixed": "Token Splitting"}
 _INDEX_LABELS = {
@@ -1191,14 +1209,12 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
         )
 
     # Colored, numbered frontier points + side-legend descriptions.
-    cmap_name = _FRONTIER_COLORMAP if len(frontier) <= 10 else _FRONTIER_COLORMAP_LARGE
-    cmap = plt.get_cmap(cmap_name)
     for i, p in enumerate(frontier, start=1):
         ax.scatter(
             p.cost_per_query,
             p.answer_accuracy * 100,
             s=110,
-            color=cmap((i - 1) % cmap.N),
+            color=_frontier_color(i),
             edgecolors="black",
             linewidths=0.6,
             zorder=4,
@@ -1219,7 +1235,7 @@ def make_pareto_figure(seed_dir: Path, out_path: Path, *, domain: str = "") -> N
     ax.set_ylim(0, 100)
     ax.grid(alpha=0.3, which="both")
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — {display_label('agentic_cost')} cost vs. accuracy (self-generated exam)")
+    ax.set_title(f"{display_label('agentic_cost')} cost vs exam accuracy on UniDoc{title_domain}")
 
     ax.legend(
         loc="upper left",
@@ -1245,46 +1261,54 @@ class _FrontierRecord:
     mean_llm_cost_per_query_usd: float
 
 
-def compute_pareto_hypervolumes(method_points: dict[str, list[_TrialPoint]]) -> dict:
-    """Per-method Pareto frontier + hypervolume against a SHARED reference point.
+def compute_pareto_hypervolumes(method_seed_points: dict[str, list[list[_TrialPoint]]], cost_ref: float) -> dict:
+    """Per-method NORMALIZED hypervolume, aggregated across seeds, against a shared,
+    space-derived reference point.
 
-    The reference point is computed once over the POOLED trials of every method
-    (``cost_ref = 2 × max positive cost`` across all methods, ``score_ref = 0``),
-    so the per-method hypervolumes are directly comparable. Computing HV per-method
-    with each method's own ``max(cost)`` would make the numbers incommensurable —
-    the Exp-2 fairness landmine. Frontiers are recomputed here via the framework's
-    ``compute_frontier`` (not any optimizer's self-marked flag) so all methods are
-    treated identically.
+    Each seed's frontier is recomputed (framework ``compute_frontier``), scored
+    against ``ref_point=(0, cost_ref)``, and divided by ``cost_ref`` (the area of the
+    ideal ``[0,1] x [0, cost_ref]`` box), so it reads as the fraction of the
+    achievable cost-quality box that seed's frontier dominates, in ``[0, 1]``. The
+    per-seed fractions are summarized as mean / min / max so no single seed is
+    privileged and the table matches the seed-aggregated figures. ``cost_ref`` is a
+    property of the search space (see ``space_derived_cost_reference``), shared
+    across every method so the numbers are comparable.
     """
     from agentic_autorag.optimizer import pareto as fpareto
 
-    all_costs = [p.cost_per_query for pts in method_points.values() for p in pts]
-    cost_ref = fpareto.cost_reference(all_costs)
     ref_point = (0.0, cost_ref)
     out: dict = {"score_reference": 0.0, "cost_reference": cost_ref, "methods": {}}
-    for method, pts in method_points.items():
-        records = [_FrontierRecord(p.trial_number, p.answer_accuracy, p.cost_per_query) for p in pts]
-        frontier = fpareto.compute_frontier(records)
-        hv = fpareto.compute_hypervolume(frontier, ref_point=ref_point)
+    for method, seeds in method_seed_points.items():
+        per_seed = []
+        for pts in seeds:
+            records = [_FrontierRecord(p.trial_number, p.answer_accuracy, p.cost_per_query) for p in pts]
+            frontier = fpareto.compute_frontier(records)
+            per_seed.append(fpareto.compute_hypervolume(frontier, ref_point=ref_point) / cost_ref)
+        if not per_seed:
+            continue
         out["methods"][method] = {
-            "hypervolume": hv,
-            "n_trials": len(records),
-            "n_frontier": len(frontier),
-            "frontier_trials": [r.trial_number for r in frontier],
+            "hypervolume_mean": sum(per_seed) / len(per_seed),
+            "hypervolume_min": min(per_seed),
+            "hypervolume_max": max(per_seed),
+            "hypervolume_per_seed": per_seed,
+            "n_seeds": len(per_seed),
+            "n_trials_per_seed": [len(pts) for pts in seeds],
         }
     return out
 
 
 def make_pareto_comparison_figure(
     method_points: dict[str, list[_TrialPoint]],
-    hv_info: dict,
     out_path: Path,
     *,
     domain: str = "",
 ) -> None:
-    """Overlay every method's trial cloud + Pareto frontier on one figure, with
-    each method's shared-reference-point hypervolume in the legend. No-op when
-    nothing is plottable."""
+    """Overlay every method's trial cloud + Pareto frontier (one seed) on one
+    figure. The hypervolume numbers live in ``hypervolume.json`` and the
+    hypervolume-over-trials figure, both aggregated across seeds; this scatter is
+    the shape of a single run. No-op when nothing is plottable."""
+    from agentic_autorag.optimizer import pareto as fpareto
+
     if not any(method_points.values()):
         logger.warning("No plottable trials; skipping pareto comparison figure")
         return
@@ -1306,11 +1330,10 @@ def make_pareto_comparison_figure(
             edgecolors="none",
             zorder=1,
         )
-        info = hv_info["methods"].get(method, {})
-        frontier_tns = set(info.get("frontier_trials", []))
+        records = [_FrontierRecord(p.trial_number, p.answer_accuracy, p.cost_per_query) for p in pts]
+        frontier_tns = {r.trial_number for r in fpareto.compute_frontier(records)}
         frontier = sorted((p for p in pts if p.trial_number in frontier_tns), key=lambda p: p.cost_per_query)
-        hv = info.get("hypervolume", 0.0)
-        label = f"{display_label(method)} (HV={hv:.4f})"
+        label = display_label(method)
         if len(frontier) >= 2:
             ax.plot(
                 [p.cost_per_query for p in frontier],
@@ -1344,8 +1367,8 @@ def make_pareto_comparison_figure(
     ax.set_ylim(0, 100)
     ax.grid(alpha=0.3, which="both")
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — cost vs. accuracy Pareto frontiers")
-    ax.legend(loc="lower right", frameon=False, fontsize=9, title="Frontier (shared HV ref point)")
+    ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain} (Pareto frontiers)")
+    ax.legend(loc="lower right", frameon=False, fontsize=9)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -1382,58 +1405,234 @@ def _load_method_seed_points(output_root: Path) -> dict[str, list[list[_TrialPoi
 
 
 def _attainment_curve(points: list[_TrialPoint], grid: np.ndarray) -> np.ndarray:
-    """Best accuracy among trials with ``cost <= x`` for each ``x`` in ``grid``
-    (NaN where ``x`` is below the method's cheapest trial). Monotone in ``x``."""
+    """Empirical attainment function: best accuracy among trials with ``cost <= x``
+    for each ``x`` in ``grid``, and 0 where ``x`` is below the seed's cheapest trial.
+
+    Zero (not NaN) is the correct value below the cheapest trial: a run that found
+    no configuration at or under budget ``x`` has nothing to deploy there, so its
+    attained accuracy is 0. Monotone non-decreasing in ``x``."""
     ordered = sorted(points, key=lambda p: p.cost_per_query)
     costs = np.array([p.cost_per_query for p in ordered])
     best = np.maximum.accumulate(np.array([p.answer_accuracy for p in ordered]))
     idx = np.searchsorted(costs, grid, side="right") - 1
-    return np.where(idx >= 0, best[idx.clip(0)], np.nan)
+    return np.where(idx >= 0, best[idx.clip(0)], 0.0)
+
+
+def _attainment_grid(method_seed_points: dict[str, list[list[_TrialPoint]]]) -> np.ndarray | None:
+    """Shared log-spaced cost grid spanning every method's cheapest..dearest trial.
+    None when there is nothing plottable."""
+    all_costs = [p.cost_per_query for seeds in method_seed_points.values() for pts in seeds for p in pts]
+    if not all_costs:
+        return None
+    return np.logspace(np.log10(min(all_costs)), np.log10(max(all_costs)), _ATTAINMENT_GRID_POINTS)
+
+
+def _attainment_stats(seed_points: list[list[_TrialPoint]], grid: np.ndarray) -> tuple[np.ndarray, ...]:
+    """``(min, median, max)`` of the seeds' empirical attainment curves on ``grid``.
+
+    Each is a per-grid-point aggregate across seeds. ``max`` is the best any seed
+    attained (the pooled frontier); ``median`` is the typical seed; ``min`` is the
+    worst. Because curves are 0-padded below a seed's cheapest trial, all three are
+    defined over the whole grid."""
+    curves = np.vstack([_attainment_curve(pts, grid) for pts in seed_points])
+    return curves.min(axis=0), np.median(curves, axis=0), curves.max(axis=0)
+
+
+def _plot_attainment(
+    ax, method_seed_points: dict[str, list[list[_TrialPoint]]], grid: np.ndarray, *, central: str
+) -> None:
+    """Draw each method's attainment on ``ax``: a central line + a min-max band.
+
+    ``central`` picks the line: ``"max"`` is the best-across-seeds frontier (every
+    frontier point is on the line), ``"median"`` is the typical seed. The line is
+    drawn over its full positive extent, so it reaches the cheapest costs a seed
+    explored. The min-max band is drawn ONLY where every seed has coverage (its
+    worst seed has a trial that cheap), i.e. where a seed-spread estimate is
+    honest; in the partial-coverage cheap region the line stands alone rather than
+    a band collapsing to 0. Our own method is emphasised."""
+    for method in _order_methods(method_seed_points):
+        lo, med, hi = _attainment_stats(method_seed_points[method], grid)
+        line = hi if central == "max" else med
+        color, emph = _color_for(method), _is_our_method(method)
+        band = lo > 0  # every seed has a trial this cheap -> spread is meaningful
+        ax.fill_between(grid, lo * 100, hi * 100, where=band, color=color,
+                        alpha=0.18 if emph else 0.10, lw=0, zorder=4 if emph else 2)
+        ax.plot(grid, np.where(line > 0, line * 100, np.nan), color=color, lw=2.4 if emph else 1.7,
+                solid_capstyle="round", zorder=6 if emph else 3, label=display_label(method))
 
 
 def make_pareto_attainment_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
-    """Cost->accuracy attainment frontier: median over seeds + min-max band.
+    """Cost->accuracy frontier across seeds: best-across-seeds line + min-max band.
 
-    For each method the line is the median (across seeds) best accuracy attainable
-    at or below a given cost; the shaded band spans the seeds' min-max. This is the
-    empirical-attainment, multi-seed counterpart to ``make_pareto_comparison_figure``
-    (which reads a single seed). No-op when nothing is plottable."""
+    The line is the empirical attainment frontier (best accuracy any seed reached at
+    or below each cost), so every frontier point is shown, including cheap configs
+    only some seeds explored. The band is the seed min-max, drawn where all seeds
+    have coverage. Companion ``make_pareto_attainment_median_figure`` swaps the line
+    for the median (typical run). No-op when nothing is plottable."""
     method_seed_points = _load_method_seed_points(output_root)
-    all_costs = [p.cost_per_query for seeds in method_seed_points.values() for pts in seeds for p in pts]
-    if not all_costs:
+    grid = _attainment_grid(method_seed_points)
+    if grid is None:
         logger.warning("No plottable trials under %s; skipping pareto attainment figure", output_root)
         return
 
-    grid = np.logspace(np.log10(min(all_costs)), np.log10(max(all_costs)), _ATTAINMENT_GRID_POINTS)
     apply_paper_style()
     plt = _import_matplotlib()
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
-
-    for method in _order_methods(method_seed_points):
-        curves = np.vstack([_attainment_curve(pts, grid) for pts in method_seed_points[method]])
-        defined = (~np.isnan(curves)).all(axis=0)  # x covered by every seed
-        med = np.full(grid.shape[0], np.nan)
-        lo = np.full(grid.shape[0], np.nan)
-        hi = np.full(grid.shape[0], np.nan)
-        if defined.any():
-            covered = curves[:, defined]  # no NaNs in these columns
-            med[defined] = np.median(covered, axis=0)
-            lo[defined] = covered.min(axis=0)
-            hi[defined] = covered.max(axis=0)
-        color, emph = _color_for(method), _is_our_method(method)
-        ax.fill_between(grid, lo * 100, hi * 100, color=color, alpha=0.18 if emph else 0.10,
-                        lw=0, zorder=4 if emph else 2)
-        ax.plot(grid, med * 100, color=color, lw=2.4 if emph else 1.7, solid_capstyle="round",
-                zorder=6 if emph else 3, label=display_label(method))
+    _plot_attainment(ax, method_seed_points, grid, central="max")
 
     ax.set_xscale("log")
     ax.set_xlabel("Cost per query (USD)")
-    ax.set_ylabel("Attained exam accuracy (%)")
+    ax.set_ylabel("Exam accuracy (%)")
     ax.set_ylim(0, 100)
     ax.grid(alpha=0.3, which="both")
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — cost vs. accuracy attainment (median of seeds)")
-    ax.legend(loc="lower right", frameon=False, fontsize=9, title="line = median · band = min–max (seeds)")
+    ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain} (frontier across seeds)")
+    ax.legend(loc="lower right", frameon=False, fontsize=9,
+              title="line = best across seeds, band = min-max across seeds")
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _draw_median_attainment_panel(ax, method_seed_points, grid, *, domain: str) -> None:
+    """Median-seed cost->accuracy attainment (line + min-max band) onto ``ax``.
+    Shared by the standalone median figure and the combined landscape figure so
+    the two never drift."""
+    _plot_attainment(ax, method_seed_points, grid, central="median")
+    ax.set_xscale("log")
+    ax.set_xlabel("Cost per query (USD)")
+    ax.set_ylabel("Exam accuracy (%)")
+    ax.set_ylim(0, 100)
+    ax.grid(alpha=0.3, which="both")
+    title_domain = f" ({domain})" if domain else ""
+    ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain} (median across seeds)")
+    ax.legend(loc="lower right", frameon=False, fontsize=9,
+              title="line = median seed, band = min-max across seeds")
+
+
+def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
+    """The ``make_pareto_attainment_figure`` companion whose line is the MEDIAN seed.
+
+    Same 0-padded band; the line is the typical seed's attainment rather than the
+    best-across-seeds frontier. The median line reaches only costs a majority of
+    seeds explored, so it sits below the frontier line in the cheap region and
+    reads as "what a single run typically attains". No-op when nothing is
+    plottable."""
+    method_seed_points = _load_method_seed_points(output_root)
+    grid = _attainment_grid(method_seed_points)
+    if grid is None:
+        logger.warning("No plottable trials under %s; skipping pareto median attainment figure", output_root)
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.2, 4.6))
+    _draw_median_attainment_panel(ax, method_seed_points, grid, domain=domain)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _pooled_frontier(seed_points: list[list[_TrialPoint]]) -> list[_TrialPoint]:
+    """The Pareto frontier of a method's trials pooled across all seeds, sorted by
+    cost ascending. This is the best cost-accuracy trade-off the method actually
+    reached anywhere, so it traces the top edge of that method's min-max band."""
+    from agentic_autorag.optimizer import pareto as fpareto
+
+    pooled = [p for pts in seed_points for p in pts]
+    if not pooled:
+        return []
+    # Trial numbers collide across seeds; index into the pooled list instead.
+    records = [_FrontierRecord(i, p.answer_accuracy, p.cost_per_query) for i, p in enumerate(pooled)]
+    keep = {r.trial_number for r in fpareto.compute_frontier(records)}
+    return sorted((p for i, p in enumerate(pooled) if i in keep), key=lambda p: p.cost_per_query)
+
+
+def _select_labeled_frontier(frontier: list[_TrialPoint], max_labels: int) -> list[_TrialPoint]:
+    """Thin a cost-sorted frontier to at most ``max_labels`` points for legibility.
+
+    Always keeps the cheapest and most-accurate endpoints; fills the rest with the
+    points that sit just above the largest accuracy jumps, so the labelled subset
+    spans the frontier's whole accuracy range instead of clustering."""
+    if len(frontier) <= max_labels:
+        return list(frontier)
+    keep = {0, len(frontier) - 1}
+    interior = sorted(
+        range(1, len(frontier) - 1),
+        key=lambda i: frontier[i].answer_accuracy - frontier[i - 1].answer_accuracy,
+        reverse=True,
+    )
+    for i in interior:
+        if len(keep) >= max_labels:
+            break
+        keep.add(i)
+    return [frontier[i] for i in sorted(keep)]
+
+
+def make_pareto_frontier_annotated_figure(
+    output_root: Path,
+    out_path: Path,
+    *,
+    domain: str = "",
+    hero_method: str = "agentic_cost",
+    max_labels: int = 6,
+) -> None:
+    """The seed-aggregated frontier view (``make_pareto_attainment_figure``) with our
+    own frontier's concrete configurations called out.
+
+    Every method keeps its best-across-seeds frontier line + min-max band, so the
+    head-to-head is the same fair comparison. The pooled Pareto frontier of
+    ``hero_method`` lies exactly on that method's line, so a handful of its points
+    are marked with numbered dots, each described in a side legend the way
+    ``make_pareto_figure`` does for a single seed. This pairs "we dominate the
+    frontier" with "here are the configs that get you there". No-op when nothing is
+    plottable."""
+    from matplotlib.lines import Line2D
+
+    method_seed_points = _load_method_seed_points(output_root)
+    grid = _attainment_grid(method_seed_points)
+    if grid is None:
+        logger.warning("No plottable trials under %s; skipping annotated frontier figure", output_root)
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(8.4, 5.0))
+    _plot_attainment(ax, method_seed_points, grid, central="max")
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Cost per query (USD)")
+    ax.set_ylabel("Exam accuracy (%)")
+    ax.set_ylim(0, 100)
+    ax.grid(alpha=0.3, which="both")
+    title_domain = f" ({domain})" if domain else ""
+    ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain} (frontier across seeds)")
+
+    # Keep the method legend inside; the config legend goes outside on the right.
+    method_legend = ax.legend(
+        loc="lower right", frameon=False, fontsize=9,
+        title="line = best across seeds, band = min-max across seeds",
+    )
+    ax.add_artist(method_legend)
+
+    frontier = _pooled_frontier(method_seed_points.get(hero_method, []))
+    if frontier:
+        labeled = _select_labeled_frontier(frontier, max_labels)
+        handles: list[Line2D] = []
+        for i, p in enumerate(labeled, start=1):
+            c = _frontier_color(i)
+            ax.scatter(p.cost_per_query, p.answer_accuracy * 100, s=150, color=c,
+                       edgecolors="black", linewidths=0.7, zorder=9)
+            ax.annotate(str(i), (p.cost_per_query, p.answer_accuracy * 100), ha="center", va="center",
+                        fontsize=7.5, fontweight="bold", color="white", zorder=10)
+            handles.append(Line2D([], [], marker="o", linestyle="none", markersize=9, markerfacecolor=c,
+                                  markeredgecolor="black", markeredgewidth=0.6,
+                                  label=f"{i}. {_describe_config(p.config)}"))
+        ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1.0), frameon=False, fontsize=8,
+                  title=f"{display_label(hero_method)} frontier configurations",
+                  title_fontsize=9, borderaxespad=0.0)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -1452,47 +1651,166 @@ def _running_hypervolume(points: list[_TrialPoint], ref_point: tuple[float, floa
     return hvs
 
 
-def make_pareto_hv_convergence_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
-    """Anytime hypervolume vs. trials: mean over seeds + min-max band.
-
-    Running best-so-far hypervolume against a shared reference point built the same
-    WAY as ``compute_pareto_hypervolumes`` (``cost_ref = 2 x max cost``, ``score_ref=0``)
-    but pooled over ALL seeds of every method -- so heights are comparable across
-    methods within this figure. (``hypervolume.json`` pools a single seed, so its
-    absolute numbers differ; this figure is read for shape, not to match them.)
-    Shows convergence speed AND inter-seed spread. No-op when nothing is plottable."""
-    from agentic_autorag.optimizer import pareto as fpareto
-
-    method_seed_points = _load_method_seed_points(output_root)
-    all_costs = [p.cost_per_query for seeds in method_seed_points.values() for pts in seeds for p in pts]
-    if not all_costs:
-        logger.warning("No plottable trials under %s; skipping HV convergence figure", output_root)
-        return
-    cost_ref = fpareto.cost_reference(all_costs)
+def _draw_hv_convergence_panel(ax, method_seed_points, *, domain: str, cost_ref: float) -> None:
+    """Anytime normalized hypervolume vs. trials (mean + min-max band) onto ``ax``.
+    Shared by the standalone HV figure and the combined landscape figure."""
     ref_point = (0.0, cost_ref)
-
-    apply_paper_style()
-    plt = _import_matplotlib()
-    fig, ax = plt.subplots(figsize=(7.2, 4.6))
-
     for method in _order_methods(method_seed_points):
-        curves = _pad_edge([_running_hypervolume(pts, ref_point) for pts in method_seed_points[method]])
+        curves = _pad_edge([_running_hypervolume(pts, ref_point) / cost_ref for pts in method_seed_points[method]])
         x = np.arange(1, curves.shape[1] + 1)
         color, emph = _color_for(method), _is_our_method(method)
-        ax.fill_between(x, curves.min(axis=0), curves.max(axis=0), color=color,
-                        alpha=0.18 if emph else 0.10, lw=0, zorder=4 if emph else 2)
+        lo, hi = curves.min(axis=0), curves.max(axis=0)
+        ax.fill_between(x, lo, hi, color=color, alpha=0.18 if emph else 0.10, lw=0, zorder=4 if emph else 2)
+        # Very thin same-colour edges so each band's extent stays readable where
+        # the fills overlap (this figure has the densest band overlap of the set).
+        for edge in (lo, hi):
+            ax.plot(x, edge, color=color, lw=0.6, alpha=0.5, zorder=4 if emph else 2)
         ax.plot(x, curves.mean(axis=0), color=color, lw=2.4 if emph else 1.7, solid_capstyle="round",
                 zorder=6 if emph else 3, label=display_label(method))
 
     _integer_xticks(ax)
     ax.set_xlabel("Trials evaluated")
-    ax.set_ylabel("Hypervolume (cost vs. accuracy, shared ref)")
+    ax.set_ylabel("Normalized hypervolume")
     ax.grid(alpha=0.3)
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"UniDoc{title_domain} — anytime hypervolume (mean of seeds)")
-    ax.legend(loc="lower right", frameon=False, fontsize=9,
-              title=f"line = mean · band = min–max · cost_ref={cost_ref:.4f}")
+    ax.set_title(f"Hypervolume over trials on UniDoc{title_domain} (mean across seeds)")
+    ax.legend(loc="lower right", frameon=False, fontsize=9, title="line = mean, band = min-max across seeds")
 
+
+def make_pareto_hv_convergence_figure(output_root: Path, out_path: Path, *, domain: str = "", cost_ref: float) -> None:
+    """Anytime normalized hypervolume vs. trials: mean over seeds + min-max band.
+
+    Running best-so-far hypervolume against the shared, space-derived ``cost_ref``
+    (the same reference used for ``hypervolume.json``, so this figure and the table
+    agree), normalized by ``cost_ref`` so each curve reads as the fraction of the
+    cost-quality box dominated so far. Shows convergence speed AND inter-seed
+    spread. No-op when nothing is plottable."""
+    method_seed_points = _load_method_seed_points(output_root)
+    all_costs = [p.cost_per_query for seeds in method_seed_points.values() for pts in seeds for p in pts]
+    if not all_costs:
+        logger.warning("No plottable trials under %s; skipping HV convergence figure", output_root)
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.2, 4.6))
+    _draw_hv_convergence_panel(ax, method_seed_points, domain=domain, cost_ref=cost_ref)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def make_pareto_median_hv_combined_figure(
+    output_root: Path, out_path: Path, *, domain: str = "", cost_ref: float
+) -> None:
+    """Wide landscape figure pairing the two seed-aggregated views side by side:
+    the median cost-accuracy frontier (left) and the hypervolume-over-trials curve
+    (right). Reuses the exact panels of the two standalone figures, so it stays in
+    sync with them. No-op when nothing is plottable."""
+    method_seed_points = _load_method_seed_points(output_root)
+    grid = _attainment_grid(method_seed_points)
+    if grid is None:
+        logger.warning("No plottable trials under %s; skipping combined median+HV figure", output_root)
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(14.4, 4.8))
+    _draw_median_attainment_panel(ax_l, method_seed_points, grid, domain=domain)
+    _draw_hv_convergence_panel(ax_r, method_seed_points, domain=domain, cost_ref=cost_ref)
+
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _read_seed_cost_embed(seed_dir: Path) -> tuple[float, float, float] | None:
+    """``(optimizer_usd, trial_usd, embedding_tokens)`` from a Pareto seed's
+    ``optimizer_meta.json``; None if it is missing or unreadable.
+
+    Same three quantities the Exp-1 ``cost_and_embeddings`` panel reads out of
+    ``aggregate_by_method``, but the Pareto path has no hold-out ``stats`` object,
+    so we read each seed's meta directly."""
+    path = seed_dir / "optimizer_meta.json"
+    if not path.exists():
+        return None
+    try:
+        m = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Unreadable optimizer_meta at %s; skipping", path, exc_info=True)
+        return None
+    return (
+        float(m.get("optimizer_usd", 0.0)),
+        float(m.get("trial_usd_total", 0.0)),
+        float(m.get("embedding_tokens", 0.0)),
+    )
+
+
+def _minmax_err(per_seed: list[float]) -> tuple[float, list[float]]:
+    """``(mean, [[down], [up]])`` min-max whisker magnitudes for an errorbar."""
+    mean = float(np.mean(per_seed))
+    return mean, [[mean - min(per_seed)], [max(per_seed) - mean]]
+
+
+def make_pareto_cost_and_embeddings_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
+    """Two-panel search cost + embedding footprint for the Pareto (Exp-2) run, with
+    min-max seed whiskers.
+
+    Left: stacked search cost per method (optimizer reasoning + trial evaluation),
+    a min-max whisker on the total. Right: embedding input tokens per method (in
+    millions), min-max whisker. The Exp-2 analogue of Exp-1's ``cost_and_embeddings``
+    but sourced per seed from ``optimizer_meta.json`` and showing the seed spread.
+    No-op when nothing is plottable."""
+    methods = _discover_method_names(output_root)
+    data: dict[str, list[tuple[float, float, float]]] = {}
+    for m in methods:
+        rows = [r for sd in _seed_dirs(output_root / m) if (r := _read_seed_cost_embed(sd)) is not None]
+        if rows:
+            data[m] = rows
+    methods = [m for m in methods if m in data]
+    if not methods:
+        logger.warning("No optimizer_meta under %s; skipping cost_and_embeddings figure", output_root)
+        return
+
+    opt_mean = np.array([float(np.mean([r[0] for r in data[m]])) for m in methods])
+    trial_mean = np.array([float(np.mean([r[1] for r in data[m]])) for m in methods])
+    total_stats = [_minmax_err([r[0] + r[1] for r in data[m]]) for m in methods]
+    total_mean = np.array([t[0] for t in total_stats])
+    total_err = np.hstack([np.array(t[1]) for t in total_stats])
+    emb_stats = [_minmax_err([r[2] / 1e6 for r in data[m]]) for m in methods]
+    emb_mean = np.array([e[0] for e in emb_stats])
+    emb_err = np.hstack([np.array(e[1]) for e in emb_stats])
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    panel_w = fig_width_for(len(methods), base=5.0, per_group=0.8, cap=9.0)
+    fig, (ax_cost, ax_emb) = plt.subplots(1, 2, figsize=(2 * panel_w, 4.2))
+    x = np.arange(len(methods))
+
+    ax_cost.bar(x, opt_mean, color="#1f77b4", label="Optimizer reasoning (agent)")
+    ax_cost.bar(x, trial_mean, bottom=opt_mean, color="#ff7f0e", label="Trial evaluation (RAG + judge)")
+    ax_cost.errorbar(x, total_mean, yerr=total_err, fmt="none", ecolor="black", capsize=4, lw=1.0,
+                     zorder=5, label="min-max across seeds")
+    style_method_xticks(ax_cost, methods)
+    ax_cost.set_ylabel("Mean search cost per seed (USD)")
+    ax_cost.set_title("Search cost by source")
+    ax_cost.set_ylim(0, float((total_mean + total_err[1]).max()) * 1.15)
+    ax_cost.legend(loc="upper right", frameon=False)
+    ax_cost.grid(axis="y", alpha=0.3)
+
+    ax_emb.bar(x, emb_mean, color="#2ca02c", yerr=emb_err, capsize=4,
+               error_kw={"ecolor": "black", "lw": 1.0})
+    style_method_xticks(ax_emb, methods)
+    ax_emb.set_ylabel("Mean embedding tokens per seed (millions)")
+    ax_emb.set_title("Embedding tokens (cache-aware)")
+    ax_emb.set_ylim(0, float((emb_mean + emb_err[1]).max()) * 1.15)
+    ax_emb.grid(axis="y", alpha=0.3)
+
+    title_domain = f" ({domain})" if domain else ""
+    fig.suptitle(f"Search cost and embedding footprint on UniDoc{title_domain}", fontsize=12, y=1.04)
+    fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
