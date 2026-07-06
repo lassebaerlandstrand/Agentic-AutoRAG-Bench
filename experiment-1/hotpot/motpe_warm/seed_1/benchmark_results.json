@@ -1,6 +1,6 @@
 {
   "benchmark": "unknown",
-  "n_total": 300,
+  "n_total": 299,
   "n_valid": 299,
   "n_judge_invalid": 0,
   "em": 0.5351170568561873,
@@ -364,7 +364,7 @@
     },
     {
       "id": "5ab29842554299194fa93420",
-      "question": "What is the name of the third act in a play where a character named Carlo Gérard is partly based on a revolutionary figure?",
+      "question": "What is the name of the third act in a play where a character named Carlo G\u00e9rard is partly based on a revolutionary figure?",
       "gold_answers": [
         "La mamma morta"
       ],
@@ -538,7 +538,7 @@
       "gold_answers": [
         "American Boeing B-17 Flying Fortress"
       ],
-      "pred": "Boeing B‑17 Flying Fortress",
+      "pred": "Boeing B\u201117 Flying Fortress",
       "em": 0.0,
       "f1": 0.6666666666666665,
       "judge": 1,
@@ -1454,7 +1454,7 @@
       "id": "5add44c25542997545bbbd0a",
       "question": "A Therapy was written and directed by what French-Polish film director who was born in Paris?",
       "gold_answers": [
-        "Rajmund Roman Thierry Polański"
+        "Rajmund Roman Thierry Pola\u0144ski"
       ],
       "pred": "Roman Polanski",
       "em": 0.0,
@@ -2000,7 +2000,7 @@
       "gold_answers": [
         "around 8000 BC"
       ],
-      "pred": "8000 BC",
+      "pred": "8000\u00a0BC",
       "em": 0.0,
       "f1": 0.8,
       "judge": 1,
@@ -3248,7 +3248,7 @@
       "gold_answers": [
         "sub-Saharan Africa"
       ],
-      "pred": "Sub‑Saharan Africa",
+      "pred": "Sub\u2011Saharan Africa",
       "em": 0.0,
       "f1": 0.5,
       "judge": 1,
@@ -4740,7 +4740,7 @@
     },
     {
       "id": "5ae322b75542994393b9e622",
-      "question": "Gérard Dubois opened the first La Rose Noire in which complex of office towers and hotels in Hong Kong?",
+      "question": "G\u00e9rard Dubois opened the first La Rose Noire in which complex of office towers and hotels in Hong Kong?",
       "gold_answers": [
         "Pacific Place"
       ],
@@ -4878,7 +4878,7 @@
       "id": "5add16b65542990d50227dd2",
       "question": "What is the age range of the league for which the Bobby Smith Trophy is awarded?",
       "gold_answers": [
-        "16–21"
+        "16\u201321"
       ],
       "pred": "16-21",
       "em": 0.0,
@@ -5014,9 +5014,9 @@
       "id": "5adbfb6b55429947ff17388d",
       "question": "What IBF Light Flyweight Championship winner was related to the Mexican boxer born on May 28, 1986 in Mexico City?",
       "gold_answers": [
-        "Ricardo “El Finito” López Nava"
+        "Ricardo \u201cEl Finito\u201d L\u00f3pez Nava"
       ],
-      "pred": "Ricardo López",
+      "pred": "Ricardo L\u00f3pez",
       "em": 0.0,
       "f1": 0.5714285714285715,
       "judge": 1,
@@ -5934,7 +5934,7 @@
       "gold_answers": [
         "James Harden"
       ],
-      "pred": "NBA 2K16",
+      "pred": "NBA\u202f2K16",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -6206,7 +6206,7 @@
       "gold_answers": [
         "Henry Moseley"
       ],
-      "pred": "Henry Moseley",
+      "pred": "Henry\u202fMoseley",
       "em": 1.0,
       "f1": 1.0,
       "judge": 1,
@@ -6580,7 +6580,7 @@
       "gold_answers": [
         "YouTube"
       ],
-      "pred": "By releasing his single “Pyramid,” which became his first number one hit and charted on the Billboard Hot 100.",
+      "pred": "By releasing his single \u201cPyramid,\u201d which became his first number one hit and charted on the Billboard Hot 100.",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -7290,7 +7290,7 @@
     },
     {
       "id": "5a825bb455429940e5e1a874",
-      "question": "Folie à Deux is a studio album by the American rock band formed in which city?",
+      "question": "Folie \u00e0 Deux is a studio album by the American rock band formed in which city?",
       "gold_answers": [
         "Wilmette"
       ],
@@ -7566,7 +7566,7 @@
       "gold_answers": [
         "5 February 1976"
       ],
-      "pred": "5 February 1976",
+      "pred": "5 February\u00a01976",
       "em": 1.0,
       "f1": 1.0,
       "judge": 1,
@@ -8378,7 +8378,7 @@
     },
     {
       "id": "5ae0616255429924de1b70ca",
-      "question": "Are Steve Perry and Dennis Lyxzén both members of the same band ?",
+      "question": "Are Steve Perry and Dennis Lyxz\u00e9n both members of the same band ?",
       "gold_answers": [
         "no"
       ],
@@ -8548,7 +8548,7 @@
     },
     {
       "id": "5ac311925542995ef918c0de",
-      "question": "Are Horace Ové and A. Edward Sutherland both photographers?",
+      "question": "Are Horace Ov\u00e9 and A. Edward Sutherland both photographers?",
       "gold_answers": [
         "no"
       ],
@@ -10228,5 +10228,8 @@
     "corpus_total_chars": 0,
     "corpus_total_words": 0,
     "corpus_avg_words_per_doc": 0.0
-  }
+  },
+  "excluded_question_ids": [
+    "5ab624b855429953192ad26d"
+  ]
 }
