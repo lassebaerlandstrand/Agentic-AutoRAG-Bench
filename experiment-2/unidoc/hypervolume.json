@@ -1,57 +1,69 @@
 {
   "score_reference": 0.0,
-  "cost_reference": 0.01263435,
+  "cost_reference": 0.04608,
   "methods": {
     "agentic_cost": {
-      "hypervolume": 0.009621181249,
-      "n_trials": 30,
-      "n_frontier": 6,
-      "frontier_trials": [
-        2,
-        13,
-        28,
-        10,
-        29,
-        27
-      ]
-    },
-    "random": {
-      "hypervolume": 0.0092113019415,
-      "n_trials": 30,
-      "n_frontier": 6,
-      "frontier_trials": [
-        8,
-        12,
-        10,
-        14,
-        1,
-        19
+      "hypervolume_mean": 0.7829821514756944,
+      "hypervolume_min": 0.7670895694010418,
+      "hypervolume_max": 0.8141847550564236,
+      "hypervolume_per_seed": [
+        0.7676721299696181,
+        0.7670895694010418,
+        0.8141847550564236
+      ],
+      "n_seeds": 3,
+      "n_trials_per_seed": [
+        30,
+        30,
+        30
       ]
     },
     "motpe": {
-      "hypervolume": 0.0084352471365,
-      "n_trials": 30,
-      "n_frontier": 6,
-      "frontier_trials": [
-        23,
-        6,
-        26,
-        16,
-        20,
-        17
+      "hypervolume_mean": 0.7060547256076389,
+      "hypervolume_min": 0.6766121774414063,
+      "hypervolume_max": 0.7359508474175348,
+      "hypervolume_per_seed": [
+        0.6766121774414063,
+        0.7056011519639758,
+        0.7359508474175348
+      ],
+      "n_seeds": 3,
+      "n_trials_per_seed": [
+        30,
+        30,
+        30
       ]
     },
     "motpe_warm": {
-      "hypervolume": 0.009424072910000003,
-      "n_trials": 30,
-      "n_frontier": 6,
-      "frontier_trials": [
-        1,
-        17,
-        14,
-        10,
-        15,
-        16
+      "hypervolume_mean": 0.7138615713541666,
+      "hypervolume_min": 0.6387054742621527,
+      "hypervolume_max": 0.7561364346788194,
+      "hypervolume_per_seed": [
+        0.7561364346788194,
+        0.7467428051215277,
+        0.6387054742621527
+      ],
+      "n_seeds": 3,
+      "n_trials_per_seed": [
+        30,
+        30,
+        30
+      ]
+    },
+    "random": {
+      "hypervolume_mean": 0.6895260149956597,
+      "hypervolume_min": 0.5883296225151909,
+      "hypervolume_max": 0.7442608385742187,
+      "hypervolume_per_seed": [
+        0.7442608385742187,
+        0.7359875838975694,
+        0.5883296225151909
+      ],
+      "n_seeds": 3,
+      "n_trials_per_seed": [
+        30,
+        30,
+        30
       ]
     }
   }

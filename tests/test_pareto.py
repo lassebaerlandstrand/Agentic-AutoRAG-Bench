@@ -18,16 +18,24 @@ from agentic_autorag_bench.pareto import (
     run_pareto,
 )
 from agentic_autorag_bench.plots import (
+    _attainment_curve,
+    _attainment_stats,
     _describe_config,
     _load_method_seed_points,
     _load_trial_points,
+    _pooled_frontier,
+    _select_labeled_frontier,
     _short_model,
     _TrialPoint,
     compute_pareto_hypervolumes,
     make_pareto_attainment_figure,
+    make_pareto_attainment_median_figure,
     make_pareto_comparison_figure,
+    make_pareto_cost_and_embeddings_figure,
     make_pareto_figure,
+    make_pareto_frontier_annotated_figure,
     make_pareto_hv_convergence_figure,
+    make_pareto_median_hv_combined_figure,
 )
 
 
@@ -286,34 +294,47 @@ def test_ensure_corpus_downloads_when_empty(tmp_path) -> None:
 
 
 def test_compute_pareto_hypervolumes_uses_shared_reference() -> None:
-    """Both methods' HV is scored against ONE reference point pooled across both
-    (cost_ref = 2 × max pooled cost), so the two numbers are comparable."""
-    method_points = {
-        "agentic_cost": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8)],
-        "motpe": [_point(1, 0.001, 0.5), _point(2, 0.003, 0.7)],
+    """Each method's per-seed HV is scored against ONE passed-in reference point and
+    reported as the fraction of the ``[0,1] x [0, cost_ref]`` box dominated, so the
+    numbers are comparable. One seed here, so mean == min == max."""
+    method_seed_points = {
+        "agentic_cost": [[_point(1, 0.001, 0.6), _point(2, 0.002, 0.8)]],
+        "motpe": [[_point(1, 0.001, 0.5), _point(2, 0.003, 0.7)]],
     }
-    hv = compute_pareto_hypervolumes(method_points)
+    hv = compute_pareto_hypervolumes(method_seed_points, 0.006)
 
-    # Shared cost reference = 2 × max pooled cost (0.003).
     assert hv["cost_reference"] == pytest.approx(0.006)
     assert hv["score_reference"] == 0.0
-    # Both points of each method are non-dominated → both on each frontier.
-    assert hv["methods"]["agentic_cost"]["frontier_trials"] == [1, 2]
-    assert hv["methods"]["motpe"]["frontier_trials"] == [1, 2]
-    # Hand-computed staircase areas against the shared ref point (0, 0.006).
-    assert hv["methods"]["agentic_cost"]["hypervolume"] == pytest.approx(0.0038)
-    assert hv["methods"]["motpe"]["hypervolume"] == pytest.approx(0.0031)
+    assert hv["methods"]["agentic_cost"]["n_seeds"] == 1
+    # Hand-computed staircase areas (0.0038 / 0.0031) normalized by the ref (0.006).
+    assert hv["methods"]["agentic_cost"]["hypervolume_mean"] == pytest.approx(0.0038 / 0.006)
+    assert hv["methods"]["motpe"]["hypervolume_mean"] == pytest.approx(0.0031 / 0.006)
     # The dominating frontier has the larger hypervolume.
-    assert hv["methods"]["agentic_cost"]["hypervolume"] > hv["methods"]["motpe"]["hypervolume"]
+    assert hv["methods"]["agentic_cost"]["hypervolume_mean"] > hv["methods"]["motpe"]["hypervolume_mean"]
 
 
-def test_compute_pareto_hypervolumes_drops_dominated_from_frontier() -> None:
-    method_points = {
-        "m": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.5), _point(3, 0.003, 0.9)],
+def test_compute_pareto_hypervolumes_aggregates_across_seeds() -> None:
+    """Two seeds with different frontiers -> mean / min / max span both."""
+    method_seed_points = {
+        "m": [
+            [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8)],  # seed A: raw HV 0.0038
+            [_point(1, 0.001, 0.5), _point(2, 0.003, 0.7)],  # seed B: raw HV 0.0031
+        ],
     }
-    hv = compute_pareto_hypervolumes(method_points)
-    # Trial 2 (more cost, less accuracy than trial 1) is dominated → off frontier.
-    assert hv["methods"]["m"]["frontier_trials"] == [1, 3]
+    hv = compute_pareto_hypervolumes(method_seed_points, 0.006)["methods"]["m"]
+    assert hv["n_seeds"] == 2
+    assert hv["hypervolume_min"] == pytest.approx(0.0031 / 0.006)
+    assert hv["hypervolume_max"] == pytest.approx(0.0038 / 0.006)
+    assert hv["hypervolume_mean"] == pytest.approx((0.0038 + 0.0031) / 2 / 0.006)
+
+
+def test_compute_pareto_hypervolumes_dominated_point_does_not_change_hv() -> None:
+    """A dominated trial is dropped from the frontier, so it leaves HV unchanged."""
+    base = [_point(1, 0.001, 0.6), _point(3, 0.003, 0.9)]
+    with_dominated = base + [_point(2, 0.002, 0.5)]  # dominated by trial 1
+    hv_base = compute_pareto_hypervolumes({"m": [base]}, 0.006)["methods"]["m"]["hypervolume_mean"]
+    hv_dom = compute_pareto_hypervolumes({"m": [with_dominated]}, 0.006)["methods"]["m"]["hypervolume_mean"]
+    assert hv_dom == pytest.approx(hv_base)
 
 
 def test_make_pareto_comparison_figure_emits_png(tmp_path) -> None:
@@ -321,15 +342,14 @@ def test_make_pareto_comparison_figure_emits_png(tmp_path) -> None:
         "agentic_cost": [_point(1, 0.001, 0.6), _point(2, 0.002, 0.8), _point(3, 0.004, 0.55)],
         "motpe": [_point(1, 0.0012, 0.5), _point(2, 0.003, 0.7)],
     }
-    hv = compute_pareto_hypervolumes(method_points)
     out = tmp_path / "figures" / "pareto_comparison.png"
-    make_pareto_comparison_figure(method_points, hv, out, domain="healthcare")
+    make_pareto_comparison_figure(method_points, out, domain="healthcare")
     assert out.exists() and out.stat().st_size > 0
 
 
 def test_make_pareto_comparison_figure_no_points_is_noop(tmp_path) -> None:
     out = tmp_path / "figures" / "pareto_comparison.png"
-    make_pareto_comparison_figure({"agentic_cost": [], "motpe": []}, {"methods": {}}, out)
+    make_pareto_comparison_figure({"agentic_cost": [], "motpe": []}, out)
     assert not out.exists()
 
 
@@ -357,6 +377,28 @@ def test_load_method_seed_points_groups_seeds_per_method(tmp_path) -> None:
     assert all(len(pts) == 3 for seeds in msp.values() for pts in seeds)
 
 
+def test_attainment_curve_pads_zero_below_cheapest() -> None:
+    # An empirical attainment function is 0 (not NaN) below the cheapest trial:
+    # a run with nothing at that budget attains nothing there.
+    import numpy as np
+
+    pts = [_point(1, 0.010, 0.6), _point(2, 0.020, 0.8)]
+    curve = _attainment_curve(pts, np.array([0.005, 0.010, 0.015, 0.020, 0.050]))
+    assert list(curve) == [0.0, 0.6, 0.6, 0.8, 0.8]  # 0 below cheapest, then best-so-far
+
+
+def test_attainment_stats_frontier_shows_single_seed_cheap_point() -> None:
+    # One seed explores a cheap config the other never reaches. The frontier (max)
+    # must show it; the worst-seed floor (min) is 0 there, so the band would be
+    # empty at that cost.
+    import numpy as np
+
+    seed_cheap = [_point(1, 0.001, 0.5), _point(2, 0.004, 0.7)]
+    seed_dear = [_point(1, 0.004, 0.65)]  # nothing under 0.004
+    lo, _med, hi = _attainment_stats([seed_cheap, seed_dear], np.array([0.001, 0.004]))
+    assert hi[0] == 0.5 and lo[0] == 0.0  # frontier reaches the cheap point; floor does not
+
+
 def test_make_pareto_attainment_figure_emits_png(tmp_path) -> None:
     _write_run_tree(tmp_path)
     out = tmp_path / "figures" / "pareto_attainment.png"
@@ -364,19 +406,102 @@ def test_make_pareto_attainment_figure_emits_png(tmp_path) -> None:
     assert out.exists() and out.stat().st_size > 0
 
 
+def test_make_pareto_attainment_median_figure_emits_png(tmp_path) -> None:
+    _write_run_tree(tmp_path)
+    out = tmp_path / "figures" / "pareto_attainment_median.png"
+    make_pareto_attainment_median_figure(tmp_path, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
 def test_make_pareto_hv_convergence_figure_emits_png(tmp_path) -> None:
     _write_run_tree(tmp_path)
     out = tmp_path / "figures" / "pareto_hv_convergence.png"
-    make_pareto_hv_convergence_figure(tmp_path, out, domain="healthcare")
+    make_pareto_hv_convergence_figure(tmp_path, out, domain="healthcare", cost_ref=0.006)
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_make_pareto_median_hv_combined_figure_emits_png(tmp_path) -> None:
+    _write_run_tree(tmp_path)
+    out = tmp_path / "figures" / "pareto_median_and_hypervolume.png"
+    make_pareto_median_hv_combined_figure(tmp_path, out, domain="healthcare", cost_ref=0.006)
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_make_pareto_median_hv_combined_figure_no_points_is_noop(tmp_path) -> None:
+    (tmp_path / "agentic_cost" / "seed_1").mkdir(parents=True)  # empty: no history
+    out = tmp_path / "figures" / "pareto_median_and_hypervolume.png"
+    make_pareto_median_hv_combined_figure(tmp_path, out, cost_ref=0.006)
+    assert not out.exists()
 
 
 def test_multiseed_figures_no_points_is_noop(tmp_path) -> None:
     (tmp_path / "agentic_cost" / "seed_1").mkdir(parents=True)  # empty: no history
     make_pareto_attainment_figure(tmp_path, tmp_path / "figures" / "pareto_attainment.png")
-    make_pareto_hv_convergence_figure(tmp_path, tmp_path / "figures" / "pareto_hv_convergence.png")
+    make_pareto_attainment_median_figure(tmp_path, tmp_path / "figures" / "pareto_attainment_median.png")
+    make_pareto_hv_convergence_figure(tmp_path, tmp_path / "figures" / "pareto_hv_convergence.png", cost_ref=0.006)
     assert not (tmp_path / "figures" / "pareto_attainment.png").exists()
+    assert not (tmp_path / "figures" / "pareto_attainment_median.png").exists()
     assert not (tmp_path / "figures" / "pareto_hv_convergence.png").exists()
+
+
+# ------------------------------------------- annotated frontier + cost/embeddings
+
+
+def test_pooled_frontier_pools_seeds_and_drops_dominated() -> None:
+    # seed 2's cheap+strong point dominates seed 1's first; both a dear-weak point
+    # (seed 2) and the dominated point fall off the pooled frontier.
+    seed1 = [_point(1, 0.0010, 0.50), _point(2, 0.0020, 0.70)]
+    seed2 = [_point(1, 0.0008, 0.55), _point(2, 0.0015, 0.40)]
+    frontier = _pooled_frontier([seed1, seed2])
+    costs = [round(p.cost_per_query, 4) for p in frontier]
+    assert costs == [0.0008, 0.0020]  # sorted by cost, dominated points removed
+
+
+def test_select_labeled_frontier_caps_and_keeps_endpoints() -> None:
+    frontier = [_point(i, 0.0001 * (i + 1), 0.30 + 0.05 * i) for i in range(9)]
+    picked = _select_labeled_frontier(frontier, max_labels=6)
+    assert len(picked) == 6
+    assert picked[0] is frontier[0] and picked[-1] is frontier[-1]  # both endpoints kept
+    # under the cap: everything is returned untouched
+    assert _select_labeled_frontier(frontier[:4], max_labels=6) == frontier[:4]
+
+
+def test_make_pareto_frontier_annotated_figure_emits_png(tmp_path) -> None:
+    _write_run_tree(tmp_path)
+    out = tmp_path / "figures" / "pareto_frontier_configs.png"
+    make_pareto_frontier_annotated_figure(tmp_path, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
+def _write_meta(seed_dir: Path, *, optimizer_usd: float, trial_usd: float, embedding_tokens: float) -> None:
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    (seed_dir / "optimizer_meta.json").write_text(
+        json.dumps(
+            {"optimizer_usd": optimizer_usd, "trial_usd_total": trial_usd, "embedding_tokens": embedding_tokens}
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_make_pareto_cost_and_embeddings_figure_emits_png(tmp_path) -> None:
+    for method, opt in (("agentic_cost", 0.7), ("motpe", 0.0)):
+        for s in (1, 2, 3):
+            _write_meta(
+                tmp_path / method / f"seed_{s}",
+                optimizer_usd=opt,
+                trial_usd=3.0 + 0.1 * s,
+                embedding_tokens=1e7 * (1 + s) if method == "motpe" else 1.2e7,
+            )
+    out = tmp_path / "figures" / "cost_and_embeddings.png"
+    make_pareto_cost_and_embeddings_figure(tmp_path, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_make_pareto_cost_and_embeddings_figure_no_meta_is_noop(tmp_path) -> None:
+    (tmp_path / "agentic_cost" / "seed_1").mkdir(parents=True)  # no optimizer_meta.json
+    out = tmp_path / "figures" / "cost_and_embeddings.png"
+    make_pareto_cost_and_embeddings_figure(tmp_path, out)
+    assert not out.exists()
 
 
 # ------------------------------------------ methods/seeds config + selection
