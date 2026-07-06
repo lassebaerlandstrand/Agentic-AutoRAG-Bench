@@ -29,3 +29,9 @@ logs/*
 # search_result.json. The run is done; we never resume a study from git.
 optuna.db
 *.pkl
+
+# Sidelined variant: the glm-free-exam run's results folder (its self-exam was
+# generated with bedrock/zai.glm-4.7 excluded from the pool). The canonical run
+# is `unidoc/`; this variant is kept locally for reference only and does not ship
+# — no config or logs, just the results tree, ignored wholesale.
+unidoc_glmfree_exam/

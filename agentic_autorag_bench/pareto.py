@@ -33,8 +33,10 @@ import yaml
 from agentic_autorag_bench.plots import (
     _load_trial_points,
     compute_pareto_hypervolumes,
+    make_pareto_attainment_figure,
     make_pareto_comparison_figure,
     make_pareto_figure,
+    make_pareto_hv_convergence_figure,
 )
 
 logger = logging.getLogger("agentic_autorag_bench.run")
@@ -418,6 +420,18 @@ async def run_pareto(
         hv_info["cost_reference"],
         {m: round(d["hypervolume"], 5) for m, d in hv_info["methods"].items()},
     )
+
+    # Multi-seed figures (read every seed, show the seed spread as a band).
+    # Best-effort: a failure here must not discard the hypervolume.json /
+    # comparison figure already written above.
+    for name, render in (
+        ("pareto_attainment", make_pareto_attainment_figure),
+        ("pareto_hv_convergence", make_pareto_hv_convergence_figure),
+    ):
+        try:
+            render(cfg.output_root, figures_dir / f"{name}.png", domain=cfg.corpus_domain)
+        except Exception:
+            logger.warning("Multi-seed figure %s failed", name, exc_info=True)
 
 
 def pareto_cli(

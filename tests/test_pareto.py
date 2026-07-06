@@ -19,12 +19,15 @@ from agentic_autorag_bench.pareto import (
 )
 from agentic_autorag_bench.plots import (
     _describe_config,
+    _load_method_seed_points,
     _load_trial_points,
     _short_model,
     _TrialPoint,
     compute_pareto_hypervolumes,
+    make_pareto_attainment_figure,
     make_pareto_comparison_figure,
     make_pareto_figure,
+    make_pareto_hv_convergence_figure,
 )
 
 
@@ -328,6 +331,52 @@ def test_make_pareto_comparison_figure_no_points_is_noop(tmp_path) -> None:
     out = tmp_path / "figures" / "pareto_comparison.png"
     make_pareto_comparison_figure({"agentic_cost": [], "motpe": []}, {"methods": {}}, out)
     assert not out.exists()
+
+
+# ------------------------------------------- multi-seed attainment / convergence
+
+
+def _write_run_tree(root: Path) -> None:
+    """Two methods, three seeds each, a few trials per seed."""
+    for method, base in (("agentic_cost", 0.6), ("motpe", 0.5)):
+        for s in (1, 2, 3):
+            rows = [
+                _trial(1, 0.0010, base, pareto=True),
+                _trial(2, 0.0020, base + 0.1, pareto=True),
+                _trial(3, 0.0040 + 0.0005 * s, base + 0.15, pareto=True),
+            ]
+            _write_history(root / method / f"seed_{s}", rows)
+
+
+def test_load_method_seed_points_groups_seeds_per_method(tmp_path) -> None:
+    _write_run_tree(tmp_path)
+    msp = _load_method_seed_points(tmp_path)
+    assert set(msp) == {"agentic_cost", "motpe"}
+    # every method keeps its three seeds separate (not pooled into one list)
+    assert [len(seeds) for seeds in msp.values()] == [3, 3]
+    assert all(len(pts) == 3 for seeds in msp.values() for pts in seeds)
+
+
+def test_make_pareto_attainment_figure_emits_png(tmp_path) -> None:
+    _write_run_tree(tmp_path)
+    out = tmp_path / "figures" / "pareto_attainment.png"
+    make_pareto_attainment_figure(tmp_path, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_make_pareto_hv_convergence_figure_emits_png(tmp_path) -> None:
+    _write_run_tree(tmp_path)
+    out = tmp_path / "figures" / "pareto_hv_convergence.png"
+    make_pareto_hv_convergence_figure(tmp_path, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_multiseed_figures_no_points_is_noop(tmp_path) -> None:
+    (tmp_path / "agentic_cost" / "seed_1").mkdir(parents=True)  # empty: no history
+    make_pareto_attainment_figure(tmp_path, tmp_path / "figures" / "pareto_attainment.png")
+    make_pareto_hv_convergence_figure(tmp_path, tmp_path / "figures" / "pareto_hv_convergence.png")
+    assert not (tmp_path / "figures" / "pareto_attainment.png").exists()
+    assert not (tmp_path / "figures" / "pareto_hv_convergence.png").exists()
 
 
 # ------------------------------------------ methods/seeds config + selection

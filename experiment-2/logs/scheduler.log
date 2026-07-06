@@ -1,0 +1,30 @@
+2026-07-06T08:46:37Z LAUNCH config=/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/configs/unidoc_pareto.yaml workers=2 methods=agentic_cost,random,motpe,motpe_warm seeds=1,2,3 units=14
+2026-07-06T08:46:37Z START agentic_cost/seed_1 attempt=1
+2026-07-06T08:46:37Z START random/seed_1 attempt=1
+2026-07-06T09:30:56Z DONE random/seed_1 rc=0
+2026-07-06T09:30:56Z START motpe_warm/seed_1 attempt=1
+2026-07-06T10:52:33Z DONE motpe_warm/seed_1 rc=0
+2026-07-06T10:52:33Z START motpe/seed_1 attempt=1
+2026-07-06T11:08:33Z DONE agentic_cost/seed_1 rc=0
+2026-07-06T11:08:33Z START agentic_cost/seed_2 attempt=1
+2026-07-06T11:41:29Z DONE motpe/seed_1 rc=0
+2026-07-06T11:41:29Z START random/seed_2 attempt=1
+2026-07-06T12:14:28Z RETRY random/seed_2 reason=incomplete-after-exit0 next_attempt=2 wait_s=60
+2026-07-06T12:14:28Z START motpe/seed_2 attempt=1
+2026-07-06T12:23:08Z DONE agentic_cost/seed_2 rc=0
+2026-07-06T12:23:08Z START random/seed_2 attempt=2
+2026-07-06T12:28:08Z DONE random/seed_2 rc=0
+2026-07-06T12:28:08Z START motpe_warm/seed_2 attempt=1
+2026-07-06T13:07:27Z DONE motpe/seed_2 rc=0
+2026-07-06T13:07:27Z START agentic_cost/seed_3 attempt=1
+2026-07-06T13:33:15Z DONE motpe_warm/seed_2 rc=0
+2026-07-06T13:33:15Z START random/seed_3 attempt=1
+2026-07-06T14:38:38Z DONE agentic_cost/seed_3 rc=0
+2026-07-06T14:38:38Z START motpe/seed_3 attempt=1
+2026-07-06T14:49:42Z DONE random/seed_3 rc=0
+2026-07-06T14:49:42Z START motpe_warm/seed_3 attempt=1
+2026-07-06T15:31:44Z DONE motpe/seed_3 rc=0
+2026-07-06T15:41:08Z DONE motpe_warm/seed_3 rc=0
+2026-07-06T15:41:08Z START finalize attempt=1
+2026-07-06T15:41:18Z DONE finalize rc=0
+2026-07-06T15:41:18Z COMPLETE_OK
