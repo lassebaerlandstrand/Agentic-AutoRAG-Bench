@@ -239,11 +239,11 @@ def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Pat
     # default so the per-panel titles and the legend stay legible after the
     # downscale (mirrors build_cost_figure). Scoped so other figures are unaffected.
     font_overrides = {
-        "axes.titlesize": 15,
-        "axes.labelsize": 14,
-        "xtick.labelsize": 12.5,
-        "ytick.labelsize": 13.5,
-        "legend.fontsize": 13.5,
+        "axes.titlesize": 13,
+        "axes.labelsize": 12,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11.5,
+        "legend.fontsize": 12,
     }
     with plt.rc_context(font_overrides):
         fig, axes = plt.subplots(1, n, figsize=(9.6, 3.1), sharey=True)
