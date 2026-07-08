@@ -70,6 +70,25 @@ TABLE_METHODS = [
 REFERENCE_METHODS = ["kb_greedy"]
 # Methods that get a per-trial line (exclude @k prefixes and the no-search ref).
 FIGURE_METHODS = ["random", "motpe", "motpe_warm", "agentic_nokb_nodiag", "agentic_score"]
+# Methods (left-to-right) shown as bars in the cost/embeddings figure: our full
+# method first, then its @10/@20 checkpoints, then the maximally-ablated agentic
+# baseline, then the statistical baselines. Keeping the @10/@20 checkpoints pairs
+# cost with the sample-efficiency story. ``kb_greedy`` is excluded: it runs no
+# search loop, so it has zero search cost and zero embedding tokens.
+COST_METHODS = [
+    "agentic_score",
+    "agentic_score@10",
+    "agentic_score@20",
+    "agentic_nokb_nodiag",
+    "random",
+    "motpe",
+    "motpe_warm",
+]
+
+# One hue per dataset for the grouped cost/embedding bars, in ``DATASETS`` order.
+# These identify a DATASET (not a method), so they intentionally do not use
+# ``color_for``; the legend and bar position disambiguate. Distinct tab10 hues.
+_DATASET_COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c"]
 
 # Short paper-facing labels (override _figstyle's longer defaults where needed).
 PAPER_LABEL = {
@@ -140,11 +159,7 @@ def build_latex_table(per_dataset: list[tuple[str, str, dict]]) -> str:
     bold: dict[tuple[int, str], set[str]] = {}
     for di, (_dir, _hdr, stats) in enumerate(per_dataset):
         for metric, _lbl in METRICS:
-            rounded = {
-                m: round(ms[0], 3)
-                for m in TABLE_METHODS
-                if (ms := mean_sd_of(stats, m, metric)) is not None
-            }
+            rounded = {m: round(ms[0], 3) for m in TABLE_METHODS if (ms := mean_sd_of(stats, m, metric)) is not None}
             if not rounded:
                 continue
             top = max(rounded.values())
@@ -225,7 +240,7 @@ def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Pat
         axes = [axes]
 
     handles: dict[str, object] = {}
-    for ax, (_dir, header, results) in zip(axes, per_dataset_results):
+    for ax, (_dir, header, results) in zip(axes, per_dataset_results, strict=True):
         for method in FIGURE_METHODS:
             per_seed = _seed_scores(results, method)
             if not per_seed:
@@ -264,6 +279,133 @@ def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Pat
     plt.close(fig)
 
 
+# ---------------------------------------------------------------- cost figure
+
+
+def _minmax(vals: list[float]) -> tuple[float, float, float]:
+    """``(mean, lower, upper)`` where lower/upper are the min-max whisker
+    magnitudes about the mean (``mean - min`` and ``max - mean``)."""
+    mean = float(np.mean(vals))
+    return mean, mean - min(vals), max(vals) - mean
+
+
+def _cost_totals(stats: dict, method: str) -> tuple[float, float, tuple[float, float, float]]:
+    """``(opt_mean, trial_mean, (total_mean, lo, hi))`` for one method.
+
+    The whisker is the min-max of the per-seed *totals* (optimizer + trial),
+    which is the right quantity for a stacked bar's error mark. Absent method →
+    all zeros so the bar renders empty rather than erroring.
+    """
+    if method not in stats:
+        return 0.0, 0.0, (0.0, 0.0, 0.0)
+    s = stats[method]
+    seed_totals = [o + t for o, t in zip(s["optimizer_usd_list"], s["trial_usd_list"], strict=True)]
+    return s["optimizer_usd_mean"], s["trial_usd_mean"], _minmax(seed_totals)
+
+
+def _embed_millions(stats: dict, method: str) -> tuple[float, float, float]:
+    """``(mean, lo, hi)`` embedding tokens in millions, min-max across seeds."""
+    if method not in stats:
+        return 0.0, 0.0, 0.0
+    return _minmax([e / 1e6 for e in stats[method]["embedding_tokens_list"]])
+
+
+def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path) -> None:
+    """Cross-dataset search-cost + embedding-footprint figure (Exp-1).
+
+    Two horizontal-bar panels sharing one y-axis of methods (top to bottom: our
+    full method, its @10/@20 checkpoints, the maximally-ablated agentic baseline,
+    then the statistical baselines). Left panel: total per-seed search cost (USD).
+    Right panel: cache-aware embedding tokens (millions). Within each method the
+    three datasets are color-coded bars, each with a min-max-across-seeds whisker
+    and its value printed at the bar's end. Horizontal bars keep the long method
+    names unrotated and pack the comparison into two dense panels. The
+    optimizer/trial cost split is left to the per-dataset appendix breakdown
+    figures; the bars here are totals.
+    """
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    apply_paper_style()
+    methods = COST_METHODS
+    labels = [label_for(m) for m in methods]
+    nm = len(methods)
+    n = len(per_dataset)
+    # Method 0 sits at the top of the axis; the datasets are stacked as sub-bars
+    # within each method's slot (dataset 0 highest, matching the legend order).
+    centers = np.arange(nm)[::-1].astype(float)
+    thick = 0.24
+    step = 0.27
+    offsets = [((n - 1) / 2 - j) * step for j in range(n)]
+
+    # Full-width ``figure*`` scaled down to ~\textwidth: set fonts larger than the
+    # paper default so they stay legible after the downscale. Scoped to this figure
+    # so ``score_per_trial`` is unaffected.
+    font_overrides = {
+        "axes.titlesize": 15,
+        "axes.labelsize": 14,
+        "xtick.labelsize": 12.5,
+        "ytick.labelsize": 13.5,
+        "legend.fontsize": 13.5,
+    }
+    value_fontsize = 12  # number at each bar's end
+
+    panels = [
+        (0, "Search cost (USD)", lambda stats, m: _cost_totals(stats, m)[2], lambda v: f"${v:.2f}"),
+        (1, "Embedding tokens (M)", lambda stats, m: _embed_millions(stats, m), lambda v: f"{v:.0f}"),
+    ]
+
+    with plt.rc_context(font_overrides):
+        fig, axs = plt.subplots(1, 2, figsize=(11.5, 6.4), sharey=True)
+
+        for ax_i, title, getter, fmt in panels:
+            ax = axs[ax_i]
+            per_ds = [
+                (
+                    np.array([getter(stats, m)[0] for m in methods]),
+                    np.array([getter(stats, m)[1] for m in methods]),
+                    np.array([getter(stats, m)[2] for m in methods]),
+                )
+                for _dir, _header, stats in per_dataset
+            ]
+            xmax = max(float((mean + hi).max()) for mean, _lo, hi in per_ds)
+            pad = 0.012 * xmax
+            for j, (mean, lo, hi) in enumerate(per_ds):
+                color = _DATASET_COLORS[j % len(_DATASET_COLORS)]
+                y = centers + offsets[j]
+                ax.barh(
+                    y,
+                    mean,
+                    height=thick,
+                    color=color,
+                    xerr=[lo, hi],
+                    capsize=2.5,
+                    error_kw={"ecolor": "#333", "lw": 0.9},
+                    zorder=3,
+                )
+                for yi, mv, hv in zip(y, mean, hi, strict=True):
+                    if mv > 0:
+                        ax.annotate(fmt(mv), (mv + hv + pad, yi), va="center", ha="left", fontsize=value_fontsize)
+            ax.set_title(title)
+            ax.set_xlim(0, xmax * 1.20)
+            ax.grid(axis="x", alpha=0.3)
+            ax.set_axisbelow(True)
+
+        axs[0].set_yticks(centers)
+        axs[0].set_yticklabels(labels)
+        axs[0].set_ylim(centers.min() - 0.6, centers.max() + 0.6)
+
+        handles = [
+            Patch(color=_DATASET_COLORS[j % len(_DATASET_COLORS)], label=hdr)
+            for j, (_dir, hdr, _stats) in enumerate(per_dataset)
+        ]
+        handles.append(Line2D([], [], color="#333", lw=0.9, marker="|", markersize=9, label="min–max across seeds"))
+        fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, bbox_to_anchor=(0.5, 0.01))
+        fig.tight_layout(rect=(0, 0.07, 1, 1))
+        fig.savefig(out_path)
+        plt.close(fig)
+
+
 # ---------------------------------------------------------------- entry point
 
 
@@ -275,6 +417,8 @@ def main() -> None:
     dataset_dirs = [(EXP1_ROOT / d, hdr) for d, hdr in DATASETS]
     table_path = OUT_DIR / "table1_answer_quality.tex"
     fig_path = OUT_DIR / "score_per_trial_3panel.pdf"
+    cost_pdf = OUT_DIR / "cost_and_embeddings.pdf"
+    cost_png = OUT_DIR / "cost_and_embeddings.png"
 
     if args.dry_run:
         print("experiment-1 root:", EXP1_ROOT)
@@ -282,6 +426,7 @@ def main() -> None:
             print(f"  dataset {hdr:14s} -> {d}  (exists={d.is_dir()})")
         print("table  ->", table_path)
         print("figure ->", fig_path)
+        print("cost   ->", cost_pdf, "(+ .png)")
         return
 
     missing = [str(d) for d, _ in dataset_dirs if not d.is_dir()]
@@ -302,6 +447,10 @@ def main() -> None:
 
     build_figure(per_dataset_results, fig_path)
     print("wrote", fig_path)
+
+    build_cost_figure(per_dataset_table, cost_pdf)
+    build_cost_figure(per_dataset_table, cost_png)
+    print("wrote", cost_pdf, "and", cost_png)
 
 
 if __name__ == "__main__":
