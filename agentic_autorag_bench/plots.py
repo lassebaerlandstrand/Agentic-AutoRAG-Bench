@@ -1506,8 +1506,8 @@ def _draw_median_attainment_panel(ax, method_seed_points, grid, *, domain: str) 
     ax.set_ylim(0, 100)
     ax.grid(alpha=0.3, which="both")
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain} (median across seeds)")
-    ax.legend(loc="lower right", frameon=False, fontsize=9,
+    ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain}")
+    ax.legend(loc="lower right", frameon=False,
               title="line = median seed, band = min-max across seeds")
 
 
@@ -1673,8 +1673,8 @@ def _draw_hv_convergence_panel(ax, method_seed_points, *, domain: str, cost_ref:
     ax.set_ylabel("Normalized hypervolume")
     ax.grid(alpha=0.3)
     title_domain = f" ({domain})" if domain else ""
-    ax.set_title(f"Hypervolume over trials on UniDoc{title_domain} (mean across seeds)")
-    ax.legend(loc="lower right", frameon=False, fontsize=9, title="line = mean, band = min-max across seeds")
+    ax.set_title(f"Hypervolume over trials on UniDoc{title_domain}")
+    ax.legend(loc="lower right", frameon=False, title="line = mean, band = min-max across seeds")
 
 
 def make_pareto_hv_convergence_figure(output_root: Path, out_path: Path, *, domain: str = "", cost_ref: float) -> None:
@@ -1716,14 +1716,30 @@ def make_pareto_median_hv_combined_figure(
 
     apply_paper_style()
     plt = _import_matplotlib()
-    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(14.4, 4.8))
-    _draw_median_attainment_panel(ax_l, method_seed_points, grid, domain=domain)
-    _draw_hv_convergence_panel(ax_r, method_seed_points, domain=domain, cost_ref=cost_ref)
+    # Full-width figure* downscaled to ~\textwidth: bump fonts modestly above the
+    # paper default so both panels stay legible after the downscale. This figure
+    # saves with bbox_inches="tight" (unlike build_cost_figure), which crops the
+    # margins and magnifies fonts once stretched to \textwidth, so the values here
+    # are smaller than a naive width-scaling would suggest. Scoped to this figure so
+    # the standalone panels that share these helpers are unaffected; the smaller
+    # legend.title_fontsize keeps the long band-legend titles from dominating.
+    font_overrides = {
+        "axes.titlesize": 14,
+        "axes.labelsize": 12.5,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11.5,
+        "legend.fontsize": 11.5,
+        "legend.title_fontsize": 9.5,
+    }
+    with plt.rc_context(font_overrides):
+        fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(14.4, 4.8))
+        _draw_median_attainment_panel(ax_l, method_seed_points, grid, domain=domain)
+        _draw_hv_convergence_panel(ax_r, method_seed_points, domain=domain, cost_ref=cost_ref)
 
-    fig.tight_layout()
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+        fig.tight_layout()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
 
 
 def _read_seed_cost_embed(seed_dir: Path) -> tuple[float, float, float] | None:

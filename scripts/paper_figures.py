@@ -235,48 +235,59 @@ def _seed_scores(results: list, method: str) -> list[np.ndarray]:
 def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Path) -> None:
     apply_paper_style()
     n = len(per_dataset_results)
-    fig, axes = plt.subplots(1, n, figsize=(9.6, 3.1), sharey=True)
-    if n == 1:
-        axes = [axes]
+    # Full-width figure* scaled down to ~\textwidth: bump fonts above the paper
+    # default so the per-panel titles and the legend stay legible after the
+    # downscale (mirrors build_cost_figure). Scoped so other figures are unaffected.
+    font_overrides = {
+        "axes.titlesize": 15,
+        "axes.labelsize": 14,
+        "xtick.labelsize": 12.5,
+        "ytick.labelsize": 13.5,
+        "legend.fontsize": 13.5,
+    }
+    with plt.rc_context(font_overrides):
+        fig, axes = plt.subplots(1, n, figsize=(9.6, 3.1), sharey=True)
+        if n == 1:
+            axes = [axes]
 
-    handles: dict[str, object] = {}
-    for ax, (_dir, header, results) in zip(axes, per_dataset_results, strict=True):
-        for method in FIGURE_METHODS:
-            per_seed = _seed_scores(results, method)
-            if not per_seed:
-                continue
-            color = color_for(method)
-            if len(per_seed) >= 2:
-                padded = _pad_nan(per_seed)
-                with np.errstate(invalid="ignore"):
-                    mean = np.nanmean(padded, axis=0)
-                x = np.arange(1, padded.shape[1] + 1)
-                (line,) = ax.plot(x, mean, "o-", color=color, markersize=1.4, linewidth=1.4)
-            else:
-                scores = per_seed[0]
-                (line,) = ax.plot(
-                    np.arange(1, scores.size + 1), scores, "o-", color=color, markersize=1.4, linewidth=1.4
-                )
-            handles.setdefault(method, line)
-        ax.set_title(header)
-        ax.set_xlabel("Trial")
-        ax.set_ylim(0, 1)
-        ax.grid(alpha=0.3)
-        ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-    axes[0].set_ylabel("Validation-exam accuracy")
+        handles: dict[str, object] = {}
+        for ax, (_dir, header, results) in zip(axes, per_dataset_results, strict=True):
+            for method in FIGURE_METHODS:
+                per_seed = _seed_scores(results, method)
+                if not per_seed:
+                    continue
+                color = color_for(method)
+                if len(per_seed) >= 2:
+                    padded = _pad_nan(per_seed)
+                    with np.errstate(invalid="ignore"):
+                        mean = np.nanmean(padded, axis=0)
+                    x = np.arange(1, padded.shape[1] + 1)
+                    (line,) = ax.plot(x, mean, "o-", color=color, markersize=1.4, linewidth=1.4)
+                else:
+                    scores = per_seed[0]
+                    (line,) = ax.plot(
+                        np.arange(1, scores.size + 1), scores, "o-", color=color, markersize=1.4, linewidth=1.4
+                    )
+                handles.setdefault(method, line)
+            ax.set_title(header)
+            ax.set_xlabel("Trial")
+            ax.set_ylim(0, 1)
+            ax.grid(alpha=0.3)
+            ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+        axes[0].set_ylabel("Validation-exam accuracy")
 
-    ordered = [m for m in FIGURE_METHODS if m in handles]
-    fig.legend(
-        [handles[m] for m in ordered],
-        [label_for(m) for m in ordered],
-        loc="lower center",
-        ncol=len(ordered),
-        frameon=False,
-        bbox_to_anchor=(0.5, -0.02),
-    )
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
-    fig.savefig(out_path)
-    plt.close(fig)
+        ordered = [m for m in FIGURE_METHODS if m in handles]
+        fig.legend(
+            [handles[m] for m in ordered],
+            [label_for(m) for m in ordered],
+            loc="lower center",
+            ncol=len(ordered),
+            frameon=False,
+            bbox_to_anchor=(0.5, -0.02),
+        )
+        fig.tight_layout(rect=(0, 0.08, 1, 1))
+        fig.savefig(out_path)
+        plt.close(fig)
 
 
 # ---------------------------------------------------------------- cost figure
@@ -310,18 +321,25 @@ def _embed_millions(stats: dict, method: str) -> tuple[float, float, float]:
     return _minmax([e / 1e6 for e in stats[method]["embedding_tokens_list"]])
 
 
-def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path) -> None:
+_OPT_GRAY = "#9e9e9e"  # neutral hue for the optimizer-reasoning segment (gray split style)
+
+
+def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, *, split_style: str = "gray") -> None:
     """Cross-dataset search-cost + embedding-footprint figure (Exp-1).
 
     Two horizontal-bar panels sharing one y-axis of methods (top to bottom: our
     full method, its @10/@20 checkpoints, the maximally-ablated agentic baseline,
-    then the statistical baselines). Left panel: total per-seed search cost (USD).
-    Right panel: cache-aware embedding tokens (millions). Within each method the
-    three datasets are color-coded bars, each with a min-max-across-seeds whisker
-    and its value printed at the bar's end. Horizontal bars keep the long method
-    names unrotated and pack the comparison into two dense panels. The
-    optimizer/trial cost split is left to the per-dataset appendix breakdown
-    figures; the bars here are totals.
+    then the statistical baselines). Left panel: per-seed search cost (USD), each
+    bar split into optimizer reasoning (proposer + diagnoser calls) and trial
+    evaluation (RAG generation + judge); the statistical baselines have no
+    optimizer-reasoning cost. Right panel: cache-aware embedding tokens (millions),
+    a single solid bar. Within each method the three datasets are color-coded bars,
+    each with a min-max-across-seeds whisker on the total and its value printed at
+    the bar's end. Horizontal bars keep the long method names unrotated.
+
+    ``split_style`` picks how the optimizer segment is drawn: ``"gray"`` paints it
+    a single neutral gray (dataset hue stays on the trial segment); ``"hatch"``
+    keeps the dataset hue and marks the optimizer segment with a hatch texture.
     """
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
@@ -350,46 +368,79 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path) 
     }
     value_fontsize = 12  # number at each bar's end
 
-    panels = [
-        (0, "Search cost (USD)", lambda stats, m: _cost_totals(stats, m)[2], lambda v: f"${v:.2f}"),
-        (1, "Embedding tokens (M)", lambda stats, m: _embed_millions(stats, m), lambda v: f"{v:.0f}"),
-    ]
+    def _annotate_ends(ax, y, ends, hi, fmt):
+        for yi, ev, hv in zip(y, ends, hi, strict=True):
+            if ev > 0:
+                ax.annotate(fmt(ev), (ev + hv + pad, yi), va="center", ha="left", fontsize=value_fontsize)
 
     with plt.rc_context(font_overrides):
         fig, axs = plt.subplots(1, 2, figsize=(11.5, 6.4), sharey=True)
 
-        for ax_i, title, getter, fmt in panels:
-            ax = axs[ax_i]
-            per_ds = [
+        # ---- Left panel: search cost, split optimizer reasoning vs trial eval ----
+        ax = axs[0]
+        cost = []
+        for _dir, _header, stats in per_dataset:
+            rows = [_cost_totals(stats, m) for m in methods]
+            cost.append(
                 (
-                    np.array([getter(stats, m)[0] for m in methods]),
-                    np.array([getter(stats, m)[1] for m in methods]),
-                    np.array([getter(stats, m)[2] for m in methods]),
+                    np.array([r[0] for r in rows]),  # opt_mean
+                    np.array([r[1] for r in rows]),  # trial_mean
+                    np.array([r[2][0] for r in rows]),  # total_mean (= opt + trial)
+                    np.array([r[2][1] for r in rows]),  # lo
+                    np.array([r[2][2] for r in rows]),  # hi
                 )
-                for _dir, _header, stats in per_dataset
-            ]
-            xmax = max(float((mean + hi).max()) for mean, _lo, hi in per_ds)
-            pad = 0.012 * xmax
-            for j, (mean, lo, hi) in enumerate(per_ds):
-                color = _DATASET_COLORS[j % len(_DATASET_COLORS)]
-                y = centers + offsets[j]
-                ax.barh(
-                    y,
-                    mean,
-                    height=thick,
-                    color=color,
-                    xerr=[lo, hi],
-                    capsize=2.5,
-                    error_kw={"ecolor": "#333", "lw": 0.9},
-                    zorder=3,
+            )
+        xmax = max(float((total + hi).max()) for _o, _t, total, _lo, hi in cost)
+        pad = 0.012 * xmax
+        for j, (opt, trial, total, lo, hi) in enumerate(cost):
+            color = _DATASET_COLORS[j % len(_DATASET_COLORS)]
+            y = centers + offsets[j]
+            # Trial-evaluation segment in the dataset hue, stacked on the optimizer foot.
+            ax.barh(y, trial, height=thick, left=opt, color=color, zorder=3)
+            # Optimizer-reasoning foot: neutral gray, or the dataset hue with a hatch.
+            if split_style == "hatch":
+                ax.barh(y, opt, height=thick, color=color, hatch="////", edgecolor="white", linewidth=0.0, zorder=3)
+            else:
+                ax.barh(y, opt, height=thick, color=_OPT_GRAY, zorder=3)
+            ax.errorbar(total, y, xerr=[lo, hi], fmt="none", ecolor="#333", elinewidth=0.9, capsize=2.5, zorder=4)
+            _annotate_ends(ax, y, total, hi, lambda v: f"${v:.2f}")
+        ax.set_title("Search cost (USD)")
+        ax.set_xlim(0, xmax * 1.20)
+        ax.grid(axis="x", alpha=0.3)
+        ax.set_axisbelow(True)
+
+        # ---- Right panel: embedding tokens, single solid bar per dataset ----
+        ax = axs[1]
+        emb = []
+        for _dir, _header, stats in per_dataset:
+            rows = [_embed_millions(stats, m) for m in methods]
+            emb.append(
+                (
+                    np.array([r[0] for r in rows]),
+                    np.array([r[1] for r in rows]),
+                    np.array([r[2] for r in rows]),
                 )
-                for yi, mv, hv in zip(y, mean, hi, strict=True):
-                    if mv > 0:
-                        ax.annotate(fmt(mv), (mv + hv + pad, yi), va="center", ha="left", fontsize=value_fontsize)
-            ax.set_title(title)
-            ax.set_xlim(0, xmax * 1.20)
-            ax.grid(axis="x", alpha=0.3)
-            ax.set_axisbelow(True)
+            )
+        xmax = max(float((mean + hi).max()) for mean, _lo, hi in emb)
+        pad = 0.012 * xmax
+        for j, (mean, lo, hi) in enumerate(emb):
+            color = _DATASET_COLORS[j % len(_DATASET_COLORS)]
+            y = centers + offsets[j]
+            ax.barh(
+                y,
+                mean,
+                height=thick,
+                color=color,
+                xerr=[lo, hi],
+                capsize=2.5,
+                error_kw={"ecolor": "#333", "lw": 0.9},
+                zorder=3,
+            )
+            _annotate_ends(ax, y, mean, hi, lambda v: f"{v:.0f}")
+        ax.set_title("Embedding tokens (M)")
+        ax.set_xlim(0, xmax * 1.20)
+        ax.grid(axis="x", alpha=0.3)
+        ax.set_axisbelow(True)
 
         axs[0].set_yticks(centers)
         axs[0].set_yticklabels(labels)
@@ -399,7 +450,12 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path) 
             Patch(color=_DATASET_COLORS[j % len(_DATASET_COLORS)], label=hdr)
             for j, (_dir, hdr, _stats) in enumerate(per_dataset)
         ]
-        handles.append(Line2D([], [], color="#333", lw=0.9, marker="|", markersize=9, label="min–max across seeds"))
+        if split_style == "hatch":
+            opt_handle = Patch(facecolor=_OPT_GRAY, edgecolor="white", hatch="////", label="Optimizer reasoning")
+        else:
+            opt_handle = Patch(color=_OPT_GRAY, label="Optimizer reasoning")
+        handles.append(opt_handle)
+        handles.append(Line2D([], [], color="#333", lw=0.9, marker="|", markersize=9, label="Min–max across seeds"))
         fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, bbox_to_anchor=(0.5, 0.01))
         fig.tight_layout(rect=(0, 0.07, 1, 1))
         fig.savefig(out_path)
@@ -417,8 +473,12 @@ def main() -> None:
     dataset_dirs = [(EXP1_ROOT / d, hdr) for d, hdr in DATASETS]
     table_path = OUT_DIR / "table1_answer_quality.tex"
     fig_path = OUT_DIR / "score_per_trial_3panel.pdf"
+    # Canonical cost figure uses the hatched optimizer/trial split; the gray
+    # split is kept as an alternate for comparison.
     cost_pdf = OUT_DIR / "cost_and_embeddings.pdf"
     cost_png = OUT_DIR / "cost_and_embeddings.png"
+    cost_gray_pdf = OUT_DIR / "cost_and_embeddings_gray.pdf"
+    cost_gray_png = OUT_DIR / "cost_and_embeddings_gray.png"
 
     if args.dry_run:
         print("experiment-1 root:", EXP1_ROOT)
@@ -426,7 +486,8 @@ def main() -> None:
             print(f"  dataset {hdr:14s} -> {d}  (exists={d.is_dir()})")
         print("table  ->", table_path)
         print("figure ->", fig_path)
-        print("cost   ->", cost_pdf, "(+ .png)")
+        print("cost   ->", cost_pdf, "(+ .png)  [hatched, canonical]")
+        print("cost   ->", cost_gray_pdf, "(+ .png)  [gray alt]")
         return
 
     missing = [str(d) for d, _ in dataset_dirs if not d.is_dir()]
@@ -448,9 +509,11 @@ def main() -> None:
     build_figure(per_dataset_results, fig_path)
     print("wrote", fig_path)
 
-    build_cost_figure(per_dataset_table, cost_pdf)
-    build_cost_figure(per_dataset_table, cost_png)
-    print("wrote", cost_pdf, "and", cost_png)
+    build_cost_figure(per_dataset_table, cost_pdf, split_style="hatch")
+    build_cost_figure(per_dataset_table, cost_png, split_style="hatch")
+    build_cost_figure(per_dataset_table, cost_gray_pdf, split_style="gray")
+    build_cost_figure(per_dataset_table, cost_gray_png, split_style="gray")
+    print("wrote", cost_png, "and", cost_gray_png, "(+ pdfs)")
 
 
 if __name__ == "__main__":
