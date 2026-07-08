@@ -1495,10 +1495,14 @@ def make_pareto_attainment_figure(output_root: Path, out_path: Path, *, domain: 
     plt.close(fig)
 
 
-def _draw_median_attainment_panel(ax, method_seed_points, grid, *, domain: str) -> None:
+def _draw_median_attainment_panel(
+    ax, method_seed_points, grid, *, domain: str,
+    legend_title: str | None = "line = median seed, band = min-max across seeds",
+) -> None:
     """Median-seed cost->accuracy attainment (line + min-max band) onto ``ax``.
     Shared by the standalone median figure and the combined landscape figure so
-    the two never drift."""
+    the two never drift. ``legend_title`` can be set to ``None`` to drop the
+    line/band explainer when the figure caption already carries it."""
     _plot_attainment(ax, method_seed_points, grid, central="median")
     ax.set_xscale("log")
     ax.set_xlabel("Cost per query (USD)")
@@ -1507,8 +1511,7 @@ def _draw_median_attainment_panel(ax, method_seed_points, grid, *, domain: str) 
     ax.grid(alpha=0.3, which="both")
     title_domain = f" ({domain})" if domain else ""
     ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain}")
-    ax.legend(loc="lower right", frameon=False,
-              title="line = median seed, band = min-max across seeds")
+    ax.legend(loc="lower right", frameon=False, title=legend_title)
 
 
 def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
@@ -1527,12 +1530,24 @@ def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, d
 
     apply_paper_style()
     plt = _import_matplotlib()
-    fig, ax = plt.subplots(figsize=(7.2, 4.6))
-    _draw_median_attainment_panel(ax, method_seed_points, grid, domain=domain)
+    # Keep the spacious 7.2in canvas (uncramped) but bump fonts modestly so they
+    # stay legible after the figure is downscaled into a single \columnwidth slot.
+    # The legend title is dropped (legend_title=None) since the caption carries it.
+    font_overrides = {
+        "axes.titlesize": 15,
+        "axes.labelsize": 14,
+        "xtick.labelsize": 12.5,
+        "ytick.labelsize": 12.5,
+        "legend.fontsize": 13,
+    }
+    with plt.rc_context(font_overrides):
+        fig, ax = plt.subplots(figsize=(7.2, 4.6))
+        _draw_median_attainment_panel(ax, method_seed_points, grid, domain=domain,
+                                      legend_title=None)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
 
 
 def _pooled_frontier(seed_points: list[list[_TrialPoint]]) -> list[_TrialPoint]:
