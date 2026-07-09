@@ -1,0 +1,30 @@
+# experiment-1 output tree — commit results + the run record; drop the cache.
+# The root .gitignore ignores `logs/`, `*.log`, `*.out` globally; the negations
+# below re-include the operational logs. Patterns are relative to experiment-1/.
+# NOTE: .gitignore has no inline comments — keep every comment on its own line.
+
+# 31 GB regeneratable cache (embeddings.npy, chunks.json, parsed corpus).
+# This is ~all of the tree's weight; everything else is small result artifacts.
+.shared_cache/
+
+# Transient scheduler markers (no value post-run).
+.scheduler_*
+
+# ── Operational logs: re-include what the root .gitignore would drop ──
+# Let git descend into logs/ (overrides the root `logs/` rule):
+!logs/
+# Re-ignore its contents by default, then keep the specific files below:
+logs/*
+# scheduler.log + the 79 per-unit stdout logs (~21 MB):
+!logs/*.log
+# final status snapshot:
+!logs/STATUS.json
+# logs/nohup.out and logs/scheduler.pid stay ignored by the `logs/*` line above.
+
+# Per-seed run.log under the method dirs stays ignored by the root `*.log`
+# rule (~150 MB verbose framework logs) — intentionally nothing here.
+
+# Optuna study internals — binary, resume-only, redundant with the readable
+# history.jsonl / search_result.json. The run is done; we never resume a study.
+optuna.db
+*.pkl

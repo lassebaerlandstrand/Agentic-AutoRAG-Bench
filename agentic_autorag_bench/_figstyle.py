@@ -16,23 +16,38 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.container import BarContainer
 
-# One stable color per BASE method (matplotlib tab10); ``@k`` checkpoint
-# variants inherit their base method's color via ``color_for``.
+# Standard matplotlib tab10 colours (dropping brown, which looks muddy, and
+# olive, which reads too close to green). Assigned so the set that co-occurs in
+# nearly every chart -- {agentic, MO-TPE cold, MO-TPE warm, random} -- lands on
+# four well-separated, high-contrast hues: blue, green, purple, orange. Agentic
+# (Ours) is the tab blue (the "darker blue"), shared by score/cost so it reads
+# the same in every experiment. ``@k`` checkpoint variants inherit their base
+# method's colour via ``color_for``.
 METHOD_COLOR: dict[str, str] = {
-    "agentic_score": "#1f77b4",  # blue
-    "agentic_cost": "#17becf",  # cyan
+    "agentic_score": "#1f77b4",  # blue — "Agentic (Ours)"
+    "agentic_cost": "#1f77b4",  # same blue — consistent "Ours" across experiments
+    "agentic_nokb": "#17becf",  # cyan (agentic ablation: KB off)
+    "agentic_nodiag": "#d62728",  # red (agentic ablation: diagnosis off)
+    "agentic_nokb_nodiag": "#e377c2",  # pink (maximally ablated agentic baseline)
     "random": "#ff7f0e",  # orange
-    "bayesian": "#2ca02c",  # green
+    "motpe": "#2ca02c",  # green (MO-TPE cold)
+    "motpe_warm": "#9467bd",  # purple (MO-TPE warm)
+    "qlognehvi": "#7f7f7f",  # gray (GP-BO reference; cite-only)
 }
-_FALLBACK_COLOR = "#888888"
+_FALLBACK_COLOR = "#888888"  # kb_greedy and any unlisted method (neutral gray)
 
-# Paper-facing display names (display-only). ``agentic_cost`` is mapped for
-# when the cost-aware run lands; it does not appear in the current figure set.
+# Paper-facing display names (display-only). The internal method keys, config
+# YAML, and on-disk ``results_*/<method>/`` directories are unchanged.
 _DISPLAY_LABEL: dict[str, str] = {
     "agentic_score": "Agentic (Ours)",
-    "agentic_cost": "Agentic-Pareto (Ours)",
+    "agentic_cost": "Agentic (Ours)",
+    "agentic_nokb": "Agentic (no KB)",
+    "agentic_nodiag": "Agentic (no diagnosis)",
+    "agentic_nokb_nodiag": "Agentic (no KB, no diag)",
     "random": "Random",
-    "bayesian": "Bayesian (TPE)",
+    "motpe": "MO-TPE",
+    "motpe_warm": "MO-TPE (transfer warm-start)",
+    "qlognehvi": "GP-BO (qLogNEHVI)",
 }
 
 
@@ -52,12 +67,13 @@ def display_label(method: str) -> str:
     """Paper-facing label for a method name.
 
     ``agentic_score`` → "Agentic (Ours)"; ``agentic_score@10`` → "Agentic@10";
-    ``bayesian`` → "Bayesian (TPE)"; unknown names fall back to a hyphenated
+    ``motpe`` → "MO-TPE"; unknown names fall back to a hyphenated
     form so nothing renders as raw snake_case.
     """
     if "@" in method:
         base, k = method.split("@", 1)
-        if base_method(base).startswith("agentic"):
+        b = base_method(base)
+        if b.startswith("agentic"):
             return f"Agentic@{k}"
         return f"{display_label(base)}@{k}"
     if method in _DISPLAY_LABEL:

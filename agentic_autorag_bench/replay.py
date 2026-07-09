@@ -204,6 +204,7 @@ async def replay_holdout(
                 judge_model=bench.hold_out_judge_model,
                 limit=bench.hold_out_limit,
                 concurrency=bench.hold_out_concurrency,
+                exclude_question_types=bench.hold_out_exclude_question_types,
             )
 
     # Cross-method union exclusion now sees the new replay rows; rewrites

@@ -1,0 +1,30 @@
+# One-off validation run: agentic_score on MuSiQue, single seed, 40 trials.
+# Same project config (search space + minimax examiner + kimi optimizer +
+# DeepSeek judge) as musique_paper.yaml, but a single method/seed and an
+# isolated output_root so it doesn't collide with the eventual paper matrix.
+# The exam.json still caches under the project YAML's meta.output_dir
+# (./results_paper_musique/.shared_cache), so the real paper run reuses it.
+
+project_config: ./musique_paper_project.yaml
+
+methods:
+  - agentic_score
+
+seeds: [1]
+
+budget:
+  max_trials: 40
+
+benchmark:
+  name: musique
+  split: validation
+  sample_size: 2417
+  prep_seed: 42
+  output_dir: ./benchmark_data/musique_val_2417
+
+hold_out:
+  limit: 300
+  judge_model: azure_ai/DeepSeek-V3.2
+  concurrency: 10
+
+output_root: ./results_run_musique_score

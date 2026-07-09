@@ -1,0 +1,39 @@
+# experiment-2 (UniDoc Pareto) output tree — commit the result artifacts + the
+# run record; drop the cache and binary resume state.
+# The root .gitignore ignores `logs/`, `*.log`, `*.out` globally; the negations
+# below re-include the operational logs. Patterns are relative to experiment-2/.
+# NOTE: .gitignore has no inline comments — keep every comment on its own line.
+
+# ~1.6 GB regeneratable cache (per-embedder corpus embeddings, parsed corpus,
+# probe indexes). This is ~all of the tree's weight; everything else is small
+# result artifacts. Keep the frozen exam.json (the run's optimization target and
+# score) in git history; drop the rest of the cache.
+**/.shared_cache/*
+!**/.shared_cache/exam.json
+
+# ── Operational logs: re-include what the root .gitignore would drop ──
+# Let git descend into logs/ (overrides the root `logs/` rule):
+!logs/
+# Re-ignore its contents by default, then keep the specific files below:
+logs/*
+# scheduler.log + the per-unit stdout logs (setup/finalize/<method>__seed_N):
+!logs/*.log
+# final status snapshot:
+!logs/STATUS.json
+# logs/nohup.out stays ignored by the `logs/*` line above (also root `*.out`).
+
+# Per-seed run.log under the method dirs stays ignored by the root `*.log`
+# rule (~3 MB verbose framework logs) — the `!logs/*.log` negation above only
+# re-includes logs inside logs/, not these, so intentionally nothing here.
+
+# Optuna study internals (motpe / motpe_warm) + RNG/sampler pickles (random /
+# motpe) — binary, resume-only, redundant with the readable history.jsonl /
+# search_result.json. The run is done; we never resume a study from git.
+optuna.db
+*.pkl
+
+# Sidelined variant: the glm-free-exam run's results folder (its self-exam was
+# generated with bedrock/zai.glm-4.7 excluded from the pool). The canonical run
+# is `unidoc/`; this variant is kept locally for reference only and does not ship
+# — no config or logs, just the results tree, ignored wholesale.
+unidoc_glmfree_exam/

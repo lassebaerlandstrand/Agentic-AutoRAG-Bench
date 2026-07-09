@@ -1,0 +1,3202 @@
+[
+  {
+    "id": "5a7145d55542994082a3e73c",
+    "question": "Which person went into space at a later date, Sigmund Jähn or Christer Fuglesang?",
+    "canonical_answer": "Christer Fuglesang",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "sigmund_j_hn",
+      "christer_fuglesang"
+    ],
+    "source_spans": [
+      "Sigmund Werner Paul Jähn (born 13 February 1937) is a German cosmonaut and pilot, who in 1978 became the first East German (and German native) to fly in space as part of the Soviet Union's Interkosmos programme.",
+      "He was first launched aboard the STS-116 Space Shuttle mission on December 10, 2006, at 01:47 GMT, making him the first Swedish citizen in space."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        227
+      ],
+      [
+        131,
+        276
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sigmund_j_hn",
+      "christer_fuglesang"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7147fd5542994082a3e758",
+    "question": "When was the king that started coin production in Copenhagen born?",
+    "canonical_answer": "2 February 1455",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "royal_mint_denmark",
+      "john_king_of_denmark"
+    ],
+    "source_spans": [
+      "The first king to start a production of coins in Copenhagen was King Hans.",
+      "John (Danish and Norwegian: \"Hans\" ; Swedish: \"Johan\" ; né \"Johannes\") (2 February 1455 – 20 February 1513) was a Scandinavian monarch under the Kalmar Union."
+    ],
+    "source_span_offsets": [
+      [
+        158,
+        232
+      ],
+      [
+        25,
+        183
+      ]
+    ],
+    "supporting_doc_ids": [
+      "royal_mint_denmark",
+      "john_king_of_denmark"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a722c2255429971e9dc932c",
+    "question": "What type of development, currently existing in Pasay, is currently being considered for malls such as one in M.A. Roxas Avenue in Clark Freeport, Angeles City in Pampanga Philippines?",
+    "canonical_answer": "SM Lifestyle Cities",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "sm_lifestyle_city",
+      "sm_city_clark"
+    ],
+    "source_spans": [
+      "SM Prime plans to develop more \"lifestyle cities\" similar to the 60-hectare Mall of Asia Complex in Pasay City which will optimize land where premiere malls currently stand.",
+      "SM City Clark is a shopping mall owned and operated by SM Prime Holdings."
+    ],
+    "source_span_offsets": [
+      [
+        284,
+        457
+      ],
+      [
+        17,
+        90
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sm_lifestyle_city",
+      "sm_city_clark"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a728f3c5542992359bc30f4",
+    "question": "Which football club appeared in the 2015 FA Community Shield Cup, as well as, the 2014–15 Premier League championship?",
+    "canonical_answer": "Chelsea",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "2015_fa_community_shield",
+      "2014_15_premier_league"
+    ],
+    "source_spans": [
+      "The match was contested by Arsenal, the 2014–15 FA Cup winners, and Chelsea, champions of the 2014–15 Premier League.",
+      "The 2014–15 Premier League (also known as the Barclays Premier League for sponsorship reasons) was the 23rd season of the Premier League, the top English professional league for association football clubs, since its establishment in 1992."
+    ],
+    "source_span_offsets": [
+      [
+        296,
+        413
+      ],
+      [
+        26,
+        264
+      ]
+    ],
+    "supporting_doc_ids": [
+      "2015_fa_community_shield",
+      "2014_15_premier_league"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a728f505542992359bc30f5",
+    "question": "Gail Matthius co-anchored the Weekend Update segment of \"Saturday Night Live\" with the actor who played the villain Nicholas Andre in what movie?",
+    "canonical_answer": "Dumb and Dumber",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "gail_matthius",
+      "charles_rocket"
+    ],
+    "source_spans": [
+      "Gail Matthius co-anchored the Weekend Update segment with Charles Rocket in 1981.",
+      "He was best known for his tenure as a cast member on \"Saturday Night Live\", for his role as the villain Nicholas Andre in the film \"Dumb and Dumber\", and for his appearance as Dave Dennison, Max and Dani Dennison's father in Disney's \"Hocus Pocus\"."
+    ],
+    "source_span_offsets": [
+      [
+        268,
+        335
+      ],
+      [
+        203,
+        451
+      ]
+    ],
+    "supporting_doc_ids": [
+      "gail_matthius",
+      "charles_rocket"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7312675542994cef4bc43d",
+    "question": "Which one of Ricardo Rodríguez Saá's relatives would become governor from 1983 to 2001?",
+    "canonical_answer": "Adolfo Rodríguez Saá",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "ricardo_rodr_guez_sa",
+      "adolfo_rodr_guez_sa"
+    ],
+    "source_spans": [
+      "His brother, Adolfo, and another great-nephew, Alberto, have also served as Governors of the San Luis Province.",
+      "Born in a family that was highly influential in the history of the San Luis Province, he became governor in 1983, after the end of the National Reorganization Process military dictatorship. He remained governor up to 2001, being re-elected in successive elections."
+    ],
+    "source_span_offsets": [
+      [
+        194,
+        305
+      ],
+      [
+        103,
+        367
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ricardo_rodr_guez_sa",
+      "adolfo_rodr_guez_sa"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7323ad5542994cef4bc476",
+    "question": "Which musician is older, Chantal Claret or Max Green?",
+    "canonical_answer": "Chantal Claret",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "chantal_claret",
+      "max_green_musician"
+    ],
+    "source_spans": [
+      "Chantal Claret Euringer (born February 21, 1982), known as Chantal Claret, is an American singer/songwriter.",
+      "Maxwell Scott Green (born December 15, 1984), better known as Max Green, is an American musician who is the former bassist/backing vocalist and one of the founders of the band Escape the Fate, and is the former rhythm guitarist and vocalist for the band The Natural Born Killers."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        126
+      ],
+      [
+        24,
+        303
+      ]
+    ],
+    "supporting_doc_ids": [
+      "chantal_claret",
+      "max_green_musician"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a73cbe4554299623ed4ac5f",
+    "question": "What series did Tom Mandrake collaborate on that was based on a fictional superhero?",
+    "canonical_answer": "Martian Manhunter",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "tom_mandrake",
+      "martian_manhunter"
+    ],
+    "source_spans": [
+      "Tom Mandrake (born May 26, 1956) is an American comics artist, perhaps best known for his collaborations with writer John Ostrander on several series, including \"Grimjack\" (from First Comics) and \"Firestorm\", \"The Spectre\", and \"Martian Manhunter\" from DC Comics.",
+      "The Martian Manhunter (J'onn J'onzz) is a fictional superhero appearing in American comic books published by DC Comics."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        279
+      ],
+      [
+        21,
+        140
+      ]
+    ],
+    "supporting_doc_ids": [
+      "tom_mandrake",
+      "martian_manhunter"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7414d855429929fddd83db",
+    "question": "What English professional football club, won the 1994 European Cup? Arsenal",
+    "canonical_answer": "Arsenal",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "arsenal_f_c_in_european_football",
+      "1994_european_cup_winners_cup_final"
+    ],
+    "source_spans": [
+      "Arsenal has won two European honours: the Inter-Cities Fairs Cup in 1970 and the Cup Winners' Cup in 1994 – the latter title recognised by the European confederation.",
+      "The final was held at the Parken Stadium in Copenhagen, and Arsenal won 1–0 with the goal coming from Alan Smith."
+    ],
+    "source_span_offsets": [
+      [
+        390,
+        556
+      ],
+      [
+        283,
+        396
+      ]
+    ],
+    "supporting_doc_ids": [
+      "arsenal_f_c_in_european_football",
+      "1994_european_cup_winners_cup_final"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7471f655429979e2882955",
+    "question": "Which American main title designer designed sequences for the founder of the Sundance Film Festival?",
+    "canonical_answer": "Wayne Fitzgerald",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "wayne_fitzgerald",
+      "robert_redford"
+    ],
+    "source_spans": [
+      "Wayne Fitzgerald (born March 19, 1930) is an American main title designer.",
+      "He is the founder of the Sundance Film Festival."
+    ],
+    "source_span_offsets": [
+      [
+        20,
+        94
+      ],
+      [
+        161,
+        209
+      ]
+    ],
+    "supporting_doc_ids": [
+      "wayne_fitzgerald",
+      "robert_redford"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a74bc1555429929fddd84dd",
+    "question": "Which movie was released first, Fantastic Mr. Fox or Khan Kluay?",
+    "canonical_answer": "Khan Kluay",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "fantastic_mr_fox_film",
+      "khan_kluay"
+    ],
+    "source_spans": [
+      "Fantastic Mr. Fox is a 2009 American stop-motion animated comedy film based on Roald Dahl's children's novel of the same name.",
+      "Khan Kluay (Thai: ก้านกล้วย) is a 2006 Thai 3D computer-animated Action adventure comedy family feature film set during Ayutthaya-era Siam about a Thai elephant who wanders away from his mother and eventually becomes the war elephant for King Naresuan."
+    ],
+    "source_span_offsets": [
+      [
+        28,
+        154
+      ],
+      [
+        14,
+        266
+      ]
+    ],
+    "supporting_doc_ids": [
+      "fantastic_mr_fox_film",
+      "khan_kluay"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a74be7a55429929fddd84e4",
+    "question": "What is served shaken with ice and should not be mistaken with the name Margarita?",
+    "canonical_answer": "A margarita",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "margarida",
+      "margarita"
+    ],
+    "source_spans": [
+      "It should not be mistaken for the Mexican alcoholic drink Margarita or the Italian Margherita pizza.",
+      "The drink is served shaken with ice (on the rocks), blended with ice (frozen margarita), or without ice (straight up)."
+    ],
+    "source_span_offsets": [
+      [
+        145,
+        245
+      ],
+      [
+        156,
+        274
+      ]
+    ],
+    "supporting_doc_ids": [
+      "margarida",
+      "margarita"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a74ee175542996c70cfae41",
+    "question": "Which Indian actor is best known for his role in the film Tadakha following his debut in the 2009 film Josh?",
+    "canonical_answer": "Naga Chaitanya",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "tadakha",
+      "naga_chaitanya"
+    ],
+    "source_spans": [
+      "Tamannaah is seen opposite Naga Chaitanya for the second time after \"100% Love\".",
+      "He debuted in the 2009 film \"Josh\", directed by newcomer Vasu Varma and produced by Dil Raju."
+    ],
+    "source_span_offsets": [
+      [
+        389,
+        469
+      ],
+      [
+        118,
+        211
+      ]
+    ],
+    "supporting_doc_ids": [
+      "tadakha",
+      "naga_chaitanya"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7509175542993748c897a3",
+    "question": "What group of Elektra Records recording artists are known to be an indie pop band?",
+    "canonical_answer": "Saint Motel",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "saintmotelevision",
+      "saint_motel"
+    ],
+    "source_spans": [
+      "Saintmotelevision (stylized as saintmotelevision) is the second studio album by American indie pop band Saint Motel. It was released on October 21, 2016, by Elektra Records.",
+      "Saint Motel is an American indie pop band from Los Angeles, whose music has been described as everything from \"dream pop\" to \"indie prog\"."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        194
+      ],
+      [
+        15,
+        153
+      ]
+    ],
+    "supporting_doc_ids": [
+      "saintmotelevision",
+      "saint_motel"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7625c7554299109176e668",
+    "question": "What podcast was the cheif executive officer of Nerdist Industries a guest on?",
+    "canonical_answer": "Comedy Film Nerds",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "comedy_film_nerds",
+      "chris_hardwick"
+    ],
+    "source_spans": [
+      "Guests have included actor/comedian/author Kevin Pollak, SNL alum Janeane Garofalo, comedian Chris Hardwick, WTF host Marc Maron and best-selling author Stefanie Wilder-Taylor.",
+      "He is the chief executive officer of Nerdist Industries, the digital division of Legendary Entertainment."
+    ],
+    "source_span_offsets": [
+      [
+        432,
+        608
+      ],
+      [
+        183,
+        288
+      ]
+    ],
+    "supporting_doc_ids": [
+      "comedy_film_nerds",
+      "chris_hardwick"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7651825542992d0ec060a3",
+    "question": "Which university has more schools, Ateneo de Davao University or University of Rochester?",
+    "canonical_answer": "Ateneo de Davao University",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "ateneo_de_davao_university",
+      "university_of_rochester"
+    ],
+    "source_spans": [
+      "The university has five undergraduate schools, namely the School of Arts and Sciences, School of Business and Governance, School of Engineering and Architecture, School of Education and the School of Nursing.",
+      "The university has six schools and various interdisciplinary programs."
+    ],
+    "source_span_offsets": [
+      [
+        312,
+        520
+      ],
+      [
+        290,
+        360
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ateneo_de_davao_university",
+      "university_of_rochester"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a76d15e55429966f1a36bfa",
+    "question": "What actress from \"The House of Mirth\" played an FBI agent involved in the cover up of extraterrestrials?",
+    "canonical_answer": "Gillian Anderson",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_x_files_season_6",
+      "gillian_anderson"
+    ],
+    "source_spans": [
+      "The season continued on from the 1998 feature film and focused heavily on FBI federal agents Fox Mulder (David Duchovny) and Dana Scully's (Gillian Anderson) separation from the X-Files Division and the demise of the Syndicate—a \"shadow government\" group attempting to cover up the existence of extraterrestrials—in the two part episode \"Two Fathers\" and \"One Son\".",
+      "Her credits include the roles of FBI Special Agent Dana Scully in the long-running and widely popular series \"The X-Files\", ill-fated socialite Lily Bart in Terence Davies' film \"The House of Mirth\" (2000), and DSI Stella Gibson on the BBC crime drama television series \"The Fall\"."
+    ],
+    "source_span_offsets": [
+      [
+        262,
+        627
+      ],
+      [
+        181,
+        462
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_x_files_season_6",
+      "gillian_anderson"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a77253455429972597f1449",
+    "question": "Who is older, Ivan Foster or Ian Paisley?",
+    "canonical_answer": "Ian Paisley",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "ivan_foster",
+      "ian_paisley"
+    ],
+    "source_spans": [
+      "Ivan Foster (born 1943) is a retired senior minister in the Free Presbyterian Church of Ulster and a former Democratic Unionist Party politician.",
+      "Ian Richard Kyle Paisley, Baron Bannside, PC (6 April 1926 – 12 September 2014) was a loyalist politician and Protestant religious leader from Northern Ireland."
+    ],
+    "source_span_offsets": [
+      [
+        15,
+        160
+      ],
+      [
+        15,
+        175
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ivan_foster",
+      "ian_paisley"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a778ce55542995d831811c0",
+    "question": "Where is Greensky Bluegrass band's home and location of where they created their first album?",
+    "canonical_answer": "Bell's Brewery, Inc.",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "live_at_bell_s",
+      "bell_s_brewery"
+    ],
+    "source_spans": [
+      "Recorded in the summer of 2007 at their home base of Bell's Brewery, this album is the first",
+      "Bell's Brewery, Inc. is a brewing company based in Kalamazoo, Michigan, with a second brewery in Comstock, Michigan."
+    ],
+    "source_span_offsets": [
+      [
+        150,
+        242
+      ],
+      [
+        18,
+        134
+      ]
+    ],
+    "supporting_doc_ids": [
+      "live_at_bell_s",
+      "bell_s_brewery"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a77c74155429967ab105291",
+    "question": "Which band formed in England, Of Montreal or Vib Gyor?",
+    "canonical_answer": "Vib Gyor was a band that was formed in Leeds, England.",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "of_montreal",
+      "vib_gyor"
+    ],
+    "source_spans": [
+      "of Montreal is an American experimental pop band from Athens, Georgia.",
+      "Vib Gyor was a band that was formed in Leeds, England."
+    ],
+    "source_span_offsets": [
+      [
+        15,
+        85
+      ],
+      [
+        12,
+        66
+      ]
+    ],
+    "supporting_doc_ids": [
+      "of_montreal",
+      "vib_gyor"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a79093955429974737f794b",
+    "question": "Which writer had a longer lifespan, Ann-Marie MacDonald or Michel Butor?",
+    "canonical_answer": "Michel Butor",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "ann_marie_macdonald",
+      "michel_butor"
+    ],
+    "source_spans": [
+      "Ann-Marie MacDonald (born October 29, 1958) is a Canadian playwright, novelist, actress and broadcast host who lives in Toronto, Ontario, Canada.",
+      "Michel Butor (] ; 14 September 1926 – 24 August 2016) was a French writer."
+    ],
+    "source_span_offsets": [
+      [
+        23,
+        168
+      ],
+      [
+        16,
+        90
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ann_marie_macdonald",
+      "michel_butor"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7a32225542990783324eb4",
+    "question": "Future Rhythm is the fourth album from a rap group that is from what city?",
+    "canonical_answer": "Oakland",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "future_rhythm",
+      "digital_underground"
+    ],
+    "source_spans": [
+      "Future Rhythm is the fourth album from rap group, Digital Underground, and also marks their first independent release.",
+      "Digital Underground was an alternative hip hop group from Oakland, California."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        135
+      ],
+      [
+        23,
+        101
+      ]
+    ],
+    "supporting_doc_ids": [
+      "future_rhythm",
+      "digital_underground"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7a4f405542994f819ef1c0",
+    "question": "Who was the director of the film featuring the character \"Supah Ninjas\"?",
+    "canonical_answer": "Don Hall",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "big_hero_6_film",
+      "ryan_potter"
+    ],
+    "source_spans": [
+      "Directed by Don Hall and Chris Williams, the film tells the story of Hiro Hamada, a young robotics prodigy who forms a superhero team to combat a masked villain.",
+      "Potter is perhaps best known for his starring role as Mike Fukanaga in \"Supah Ninjas\" and for voicing Hiro Hamada in \"Big Hero 6\" (2014)."
+    ],
+    "source_span_offsets": [
+      [
+        296,
+        457
+      ],
+      [
+        157,
+        294
+      ]
+    ],
+    "supporting_doc_ids": [
+      "big_hero_6_film",
+      "ryan_potter"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7a650355429941d65f2615",
+    "question": "Who was born first, Lecrae Devaughn Moore or Gawvi?",
+    "canonical_answer": "Lecrae Devaughn Moore",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "gawvi",
+      "lecrae"
+    ],
+    "source_spans": [
+      "Gabriel Alberto Azucena (born September 23, 1988), who goes by the stage name Gawvi, formerly G-Styles, is an American Christian hip hop artist and music producer for Reach Records.",
+      "Lecrae Devaughn Moore (born October 9, 1979), mononymously known as Lecrae, is an American Christian hip hop recording artist, songwriter, record producer, and actor."
+    ],
+    "source_span_offsets": [
+      [
+        9,
+        190
+      ],
+      [
+        10,
+        176
+      ]
+    ],
+    "supporting_doc_ids": [
+      "gawvi",
+      "lecrae"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7ba11d554299294a54aa39",
+    "question": "What Danish sports club based in Copenhagen  did striker Søren Lindsted start his career at?",
+    "canonical_answer": "Søren Lindsted",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "s_ren_lindsted",
+      "kj_benhavns_boldklub"
+    ],
+    "source_spans": [
+      "Søren Lindsted (born February 2, 1957) is a Danish former football player in the striker position.",
+      "Kjøbenhavns Boldklub or KB is a Danish sports club based in Copenhagen."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        116
+      ],
+      [
+        24,
+        95
+      ]
+    ],
+    "supporting_doc_ids": [
+      "s_ren_lindsted",
+      "kj_benhavns_boldklub"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7c78c955429935c91b51d2",
+    "question": "What was the population in 2016 of the city that Norman Foote is originally from?",
+    "canonical_answer": "631,486",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "norman_foote",
+      "vancouver"
+    ],
+    "source_spans": [
+      "Foote is originally from Vancouver, British Columbia, Canada.",
+      "As the most populous city in the province, the 2016 census recorded 631,486 people in the city, up from 603,502 in 2011."
+    ],
+    "source_span_offsets": [
+      [
+        97,
+        158
+      ],
+      [
+        124,
+        244
+      ]
+    ],
+    "supporting_doc_ids": [
+      "norman_foote",
+      "vancouver"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7cd8da55429909bec76845",
+    "question": "Which The Wind's Twelve Quarters story depicts a summer festival in the utopian city of Omelas?",
+    "canonical_answer": "The Ones Who Walk Away from Omelas",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_wind_s_twelve_quarters",
+      "the_ones_who_walk_away_from_omelas"
+    ],
+    "source_spans": [
+      "The story \"The Ones Who Walk Away from Omelas\" won the Hugo Award in 1974, while \"The Day Before the Revolution\" won the Locus and Nebula Awards in 1975.",
+      "With deliberately both vague and vivid descriptions, the narrator depicts a summer festival in the utopian city of Omelas, whose prosperity depends on the perpetual misery of a single child."
+    ],
+    "source_span_offsets": [
+      [
+        805,
+        958
+      ],
+      [
+        229,
+        419
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_wind_s_twelve_quarters",
+      "the_ones_who_walk_away_from_omelas"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7e7ed05542991319bc94c2",
+    "question": "Which magazine is older, Gallery or Dime Magazine?",
+    "canonical_answer": "arose on the \"Playboy\" magazine pattern in the 1970s.",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "dime_magazine",
+      "gallery_magazine"
+    ],
+    "source_spans": [
+      "Dime Magazine is an American basketball magazine that began circulation in 2001.",
+      "It is one of the more popular \"skin\" magazines that arose on the \"Playboy\" magazine pattern in the 1970s."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        97
+      ],
+      [
+        87,
+        192
+      ]
+    ],
+    "supporting_doc_ids": [
+      "dime_magazine",
+      "gallery_magazine"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7f3c8f55429930675136c9",
+    "question": "Buck Rogers XXVC is a published campaign setting or a homebrew campaign setting?",
+    "canonical_answer": "published campaign settings",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "buck_rogers_xxvc",
+      "campaign_setting"
+    ],
+    "source_spans": [
+      "Buck Rogers XXVC (sometimes written as Buck Rogers in the 25th Century) is a game setting created by TSR, Inc. in the late 1980s.",
+      "In addition to published campaign settings available for purchase, many game masters create their own settings, often referred to as \"homebrew\" settings or worlds."
+    ],
+    "source_span_offsets": [
+      [
+        20,
+        149
+      ],
+      [
+        575,
+        738
+      ]
+    ],
+    "supporting_doc_ids": [
+      "buck_rogers_xxvc",
+      "campaign_setting"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a7f7b365542992097ad2f80",
+    "question": "Did the Beaulieu Mine or the McIntyre Mines yield gold and copper?",
+    "canonical_answer": "The McIntyre also yielded a considerable amount of copper",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "beaulieu_mine",
+      "mcintyre_mines"
+    ],
+    "source_spans": [
+      "The Beaulieu Mine was a post-World War II gold mining operation near Yellowknife, Northwest Territories.",
+      "The McIntyre also yielded a considerable amount of copper over its life."
+    ],
+    "source_span_offsets": [
+      [
+        17,
+        121
+      ],
+      [
+        310,
+        382
+      ]
+    ],
+    "supporting_doc_ids": [
+      "beaulieu_mine",
+      "mcintyre_mines"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a81549055429938b6142338",
+    "question": "The Rhymers' Club met at Ye Olde Cheshire Cheese listed as what type of house?",
+    "canonical_answer": "public",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "rhymers_club",
+      "ye_olde_cheshire_cheese"
+    ],
+    "source_spans": [
+      "They met at the London pub ‘Ye Olde Cheshire Cheese’ in Fleet Street and in the 'Domino Room' of the \"Café Royal\".",
+      "Ye Olde Cheshire Cheese is a Grade II listed public house at 145 Fleet Street, on Wine Office Court, City of London."
+    ],
+    "source_span_offsets": [
+      [
+        220,
+        334
+      ],
+      [
+        27,
+        143
+      ]
+    ],
+    "supporting_doc_ids": [
+      "rhymers_club",
+      "ye_olde_cheshire_cheese"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a81d54a55429903bc27b9d4",
+    "question": "Were Jeff Martin and Kyle Patrick both in The Click Five?",
+    "canonical_answer": "no",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "jeff_martin_canadian_musician",
+      "kyle_patrick"
+    ],
+    "source_spans": [
+      "Jeffrey Scott Martin (born October 2, 1969 in Windsor, Ontario) is a Canadian guitarist and singer-songwriter best known for fronting the rock band The Tea Party.",
+      "Kyle Patrick Dickherber (born May 20, 1986, Atlanta, Georgia, United States) is an American singer-songwriter, multi-instrumentalist and producer, best known as the lead singer of Boston power pop band, The Click Five."
+    ],
+    "source_span_offsets": [
+      [
+        35,
+        197
+      ],
+      [
+        16,
+        234
+      ]
+    ],
+    "supporting_doc_ids": [
+      "jeff_martin_canadian_musician",
+      "kyle_patrick"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a823b0c55429940e5e1a804",
+    "question": "Which physicist known for his work on parity violation has a son who became an American chemist teaching at Cornell University?",
+    "canonical_answer": "Tsung-Dao Lee",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "stephen_lee_chemist",
+      "tsung_dao_lee"
+    ],
+    "source_spans": [
+      "He is the son of Tsung-Dao Lee, the winner of the 1957 Nobel Prize in Physics.",
+      "Tsung-Dao Lee (T. D. Lee; ; born November 24, 1926) is a Chinese-American physicist, known for his work on parity violation, the Lee Model, particle physics, relativistic heavy ion (RHIC) physics, nontopological solitons and soliton stars."
+    ],
+    "source_span_offsets": [
+      [
+        84,
+        162
+      ],
+      [
+        17,
+        256
+      ]
+    ],
+    "supporting_doc_ids": [
+      "stephen_lee_chemist",
+      "tsung_dao_lee"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a85ecf25542991dd0999ec6",
+    "question": "Who plays opposite the double Olivier Award-winning English actress in the 2000 TV film following the relationship between \"Carry On\" film actors Sid James and Barbara Windsor?",
+    "canonical_answer": "Geoffrey Hutchings",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "cor_blimey",
+      "samantha_spiro"
+    ],
+    "source_spans": [
+      "Cor, Blimey! is a 2000 TV film that follows the relationship between \"Carry On\" film actors Sid James (played by Geoffrey Hutchings) and Barbara Windsor (played by Samantha Spiro).",
+      "Samantha Spiro (born 20 June 1968) is a double Olivier Award-winning English actress."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        196
+      ],
+      [
+        18,
+        103
+      ]
+    ],
+    "supporting_doc_ids": [
+      "cor_blimey",
+      "samantha_spiro"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a862b0b554299211dda2a98",
+    "question": "The current home ground of the Salford Red Devils was built for what season?",
+    "canonical_answer": "the 2012 season",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "salford_red_devils",
+      "aj_bell_stadium"
+    ],
+    "source_spans": [
+      "Their home ground since 2012 has been the AJ Bell Stadium in Barton-upon-Irwell, before which they played at the Willows in Weaste.",
+      "It was built to replace Salford rugby league club's ground the Willows for the 2012 season."
+    ],
+    "source_span_offsets": [
+      [
+        228,
+        359
+      ],
+      [
+        174,
+        265
+      ]
+    ],
+    "supporting_doc_ids": [
+      "salford_red_devils",
+      "aj_bell_stadium"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8782a25542993e715abf95",
+    "question": "Which occurred first, Phillips v. Martin Marietta Corp. or Roth v. United States?",
+    "canonical_answer": "Roth v. United States",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "phillips_v_martin_marietta_corp",
+      "roth_v_united_states"
+    ],
+    "source_spans": [
+      "Phillips v. Martin Marietta Corp., 400 U.S. 542 (1971) , was a United States Supreme Court case in which the Court held that under Title VII of the Civil Rights Act of 1964, an employer may not, in the absence of business necessity, refuse to hire women with pre-school-age children while hiring men with such children.",
+      "Roth v. United States, 354 U.S. 476 (1957) , along with its companion case \"Miller v. California\", was a landmark case before the United States Supreme Court which redefined the Constitutional test for determining what constitutes obscene material unprotected by the First Amendment."
+    ],
+    "source_span_offsets": [
+      [
+        37,
+        356
+      ],
+      [
+        25,
+        308
+      ]
+    ],
+    "supporting_doc_ids": [
+      "phillips_v_martin_marietta_corp",
+      "roth_v_united_states"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a88940055429938390d3f7b",
+    "question": "What is the city in which Bauerfield International Ariport is based out of?",
+    "canonical_answer": "Port Vila",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "bauerfield_international_airport",
+      "air_vanuatu"
+    ],
+    "source_spans": [
+      "Bauerfield International Airport (IATA: VLI, ICAO: NVVV) is an airport located in Port Vila, Vanuatu.",
+      "Its main base is Bauerfield International Airport, Port Vila."
+    ],
+    "source_span_offsets": [
+      [
+        36,
+        137
+      ],
+      [
+        216,
+        277
+      ]
+    ],
+    "supporting_doc_ids": [
+      "bauerfield_international_airport",
+      "air_vanuatu"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8aa1685542992d82986f32",
+    "question": "What dance academy did the starring actress from The Glory of Tang Dynasty graduate from?",
+    "canonical_answer": "Beijing Dance Academy",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_glory_of_tang_dynasty",
+      "jing_tian"
+    ],
+    "source_spans": [
+      "The Glory of Tang Dynasty (Chinese: 大唐荣耀) is a 2017 Chinese television series starring Jing Tian and Allen Ren.",
+      "She graduated from the Beijing Dance Academy and Beijing Film Academy."
+    ],
+    "source_span_offsets": [
+      [
+        29,
+        140
+      ],
+      [
+        65,
+        135
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_glory_of_tang_dynasty",
+      "jing_tian"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8ae5d355429970aeb70325",
+    "question": "What collegiate division does the team coached by P.W. Underwood play in?",
+    "canonical_answer": "Division I",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "p_w_underwood",
+      "southern_miss_golden_eagles_football"
+    ],
+    "source_spans": [
+      "He was the head coach of the Southern Miss Golden Eagles from 1969 to 1974.",
+      "The Southern Miss Golden Eagles football program represents the University of Southern Mississippi in college football at the NCAA Division I Football Bowl Subdivision."
+    ],
+    "source_span_offsets": [
+      [
+        167,
+        242
+      ],
+      [
+        40,
+        208
+      ]
+    ],
+    "supporting_doc_ids": [
+      "p_w_underwood",
+      "southern_miss_golden_eagles_football"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8ae61955429970aeb70326",
+    "question": "Are both Deerhunter and Nine Lashes American Christian rock bands?",
+    "canonical_answer": "no",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "deerhunter",
+      "nine_lashes"
+    ],
+    "source_spans": [
+      "Deerhunter is an American rock band from Atlanta, Georgia, formed in 2001.",
+      "Nine Lashes is an American Christian rock band from Birmingham, Alabama formed in 2006."
+    ],
+    "source_span_offsets": [
+      [
+        14,
+        88
+      ],
+      [
+        15,
+        102
+      ]
+    ],
+    "supporting_doc_ids": [
+      "deerhunter",
+      "nine_lashes"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8af05d55429950cd6afc1a",
+    "question": "Joe Ford played for which football club based out of Old Trafford?",
+    "canonical_answer": "Manchester United",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "joe_ford_footballer",
+      "manchester_united_f_c"
+    ],
+    "source_spans": [
+      "He played for Witton Albion, Crewe Alexandra, Manchester United, Nottingham Forest and Goole Town.",
+      "Manchester United Football Club is a professional football club based in Old Trafford, Greater Manchester, England, that competes in the Premier League, the top flight of English football."
+    ],
+    "source_span_offsets": [
+      [
+        173,
+        271
+      ],
+      [
+        26,
+        214
+      ]
+    ],
+    "supporting_doc_ids": [
+      "joe_ford_footballer",
+      "manchester_united_f_c"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8ba07d5542996e8ac88985",
+    "question": "What event in 1920 was established by the director of the play \"The Miracle?\"",
+    "canonical_answer": "Salzburg Festival",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_miracle_1959_film",
+      "max_reinhardt"
+    ],
+    "source_spans": [
+      "It is a remake of the 1912 hand-colored, black-and-white film \"The Miracle\", which was in turn a production of the 1911 pantomime play \"The Miracle\" written by Karl Vollmöller and directed by Max Reinhardt.",
+      "In 1920, he established the Salzburg Festival with the performance of Hofmannsthal's \"Jedermann\"."
+    ],
+    "source_span_offsets": [
+      [
+        124,
+        330
+      ],
+      [
+        310,
+        407
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_miracle_1959_film",
+      "max_reinhardt"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8de4595542995085b37348",
+    "question": "What is the prefix given to the end of the name to avoid confusion for the winner of the 1996 Record of the Year Grammy?",
+    "canonical_answer": "II",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "seal_1994_album",
+      "kiss_from_a_rose"
+    ],
+    "source_spans": [
+      "Seal (sometimes referred to as Seal II to avoid confusion with the 1991 album of the same name) is the second eponymous studio album by singer Seal.",
+      "At the 1996 Grammy Awards, it won awards for Record of the Year, Song of the Year, and Best Male Pop Vocal Performance."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        169
+      ],
+      [
+        268,
+        387
+      ]
+    ],
+    "supporting_doc_ids": [
+      "seal_1994_album",
+      "kiss_from_a_rose"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a8f7c9a55429918e830d239",
+    "question": "Which NFL team did both Don Looney and DeSean Jackson play for?",
+    "canonical_answer": "Philadelphia Eagles",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "don_looney",
+      "desean_jackson"
+    ],
+    "source_spans": [
+      "He played three seasons for the Philadelphia Eagles (1940) and the Pittsburgh Steelers (1941–1942).",
+      "He was drafted by the Philadelphia Eagles in the second round of the 2008 NFL Draft, and played for the Washington Redskins for three seasons after his departure from the Eagles."
+    ],
+    "source_span_offsets": [
+      [
+        179,
+        278
+      ],
+      [
+        295,
+        473
+      ]
+    ],
+    "supporting_doc_ids": [
+      "don_looney",
+      "desean_jackson"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a906a685542990a9849362e",
+    "question": "Where was the world cup hosted that Algeria qualified for the first time into the round of 16?",
+    "canonical_answer": "Brazil",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "algeria_at_the_fifa_world_cup",
+      "2014_fifa_world_cup"
+    ],
+    "source_spans": [
+      "In 2014, Algeria qualifyed for the first time into the round of 16.",
+      "It took place in Brazil from 12 June to 13 July 2014, after the country was awarded the hosting rights in 2007."
+    ],
+    "source_span_offsets": [
+      [
+        474,
+        541
+      ],
+      [
+        164,
+        275
+      ]
+    ],
+    "supporting_doc_ids": [
+      "algeria_at_the_fifa_world_cup",
+      "2014_fifa_world_cup"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5a9080275542995651fb5175",
+    "question": "What year was the Leeds football club, which Arthur Hydes played, formed? ",
+    "canonical_answer": "1919",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "arthur_hydes",
+      "leeds_united_f_c"
+    ],
+    "source_spans": [
+      "He played for Leeds United and Newport County.",
+      "The club was formed in 1919 following the disbanding of Leeds City F.C. by the Football League and took over their Elland Road stadium."
+    ],
+    "source_span_offsets": [
+      [
+        104,
+        150
+      ],
+      [
+        127,
+        262
+      ]
+    ],
+    "supporting_doc_ids": [
+      "arthur_hydes",
+      "leeds_united_f_c"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab446875542990594ba9bea",
+    "question": "What was the first film scored by the man who composed the soundtrack for Udhayam NH4?",
+    "canonical_answer": "Veyyil",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "udhayam_nh4",
+      "g_v_prakash_kumar"
+    ],
+    "source_spans": [
+      "The film's soundtrack and background score were composed by G. V. Prakash Kumar.",
+      "His first film was S Pictures' \"Veyyil\" (2006) and he became popular in Tamil cinema by the early 2010s."
+    ],
+    "source_span_offsets": [
+      [
+        359,
+        439
+      ],
+      [
+        152,
+        256
+      ]
+    ],
+    "supporting_doc_ids": [
+      "udhayam_nh4",
+      "g_v_prakash_kumar"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab502ae5542991779162d4c",
+    "question": "What position in the court does the Professor of Law at the Interdisciplinary Center in Herzliya hold?",
+    "canonical_answer": "Supreme Court Judge",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "kahan_commission",
+      "aharon_barak"
+    ],
+    "source_spans": [
+      "Its other two members were Supreme Court Judge Aharon Barak, and Major general (res.) Yona Efrat.",
+      "Aharon Barak (Hebrew: אהרן ברק‎ , born Aharon Brick, 16 September 1936) is a Professor of Law at the Interdisciplinary Center in Herzliya and a lecturer in law at the Hebrew University of Jerusalem, the Yale Law School, Central European University, Georgetown University Law Center, and the University of Toronto Faculty of Law."
+    ],
+    "source_span_offsets": [
+      [
+        366,
+        463
+      ],
+      [
+        16,
+        344
+      ]
+    ],
+    "supporting_doc_ids": [
+      "kahan_commission",
+      "aharon_barak"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab596d95542992aa134a371",
+    "question": "WHere are both Sanming and Jiutai District located?",
+    "canonical_answer": "China",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "sanming",
+      "jiutai_district"
+    ],
+    "source_spans": [
+      "Sanming (; Foochow Romanized: Săng-mìng)) is a prefecture-level city in western Fujian province, China.",
+      "Jiutai () is a district under the jurisdiction of Changchun, the capital of Jilin province, People's Republic of China."
+    ],
+    "source_span_offsets": [
+      [
+        11,
+        114
+      ],
+      [
+        19,
+        138
+      ]
+    ],
+    "supporting_doc_ids": [
+      "sanming",
+      "jiutai_district"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab5b6c1554299637185c5e5",
+    "question": "Did Franki Valli sing with Hellogoodbye or The Four Seasons?",
+    "canonical_answer": "The Four Seasons",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "hellogoodbye",
+      "the_four_seasons_band"
+    ],
+    "source_spans": [
+      "Hellogoodbye (sometimes styled as hellogoodbye) is a pop rock band that was formed in Huntington Beach, California in 2001 by singer Forrest Kline.",
+      "Since 1970, they have also been known at times as Frankie Valli and the Four Seasons."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        163
+      ],
+      [
+        246,
+        331
+      ]
+    ],
+    "supporting_doc_ids": [
+      "hellogoodbye",
+      "the_four_seasons_band"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab5f372554299488d4d9a60",
+    "question": "Which opera has more acts, La jolie fille de Perth or Mitridate, re di Ponto?",
+    "canonical_answer": "La jolie fille de Perth \"(The Fair Maid of Perth)\" is an opera in four acts",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "la_jolie_fille_de_perth",
+      "mitridate_re_di_ponto"
+    ],
+    "source_spans": [
+      "La jolie fille de Perth \"(The Fair Maid of Perth)\" is an opera in four acts by Georges Bizet (1838–1875), from a libretto by Jules-Henri Vernoy de Saint-Georges and Jules Adenis, after the novel by Sir Walter Scott.",
+      "Mitridate, re di Ponto (\"Mithridates, King of Pontus\"), K. 87 (74a), is an early opera seria in three acts by Wolfgang Amadeus Mozart."
+    ],
+    "source_span_offsets": [
+      [
+        27,
+        242
+      ],
+      [
+        26,
+        160
+      ]
+    ],
+    "supporting_doc_ids": [
+      "la_jolie_fille_de_perth",
+      "mitridate_re_di_ponto"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab6ba9d5542995eadef0083",
+    "question": "What is the first name of the mother of the artist who interpreted Karla  Bonoff's Tell Me Why ?",
+    "canonical_answer": "Naomi",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "karla_bonoff",
+      "wynonna_judd"
+    ],
+    "source_spans": [
+      "As a songwriter, Bonoff's songs have been interpreted by other artists such as \"Home\" by Bonnie Raitt, \"Tell Me Why\" by Wynonna Judd, and \"Isn't It Always Love\" by Lynn Anderson.",
+      "She first rose to fame in the 1980s alongside her mother Naomi in the country music duo The Judds."
+    ],
+    "source_span_offsets": [
+      [
+        125,
+        303
+      ],
+      [
+        196,
+        294
+      ]
+    ],
+    "supporting_doc_ids": [
+      "karla_bonoff",
+      "wynonna_judd"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ab72a025542992aa3b8c7b8",
+    "question": "\"A Summer in the Cage\" and \"American Hardcore\" are both what kind of film?",
+    "canonical_answer": "documentary",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "a_summer_in_the_cage",
+      "american_hardcore_film"
+    ],
+    "source_spans": [
+      "A Summer in the Cage is a 2007 documentary film about a man's experiences with bipolar disorder.",
+      "American Hardcore: The History of American Punk Rock 1980-1986 is a documentary directed by Paul Rachman and written by Steven Blush."
+    ],
+    "source_span_offsets": [
+      [
+        24,
+        120
+      ],
+      [
+        28,
+        161
+      ]
+    ],
+    "supporting_doc_ids": [
+      "a_summer_in_the_cage",
+      "american_hardcore_film"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abbb42555429931dba144af",
+    "question": "Jean-Paul Sartre or George Bernard Shaw  have more influence on turn of the century literature?",
+    "canonical_answer": "George Bernard Shaw",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "jean_paul_sartre",
+      "george_bernard_shaw"
+    ],
+    "source_spans": [
+      "Jean-Paul Charles Aymard Sartre ( ; ] ; 21 June 1905 – 15 April 1980) was a French philosopher, playwright, novelist, political activist, biographer, and literary critic.",
+      "George Bernard Shaw ( ; 26 July 1856 – 2 November 1950), known at his insistence simply as Bernard Shaw, was an Irish playwright, critic and polemicist whose influence on Western theatre, culture and politics extended from the 1880s to his death and beyond."
+    ],
+    "source_span_offsets": [
+      [
+        20,
+        190
+      ],
+      [
+        23,
+        280
+      ]
+    ],
+    "supporting_doc_ids": [
+      "jean_paul_sartre",
+      "george_bernard_shaw"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abbd12b55429931dba14577",
+    "question": "The Cromwell station is located in which Maryland county?",
+    "canonical_answer": "Anne Arundel County",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "cromwell_station",
+      "glen_burnie_maryland"
+    ],
+    "source_spans": [
+      "Cromwell station, also known as Cromwell Station/Glen Burnie or Cromwell/Glen Burnie, is a Baltimore Light Rail station in Glen Burnie, Maryland.",
+      "Glen Burnie is a census-designated place (CDP) in Anne Arundel County, Maryland, United States."
+    ],
+    "source_span_offsets": [
+      [
+        20,
+        165
+      ],
+      [
+        25,
+        120
+      ]
+    ],
+    "supporting_doc_ids": [
+      "cromwell_station",
+      "glen_burnie_maryland"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abd0553554299700f9d7963",
+    "question": "Archie Norman will succeed Robert Swannell as chairman of what British multinational retailer that is headquartered in the city of Westminster, London?",
+    "canonical_answer": "Marks and Spencer plc",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "archie_norman",
+      "marks_amp_spencer"
+    ],
+    "source_spans": [
+      "He will succeed Robert Swannell as chairman of Marks & Spencer in September 2017.",
+      "Marks and Spencer plc (also known as M&S) is a major British multinational retailer headquartered in the City of Westminster, London."
+    ],
+    "source_span_offsets": [
+      [
+        297,
+        378
+      ],
+      [
+        23,
+        156
+      ]
+    ],
+    "supporting_doc_ids": [
+      "archie_norman",
+      "marks_amp_spencer"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abd6be55542993062266c89",
+    "question": "What is Peter Daou's website's slogan?",
+    "canonical_answer": "\"media for the 65.8 million,\"",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "peter_daou",
+      "verrit"
+    ],
+    "source_spans": [
+      "Peter Daou is the creator of Verrit, the prior chief executive of Shareblue, and a member of the band The Daou.",
+      "The website's slogan says it is \"media for the 65.8 million,\" referring to the number of votes Hillary Clinton won in the 2016 presidential election."
+    ],
+    "source_span_offsets": [
+      [
+        14,
+        125
+      ],
+      [
+        10,
+        159
+      ]
+    ],
+    "supporting_doc_ids": [
+      "peter_daou",
+      "verrit"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abda8d55542992ac4f382e7",
+    "question": "Who is the sister of Princess Zein and the daughter of a British woman?",
+    "canonical_answer": "Princess Aisha bint Hussein",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "princess_aisha_bint_hussein",
+      "princess_muna_al_hussein"
+    ],
+    "source_spans": [
+      "Princess Aisha bint Hussein (born 23 April 1968) is the sister of King Abdullah II of Jordan and is the twin sister of Princess Zein.",
+      "She is British by birth, and changed her name to Muna al-Hussein upon marriage."
+    ],
+    "source_span_offsets": [
+      [
+        31,
+        164
+      ],
+      [
+        228,
+        307
+      ]
+    ],
+    "supporting_doc_ids": [
+      "princess_aisha_bint_hussein",
+      "princess_muna_al_hussein"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abe239355429976d4830a7d",
+    "question": "Jamie Harris is best known for his role as The Hook-Handed Man in a movie directed by who ?",
+    "canonical_answer": "Brad Silberling",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "jamie_harris_actor",
+      "lemony_snicket_s_a_series_of_unfortunate_events"
+    ],
+    "source_spans": [
+      "He is best known for his role as The Hook-Handed Man in \"Lemony Snicket's A Series of Unfortunate Events\", Rodney in \"Rise of the Planet of the Apes\" and Gordon in Marvel's \"Agents of S.H.I.E.L.D.\".",
+      "Lemony Snicket's A Series of Unfortunate Events is a 2004 American dark comedy film directed by Brad Silberling."
+    ],
+    "source_span_offsets": [
+      [
+        77,
+        275
+      ],
+      [
+        51,
+        163
+      ]
+    ],
+    "supporting_doc_ids": [
+      "jamie_harris_actor",
+      "lemony_snicket_s_a_series_of_unfortunate_events"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abef8fd5542990832d3a111",
+    "question": "The evil clown is a subversion of the traditional comic clown character with the modern archetype popularised by a book that follows the experiences of how many children?",
+    "canonical_answer": "seven",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "evil_clown",
+      "it_novel"
+    ],
+    "source_spans": [
+      "The modern archetype of the evil clown was popularized by Stephen King's 1986 novel \"It\".",
+      "The story follows the experiences of seven children as they are terrorized by a being that exploits the fears and phobias of its victims to disguise itself while hunting its prey."
+    ],
+    "source_span_offsets": [
+      [
+        199,
+        288
+      ],
+      [
+        137,
+        316
+      ]
+    ],
+    "supporting_doc_ids": [
+      "evil_clown",
+      "it_novel"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5abf92c45542993fe9a41e07",
+    "question": "Southern California Logistics Airport is how many miles northwest of Victorville, California?",
+    "canonical_answer": "8 miles",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "darpa_grand_challenge_2007",
+      "george_air_force_base"
+    ],
+    "source_spans": [
+      "It took place on November 3, 2007 at the site of the now-closed George Air Force Base (currently used as Southern California Logistics Airport), in Victorville, California (Google map), in the West of the United States.",
+      "George Air Force Base is a former United States Air Force base located within the city limits, 8 miles northwest, of central Victorville, California, about 75 miles northeast of Los Angeles, California."
+    ],
+    "source_span_offsets": [
+      [
+        148,
+        367
+      ],
+      [
+        25,
+        227
+      ]
+    ],
+    "supporting_doc_ids": [
+      "darpa_grand_challenge_2007",
+      "george_air_force_base"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac00584554299012d1db575",
+    "question": "What date was the person born that Samuel Flores Borrego was the right hand man of? ",
+    "canonical_answer": "1 August 1971",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "samuel_flores_borrego",
+      "jorge_eduardo_costilla_s_nchez"
+    ],
+    "source_spans": [
+      "Upon his arrest, Flores Borrego became the right-hand man of Jorge Eduardo Costilla Sánchez, the former leader of the criminal organization.",
+      "Jorge Eduardo Costilla Sánchez (born 1 August 1971), is a former Mexican drug lord and top leader of the criminal drug trafficking organization known as the Gulf Cartel."
+    ],
+    "source_span_offsets": [
+      [
+        284,
+        424
+      ],
+      [
+        34,
+        203
+      ]
+    ],
+    "supporting_doc_ids": [
+      "samuel_flores_borrego",
+      "jorge_eduardo_costilla_s_nchez"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac00cde554299012d1db58a",
+    "question": "Are both movies Nerdcore Rising and What Would Jesus Buy? focused on similar topics?",
+    "canonical_answer": "no",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "nerdcore_rising_film",
+      "what_would_jesus_buy"
+    ],
+    "source_spans": [
+      "Nerdcore Rising is a documentary/concert film starring MC Frontalot and other nerdcore hip hop artists such as mc chris, Wheelie Cyberman of Optimus Rhyme and MC Lars, with contributors from artists such as \"Weird Al\" Yankovic, Prince Paul, and Brian Posehn.",
+      "What Would Jesus Buy? is a 2007 documentary film produced by Morgan Spurlock and directed by Rob VanAlkemade."
+    ],
+    "source_span_offsets": [
+      [
+        26,
+        284
+      ],
+      [
+        25,
+        134
+      ]
+    ],
+    "supporting_doc_ids": [
+      "nerdcore_rising_film",
+      "what_would_jesus_buy"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac1c7605542994ab5c67e14",
+    "question": "What was the nationality of Bernhard Heiden's teacher?",
+    "canonical_answer": "German",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "bernhard_heiden",
+      "paul_hindemith"
+    ],
+    "source_spans": [
+      "Bernhard Heiden (b. Frankfurt-am-Main, August 24, 1910; d. Bloomington, IN, April 30, 2000) was a German and American composer and music teacher, who studied under and was heavily influenced by Paul Hindemith.",
+      "Paul Hindemith ( ) (16 November 1895 – 28 December 1963) was a prolific German composer, violist, violinist, teacher and conductor."
+    ],
+    "source_span_offsets": [
+      [
+        19,
+        228
+      ],
+      [
+        18,
+        149
+      ]
+    ],
+    "supporting_doc_ids": [
+      "bernhard_heiden",
+      "paul_hindemith"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac26eed55429951e9e685bf",
+    "question": "where is the  a county where  Purcell can be found located ",
+    "canonical_answer": "the U.S. state of Kansas",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "purcell_kansas",
+      "doniphan_county_kansas"
+    ],
+    "source_spans": [
+      "Purcell is an unincorporated community in Doniphan County, Kansas, United States.",
+      "Doniphan County (county code DP) is a county located in the U.S. state of Kansas."
+    ],
+    "source_span_offsets": [
+      [
+        19,
+        100
+      ],
+      [
+        27,
+        108
+      ]
+    ],
+    "supporting_doc_ids": [
+      "purcell_kansas",
+      "doniphan_county_kansas"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac29cf8554299218029dac2",
+    "question": "Who is the American actress performed \"Take On The World\" with Sabrina Carpenter?",
+    "canonical_answer": "Rowan Blanchard",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "matthew_tishler",
+      "rowan_blanchard"
+    ],
+    "source_spans": [
+      "Tishler is responsible for producing and co-writing the theme song to Girl Meets World, \"Take On The World\", performed by Sabrina Carpenter and Rowan Blanchard.",
+      "Rowan Blanchard (born October 14, 2001) is an American actress."
+    ],
+    "source_span_offsets": [
+      [
+        374,
+        534
+      ],
+      [
+        19,
+        82
+      ]
+    ],
+    "supporting_doc_ids": [
+      "matthew_tishler",
+      "rowan_blanchard"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac30a79554299657fa290e2",
+    "question": "What 2003 Christmas-themed romantic comedy did Gregor Fisher have a role in?",
+    "canonical_answer": "Love Actually",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "gregor_fisher",
+      "love_actually"
+    ],
+    "source_spans": [
+      "He has also had roles in films such as \"Love Actually\", \"Lassie\" and \"Wild Target\".",
+      "Love Actually is a 2003 Christmas-themed romantic comedy film written and directed by Richard Curtis."
+    ],
+    "source_span_offsets": [
+      [
+        295,
+        378
+      ],
+      [
+        17,
+        118
+      ]
+    ],
+    "supporting_doc_ids": [
+      "gregor_fisher",
+      "love_actually"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ac34fdb554299741d48a24a",
+    "question": "Which TV series directed and written by the same person as \"Buffy the Vampire Slayer\" starred Tahmoh Penikett?",
+    "canonical_answer": "Dollhouse",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "tahmoh_penikett",
+      "joss_whedon"
+    ],
+    "source_spans": [
+      "He has starred in TV series \"Supernatural\", Joss Whedon's \"Dollhouse\", and the Showtime time travel show, \"Continuum\".",
+      "He is the founder of Mutant Enemy Productions and co-founder of Bellwether Pictures, and is best known as the creator of the television series \"Buffy the Vampire Slayer\" (1997–2003), \"Angel\" (1999–2004), \"Firefly\" (2002), \"Dollhouse\" (2009–10) and \"Agents of S.H.I.E.L.D.\" (from 2013)."
+    ],
+    "source_span_offsets": [
+      [
+        200,
+        318
+      ],
+      [
+        140,
+        425
+      ]
+    ],
+    "supporting_doc_ids": [
+      "tahmoh_penikett",
+      "joss_whedon"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adbfb3f55429947ff17388a",
+    "question": "What award was won by Niels Henrik David Bohr, a Danish physicist who established the Nordic Institute for Theoretical Physics?",
+    "canonical_answer": "Nobel Prize in Physics in 1922.",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "nordic_institute_for_theoretical_physics",
+      "niels_bohr"
+    ],
+    "source_spans": [
+      "It was established in 1957 by Niels Bohr and the Swedish minister Torsten Gustafsson.",
+      "Niels Henrik David Bohr (] ; 7 October 1885 – 18 November 1962) was a Danish physicist who made foundational contributions to understanding atomic structure and quantum theory, for which he received the Nobel Prize in Physics in 1922."
+    ],
+    "source_span_offsets": [
+      [
+        228,
+        313
+      ],
+      [
+        14,
+        248
+      ]
+    ],
+    "supporting_doc_ids": [
+      "nordic_institute_for_theoretical_physics",
+      "niels_bohr"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adc6eb65542994650320cf3",
+    "question": "Are Norman Z. McLeod and Sam Wanamaker both directors?",
+    "canonical_answer": "yes",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "norman_z_mcleod",
+      "sam_wanamaker"
+    ],
+    "source_spans": [
+      "Norman Zenos McLeod (September 20, 1898 – January 27, 1964) was an American film director, cartoonist, and writer.",
+      "Samuel Wanamaker, CBE (born Samuel Wattenmacker; June 14, 1919 – December 18, 1993) was an American actor and director who moved to the UK after he feared being blacklisted in Hollywood due to his early pronounced liberal sympathies."
+    ],
+    "source_span_offsets": [
+      [
+        20,
+        134
+      ],
+      [
+        17,
+        250
+      ]
+    ],
+    "supporting_doc_ids": [
+      "norman_z_mcleod",
+      "sam_wanamaker"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adc82fc554299438c868dce",
+    "question": "How many Major League Baseball teams usually attend the meeting where the John H. Johnson President's Award is awarded?",
+    "canonical_answer": "30 Major League Baseball teams",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "john_h_johnson_president_s_award",
+      "winter_meetings"
+    ],
+    "source_spans": [
+      "The award was first presented in 1974 and is usually awarded during baseball's Winter Meetings.",
+      "The Winter Meetings are an annual event, held each December, in which representatives of all 30 Major League Baseball teams and their 160 minor league baseball affiliates convene for four days to discuss league business and conduct off-season trades and transactions."
+    ],
+    "source_span_offsets": [
+      [
+        455,
+        550
+      ],
+      [
+        19,
+        286
+      ]
+    ],
+    "supporting_doc_ids": [
+      "john_h_johnson_president_s_award",
+      "winter_meetings"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adc99cf554299438c868e0d",
+    "question": "What is the middle name of the singer who recorded Would You Like to Take a Walk? with Louis Armstrong in 1951",
+    "canonical_answer": "Jane",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "would_you_like_to_take_a_walk",
+      "ella_fitzgerald"
+    ],
+    "source_spans": [
+      "Ella Fitzgerald and Louis Armstrong recorded the song for Decca in 1951, accompanied by the Dave Barbour Orchestra.",
+      "Ella Jane Fitzgerald (April 25, 1917 – June 15, 1996) was an African - American jazz singer often referred to as the First Lady of Song, Queen of Jazz and Lady Ella."
+    ],
+    "source_span_offsets": [
+      [
+        565,
+        680
+      ],
+      [
+        19,
+        184
+      ]
+    ],
+    "supporting_doc_ids": [
+      "would_you_like_to_take_a_walk",
+      "ella_fitzgerald"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adcea3755429947343537ca",
+    "question": "The  Actaea genus is native to what continent that the Onoclea genus is not?",
+    "canonical_answer": "Europe",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "actaea_plant",
+      "onoclea"
+    ],
+    "source_spans": [
+      "Actaea, commonly called baneberry, bugbane and cohosh, is a genus of flowering plants belonging to the family Ranunculaceae, native to subtropical, temperate and subartic regions of the Europe, Asia and North America.",
+      "Onoclea is a genus of plants in the Onocleaceae family, native to moist habitats in eastern Asia and eastern North America."
+    ],
+    "source_span_offsets": [
+      [
+        18,
+        235
+      ],
+      [
+        11,
+        134
+      ]
+    ],
+    "supporting_doc_ids": [
+      "actaea_plant",
+      "onoclea"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5add695a5542992ae4cec557",
+    "question": "What bluegrass singer provides vocals for a song on the album which was released in September 2013 through PRMD Music?",
+    "canonical_answer": "Dan Tyminski",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "hey_brother",
+      "true_avicii_album"
+    ],
+    "source_spans": [
+      "American bluegrass singer Dan Tyminski provides vocals for the track.",
+      "It was released on 13 September 2013 on compact disc and audio cassette through PRMD Music, Lava Records and Sony Music Entertainment's Columbia Records."
+    ],
+    "source_span_offsets": [
+      [
+        123,
+        192
+      ],
+      [
+        76,
+        229
+      ]
+    ],
+    "supporting_doc_ids": [
+      "hey_brother",
+      "true_avicii_album"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5add750c5542990dbb2f7e53",
+    "question": "What Guiness World Record is held by the actor who stars as \"Jack\" in a series created by Jim O'Doherty?.",
+    "canonical_answer": "youngest TV director ever",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "kickin_it",
+      "leo_howard"
+    ],
+    "source_spans": [
+      "Created and executive produced by Jim O'Doherty, the series follows the karate instructor at an under-performing martial arts academy, played by Jason Earles, and his five misfit students, played by Leo Howard, Dylan Riley Snyder, , Olivia Holt, and .",
+      "Howard was certified as the youngest TV director ever by the Guinness World Records for his work on the episode \"Fight at the Museum\" in the fourth season of the \"Kickin' It\" TV series at age 16."
+    ],
+    "source_span_offsets": [
+      [
+        160,
+        411
+      ],
+      [
+        416,
+        611
+      ]
+    ],
+    "supporting_doc_ids": [
+      "kickin_it",
+      "leo_howard"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5add8f055542990dbb2f7e6d",
+    "question": "Who conducted the negotiations  with the owners and the longest serving commandant of Auschwitz concentration and extermination camp?",
+    "canonical_answer": "Rudolf Höss",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "gerstein_report",
+      "rudolf_h_ss"
+    ],
+    "source_spans": [
+      "and in that capacity supplied hydrogen cyanide (Zyklon B) from Degesch (\"Deutsche Gesellschaft für Schädlingsbekämpfung\") to Rudolf Höss in Auschwitz and conducted the negotiations with the owners.",
+      "Rudolf Höss (also Höß, Hoeß or Hoess; 25 November 1901 – 16 April 1947) was a Nazi German \"SS\"-\"Obersturmbannführer\" (lieutenant colonel) and the longest-serving commandant of Auschwitz concentration and extermination camp in World War II."
+    ],
+    "source_span_offsets": [
+      [
+        206,
+        403
+      ],
+      [
+        15,
+        254
+      ]
+    ],
+    "supporting_doc_ids": [
+      "gerstein_report",
+      "rudolf_h_ss"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ade27e05542997c77aded7d",
+    "question": "When was the friends song was released which is taken from the fourth studio album of canadian singer and song writer Justin Bieber?",
+    "canonical_answer": "August 17, 2017",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "friends_justin_bieber_and_bloodpop_song",
+      "purpose_justin_bieber_album"
+    ],
+    "source_spans": [
+      "The song was released through GENPOP Corporation, RBMG Records, School Boy Records, Def Jam Recordings and Republic Records on August 17, 2017.",
+      "Purpose is the fourth studio album by Canadian singer and songwriter Justin Bieber."
+    ],
+    "source_span_offsets": [
+      [
+        271,
+        414
+      ],
+      [
+        33,
+        116
+      ]
+    ],
+    "supporting_doc_ids": [
+      "friends_justin_bieber_and_bloodpop_song",
+      "purpose_justin_bieber_album"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ade2bce5542997c77aded96",
+    "question": "Who is the director of Hollywood film \"7th Heaven\" (1927), Jerry Belson or  Frank Borzage?",
+    "canonical_answer": "Frank Borzage",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "jerry_belson",
+      "frank_borzage"
+    ],
+    "source_spans": [
+      "Jerry Belson (July 8, 1938 – October 10, 2006) was a writer, director, and producer of Hollywood films for over forty years.",
+      "Frank Borzage ( ; April 23, 1894 – June 19, 1962) was an American film director and actor, most remembered for directing \"7th Heaven\" (1927), \"Man's Castle\" (1933), and \"The Mortal Storm\" (1940)."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        140
+      ],
+      [
+        17,
+        212
+      ]
+    ],
+    "supporting_doc_ids": [
+      "jerry_belson",
+      "frank_borzage"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adec62a55429975fa854f89",
+    "question": "The song that came out ahead of The Wanted's \"Lightning\" on the UK Singles Chart was featured on which album?",
+    "canonical_answer": "\"Talk That Talk\"",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "lightning_song",
+      "we_found_love"
+    ],
+    "source_spans": [
+      "The song debuted at number two on the UK Singles Chart, behind Rihanna's \"We Found Love\".",
+      "\"We Found Love\" is a song recorded by Barbadian singer Rihanna from her sixth studio album, \"Talk That Talk\" (2011)."
+    ],
+    "source_span_offsets": [
+      [
+        331,
+        420
+      ],
+      [
+        17,
+        133
+      ]
+    ],
+    "supporting_doc_ids": [
+      "lightning_song",
+      "we_found_love"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adf2fa35542993344016c11",
+    "question": "Which of Jonny Craig and Pete Doherty has been a member of more bands ?",
+    "canonical_answer": "Jonny\" Craig",
+    "answer_variants": [],
+    "reasoning_type": "comparison",
+    "source_doc_ids": [
+      "jonny_craig",
+      "pete_doherty"
+    ],
+    "source_spans": [
+      "He has been the lead vocalist for the bands Dance Gavin Dance, Emarosa, Ghost Runner on Third, Slaves, and westerHALTS.",
+      "His other musical projects are indie band Babyshambles and Peter Doherty and the Puta Madres."
+    ],
+    "source_span_offsets": [
+      [
+        157,
+        276
+      ],
+      [
+        219,
+        312
+      ]
+    ],
+    "supporting_doc_ids": [
+      "jonny_craig",
+      "pete_doherty"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adf4ba65542992d7e9f931c",
+    "question": "Which 9th longest-running musical in Broadway history was the 30th Disney animated feature film?",
+    "canonical_answer": "Beauty and the Beast",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "beauty_and_the_beast_franchise",
+      "beauty_and_the_beast_1991_film"
+    ],
+    "source_spans": [
+      "The success of the original 1991 American animated feature, \"Beauty and the Beast\", directed by Gary Trousdale and Kirk Wise, led to three direct-to-video follow-up films, a live-action spin-off television series, a Disney World stage show, a Disney World restaurant, several video games, merchandise, and the 9th longest-running musical in Broadway history, which was nominated for nine Tony Awards, winning for Best Costume Design.",
+      "The 30th Disney animated feature film and the third released during the Disney Renaissance period, it is based on the French fairy tale of the same name by Jeanne-Marie Leprince de Beaumont (who was also credited in the English version as well as in the French version), and ideas from the 1946 French film of the same name directed by Jean Cocteau."
+    ],
+    "source_span_offsets": [
+      [
+        138,
+        571
+      ],
+      [
+        195,
+        544
+      ]
+    ],
+    "supporting_doc_ids": [
+      "beauty_and_the_beast_franchise",
+      "beauty_and_the_beast_1991_film"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5adface25542995ec70e906c",
+    "question": "Killing You is a song by a band that consists of lead vocalist Danny Worsnop, guitarists Ben Bruce and Cameron Liddell, drummer James Cassells and what bassist?",
+    "canonical_answer": "Sam Bettley",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "killing_you",
+      "asking_alexandria"
+    ],
+    "source_spans": [
+      "Killing You is a song by English Metalcore band Asking Alexandria.",
+      "Asking Alexandria are an English rock band from York, North Yorkshire consisting of lead vocalist Danny Worsnop, guitarists Ben Bruce and Cameron Liddell, drummer James Cassells and bassist Sam Bettley."
+    ],
+    "source_span_offsets": [
+      [
+        15,
+        81
+      ],
+      [
+        21,
+        223
+      ]
+    ],
+    "supporting_doc_ids": [
+      "killing_you",
+      "asking_alexandria"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae0945d55429906c02daadd",
+    "question": "Wich children's novelist whow was first published in 1939 gained an internaional following writting about an orphaned girl named Anne Shirley?",
+    "canonical_answer": "Lucy Maud Montgomery",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "anne_of_ingleside",
+      "lucy_maud_montgomery"
+    ],
+    "source_spans": [
+      "Anne of Ingleside is a children's novel by Canadian author Lucy Maud Montgomery. It was first published in July 1939 by McClelland and Stewart (Toronto) and the Frederick A. Stokes Company (New York).",
+      "The central character, Anne Shirley, an orphaned girl, made Montgomery famous in her lifetime and gave her an international following."
+    ],
+    "source_span_offsets": [
+      [
+        21,
+        221
+      ],
+      [
+        283,
+        417
+      ]
+    ],
+    "supporting_doc_ids": [
+      "anne_of_ingleside",
+      "lucy_maud_montgomery"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae141475542997b2ef7d185",
+    "question": "I Like 'em Big and Stupid was a single whose B-side was played on the show of the record collector specializing in what type of music?",
+    "canonical_answer": "novelty songs",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "i_like_em_big_and_stupid",
+      "dr_demento"
+    ],
+    "source_spans": [
+      "The 12-inch version contained an extended dance mix and the B-side on all releases, \"The Homecoming Queen's Got a Gun\", was played on \"The Dr. Demento Show,\" and received airplay on Top 40 and Modern Rock stations around the US in 1984.",
+      "record collector specializing in novelty songs"
+    ],
+    "source_span_offsets": [
+      [
+        385,
+        621
+      ],
+      [
+        132,
+        178
+      ]
+    ],
+    "supporting_doc_ids": [
+      "i_like_em_big_and_stupid",
+      "dr_demento"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae152a65542990adbacf74f",
+    "question": "When was the novel published  in 2010 which is part of the series of The Maze Runner?",
+    "canonical_answer": "September 18, 2010",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "the_maze_runner_series",
+      "the_scorch_trials"
+    ],
+    "source_spans": [
+      "The series consists of \"The Maze Runner\" (2009), \"The Scorch Trials\" (2010) and \"The Death Cure\" (2011), as well as the two prequel novels, \"The Kill Order\" (2012) and \"The Fever Code\" (2016), and a companion book titled \"The Maze Runner Files\" (2013).",
+      "The novel was published on September 18, 2010 by Delacorte Press."
+    ],
+    "source_span_offsets": [
+      [
+        146,
+        398
+      ],
+      [
+        225,
+        290
+      ]
+    ],
+    "supporting_doc_ids": [
+      "the_maze_runner_series",
+      "the_scorch_trials"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae1801955429901ffe4aec4",
+    "question": "Where is the Cocoa Krispies and former Superman sponsor located?",
+    "canonical_answer": "Battle Creek, Michigan",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "adventures_of_superman_tv_series",
+      "kellogg_s"
+    ],
+    "source_spans": [
+      "It was sponsored by cereal manufacturer Kellogg's.",
+      "The Kellogg Company (also Kellogg's, Kellogg, and Kellogg's of Battle Creek) is an American multinational food manufacturing company headquartered in Battle Creek, Michigan, United States."
+    ],
+    "source_span_offsets": [
+      [
+        342,
+        392
+      ],
+      [
+        13,
+        201
+      ]
+    ],
+    "supporting_doc_ids": [
+      "adventures_of_superman_tv_series",
+      "kellogg_s"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae1e4095542997283cd22bf",
+    "question": "What is the genus and species of the bear in which the Florida black bear is a subspecies of?",
+    "canonical_answer": "Ursus americanus",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "florida_black_bear",
+      "american_black_bear"
+    ],
+    "source_spans": [
+      "The Florida black bear (\"Ursus americanus floridanus\") is a subspecies of the American black bear that has historically ranged throughout most of Florida and southern portions of Alabama, Georgia, and Mississippi.",
+      "The American black bear (\"Ursus americanus\") is a medium-sized bear native to North America."
+    ],
+    "source_span_offsets": [
+      [
+        22,
+        235
+      ],
+      [
+        23,
+        115
+      ]
+    ],
+    "supporting_doc_ids": [
+      "florida_black_bear",
+      "american_black_bear"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae1f8235542997f29b3c1cf",
+    "question": "Charles Scribner's Sons publishes the books of what author whose books cover subjects such as the Cold War, mathematics, politics, and economics, and global terrorism?",
+    "canonical_answer": "Donald Richard \"Don\" DeLillo",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "charles_scribner_s_sons",
+      "don_delillo"
+    ],
+    "source_spans": [
+      "Charles Scribner's Sons, or simply Scribner's or Scribner, is an American publisher based in New York City, known for publishing American authors including Ernest Hemingway, F. Scott Fitzgerald, Kurt Vonnegut, Marjorie Kinnan Rawlings, Stephen King, Robert A. Heinlein, Thomas Wolfe, George Santayana, John Clellon Holmes, Don DeLillo and Edith Wharton.",
+      "His works have covered subjects as diverse as television, nuclear war, sports, the complexities of language, performance art, the Cold War, mathematics, the advent of the digital age, politics, economics, and global terrorism."
+    ],
+    "source_span_offsets": [
+      [
+        27,
+        380
+      ],
+      [
+        119,
+        345
+      ]
+    ],
+    "supporting_doc_ids": [
+      "charles_scribner_s_sons",
+      "don_delillo"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae236da5542994d89d5b397",
+    "question": "When was the American actor, film director which  Dana Brunetti is the president of his company born ",
+    "canonical_answer": "July 26, 1959",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "dana_brunetti",
+      "kevin_spacey"
+    ],
+    "source_spans": [
+      "He is the president of Kevin Spacey's production company, Trigger Street Productions.",
+      "Kevin Spacey Fowler, KBE (born July 26, 1959) is an American actor, film director, producer, screenwriter, and singer."
+    ],
+    "source_span_offsets": [
+      [
+        117,
+        202
+      ],
+      [
+        16,
+        134
+      ]
+    ],
+    "supporting_doc_ids": [
+      "dana_brunetti",
+      "kevin_spacey"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae256c35542994d89d5b3e9",
+    "question": "The transnational lottery Les Scadding won in 2009 held it's first draw on what date?",
+    "canonical_answer": "13 February 2004",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "les_scadding",
+      "euromillions"
+    ],
+    "source_spans": [
+      "Les Scadding is an English former mechanic who acquired media attention as the winner of £45,500,000 on the EuroMillions lottery in 2009.",
+      "The first draw was held on Friday 13 February 2004 in Paris."
+    ],
+    "source_span_offsets": [
+      [
+        16,
+        153
+      ],
+      [
+        192,
+        252
+      ]
+    ],
+    "supporting_doc_ids": [
+      "les_scadding",
+      "euromillions"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae28b76554299495565daa8",
+    "question": "What three categories does income get levied under the Parliament of Australia's tax code?",
+    "canonical_answer": "\"personal earnings\" (such as salary and wages), \"business income\" and \"capital gains\"",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "income_tax_assessment_act_1936",
+      "income_tax_in_australia"
+    ],
+    "source_spans": [
+      "The Income Tax Assessment Act 1936 is an act of the Parliament of Australia.",
+      "Income tax is levied upon three sources of income for individual taxpayers: \"personal earnings\" (such as salary and wages), \"business income\" and \"capital gains\"."
+    ],
+    "source_span_offsets": [
+      [
+        34,
+        110
+      ],
+      [
+        127,
+        289
+      ]
+    ],
+    "supporting_doc_ids": [
+      "income_tax_assessment_act_1936",
+      "income_tax_in_australia"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae2dfd155429928c423951b",
+    "question": "Which of the city at the south of Shelly Beach, New South Wales is a local government area in the Hunter region of New South Wales, Australia?",
+    "canonical_answer": "City of Newcastle",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "shelly_beach_new_south_wales",
+      "city_of_newcastle"
+    ],
+    "source_spans": [
+      "It is 66 km south of Newcastle & 93 km north of Sydney.",
+      "The City of Newcastle is a local government area in the Hunter region of New South Wales, Australia."
+    ],
+    "source_span_offsets": [
+      [
+        273,
+        328
+      ],
+      [
+        21,
+        121
+      ]
+    ],
+    "supporting_doc_ids": [
+      "shelly_beach_new_south_wales",
+      "city_of_newcastle"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae3205c55429928c423961e",
+    "question": "Ms. Knope Goes to Washington is the fifth season premiere of an American political comedy television sitcom starring Amy Poehler as who?",
+    "canonical_answer": "Leslie Knope",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "ms_knope_goes_to_washington",
+      "parks_and_recreation"
+    ],
+    "source_spans": [
+      "\"Ms. Knope Goes to Washington\" is the season premiere of the fifth season of the American comedy television series \"Parks and Recreation\", and the 69th overall episode of the series.",
+      "Parks and Recreation is an American political comedy television sitcom starring Amy Poehler as Leslie Knope, a perky, mid-level bureaucrat in the Parks Department of Pawnee, a fictional town in Indiana."
+    ],
+    "source_span_offsets": [
+      [
+        32,
+        214
+      ],
+      [
+        24,
+        226
+      ]
+    ],
+    "supporting_doc_ids": [
+      "ms_knope_goes_to_washington",
+      "parks_and_recreation"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae37b4d5542991a06ce99ce",
+    "question": "When was the University established where Laura Landweber is a professor ?",
+    "canonical_answer": "1754",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "laura_landweber",
+      "columbia_university"
+    ],
+    "source_spans": [
+      "As of 2016, she is a professor of biochemistry and molecular biophysics and of biological sciences at Columbia University.",
+      "Columbia University (Columbia; officially Columbia University in the City of New York), established in 1754, is a private Ivy League research university in Upper Manhattan, New York City, often cited as one of the world's most prestigious universities."
+    ],
+    "source_span_offsets": [
+      [
+        79,
+        201
+      ],
+      [
+        23,
+        275
+      ]
+    ],
+    "supporting_doc_ids": [
+      "laura_landweber",
+      "columbia_university"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae48e7e55429913cc20449d",
+    "question": "Gualdo Tadino Cathedral, a Roman Catholic cathedral, was dedicated to Saint Bendict of Nursia who is a patron saint of what continent?",
+    "canonical_answer": "Europe",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "gualdo_tadino_cathedral",
+      "benedict_of_nursia"
+    ],
+    "source_spans": [
+      "Gualdo Tadino Cathedral (Italian: \"Duomo di Gualdo Tadino; Basilica Cattedrale di San Benedetto\" ) is a Roman Catholic cathedral in Gualdo Tadino in Umbria, Italy, dedicated to Saint Benedict of Nursia.",
+      "He is a patron saint of Europe."
+    ],
+    "source_span_offsets": [
+      [
+        27,
+        229
+      ],
+      [
+        545,
+        576
+      ]
+    ],
+    "supporting_doc_ids": [
+      "gualdo_tadino_cathedral",
+      "benedict_of_nursia"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae56c875542990ba0bbb2a2",
+    "question": "How many albums does the duo who sang \"Yesterday Once More\" have? ",
+    "canonical_answer": "11 albums",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "yesterday_once_more_album",
+      "the_carpenters"
+    ],
+    "source_spans": [
+      "Yesterday Once More is a 2-disc compilation album by US pop group The Carpenters.",
+      "During their 14-year career, the Carpenters recorded 11 albums, 31 singles, five television specials, and a short-lived television series."
+    ],
+    "source_span_offsets": [
+      [
+        31,
+        112
+      ],
+      [
+        349,
+        487
+      ]
+    ],
+    "supporting_doc_ids": [
+      "yesterday_once_more_album",
+      "the_carpenters"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae5bcbd55429960a22e0324",
+    "question": "When is the football club which Stan Spinks played for founded",
+    "canonical_answer": "in 1902",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "stan_spinks",
+      "hawthorn_football_club"
+    ],
+    "source_spans": [
+      "Stanley James Spinks (16 October 1912 – 23 October 2003) was an Australian rules footballer who played for the Hawthorn Football Club in the Victorian Football League (VFL) during the 1930s.",
+      "The club, founded in 1902, is the youngest of the Victorian-based teams in the AFL and has won thirteen VFL/AFL premierships."
+    ],
+    "source_span_offsets": [
+      [
+        15,
+        205
+      ],
+      [
+        165,
+        290
+      ]
+    ],
+    "supporting_doc_ids": [
+      "stan_spinks",
+      "hawthorn_football_club"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae5cf0b55429929b08079aa",
+    "question": "what caused the death of over 250 people in Accra, Ghana?",
+    "canonical_answer": "an explosion and a fire occurred at a petrol station",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "2015_accra_floods",
+      "2015_accra_explosion"
+    ],
+    "source_spans": [
+      "At least 25 people have died from the flooding directly, while a petrol station explosion caused by the flooding killed at least 200 more people.",
+      "On June 4, 2015, an explosion and a fire occurred at a petrol station in Ghana's capital city Accra, killing over 250 people."
+    ],
+    "source_span_offsets": [
+      [
+        572,
+        717
+      ],
+      [
+        24,
+        149
+      ]
+    ],
+    "supporting_doc_ids": [
+      "2015_accra_floods",
+      "2015_accra_explosion"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae638865542992ae0d1628c",
+    "question": "Who created the 2003 remake of the 1983 overhead view, vehicular combat game developed by Bally Midway?",
+    "canonical_answer": "Adam Dawes",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "highway_pursuit",
+      "spy_hunter"
+    ],
+    "source_spans": [
+      "Highway Pursuit is a computer game remake of Spy Hunter created by Adam Dawes in association with Retrospec, initially released in 2003.",
+      "Spy Hunter is an overhead view, vehicular combat game developed by Bally Midway and released in arcades in 1983."
+    ],
+    "source_span_offsets": [
+      [
+        19,
+        155
+      ],
+      [
+        14,
+        126
+      ]
+    ],
+    "supporting_doc_ids": [
+      "highway_pursuit",
+      "spy_hunter"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  },
+  {
+    "id": "5ae788fa55429952e35ea964",
+    "question": "The On Tour Forever album gave Blues Traveler the opportunity to display what musical trademark?",
+    "canonical_answer": "extensive use of segues",
+    "answer_variants": [],
+    "reasoning_type": "bridge",
+    "source_doc_ids": [
+      "on_tour_forever",
+      "blues_traveler"
+    ],
+    "source_spans": [
+      "On Tour Forever is a live EP album released by Blues Traveler in 1992.",
+      "It is known for extensive use of segues in their live performances, and was considered a key part of the re-emerging jam band scene of the 1990s, spearheading the H.O.R.D.E. touring music festival."
+    ],
+    "source_span_offsets": [
+      [
+        19,
+        89
+      ],
+      [
+        220,
+        417
+      ]
+    ],
+    "supporting_doc_ids": [
+      "on_tour_forever",
+      "blues_traveler"
+    ],
+    "formula": null,
+    "formula_kind": null,
+    "probe_outcomes": []
+  }
+]

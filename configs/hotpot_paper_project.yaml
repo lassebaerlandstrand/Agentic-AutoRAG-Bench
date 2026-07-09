@@ -1,13 +1,14 @@
 # Paper-scale framework project config — HotpotQA distractor, expanded space.
 #
-# The active bench matrix is { agentic_score, agentic_cost, random, bayesian }.
-# The original Marker-Inc AutoRAG baseline was decoupled on 2026-05-27 (see
+# The active accuracy matrix is { agentic_score, agentic_nodiag, agentic_nokb_nodiag,
+# motpe, motpe_warm, random }; agentic_cost is the Pareto experiment. The original Marker-Inc
+# AutoRAG baseline was decoupled on 2026-05-27 (see
 # agentic_autorag_bench/_deprecated/README.md). With AutoRAG gone, the search
 # space is no longer restricted to its lowest common denominator — chunking
 # is sweepable, top_k / hybrid_alpha / reranker_top_n can be continuous,
 # query_expansion gains HyDE, and the generator pool is broad. Bench's
-# random + Bayesian samplers already dispatch on DiscreteValues vs
-# NumericRange, so the same project config powers all four methods.
+# random + MO-TPE samplers already dispatch on DiscreteValues vs
+# NumericRange, so the same project config powers every method.
 
 meta:
   project_name: "hotpot-paper"
@@ -17,13 +18,13 @@ meta:
     words each), one paragraph per page/entity rather than full articles.
     Content is encyclopedic prose: entity-centric, factoid-dense, neutral
     register.
-  output_dir: "./results_hotpot/.shared_cache"
-  max_trials: 40
+  output_dir: "./experiment-1/hotpot/.shared_cache"
+  max_trials: 30
   cache_max_gb: 40.0
   # Score-only mode for the paper's headline Table 1. Cost is still recorded
   # for post-hoc analysis but is hidden from the agentic optimizer's prompts:
   # no Pareto block, no polish stance, no knee anchor, no cheapest-in-band
-  # signal. Every method (random / Bayesian / agentic_score / agentic_cost)
+  # signal. Every method (random / MO-TPE / agentic_score / agentic_cost)
   # optimizes the same scalar objective so the headline number is
   # apples-to-apples. The agentic_cost variant flips cost_aware=True at the
   # orchestrator level for the Pareto matrix (see methods/agentic.py).
@@ -36,25 +37,31 @@ meta:
 model_aliases:
   azure/gpt-5-nano: azure/gpt-5-nano-1
   azure/gpt-5-mini: azure/gpt-5-mini-1
+  azure/gpt-4.1-nano: azure/gpt-4.1-nano-1
+  azure/gpt-4.1-mini: azure/gpt-4.1-mini-1
 
 agent:
-  examiner_model: "azure_ai/DeepSeek-V3.2"
-  optimizer_model: "azure_ai/DeepSeek-V3.2"
+  examiner_model: "bedrock/minimax.minimax-m2.5"
+  optimizer_model: "bedrock/moonshotai.kimi-k2.5"
   judge_model: "azure_ai/DeepSeek-V3.2"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
   concurrency: 8
 
 examiner:
+  # Headline (Exp 1) optimizes against the validation exam built from Hotpot's own
+  # held-in questions (LLM-extracted, verify_source_facts-grounded tier-C spans),
+  # not the corpus self-exam. Loaded via this path; generation is skipped.
+  custom_exam_path: ./benchmark_data/hotpot_val_2000/validation_exam.json
   exam_size: 100
-  initial_question_multiplier: 1.7
+  initial_question_multiplier: 1.8
   probe_selection: true
   # Neighborhood-builder thresholds. The composer sees a neighborhood per
   # call (anchor + same-doc siblings + cosine-similar cross-doc chunks).
-  # HotpotQA paragraphs are ~50-100 words each so the 18-chunk floor binds
-  # first (~1.8k words), giving the composer enough raw material for
-  # 3-hop chains.
-  neighborhood_min_chunks: 18
+  # HotpotQA chunks are ~81 words (median), so the 20-chunk floor binds first
+  # (~1.6k words) — well below the 5k-word floor — giving the composer enough
+  # raw material for 3-hop chains.
+  neighborhood_min_chunks: 20
   neighborhood_min_words: 5000
   # HotpotQA paragraphs are single-topic snippets, so same-document siblings
   # are sparse — cross-doc cosine neighbors carry essentially all the
@@ -100,7 +107,7 @@ search_space:
       - "sentence-transformers/all-MiniLM-L6-v2"
 
   # top_k and hybrid_alpha are runtime-only (not in any cache key), so
-  # continuous ranges are safe and let Bayesian's TPE learn gradients.
+  # continuous ranges are safe and let MO-TPE learn gradients.
   # bm25_vector_fusion gates whether hybrid_alpha is actually consulted;
   # the sampler skips it under rrf and uses the midpoint for serialization.
   retrieval:
@@ -132,45 +139,41 @@ search_space:
   # expressive.
   generator:
     models:
-      - "bedrock/global.amazon.nova-2-lite-v1:0"
-      - "bedrock/openai.gpt-oss-20b-1:0"
-      - "bedrock/openai.gpt-oss-120b-1:0"
-      - "bedrock/qwen.qwen3-32b-v1:0"
-      - "bedrock/minimax.minimax-m2.1"
-      - "bedrock/minimax.minimax-m2.5"
-      - "bedrock/nvidia.nemotron-nano-3-30b"
-      - "bedrock/nvidia.nemotron-super-3-120b"
-      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"
-      - "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0"
-      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
       - "bedrock/us.amazon.nova-micro-v1:0"
-      - "bedrock/mistral.magistral-small-2509"
-      - "bedrock/mistral.ministral-3-14b-instruct"
-      - "bedrock/mistral.ministral-3-8b-instruct"
-      - "bedrock/mistral.ministral-3-3b-instruct"
-      - "bedrock/mistral.mistral-large-3-675b-instruct"
-      - "bedrock/mistral.mistral-7b-instruct-v0:2"
-      - "bedrock/mistral.mixtral-8x7b-instruct-v0:1"
-      - "bedrock/qwen.qwen3-next-80b-a3b"
+      - "bedrock/us.amazon.nova-lite-v1:0"
+      - "bedrock/us.amazon.nova-pro-v1:0"
       - "bedrock/google.gemma-3-4b-it"
       - "bedrock/google.gemma-3-12b-it"
       - "bedrock/google.gemma-3-27b-it"
-      - "bedrock/moonshotai.kimi-k2.5"
-      - "bedrock/zai.glm-4.7-flash"
-      - "bedrock/zai.glm-4.7"
+      - "bedrock/us.meta.llama3-1-8b-instruct-v1:0"
+      - "bedrock/us.meta.llama3-3-70b-instruct-v1:0"
       - "bedrock/us.meta.llama4-scout-17b-instruct-v1:0"
-      - "bedrock/us.amazon.nova-lite-v1:0"
-      - "bedrock/minimax.minimax-m2"
+      - "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0"
+      - "bedrock/mistral.magistral-small-2509"
+      - "bedrock/mistral.ministral-3-3b-instruct"
+      - "bedrock/mistral.ministral-3-8b-instruct"
+      - "bedrock/mistral.ministral-3-14b-instruct"
+      - "bedrock/mistral.mistral-7b-instruct-v0:2"
+      - "bedrock/mistral.mistral-large-3-675b-instruct"
+      - "bedrock/mistral.mixtral-8x7b-instruct-v0:1"
+      - "bedrock/nvidia.nemotron-nano-3-30b"
+      - "bedrock/openai.gpt-oss-20b-1:0"
+      - "bedrock/openai.gpt-oss-120b-1:0"
+      - "bedrock/qwen.qwen3-32b-v1:0"
+      - "bedrock/qwen.qwen3-coder-30b-a3b-v1:0"
+      - "bedrock/zai.glm-4.7"
       - "azure/gpt-4o"
       - "azure/gpt-4o-mini"
+      - "azure/gpt-4.1-mini"
+      - "azure/gpt-4.1-nano"
       - "azure/o4-mini"
       - "azure/gpt-5-mini"
       - "azure/gpt-5-nano"
       - "azure/gpt-5.4-mini"
       - "azure/gpt-5.4-nano"
-      - "vertex_ai/gemini-3.1-flash-lite-preview"
-      - "vertex_ai/gemini-2.5-flash-lite"
       - "vertex_ai/gemini-2.5-flash"
+      - "vertex_ai/gemini-2.5-flash-lite"
+      - "vertex_ai/gemini-3.1-flash-lite-preview"
     # Per-trial reasoning toggle. The sampler will pick reasoning=True only
     # for trials whose generator supports it (via LiteLLM's
     # supports_reasoning); other trials get reasoning=False without

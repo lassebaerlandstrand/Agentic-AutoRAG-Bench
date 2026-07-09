@@ -4,33 +4,47 @@
 # ``agentic_score`` in favour of ``agentic_cost``.)
 #
 # Default iteration knobs assume the wide search space defined in
-# ``hotpot_paper_project.yaml`` (14 embedders × ~43 generators × continuous
+# ``hotpot_paper_project.yaml`` (13 embedders × 31 generators × continuous
 # top_k/hybrid_alpha × ...). Dial down inline overrides for dev runs.
+#
+# Accuracy-experiment headline slate (locked, 5 search methods). Under test:
+# agentic_score (ours: KB on, diagnosis on). Ablated LLM-optimizer:
+# agentic_nokb_nodiag (KB off, diagnosis off, compact config→score history).
+# Statistical rivals: random (floor) → motpe (cold group-multivariate MO-TPE,
+# syftr-class) → motpe_warm (motpe + a free, uncounted transfer prior seeded
+# from this run's random cell). The diagnosis/KB ablations (agentic_nodiag,
+# agentic_nokb) are Hotpot-only and run AFTER the headline via
+# configs/hotpot_ablation.yaml on the same frozen exam, so the decomposition
+# ladder (agentic_nokb_nodiag → agentic_nodiag → agentic_score; KB-value =
+# nodiag−nokb_nodiag, diagnosis-value = score−nodiag) is reconstructed across
+# the two runs. agentic_cost belongs to the Pareto experiment (unidoc), not
+# here. kb_greedy is a single-config reference run via its own script, not a
+# matrix method.
 
 project_config: ./hotpot_paper_project.yaml
 
 methods:
-  - agentic_score   # cost_aware=False (highest-score)
-  - random
-  - bayesian
-  - agentic_cost    # cost_aware=True (Pareto-aware)
+  - agentic_score      # full agentic: KB on, diagnosis on — method under test
+  - agentic_nokb_nodiag  # KB off, diagnosis off, compact (config→score) history proposer
+  - motpe              # cold group-multivariate MO-TPE (syftr-class statistical search)
+  - motpe_warm         # MO-TPE + free uncounted transfer prior from random (runs after random)
+  - random             # exploration floor (also motpe_warm's transfer source)
 
-seeds: [1]
+seeds: [1, 2, 3]
 
 budget:
-  max_trials: 40
+  max_trials: 30
 
 # Per-method early-stopping checkpoints: after a method's full
 # ``max_trials``-budget search finishes, also evaluate the best config seen
 # in ``history[:k]`` on the held-out QA. Writes a sibling
 # ``<method>@<k>/seed_<n>/`` directory per checkpoint. Lets the paper show
 # "ours at trial k" vs. "baseline at trial max_trials" without paying for
-# extra search trials. Random/Bayesian are not checkpointed (saves held-out
+# extra search trials. Baselines are not checkpointed (saves held-out
 # judge cost — the headline question is "how does ours catch up to
-# Bayesian/random when given fewer trials", not the inverse).
+# MO-TPE/random when given fewer trials", not the inverse).
 checkpoints:
   agentic_score: [10, 20]
-  agentic_cost:  [10, 20]
 
 benchmark:
   name: hotpot_qa
@@ -40,8 +54,12 @@ benchmark:
   output_dir: ./benchmark_data/hotpot_val_2000
 
 hold_out:
-  limit: 300
+  # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
+  # contiguous qa.json[:limit] slice. Already excludes doc-less rows and is
+  # exactly ~300 stratified questions, so limit is null (use all of it).
+  qa_path: ./benchmark_data/hotpot_val_2000/splits/holdout_qa.json
+  limit: null
   judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
-output_root: ./results_hotpot
+output_root: ./experiment-1/hotpot

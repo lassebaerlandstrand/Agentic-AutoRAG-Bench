@@ -1,0 +1,16 @@
+{
+  "method": "agentic_cost",
+  "seed": 1,
+  "deterministic": false,
+  "optimizer_usd": 0.7276766999999997,
+  "trial_usd_total": 3.0130893100000042,
+  "wall_clock_s": 8461.035176067962,
+  "n_trials_completed": 30,
+  "prompt_tokens": 10359074,
+  "completion_tokens": 751072,
+  "embedding_tokens": 10133269,
+  "extras": {
+    "output_dir": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-2/unidoc/agentic_cost/seed_1",
+    "cost_aware": true
+  }
+}

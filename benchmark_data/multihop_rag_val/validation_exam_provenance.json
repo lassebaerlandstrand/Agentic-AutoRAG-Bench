@@ -1,0 +1,28 @@
+{
+  "n_pool": 1700,
+  "exam_size": 100,
+  "all_tier_c": true,
+  "n_abstention": 12,
+  "extractor_model": "gemini/gemini-2.5-flash-lite",
+  "fuzzy_threshold": 0.9,
+  "stratify_key": "question_type",
+  "seed": 42,
+  "qa_sha256": "3e21ab78da0029ab2427ef20f1892254ab52e7103fc1910857efeecf320e4552",
+  "target_distribution": {
+    "comparison_query": 34,
+    "inference_query": 32,
+    "null_query": 12,
+    "temporal_query": 22
+  },
+  "exam_distribution": {
+    "comparison_query": 34,
+    "inference_query": 32,
+    "null_query": 12,
+    "temporal_query": 22
+  },
+  "per_stratum_extracted": {
+    "comparison_query": 39,
+    "inference_query": 34,
+    "temporal_query": 24
+  }
+}

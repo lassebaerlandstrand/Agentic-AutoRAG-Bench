@@ -13,7 +13,7 @@ from agentic_autorag.config.models import TrialConfig
 class Budget:
     """Bounds the optimizer's resource consumption.
 
-    Sequential optimizers (Random / Bayesian / Agentic) honour ``max_trials``.
+    Sequential optimizers (Random / MO-TPE / Agentic) honour ``max_trials``.
     AutoRAG enumerates per-node and ignores ``max_trials``; ``max_wall_clock_s``
     is the only knob that bounds it.
     """
@@ -45,6 +45,12 @@ class TrialResult:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     embedding_tokens: int = 0
+    # Deploy-time LLM cost per query (synthesis + query-expansion), averaged
+    # over valid questions. Read straight from ``ExamResult`` — it is the
+    # SECOND objective the cost-aware optimizer (agentic_cost / motpe Pareto)
+    # minimizes, and it deliberately EXCLUDES the judge + embedding-build
+    # spend that ``eval_usd`` rolls in. Defaults to 0.0 for accuracy-only runs.
+    mean_llm_cost_per_query_usd: float = 0.0
 
     @classmethod
     def from_exam_result(cls, exam_result: Any) -> TrialResult:
@@ -61,6 +67,7 @@ class TrialResult:
             prompt_tokens=int(getattr(exam_result, "total_prompt_tokens", 0)),
             completion_tokens=int(getattr(exam_result, "total_completion_tokens", 0)),
             embedding_tokens=0,
+            mean_llm_cost_per_query_usd=float(getattr(exam_result, "mean_llm_cost_per_query_usd", 0.0)),
         )
 
 
@@ -76,6 +83,10 @@ class HistoryEntry:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     embedding_tokens: int = 0
+    # Per-query deploy-time LLM cost (the cost-aware Pareto objective). 0.0 on
+    # accuracy-only runs; surfaced so the Pareto experiment can read it straight
+    # off ``history.jsonl`` for every method, not just agentic_cost.
+    mean_llm_cost_per_query_usd: float = 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -87,6 +98,7 @@ class HistoryEntry:
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "embedding_tokens": self.embedding_tokens,
+            "mean_llm_cost_per_query_usd": self.mean_llm_cost_per_query_usd,
         }
 
 
@@ -141,7 +153,7 @@ Provided by the bench runner; wraps the framework's ``Orchestrator.evaluate_tria
 
 
 class Optimizer(Protocol):
-    """Every method (random, bayesian, agentic, autorag) implements this."""
+    """Every method (random, motpe, agentic, autorag) implements this."""
 
     name: str
     deterministic: bool
