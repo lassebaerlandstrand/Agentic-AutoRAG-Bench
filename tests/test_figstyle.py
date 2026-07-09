@@ -12,7 +12,8 @@ from agentic_autorag_bench._figstyle import (
 def test_display_label_base_methods() -> None:
     assert display_label("agentic_score") == "Agentic (Ours)"
     assert display_label("random") == "Random"
-    assert display_label("bayesian") == "Bayesian (TPE)"
+    assert display_label("motpe") == "MO-TPE"
+    assert display_label("agentic_nokb") == "Agentic (no KB)"
 
 
 def test_display_label_checkpoints() -> None:
@@ -35,7 +36,7 @@ def test_color_for_unknown_is_fallback_gray() -> None:
 
 def test_no_autorag_in_display_labels() -> None:
     """AutoRAG was cut — no method label should mention it."""
-    for m in ("agentic_score", "agentic_cost", "random", "bayesian", "agentic_score@10"):
+    for m in ("agentic_score", "agentic_cost", "random", "motpe", "agentic_score@10"):
         assert "autorag" not in display_label(m).lower()
 
 

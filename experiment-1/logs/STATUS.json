@@ -1,0 +1,486 @@
+{
+  "updated_at": "2026-07-05T04:12:19Z",
+  "pid": 864229,
+  "workers": 2,
+  "counts": {
+    "pending": 0,
+    "running": 0,
+    "done": 57,
+    "failed": 0,
+    "blocked": 0
+  },
+  "eta_hours": 0.0,
+  "running": [],
+  "datasets": {
+    "hotpot": {
+      "search_done": "15/15",
+      "finalized": true
+    },
+    "musique": {
+      "search_done": "15/15",
+      "finalized": true
+    },
+    "multihop": {
+      "search_done": "15/15",
+      "finalized": true
+    }
+  },
+  "units": [
+    {
+      "key": "hotpot/agentic_score/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/agentic_nokb_nodiag/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/motpe/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/motpe_warm/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/random/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/kb_greedy/seed_1",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/agentic_score/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/agentic_nokb_nodiag/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/motpe/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/motpe_warm/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/random/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/kb_greedy/seed_2",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/agentic_score/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/agentic_nokb_nodiag/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/motpe/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/motpe_warm/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/random/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/kb_greedy/seed_3",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "hotpot/analyze",
+      "kind": "analyze",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/agentic_score/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/agentic_nokb_nodiag/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/motpe/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/motpe_warm/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/random/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/kb_greedy/seed_1",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/agentic_score/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/agentic_nokb_nodiag/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/motpe/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/motpe_warm/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/random/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/kb_greedy/seed_2",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/agentic_score/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/agentic_nokb_nodiag/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/motpe/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/motpe_warm/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/random/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/kb_greedy/seed_3",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "musique/analyze",
+      "kind": "analyze",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/agentic_score/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/agentic_nokb_nodiag/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/motpe/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/motpe_warm/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/random/seed_1",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/kb_greedy/seed_1",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/agentic_score/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/agentic_nokb_nodiag/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/motpe/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/motpe_warm/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/random/seed_2",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/kb_greedy/seed_2",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/agentic_score/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/agentic_nokb_nodiag/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/motpe/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/motpe_warm/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/random/seed_3",
+      "kind": "search",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/kb_greedy/seed_3",
+      "kind": "kb_greedy",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    },
+    {
+      "key": "multihop/analyze",
+      "kind": "analyze",
+      "state": "done",
+      "attempts": 1,
+      "rc": 0,
+      "last_error": ""
+    }
+  ]
+}

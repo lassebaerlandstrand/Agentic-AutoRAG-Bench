@@ -147,6 +147,7 @@ class RandomSearch:
                 prompt_tokens=result.prompt_tokens,
                 completion_tokens=result.completion_tokens,
                 embedding_tokens=result.embedding_tokens,
+                mean_llm_cost_per_query_usd=result.mean_llm_cost_per_query_usd,
             )
             history.append(entry)
             trial_usd_total += result.eval_usd

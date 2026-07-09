@@ -70,12 +70,21 @@ class BenchmarkRunner:
         judge_model: str | None,
         limit: int | None = None,
         concurrency: int = 10,
+        exclude_question_types: list[str] | None = None,
+        qa_path_override: str | Path | None = None,
     ) -> dict:
         """Score one winning ``TrialConfig`` against the held-out QA.
 
         Writes ``benchmark_results.json`` to ``output_path``. The framework's
         runner takes a path to the trial yaml; we materialise the trial config
         next to ``output_path`` for that interface and clean it up after.
+
+        ``exclude_question_types`` is forwarded to the framework runner as a
+        general escape hatch for dropping a broken question type before scoring
+        (unused by the paper configs; abstention rows are scored, not dropped).
+        ``qa_path_override`` points the held-out scoring at a specific QA file
+        (e.g. the stratified ``splits/holdout_qa.json``) instead of the full
+        ``qa.json`` — the fix for the biased contiguous held-out slice.
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -87,11 +96,12 @@ class BenchmarkRunner:
             result = await run_benchmark_evaluate(
                 project_config_path=project_config_path,
                 trial_config_path=str(trial_yaml_path),
-                qa_path=str(self.qa_path),
+                qa_path=str(qa_path_override or self.qa_path),
                 output_path=str(output_path),
                 judge_model=judge_model,
                 concurrency=concurrency,
                 limit=limit,
+                exclude_question_types=exclude_question_types,
             )
             return result.model_dump(mode="json") if hasattr(result, "model_dump") else dict(result)
         finally:

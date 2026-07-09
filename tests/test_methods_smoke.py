@@ -28,7 +28,7 @@ from agentic_autorag.config.models import (
 )
 from agentic_autorag.output_layout import RunLayout
 
-from agentic_autorag_bench.methods.bayesian import BayesianSearch
+from agentic_autorag_bench.methods.motpe import MOTPESearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.types import Budget, TrialResult
 
@@ -80,6 +80,50 @@ def _make_evaluator(scores: list[float]):
     return evaluator
 
 
+def _make_cost_evaluator(cost_per_query: float):
+    """Evaluator returning a fixed non-zero deploy-time per-query cost, so tests
+    can assert the search carries it into every HistoryEntry (the second Pareto
+    objective and motpe_warm's warm-prior cost both read this field)."""
+
+    async def evaluator(config: TrialConfig) -> TrialResult:
+        return TrialResult(
+            answer_accuracy=0.5,
+            metrics={"answer_accuracy": 0.5, "mean_em": 0.0, "mean_f1": 0.0, "mean_retrieval_quality": 0.0},
+            eval_usd=0.002,
+            mean_llm_cost_per_query_usd=cost_per_query,
+        )
+
+    return evaluator
+
+
+@pytest.mark.asyncio
+async def test_random_search_records_mean_llm_cost_per_query(tmp_path: Path) -> None:
+    """Regression: RandomSearch must carry the evaluator's
+    ``mean_llm_cost_per_query_usd`` into every HistoryEntry. When it was
+    dropped (HistoryEntry defaults it to 0.0), random's Pareto frontier
+    collapsed to nothing (``_load_trial_points`` filters cost>0) and
+    motpe_warm's two-objective warm prior — which reads this field from
+    random's history — was injected cost-blind (every prior at cost 0)."""
+    project = _tiny_project()
+    optimizer = RandomSearch(project=project, storage_dir=tmp_path)
+
+    sr = await optimizer.search(_make_cost_evaluator(0.0031), Budget(max_trials=3), seed=42)
+
+    assert [h.mean_llm_cost_per_query_usd for h in sr.history] == pytest.approx([0.0031] * 3)
+
+
+@pytest.mark.asyncio
+async def test_motpe_search_records_mean_llm_cost_per_query(tmp_path: Path) -> None:
+    """Parity: MOTPESearch must likewise carry the per-query cost, since the
+    cost-aware study minimizes it as the second objective."""
+    project = _tiny_project()
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
+
+    sr = await optimizer.search(_make_cost_evaluator(0.0027), Budget(max_trials=3), seed=42)
+
+    assert [h.mean_llm_cost_per_query_usd for h in sr.history] == pytest.approx([0.0027] * 3)
+
+
 @pytest.mark.asyncio
 async def test_random_search_runs_to_completion() -> None:
     project = _tiny_project()
@@ -126,14 +170,14 @@ async def test_random_search_different_seeds_diverge() -> None:
 
 
 @pytest.mark.asyncio
-async def test_bayesian_search_runs_to_completion(tmp_path: Path) -> None:
+async def test_motpe_search_runs_to_completion(tmp_path: Path) -> None:
     project = _tiny_project()
-    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.3, 0.7, 0.5])
 
     sr = await optimizer.search(evaluator, Budget(max_trials=3), seed=42)
 
-    assert sr.method == "bayesian"
+    assert sr.method == "motpe"
     assert len(sr.history) == 3
     assert max(h.answer_accuracy for h in sr.history) == 0.7
     assert (tmp_path / "optuna.db").exists()
@@ -151,9 +195,9 @@ async def test_random_rejects_when_budget_missing() -> None:
 
 
 @pytest.mark.asyncio
-async def test_bayesian_rejects_when_budget_missing(tmp_path: Path) -> None:
+async def test_motpe_rejects_when_budget_missing(tmp_path: Path) -> None:
     project = _tiny_project()
-    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.5])
 
     with pytest.raises(ValueError, match="max_trials"):
@@ -199,10 +243,10 @@ def _multi_embedding_project() -> ProjectConfig:
 
 
 @pytest.mark.asyncio
-async def test_bayesian_with_multiple_embeddings_runs_all_trials(tmp_path: Path) -> None:
+async def test_motpe_with_multiple_embeddings_runs_all_trials(tmp_path: Path) -> None:
     """All 8 trials complete with a multi-embedder search space."""
     project = _multi_embedding_project()
-    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.3, 0.4, 0.5, 0.6, 0.7, 0.55, 0.45, 0.35])
 
     sr = await optimizer.search(evaluator, Budget(max_trials=8), seed=42)
@@ -222,12 +266,12 @@ async def test_random_with_multiple_embeddings_runs_all_trials() -> None:
 
 
 @pytest.mark.asyncio
-async def test_bayesian_with_mixed_embedding_limits_explores_all_embeddings(tmp_path: Path) -> None:
-    """Static embedding categorical → Bayesian's first few trials see every embedding,
+async def test_motpe_with_mixed_embedding_limits_explores_all_embeddings(tmp_path: Path) -> None:
+    """Static embedding categorical → MO-TPE's first few trials see every embedding,
     not just the ones compatible with whatever chunk_token_size happened to land first.
     """
     project = _multi_embedding_project()
-    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.5] * 15)
 
     sr = await optimizer.search(evaluator, Budget(max_trials=15), seed=42)
@@ -322,11 +366,11 @@ async def test_random_search_with_discrete_values_picks_per_stage_llms() -> None
 
 
 @pytest.mark.asyncio
-async def test_bayesian_with_discrete_values_lands_in_grid(tmp_path: Path) -> None:
+async def test_motpe_with_discrete_values_lands_in_grid(tmp_path: Path) -> None:
     """Optuna's categorical suggest must produce values in the discrete sets,
     with snap-back for top_k-incompatible reranker_top_n picks."""
     project = _discrete_project()
-    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.5] * 12)
 
     sr = await optimizer.search(evaluator, Budget(max_trials=12), seed=42)
@@ -339,7 +383,7 @@ async def test_bayesian_with_discrete_values_lands_in_grid(tmp_path: Path) -> No
 
 
 @pytest.mark.asyncio
-async def test_bayesian_reranker_top_n_lands_on_grid_and_respects_top_k(tmp_path: Path) -> None:
+async def test_motpe_reranker_top_n_lands_on_grid_and_respects_top_k(tmp_path: Path) -> None:
     """Optuna now uses dynamic int bounds + snap-to-grid for reranker_top_n
     (not categorical with snap-back). Every sampled value must (a) be in the
     DiscreteValues grid and (b) be <= top_k. This is the regression test for
@@ -348,7 +392,7 @@ async def test_bayesian_reranker_top_n_lands_on_grid_and_respects_top_k(tmp_path
     project = _discrete_project()
     # Force the reranker to be active so reranker_top_n is meaningful.
     project.search_space.reranker.models = ["BAAI/bge-reranker-v2-m3"]
-    optimizer = BayesianSearch(project=project, storage_dir=tmp_path)
+    optimizer = MOTPESearch(project=project, storage_dir=tmp_path)
     evaluator = _make_evaluator([0.5] * 15)
 
     sr = await optimizer.search(evaluator, Budget(max_trials=15), seed=42)
@@ -427,10 +471,10 @@ async def test_random_resume_same_rng_point_on_in_flight_interrupt(tmp_path: Pat
 
 
 @pytest.mark.asyncio
-async def test_bayesian_resume_continues_from_last_trial(tmp_path: Path) -> None:
+async def test_motpe_resume_continues_from_last_trial(tmp_path: Path) -> None:
     project = _tiny_project()
 
-    sr_a = await BayesianSearch(project=project, storage_dir=tmp_path).search(
+    sr_a = await MOTPESearch(project=project, storage_dir=tmp_path).search(
         _make_evaluator([0.1, 0.2]),
         Budget(max_trials=2),
         seed=42,
@@ -439,7 +483,7 @@ async def test_bayesian_resume_continues_from_last_trial(tmp_path: Path) -> None
     assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "optuna.db").exists()
 
-    sr_b = await BayesianSearch(project=project, storage_dir=tmp_path, resume=True).search(
+    sr_b = await MOTPESearch(project=project, storage_dir=tmp_path, resume=True).search(
         _make_evaluator([0.3, 0.4]),
         Budget(max_trials=4),
         seed=42,
@@ -451,7 +495,7 @@ async def test_bayesian_resume_continues_from_last_trial(tmp_path: Path) -> None
 
 
 @pytest.mark.asyncio
-async def test_bayesian_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path) -> None:
+async def test_motpe_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path) -> None:
     """Wiping a non-empty storage dir is the bench-level ``--clean`` flag's
     job (``_clear_output_root_for``). The optimizer must NOT silently
     delete prior optuna.db / history.jsonl when constructed with
@@ -460,7 +504,7 @@ async def test_bayesian_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path)
     """
     project = _tiny_project()
 
-    await BayesianSearch(project=project, storage_dir=tmp_path).search(
+    await MOTPESearch(project=project, storage_dir=tmp_path).search(
         _make_evaluator([0.1, 0.2]),
         Budget(max_trials=2),
         seed=42,
@@ -468,17 +512,17 @@ async def test_bayesian_does_not_wipe_prior_state_on_fresh_start(tmp_path: Path)
     assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "optuna.db").exists()
 
-    # Construct a fresh BayesianSearch (resume=False) and confirm prior
+    # Construct a fresh MOTPESearch (resume=False) and confirm prior
     # files are still on disk. We don't run search again — that would
     # exercise the buggy ``--no-clean`` semantic (loop runs from 1, sqlite
     # still has prior trials), which is out of scope for this test.
-    BayesianSearch(project=project, storage_dir=tmp_path)
+    MOTPESearch(project=project, storage_dir=tmp_path)
     assert RunLayout(base=tmp_path).history.exists()
     assert (tmp_path / "optuna.db").exists()
 
 
 @pytest.mark.asyncio
-async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) -> None:
+async def test_motpe_resume_self_heals_missing_history_jsonl(tmp_path: Path) -> None:
     """A run started with a pre-resume version of the bench writes
     ``optuna.db`` + ``trial_cost_ledger.jsonl`` per trial but NOT
     ``history.jsonl`` (that was end-of-method-only). On ``--resume``, we
@@ -487,7 +531,7 @@ async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) 
     project = _tiny_project()
 
     # Run 2 trials normally to populate optuna.db + history.jsonl.
-    await BayesianSearch(project=project, storage_dir=tmp_path).search(
+    await MOTPESearch(project=project, storage_dir=tmp_path).search(
         _make_evaluator([0.4, 0.5]),
         Budget(max_trials=2),
         seed=42,
@@ -527,7 +571,7 @@ async def test_bayesian_resume_self_heals_missing_history_jsonl(tmp_path: Path) 
     assert not history_path.exists()
 
     # Resume: self-heal kicks in, reconstructs history.jsonl, continues to 4.
-    sr = await BayesianSearch(project=project, storage_dir=tmp_path, resume=True).search(
+    sr = await MOTPESearch(project=project, storage_dir=tmp_path, resume=True).search(
         _make_evaluator([0.6, 0.7]),
         Budget(max_trials=4),
         seed=42,

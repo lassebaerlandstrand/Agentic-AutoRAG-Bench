@@ -1,0 +1,26 @@
+{
+  "n_pool": 2117,
+  "exam_size": 100,
+  "all_tier_c": true,
+  "n_abstention": 0,
+  "extractor_model": "gemini/gemini-2.5-flash-lite",
+  "fuzzy_threshold": 0.9,
+  "stratify_key": "n_hops",
+  "seed": 42,
+  "qa_sha256": "14d639b7a685aae862adb67ec6be7b55d44b0f3a52c24213bc79e5494144bc71",
+  "target_distribution": {
+    "2": 52,
+    "3": 31,
+    "4": 17
+  },
+  "exam_distribution": {
+    "2": 52,
+    "3": 31,
+    "4": 17
+  },
+  "per_stratum_extracted": {
+    "2": 56,
+    "3": 32,
+    "4": 18
+  }
+}

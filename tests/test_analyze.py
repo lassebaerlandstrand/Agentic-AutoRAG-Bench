@@ -201,7 +201,7 @@ def test_analyze_emits_all_artifacts(tmp_path) -> None:
     _write_method_dir(results_dir, "agentic_score", 1, [1.0, 0.0, 1.0, 1.0], [True, False, True, True])
     _write_method_dir(results_dir, "agentic_score", 2, [1.0, 1.0, 0.0, 1.0], [True, True, False, True])
     _write_method_dir(results_dir, "random", 1, [0.0, 0.0, 1.0, 0.0], [False, False, True, False])
-    _write_method_dir(results_dir, "bayesian", 1, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
+    _write_method_dir(results_dir, "motpe", 1, [1.0, 0.0, 1.0, 0.0], [True, False, True, False])
 
     analyze(results_dir, output_dir)
 

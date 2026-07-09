@@ -1,25 +1,25 @@
 # Paper-scale matrix config — score-only EMNLP Table 1 run on MuSiQue.
-# Mirrors hotpot_paper.yaml exactly (same methods, seeds, budget, hold-out
-# settings) so the two benchmarks differ only in dataset.
-#
-# Currently dialled DOWN for iteration: single seed, 3 trials, 300-question
-# hold-out. Bump these for the camera-ready run (see hotpot_paper.yaml for
-# the canonical paper-scale numbers).
+# Mirrors hotpot_paper.yaml (same methods, seeds, budget, checkpoints, hold-out)
+# so the two benchmarks differ only in dataset.
 #
 # Run a single method with: -m random  (or any subset present in `methods`).
 
 project_config: ./musique_paper_project.yaml
 
 methods:
-  - random
-  - bayesian
-  - agentic_score   # cost_aware=False (highest-score)
-  - agentic_cost    # cost_aware=True  (Pareto-aware)
+  - agentic_score      # full agentic: KB on, diagnosis on — method under test
+  - agentic_nokb_nodiag  # KB off, diagnosis off, compact (config→score) history proposer
+  - motpe              # cold group-multivariate MO-TPE (syftr-class statistical search)
+  - motpe_warm         # MO-TPE + free uncounted transfer prior from random (runs after random)
+  - random             # exploration floor (also motpe_warm's transfer source)
 
-seeds: [1]
+seeds: [1, 2, 3]
 
 budget:
-  max_trials: 3
+  max_trials: 30
+
+checkpoints:
+  agentic_score: [10, 20]
 
 benchmark:
   name: musique
@@ -29,8 +29,12 @@ benchmark:
   output_dir: ./benchmark_data/musique_val_2417
 
 hold_out:
-  limit: 300
-  judge_model: azure/o4-mini
+  # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
+  # contiguous qa.json[:limit] slice, which on MuSiQue's hop-sorted pool
+  # returned 100% 2-hop. Already ~300 stratified questions, so limit is null.
+  qa_path: ./benchmark_data/musique_val_2417/splits/holdout_qa.json
+  limit: null
+  judge_model: azure_ai/DeepSeek-V3.2
   concurrency: 10
 
-output_root: ./results_paper_musique
+output_root: ./experiment-1/musique

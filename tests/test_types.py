@@ -20,12 +20,31 @@ def test_trial_result_from_exam_result() -> None:
         mean_em=0.70,
         mean_f1=0.78,
         total_llm_cost_usd=0.0123,
+        mean_llm_cost_per_query_usd=0.0009,
     )
     tr = TrialResult.from_exam_result(exam)
     assert tr.answer_accuracy == 0.80
     assert tr.metrics["answer_accuracy"] == 0.80
     assert tr.metrics["mean_em"] == 0.70
     assert tr.eval_usd == 0.0123
+    # The per-query cost (the cost-aware Pareto objective) surfaces straight
+    # off the ExamResult, distinct from eval_usd.
+    assert tr.mean_llm_cost_per_query_usd == 0.0009
+
+
+def test_history_entry_surfaces_per_query_cost() -> None:
+    entry = HistoryEntry(
+        trial_number=1,
+        config={"top_k": 5},
+        answer_accuracy=0.7,
+        metrics={"em": 0.6},
+        eval_usd=0.02,
+        mean_llm_cost_per_query_usd=0.0004,
+    )
+    d = entry.to_dict()
+    assert d["mean_llm_cost_per_query_usd"] == 0.0004
+    # Round-trips through the same kwargs the loaders use.
+    assert HistoryEntry(**d).mean_llm_cost_per_query_usd == 0.0004
 
 
 def test_trial_result_handles_missing_cost() -> None:

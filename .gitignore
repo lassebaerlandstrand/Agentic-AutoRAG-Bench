@@ -29,8 +29,15 @@ results/**/autorag_project/data/
 results/**/autorag_project/0/
 results/**/autorag_project/resources/
 
-# Benchmark data is regeneratable via `agentic-autorag benchmark-prepare`.
-benchmark_data/
+# Benchmark data (corpus, splits, held-out gold, qa) is regeneratable via
+# `agentic-autorag benchmark-prepare`, so it is not tracked. Keep only the
+# validation exams (the Experiment-1 optimization target) + their provenance, so
+# the exam that produced the results stays in git history.
+benchmark_data/*
+!benchmark_data/*/
+benchmark_data/*/*
+!benchmark_data/*/validation_exam.json
+!benchmark_data/*/validation_exam_provenance.json
 
 # Editor state
 *.swp
@@ -50,3 +57,9 @@ results_*/
 
 # Exploratory analysis artifacts paired with the results_* runs.
 *_artifacts/
+
+# Session-local scratch — not part of the shipped benchmark artifact.
+/CLAUDE.md
+/knowledge_base_render.md
+*.out
+configs/_canary_*

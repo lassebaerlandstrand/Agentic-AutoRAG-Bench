@@ -53,8 +53,18 @@ N_BOOTSTRAP = 1000
 CI_ALPHA = 0.05
 
 # Stable display order shared by the Markdown table and figure writers so the
-# paper's narrative ("agentic vs. random/bayesian") reads the same everywhere.
-METHOD_ORDER = ["agentic_score", "agentic_cost", "random", "bayesian"]
+# paper's narrative ("agentic vs. MO-TPE/random") reads the same everywhere.
+METHOD_ORDER = [
+    "agentic_score",
+    "agentic_cost",
+    "agentic_nokb",
+    "agentic_nodiag",
+    "agentic_nokb_nodiag",
+    "motpe",
+    "motpe_warm",
+    "qlognehvi",
+    "random",
+]
 
 
 def _order_methods_for_analyze(method_names) -> list[str]:
@@ -244,18 +254,27 @@ def load_results(results_dir: Path) -> list[MethodResult]:
             if not bench_path.exists():
                 logger.warning("Skipping %s/%s: no benchmark_results.json", method_dir.name, seed_dir.name)
                 continue
-            benchmarks: list[dict] = [json.loads(bench_path.read_text(encoding="utf-8"))]
-            replays_dir = seed_dir / "holdout_replays"
-            if replays_dir.is_dir():
-                for rp in sorted(replays_dir.glob("run_*.json")):
-                    benchmarks.append(json.loads(rp.read_text(encoding="utf-8")))
-            optimizer_meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-            history = []
-            if history_path.exists():
-                for line in history_path.read_text(encoding="utf-8").splitlines():
-                    line = line.strip()
-                    if line:
-                        history.append(json.loads(line))
+            # A process killed mid-write can leave a truncated json anywhere in
+            # this seed tree. Skip the whole (method, seed) on any read error
+            # rather than abort the matrix render — the next --resume rewrites it.
+            try:
+                benchmarks: list[dict] = [json.loads(bench_path.read_text(encoding="utf-8"))]
+                replays_dir = seed_dir / "holdout_replays"
+                if replays_dir.is_dir():
+                    for rp in sorted(replays_dir.glob("run_*.json")):
+                        benchmarks.append(json.loads(rp.read_text(encoding="utf-8")))
+                optimizer_meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+                history = []
+                if history_path.exists():
+                    for line in history_path.read_text(encoding="utf-8").splitlines():
+                        line = line.strip()
+                        if line:
+                            history.append(json.loads(line))
+            except (OSError, json.JSONDecodeError):
+                logger.warning(
+                    "Skipping %s/%s: unreadable/corrupt result file", method_dir.name, seed_dir.name, exc_info=True
+                )
+                continue
             seed: int | None = int(seed_dir.name.removeprefix("seed_")) if seed_dir.name.startswith("seed_") else None
             out.append(
                 MethodResult(
@@ -410,10 +429,11 @@ def write_markdown_table(
 ) -> None:
     """Per-method results as a Markdown pipe-table.
 
-    EM / F1 / Judge columns are formatted as ``mean ± SD`` across the
-    hold-out replays for that method (typically N=3 after
-    ``replay-holdout``). ``N`` is reported alongside so a method that
-    hasn't been replayed yet (N=1, SD=0) is visually obvious.
+    EM / F1 / Judge columns are formatted as ``mean ± SD`` across the N
+    held-out evaluations pooled for that method — one per seed, plus any
+    extra ``replay-holdout`` re-evaluations (typically N=3 from 3 seeds).
+    ``N`` is reported alongside so a single-seed matrix (N=1, SD=0) is
+    visually obvious.
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rows: list[str] = []
@@ -453,12 +473,13 @@ def write_markdown_table(
     body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | | | | | | |"
     text = (
         f"# {benchmark_pretty_name} held-out scores\n\n"
-        "EM / F1 / Judge columns: mean ± sample SD (ddof=1) across N hold-out "
-        "replays per method. N=1 means the method has only its end-of-search "
-        "eval; run `replay-holdout` to bring it to N=3. Token / cost / wall "
-        "columns are mean across seeds (search-side, unaffected by hold-out "
-        "replays). `Search $` = Optimizer $ + Trial $ (the one-time bill to "
-        "find the winning config).\n\n"
+        "EM / F1 / Judge columns: mean ± sample SD (ddof=1) across the N held-out "
+        "evaluations pooled per method — one per seed, plus any extra "
+        "`replay-holdout` re-evaluations of the winning config. With 3 seeds and "
+        "no replays, N=3 and the SD is the across-seed standard deviation. Token / "
+        "cost / wall columns are mean across seeds (search-side, unaffected by "
+        "hold-out replays). `Search $` = Optimizer $ + Trial $ (the one-time bill "
+        "to find the winning config).\n\n"
         f"{header}\n{body}\n\n"
         "¹ Wall-clock is reported for context only — rate limits and shared caches "
         "make it an unfair primary metric. Token counts are the recommended cost proxy.\n"
@@ -479,9 +500,9 @@ def _fmt_tok(n: float) -> str:
 def write_holdout_scores_figure(stats: dict[str, dict], out_path: Path) -> None:
     """Grouped bars of held-out EM, Token-F1, and LLM-Judge accuracy per method.
 
-    Error bars are ``± sample SD`` across N hold-out replays per method
-    (run ``replay-holdout`` to populate N>=2 replays; until then N=1 and
-    the bars have zero-height whiskers). This is the primary "which method
+    Error bars are ``± sample SD`` across the N held-out evaluations per
+    method — one per seed (plus any ``replay-holdout`` re-evaluations); with
+    3 seeds N=3 and the whiskers span the across-seed SD. This is the primary "which method
     scores best?" view — the LaTeX table carries the same numbers but
     the grouping makes cross-method comparison readable at a glance.
     """
@@ -535,9 +556,9 @@ def write_efficiency_figure(stats: dict[str, dict], out_path: Path) -> None:
     """Score-vs-cost and score-vs-wallclock scatter (1x2 panel).
 
     Each method is one point; vertical bars are ± SD of held-out Judge
-    across hold-out replays (zero if only the end-of-search eval exists),
-    horizontal bars are the per-seed std of the corresponding axis (zero
-    with a single seed).
+    across the per-seed evaluations (plus any hold-out replays; zero with a
+    single seed and no replays), horizontal bars are the per-seed std of the
+    corresponding axis (zero with a single seed).
 
     This is the headline "value" plot: a method in the upper-left corner of either
     panel is the best score per dollar / per second.

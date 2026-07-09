@@ -35,7 +35,8 @@ from agentic_autorag.output_layout import RunLayout
 from agentic_autorag_bench._holdout_registry import apply_union_exclusion
 from agentic_autorag_bench.benchmarks.runner import BenchmarkRunner
 from agentic_autorag_bench.methods.agentic import AgenticOptimizer
-from agentic_autorag_bench.methods.bayesian import BayesianSearch
+from agentic_autorag_bench.methods.motpe import MissingTransferSource, MOTPESearch
+from agentic_autorag_bench.methods.qlognehvi import QLogNEHVISearch
 from agentic_autorag_bench.methods.random import RandomSearch
 from agentic_autorag_bench.plots import (
     make_matrix_figures,
@@ -46,7 +47,17 @@ from agentic_autorag_bench.types import Budget, HistoryEntry, SearchResult, Tria
 
 logger = logging.getLogger("agentic_autorag_bench.run")
 
-STOCHASTIC_METHODS = {"random", "bayesian", "agentic_score", "agentic_cost"}
+STOCHASTIC_METHODS = {
+    "random",
+    "motpe",
+    "motpe_warm",
+    "qlognehvi",
+    "agentic_score",
+    "agentic_cost",
+    "agentic_nokb",
+    "agentic_nodiag",
+    "agentic_nokb_nodiag",
+}
 # Kept (empty) so deterministic methods can be reintroduced without rewiring
 # the dispatch loop in ``run_matrix``. AutoRAG variants used to live here
 # before being moved to agentic_autorag_bench/_deprecated/autorag/.
@@ -54,9 +65,18 @@ DETERMINISTIC_METHODS: set[str] = set()
 ALL_METHODS = STOCHASTIC_METHODS | DETERMINISTIC_METHODS
 # Methods that share the bench's ``shared`` Orchestrator via ``evaluate_trial``.
 # These need the bench to install a per-(method, seed) cost ledger and reset
-# ``shared._seen_emb_fps`` between runs; agentic instantiates its own
-# Orchestrator so it manages its own ledger lifecycle.
-_SHARED_EVALUATOR_METHODS = {"random", "bayesian"}
+# ``shared._seen_emb_fps`` between runs; agentic_* instantiate their own
+# Orchestrator so they manage their own ledger lifecycle. (Dispatch keys off
+# the ``agentic_`` name prefix in ``_run_optimizer_with_ledger``; this set is
+# documentary.)
+_SHARED_EVALUATOR_METHODS = {"random", "motpe", "motpe_warm", "qlognehvi"}
+
+# ``motpe_warm`` transfer-warm-starts from the bench's own ``random`` results
+# for the same (dataset, seed), so ``random`` MUST execute first within a
+# dataset. ``_order_methods_for_run`` enforces this; ``_build_optimizer`` reads
+# the paired random cell from ``output_root/<_RANDOM_METHOD_NAME>/<seed_label>``.
+_RANDOM_METHOD_NAME = "random"
+_MOTPE_WARM_METHOD_NAME = "motpe_warm"
 
 
 def _clear_output_root_for(output_root: Path, methods: list[str]) -> list[str]:
@@ -221,6 +241,14 @@ class BenchConfig:
     hold_out_judge_model: str | None
     hold_out_concurrency: int
     output_root: Path
+    # Optional explicit held-out QA file (e.g. the stratified
+    # ``splits/holdout_qa.json``). When None the runner falls back to the full
+    # ``qa.json`` under the benchmark output dir.
+    hold_out_qa_path: Path | None = None
+    # QA metadata.question_type values to drop from the held-out scoring. A
+    # general escape hatch for excising a broken question type; unused by the
+    # paper configs (abstention rows are now scored, not dropped).
+    hold_out_exclude_question_types: list[str] = field(default_factory=list)
     # Per-method early-stopping checkpoints. After a method's full
     # max_trials-budget search finishes, the orchestrator additionally
     # evaluates the best config seen in ``history[:k]`` on the held-out QA
@@ -278,6 +306,8 @@ class BenchConfig:
             hold_out_judge_model=raw["hold_out"].get("judge_model"),
             hold_out_concurrency=int(raw["hold_out"].get("concurrency", 10)),
             output_root=Path(raw["output_root"]).resolve(),
+            hold_out_qa_path=(Path(raw["hold_out"]["qa_path"]).resolve() if raw["hold_out"].get("qa_path") else None),
+            hold_out_exclude_question_types=list(raw["hold_out"].get("exclude_question_types") or []),
             checkpoints=checkpoints,
         )
 
@@ -327,7 +357,7 @@ def _read_trial_cost_ledger(method_dir: Path) -> list[dict]:
 
     The ledger is written for every method (framework's
     ``_finalize_trial_accounting`` for agentic_*, bench's
-    ``_make_metered_evaluator`` for random/bayesian). Each line has
+    ``_make_metered_evaluator`` for random/motpe). Each line has
     ``{"trial_number": int, "buckets": {bucket_name: {usd, prompt_tokens,
     completion_tokens, embedding_input_tokens, n_calls, ...}}}`` and may
     include a ``"status"`` field (agentic writes ``"failed"`` for trials
@@ -461,6 +491,8 @@ async def _evaluate_checkpoints(
             judge_model=bench.hold_out_judge_model,
             limit=bench.hold_out_limit,
             concurrency=bench.hold_out_concurrency,
+            exclude_question_types=bench.hold_out_exclude_question_types,
+            qa_path_override=bench.hold_out_qa_path,
         )
         make_seed_figures(ck_dir)
         logger.info(
@@ -483,13 +515,40 @@ def _build_optimizer(
 ):
     if name == "random":
         return RandomSearch(project=project, storage_dir=output_dir, resume=resume)
-    if name == "bayesian":
-        return BayesianSearch(project=project, storage_dir=output_dir, resume=resume)
-    if name in {"agentic_score", "agentic_cost"}:
+    if name == "motpe":
+        return MOTPESearch(
+            project=project,
+            storage_dir=output_dir,
+            resume=resume,
+            name=name,
+        )
+    if name == "motpe_warm":
+        # Paired sibling: motpe_warm seed s warm-starts from random seed s.
+        # ``output_dir`` is ``output_root/motpe_warm/<seed_label>``; the random
+        # source is ``output_root/random/<seed_label>``.
+        transfer_source_dir = output_dir.parent.parent / _RANDOM_METHOD_NAME / output_dir.name
+        return MOTPESearch(
+            project=project,
+            storage_dir=output_dir,
+            resume=resume,
+            name=name,
+            warm_transfer=True,
+            transfer_source_dir=transfer_source_dir,
+        )
+    if name == "qlognehvi":
+        return QLogNEHVISearch(project=project, storage_dir=output_dir, resume=resume)
+    if name in {"agentic_score", "agentic_cost", "agentic_nokb", "agentic_nodiag", "agentic_nokb_nodiag"}:
+        # ``agentic_nokb_nodiag`` is the KB+diagnosis ablation: knowledge base off,
+        # diagnosis off, and the proposer sees only a compact ``config -> accuracy``
+        # history (the ``compact_history`` flag).
         return AgenticOptimizer(
             config_path=str(bench.project_config_path),
             output_dir=str(output_dir),
             cost_aware=(name == "agentic_cost"),
+            use_knowledge_base=(name not in {"agentic_nokb", "agentic_nokb_nodiag"}),
+            use_diagnosis=(name not in {"agentic_nodiag", "agentic_nokb_nodiag"}),
+            compact_history=(name == "agentic_nokb_nodiag"),
+            method_name=name,
             resume=resume,
         )
     raise ValueError(f"Unknown method {name!r}")
@@ -498,7 +557,7 @@ def _build_optimizer(
 def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
     """Wrap ``shared.evaluate_trial`` with per-trial ledger snapshot/delta.
 
-    Used by methods that drive the shared Orchestrator (random / bayesian).
+    Used by methods that drive the shared Orchestrator (random / motpe).
     Captures the cost-ledger delta over each trial, writes one line to
     ``method_dir/trial_cost_ledger.jsonl``, flushes any pending cache-event
     credits the orchestrator queued via ``_credit_embedding_build``, and
@@ -512,14 +571,14 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
     ``eval_usd`` sums every USD bucket in the ledger delta (RAG generation,
     judge, query expansion, any other trial-phase LLM call) rather than
     using ``ExamResult.total_llm_cost_usd``, which is documented RAG-only
-    and would silently omit the judge from random/bayesian's reported
+    and would silently omit the judge from random/motpe's reported
     ``trial_usd_total``. The agentic adapter folds judge in by reading
     ``cost_breakdown.json``; this keeps the bench-side methods symmetric.
 
     ``_current_phase`` is promoted to ``"trial"`` so any
     ``_credit_embedding_build`` event fired by ``evaluate_trial`` is tagged
     with the trial number in ``cache_events.jsonl`` — the shared
-    Orchestrator stays at ``"setup"`` otherwise because random/bayesian
+    Orchestrator stays at ``"setup"`` otherwise because random/motpe
     never call the framework's per-trial phase-setting path.
     """
     trial_counter = [0]
@@ -565,6 +624,7 @@ def _make_metered_evaluator(shared: Orchestrator, method_dir: Path):
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             embedding_tokens=embedding_tokens,
+            mean_llm_cost_per_query_usd=float(getattr(exam_result, "mean_llm_cost_per_query_usd", 0.0)),
         )
 
     return evaluator
@@ -574,7 +634,7 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
     """Mark every embedding fingerprint already paid for by this (method,
     seed)'s prior trials as seen on the shared orchestrator.
 
-    Used on ``--resume`` for shared-evaluator methods (random / bayesian).
+    Used on ``--resume`` for shared-evaluator methods (random / motpe).
     Without this, the first post-resume encounter of an embedder that the
     prior run already credited to ``embedding_build`` would charge it a
     second time, breaking the bench's "first use per (method, seed) only"
@@ -596,7 +656,7 @@ def _seed_seen_emb_fps_from_history(shared: Orchestrator, method_dir: Path) -> N
         try:
             data = json.loads(line)
             trial_config = TrialConfig(**data["config"])
-            emb_fp = trial_config.to_structural().embeddings_fingerprint(corpus_hash)
+            emb_fp = trial_config.to_structural().embeddings_fingerprint(corpus_hash, shared._doc_ids)
         except Exception:
             logger.warning(
                 "Could not re-derive emb_fp for a history line in %s; first "
@@ -627,7 +687,7 @@ async def _run_optimizer_with_ledger(
 ) -> SearchResult:
     """Run ``optimizer.search`` with a per-(method, seed) cost-ledger context.
 
-    For methods that drive the shared Orchestrator (``random``, ``bayesian``,
+    For methods that drive the shared Orchestrator (``random``, ``motpe``,
     plus ``autorag_*`` which uses the shared evaluator for the rescore step):
     install a fresh ``CostLedger`` so per-trial token deltas can be captured,
     reset the shared orchestrator's cache-credit bookkeeping
@@ -692,12 +752,93 @@ def _has_prior_trial_state(method_dir: Path) -> bool:
     return any((method_dir / name).exists() for name in _RESUME_STATE_FILES)
 
 
+def _is_method_seed_complete(
+    output_root: Path,
+    method_name: str,
+    seed_label: str,
+    checkpoints: list[int],
+) -> bool:
+    """Has this (method, seed) already finished *everything* a fresh run would do?
+
+    A multi-day matrix that crashes and relaunches with ``--resume`` must not
+    re-pay for work that already landed on disk. The optimizer's ``search()``
+    skips completed trials cheaply, but ``run_matrix`` would otherwise still
+    re-run the 300-question held-out ``benchmark.evaluate`` (real RAG
+    generation + index rebuild), re-render figures, and re-evaluate every
+    ``@k`` checkpoint for a (method, seed) that fully finished before the
+    crash. This guard lets the loop ``continue`` past such pairs.
+
+    ``benchmark_results.json`` is the completion sentinel: it is written *last*
+    (after search returns to budget and ``_persist_search_result`` runs), so
+    its presence means search + main held-out both finished. Checkpoints are
+    written afterward, so each declared ``@k`` that the parent run would have
+    produced (``k < n_trials_completed`` — the same guard ``_evaluate_checkpoints``
+    applies) must also have its own held-out result. Any missing piece returns
+    ``False`` so the pair is re-entered and resumed from where it stopped.
+    """
+    base = output_root / method_name / seed_label
+    if not (base / "benchmark_results.json").exists():
+        return False
+    n_done: int | None = None
+    meta_path = base / "optimizer_meta.json"
+    if meta_path.exists():
+        try:
+            n_done = int(json.loads(meta_path.read_text(encoding="utf-8")).get("n_trials_completed"))
+        except (ValueError, TypeError, json.JSONDecodeError):
+            n_done = None
+    for k in checkpoints:
+        if n_done is not None and k >= n_done:
+            # ``_evaluate_checkpoints`` skips k >= len(history); such a
+            # checkpoint dir is never produced, so don't require it here.
+            continue
+        ck = output_root / f"{method_name}@{k}" / seed_label / "benchmark_results.json"
+        if not ck.exists():
+            return False
+    return True
+
+
+def _order_methods_for_run(methods: list[str]) -> list[str]:
+    """Stable execution order that guarantees ``random`` precedes ``motpe_warm``.
+
+    ``motpe_warm`` transfer-warm-starts from the paired ``random`` cell, a hard
+    data dependency, so ``random`` must finish first within a dataset. Only this
+    one constraint is enforced; every other method keeps its config-declared
+    order so partial-method runs stay predictable. When ``motpe_warm`` is
+    requested without ``random`` in the same run, the order is unchanged and the
+    per-cell ``MissingTransferSource`` guard reports the missing source.
+    """
+    if _MOTPE_WARM_METHOD_NAME not in methods or _RANDOM_METHOD_NAME not in methods:
+        return list(methods)
+    warm_idx = methods.index(_MOTPE_WARM_METHOD_NAME)
+    random_idx = methods.index(_RANDOM_METHOD_NAME)
+    if random_idx < warm_idx:
+        return list(methods)
+    ordered = [m for m in methods if m != _RANDOM_METHOD_NAME]
+    insert_at = ordered.index(_MOTPE_WARM_METHOD_NAME)
+    ordered.insert(insert_at, _RANDOM_METHOD_NAME)
+    return ordered
+
+
+def _methods_with_completed_results(output_root: Path, methods: list[str]) -> list[str]:
+    """Names among ``methods`` whose dir holds at least one finished hold-out
+    (a ``*/benchmark_results.json``). Used to refuse a destructive clean of
+    already-completed work unless explicitly forced."""
+    done: list[str] = []
+    for m in methods:
+        mdir = output_root / m
+        if mdir.is_dir() and any(mdir.glob("*/benchmark_results.json")):
+            done.append(m)
+    return done
+
+
 async def run_matrix(
     config_path: str | Path,
     *,
     methods_override: list[str] | None = None,
+    seeds_override: list[int] | None = None,
     clean: bool = True,
     resume: bool = False,
+    force: bool = False,
 ) -> None:
     # litellm.drop_params=True so provider-specific params (seed, temperature
     # on gpt-5) are silently dropped instead of erroring. The framework's
@@ -720,6 +861,26 @@ async def run_matrix(
                 "edit the config or pick a subset of its methods"
             )
         bench.methods = [m for m in bench.methods if m in set(methods_override)]
+
+    if seeds_override is not None:
+        unknown_seeds = set(seeds_override) - set(bench.seeds)
+        if unknown_seeds:
+            raise ValueError(
+                f"--seeds includes {sorted(unknown_seeds)} which are not in {config_path} "
+                f"(config seeds: {bench.seeds}); pick a subset of the configured seeds"
+            )
+
+    if clean and not force:
+        # Don't let an accidental re-launch of the documented `run` command
+        # after a crash silently rmtree days of finished results. Require an
+        # explicit --force to wipe completed work; otherwise point at --resume.
+        completed = _methods_with_completed_results(bench.output_root, bench.methods)
+        if completed:
+            raise ValueError(
+                f"Refusing to --clean: {sorted(completed)} under {bench.output_root} already "
+                "have completed hold-out results. Pass --resume to continue the run "
+                "(skips finished (method, seed) pairs), or --force to deliberately wipe and restart."
+            )
 
     if clean:
         removed = _clear_output_root_for(bench.output_root, bench.methods)
@@ -749,7 +910,7 @@ async def run_matrix(
     # calls per trial. setup() is idempotent — the parsed corpus, exam.json,
     # and ingredient cache live under the project YAML's meta.output_dir
     # (./results/.shared_cache by default) so they're reused across methods.
-    logger.info("Setting up shared orchestrator (will generate exam.json on first run)")
+    logger.info("Setting up shared orchestrator (loads examiner.custom_exam_path if set, else generates the exam)")
     shared = Orchestrator(str(bench.project_config_path))
     shared.evaluator.quiet_per_question = True
     try:
@@ -757,11 +918,32 @@ async def run_matrix(
 
         budget = Budget(max_trials=bench.max_trials)
 
-        for method_name in bench.methods:
+        # ``motpe_warm`` reads the paired ``random`` cell, so ``random`` must run
+        # first within the dataset (see ``_order_methods_for_run``).
+        for method_name in _order_methods_for_run(bench.methods):
             seeds_for_method = bench.seeds if method_name in STOCHASTIC_METHODS else [None]
+            if seeds_override is not None:
+                # A (method, seed) unit only applies to seeded (stochastic) methods;
+                # a deterministic method's [None] filters out and is skipped here.
+                seeds_for_method = [s for s in seeds_for_method if s in set(seeds_override)]
             for seed in seeds_for_method:
                 seed_label = f"seed_{seed}" if seed is not None else "default"
                 method_dir = bench.output_root / method_name / seed_label
+
+                # Resume fast-path: a (method, seed) that already finished
+                # search + held-out + all its checkpoints is skipped entirely,
+                # so a crash-relaunch never re-pays for completed work. Only on
+                # --resume; a fresh/--clean run has nothing on disk to skip.
+                if resume and _is_method_seed_complete(
+                    bench.output_root, method_name, seed_label, bench.checkpoints.get(method_name, [])
+                ):
+                    logger.info(
+                        "SKIP %s | %s — already complete (held-out + checkpoints on disk)",
+                        method_name,
+                        seed_label,
+                    )
+                    continue
+
                 method_dir.mkdir(parents=True, exist_ok=True)
                 logger.info("=" * 60)
                 logger.info("RUNNING %s | %s", method_name, seed_label)
@@ -793,6 +975,14 @@ async def run_matrix(
                         seed=seed,
                         resume=resume_this_method,
                     )
+                except MissingTransferSource as exc:
+                    logger.warning(
+                        "SKIP %s | %s: %s — run random for this dataset+seed first",
+                        method_name,
+                        seed_label,
+                        exc,
+                    )
+                    continue
                 except Exception:
                     logger.exception("%s seed=%s failed", method_name, seed)
                     continue
@@ -818,6 +1008,8 @@ async def run_matrix(
                     judge_model=bench.hold_out_judge_model,
                     limit=bench.hold_out_limit,
                     concurrency=bench.hold_out_concurrency,
+                    exclude_question_types=bench.hold_out_exclude_question_types,
+                    qa_path_override=bench.hold_out_qa_path,
                 )
 
                 # Per-seed figures: render as soon as one (method, seed) finishes
@@ -849,28 +1041,45 @@ async def run_matrix(
     finally:
         await shared.cleanup()
 
-    # Cross-method content-filter exclusion: drop any question that any
-    # method's best config got rejected on, so all rows score the same
-    # denominator. Runs after every hold-out so the union is complete.
-    apply_union_exclusion(bench.output_root)
+    # Cross-method content-filter exclusion + matrix figures run AFTER all the
+    # expensive search + hold-out compute has been persisted per (method, seed).
+    # A failure here must not discard that work, so the whole post-processing
+    # block is best-effort: on any error, log and leave the per-seed results on
+    # disk — they can be re-rendered later with ``analyze`` (or the next
+    # ``--resume`` will redo this step). apply_union_exclusion already skips
+    # individually-corrupt files internally.
+    try:
+        # Drop any question any method's best config got rejected on, so all
+        # rows score the same denominator. Runs after every hold-out so the
+        # union is complete.
+        apply_union_exclusion(bench.output_root)
 
-    # Matrix figures see the union-exclusion-adjusted hold-out scores; calling
-    # before apply_union_exclusion would bake stale per-question denominators
-    # into the table. Rendered into a staging dir first; the previous run's
-    # figures/ stays readable until the swap at the very end.
-    staging_dir = bench.output_root / _FIGURES_STAGING_NAME
-    if staging_dir.exists():
-        shutil.rmtree(staging_dir)
-    make_matrix_figures(bench.output_root, figures_dir=staging_dir)
-    _swap_in_staged_figures(bench.output_root)
+        # Matrix figures see the union-exclusion-adjusted hold-out scores;
+        # calling before apply_union_exclusion would bake stale per-question
+        # denominators into the table. Rendered into a staging dir first; the
+        # previous run's figures/ stays readable until the swap at the very end.
+        staging_dir = bench.output_root / _FIGURES_STAGING_NAME
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir)
+        make_matrix_figures(bench.output_root, figures_dir=staging_dir)
+        _swap_in_staged_figures(bench.output_root)
+    except Exception:
+        logger.exception(
+            "End-of-run union-exclusion / matrix figures failed; per-(method, seed) "
+            "results are intact on disk. Re-render with `agentic-autorag-bench analyze "
+            "--results-dir %s` or re-run with --resume.",
+            bench.output_root,
+        )
 
 
 def run_cli(
     config_path: str,
     *,
     methods: list[str] | None = None,
+    seeds: list[int] | None = None,
     clean: bool = True,
     resume: bool = False,
+    force: bool = False,
 ) -> None:
     """Sync wrapper for the Typer CLI."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
@@ -885,7 +1094,9 @@ def run_cli(
         run_matrix(
             config_path,
             methods_override=methods,
+            seeds_override=seeds,
             clean=clean,
             resume=resume,
+            force=force,
         )
     )
