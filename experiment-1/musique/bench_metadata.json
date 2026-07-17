@@ -7,12 +7,23 @@
   },
   "project_config_path": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/configs/musique_paper_project.yaml",
   "methods": [
-    "motpe_warm"
+    "agentic_score",
+    "agentic_nokb_nodiag",
+    "motpe",
+    "motpe_warm",
+    "random"
   ],
   "seeds": [
     1,
     2,
-    3
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
   ],
   "max_trials": 30,
   "checkpoints": {
@@ -23,8 +34,8 @@
   },
   "agentic_autorag": {
     "version": "0.1.0",
-    "commit": "2e9e4e82535526b39527afbae965d35bd6859beb",
-    "describe": "2e9e4e8",
+    "commit": "dbb9b7ebda13ed99b596d59df234025d4ed010dd",
+    "describe": "dbb9b7e",
     "dirty": false
   }
 }

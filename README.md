@@ -41,21 +41,21 @@ needs `AZURE_API_KEY` and `AZURE_API_BASE`.
 ## Experiment 1: accuracy
 
 The matrix is 3 datasets (HotpotQA, MuSiQue, MultiHop-RAG), 5 methods (`random`,
-`motpe`, `motpe_warm`, `agentic_nokb_nodiag`, `agentic_score`), and 3 seeds, at 30
-trials each, plus a `kb_greedy` reference at 3 seeds per dataset. Results land
+`motpe`, `motpe_warm`, `agentic_nokb_nodiag`, `agentic_score`), and 10 seeds, at 30
+trials each, plus a `kb_greedy` reference at 10 seeds per dataset. Results land
 under `experiment-1/<dataset>/`.
 
 The scheduler `scripts/run_experiment1.py` runs each (method, seed) pair as its
 own subprocess, keeps at most 2 running at once, starts `motpe_warm` only after
 its matching `random` pair finishes, and writes each dataset's `Table_1.md` at
-the end. Variance comes from the 3 seeds. `agentic_score` also reports its result
+the end. Variance comes from the 10 seeds. `agentic_score` also reports its result
 at 10 and 20 trials, for the sample-efficiency comparison.
 
 ```bash
 # Preview the plan without running anything:
 uv run python scripts/run_experiment1.py --dry-run --include-kb-greedy
 
-# Run in the background (the full matrix takes one to two days):
+# Run in the background (the full matrix takes about three to four days):
 mkdir -p experiment-1/logs
 setsid nohup uv run python scripts/run_experiment1.py --include-kb-greedy \
     > experiment-1/logs/nohup.out 2>&1 &

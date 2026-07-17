@@ -1,0 +1,19 @@
+{
+  "method": "agentic_score@10",
+  "seed": 5,
+  "deterministic": false,
+  "optimizer_usd": 0.16409700000000002,
+  "trial_usd_total": 1.0912465599999994,
+  "wall_clock_s": 1118.969212854281,
+  "n_trials_completed": 10,
+  "prompt_tokens": 2179171,
+  "completion_tokens": 246210,
+  "embedding_tokens": 8081239,
+  "extras": {
+    "output_dir": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/hotpot/agentic_score/seed_5",
+    "cost_aware": false,
+    "checkpoint_at": 10,
+    "parent_method": "agentic_score",
+    "parent_max_trials": 30
+  }
+}

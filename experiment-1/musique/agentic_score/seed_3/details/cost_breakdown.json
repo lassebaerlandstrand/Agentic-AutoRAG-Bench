@@ -1,14 +1,14 @@
 {
-  "total_usd": 6.227520014999994,
+  "total_usd": 6.0861377050000005,
   "buckets": {
     "agent_proposal": {
-      "usd": 0.7478522399999997,
-      "prompt_tokens": 1022766,
-      "completion_tokens": 44288,
+      "usd": 0.7543454699999999,
+      "prompt_tokens": 1021564,
+      "completion_tokens": 46669,
       "cache_read_input_tokens": 0,
       "cache_creation_input_tokens": 0,
       "embedding_input_tokens": 0,
-      "n_calls": 69
+      "n_calls": 70
     },
     "embedding_build": {
       "usd": 0.0,
@@ -16,26 +16,26 @@
       "completion_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation_input_tokens": 0,
-      "embedding_input_tokens": 17690998,
-      "n_calls": 9
+      "embedding_input_tokens": 15851929,
+      "n_calls": 8
     },
     "rag_eval": {
-      "usd": 4.693225714999995,
-      "prompt_tokens": 5322043,
-      "completion_tokens": 1577406,
-      "cache_read_input_tokens": 1155810,
+      "usd": 4.5708491150000015,
+      "prompt_tokens": 4523059,
+      "completion_tokens": 1877722,
+      "cache_read_input_tokens": 670080,
       "cache_creation_input_tokens": 0,
       "embedding_input_tokens": 0,
-      "n_calls": 3604
+      "n_calls": 5805
     },
     "judge": {
-      "usd": 0.7864420599999993,
-      "prompt_tokens": 1336603,
-      "completion_tokens": 6674,
+      "usd": 0.7609431199999991,
+      "prompt_tokens": 1293404,
+      "completion_tokens": 6410,
       "cache_read_input_tokens": 0,
       "cache_creation_input_tokens": 0,
       "embedding_input_tokens": 0,
-      "n_calls": 2568
+      "n_calls": 2485
     }
   }
 }

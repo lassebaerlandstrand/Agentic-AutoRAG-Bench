@@ -3,24 +3,24 @@
   "n_total": 299,
   "n_valid": 299,
   "n_judge_invalid": 0,
-  "em": 0.5250836120401338,
-  "f1": 0.6801537588474437,
-  "llm_judge_accuracy": 0.7993311036789298,
+  "em": 0.5317725752508361,
+  "f1": 0.6931205022489697,
+  "llm_judge_accuracy": 0.7959866220735786,
   "recall_at_1": 0.4882943143812709,
   "recall_at_2": 0.8444816053511706,
-  "recall_at_5": 0.9230769230769231,
-  "recall_at_10": 0.9230769230769231,
+  "recall_at_5": 0.9247491638795987,
+  "recall_at_10": 0.9247491638795987,
   "joint_recall_at_1": 0.0,
   "joint_recall_at_2": 0.6989966555183946,
-  "joint_recall_at_5": 0.8494983277591973,
-  "joint_recall_at_10": 0.8494983277591973,
+  "joint_recall_at_5": 0.8528428093645485,
+  "joint_recall_at_10": 0.8528428093645485,
   "mrr_first": 0.985061315496098,
-  "mrr_complete": 0.39247491638795984,
-  "avg_retrieval_s": 3.086112527885158,
-  "avg_generation_s": 2.6255780485504228,
-  "total_cost_usd": 0.22230629999999998,
-  "total_prompt_tokens": 270902,
-  "total_completion_tokens": 103129,
+  "mrr_complete": 0.3944816053511706,
+  "avg_retrieval_s": 2.8697530994157505,
+  "avg_generation_s": 3.0666958534573032,
+  "total_cost_usd": 0.22180189,
+  "total_prompt_tokens": 269521,
+  "total_completion_tokens": 103166,
   "per_question": [
     {
       "id": "5a8de02b554299068b959e13",
@@ -45,11 +45,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 3.174166279961355,
-      "generation_s": 4.14274475799175,
-      "llm_cost_usd": 0.000916095,
+      "retrieval_s": 2.042862034868449,
+      "generation_s": 2.854753758991137,
+      "llm_cost_usd": 0.0007788550000000001,
       "prompt_tokens": 782,
-      "completion_tokens": 422,
+      "completion_tokens": 344,
       "error": null
     },
     {
@@ -58,7 +58,7 @@
       "gold_answers": [
         "Stadio Olimpico"
       ],
-      "pred": "Stadio Olimpico Rome Italy",
+      "pred": "Stadio Olimpico in Rome",
       "em": 0.0,
       "f1": 0.6666666666666666,
       "judge": 1,
@@ -75,11 +75,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 5,
-      "retrieval_s": 3.724424020969309,
-      "generation_s": 2.392280291998759,
-      "llm_cost_usd": 0.00077469,
+      "retrieval_s": 3.317567177116871,
+      "generation_s": 3.4660437961574644,
+      "llm_cost_usd": 0.0007799700000000001,
       "prompt_tokens": 1152,
-      "completion_tokens": 320,
+      "completion_tokens": 328,
       "error": null
     },
     {
@@ -95,9 +95,9 @@
       "retrieved_doc_ids": [
         "childeric_i",
         "merovingian_dynasty",
-        "gabriel_garc_a_m_rquez",
-        "edward_i_of_england",
-        "claudio_monteverdi"
+        "claudio_monteverdi",
+        "charles_vi_holy_roman_emperor",
+        "ludwig_van_beethoven"
       ],
       "supporting_doc_ids": [
         "childeric_i",
@@ -105,11 +105,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.845801850024145,
-      "generation_s": 2.2252064530039206,
-      "llm_cost_usd": 0.000527245,
-      "prompt_tokens": 847,
-      "completion_tokens": 196,
+      "retrieval_s": 5.42763192509301,
+      "generation_s": 2.977468395140022,
+      "llm_cost_usd": 0.0005610449999999999,
+      "prompt_tokens": 837,
+      "completion_tokens": 251,
       "error": null
     },
     {
@@ -125,9 +125,9 @@
       "retrieved_doc_ids": [
         "richard_darman",
         "ronald_reagan",
+        "clark_gable",
         "david_palmer_24_character",
-        "frank_lloyd",
-        "warren_g_harding"
+        "frank_lloyd"
       ],
       "supporting_doc_ids": [
         "richard_darman",
@@ -135,11 +135,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 5.3287527420325205,
-      "generation_s": 2.477048830012791,
-      "llm_cost_usd": 0.0005363149999999999,
-      "prompt_tokens": 719,
-      "completion_tokens": 259,
+      "retrieval_s": 4.938499344047159,
+      "generation_s": 2.1436273350846022,
+      "llm_cost_usd": 0.000551815,
+      "prompt_tokens": 715,
+      "completion_tokens": 284,
       "error": null
     },
     {
@@ -165,11 +165,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8282209399621934,
-      "generation_s": 3.080620504973922,
-      "llm_cost_usd": 0.0009214749999999999,
+      "retrieval_s": 3.0796888349577785,
+      "generation_s": 4.256152247078717,
+      "llm_cost_usd": 0.0009234549999999999,
       "prompt_tokens": 810,
-      "completion_tokens": 416,
+      "completion_tokens": 419,
       "error": null
     },
     {
@@ -178,7 +178,7 @@
       "gold_answers": [
         "September 8, 2017"
       ],
-      "pred": "September 8 2017",
+      "pred": "September 8, 2017",
       "em": 1.0,
       "f1": 1.0,
       "judge": 1,
@@ -195,11 +195,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.45643384399591,
-      "generation_s": 3.902411002025474,
-      "llm_cost_usd": 0.000770975,
+      "retrieval_s": 2.7866452720481902,
+      "generation_s": 2.5935998940840364,
+      "llm_cost_usd": 0.000641675,
       "prompt_tokens": 646,
-      "completion_tokens": 377,
+      "completion_tokens": 309,
       "error": null
     },
     {
@@ -217,7 +217,7 @@
         "bert_trautmann",
         "andreas_trautmann",
         "david_kross",
-        "peter_schmeichel"
+        "hugo_s_nchez"
       ],
       "supporting_doc_ids": [
         "trautmann_film",
@@ -225,11 +225,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 5.672712144034449,
-      "generation_s": 2.059281797031872,
-      "llm_cost_usd": 0.000560855,
-      "prompt_tokens": 787,
-      "completion_tokens": 274,
+      "retrieval_s": 4.4844327960163355,
+      "generation_s": 2.099995167925954,
+      "llm_cost_usd": 0.000577375,
+      "prompt_tokens": 861,
+      "completion_tokens": 271,
       "error": null
     },
     {
@@ -238,16 +238,16 @@
       "gold_answers": [
         "Dan Crow"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": -1,
       "retrieved_doc_ids": [
         "dumbo",
+        "david_nessim_lawrence",
         "robert_b_sherman",
         "stephen_flaherty",
-        "merrill_jenson",
-        "stephen_sondheim"
+        "merrill_jenson"
       ],
       "supporting_doc_ids": [
         "dan_crow_musician",
@@ -255,11 +255,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 4.2959755109623075,
-      "generation_s": 2.5801311539835297,
-      "llm_cost_usd": 0.000775935,
-      "prompt_tokens": 1182,
-      "completion_tokens": 317,
+      "retrieval_s": 3.7542860000394285,
+      "generation_s": 3.7112599129322916,
+      "llm_cost_usd": 0.000723315,
+      "prompt_tokens": 1048,
+      "completion_tokens": 286,
       "error": null
     },
     {
@@ -268,9 +268,9 @@
       "gold_answers": [
         "Otto Robert Frisch"
       ],
-      "pred": "Otto Robert Frisch",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "Insufficient information",
+      "em": 0.0,
+      "f1": 0.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "otto_robert_frisch",
@@ -285,11 +285,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 6.155602252983954,
-      "generation_s": 5.896422473015264,
-      "llm_cost_usd": 0.001592665,
+      "retrieval_s": 5.703775916947052,
+      "generation_s": 12.224285886855796,
+      "llm_cost_usd": 0.003498105,
       "prompt_tokens": 1132,
-      "completion_tokens": 791,
+      "completion_tokens": 1733,
       "error": null
     },
     {
@@ -301,13 +301,13 @@
       "pred": "iTunes iTunes Radio and Beats Music",
       "em": 0.0,
       "f1": 0.2857142857142857,
-      "judge": 0,
+      "judge": 1,
       "retrieved_doc_ids": [
         "songs_of_innocence_u2_album",
         "medium_rare_amp_remastered",
         "every_breaking_wave",
         "fragile_dead_or_alive_album",
-        "apple_inc"
+        "gnarls_barkley_discography"
       ],
       "supporting_doc_ids": [
         "every_breaking_wave",
@@ -315,11 +315,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 4.701758775045164,
-      "generation_s": 2.21173900103895,
-      "llm_cost_usd": 0.0006909300000000001,
-      "prompt_tokens": 826,
-      "completion_tokens": 312,
+      "retrieval_s": 4.112621649168432,
+      "generation_s": 4.320828344905749,
+      "llm_cost_usd": 0.00072917,
+      "prompt_tokens": 1008,
+      "completion_tokens": 301,
       "error": null
     },
     {
@@ -331,7 +331,7 @@
       "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": -1,
+      "judge": 0,
       "retrieved_doc_ids": [
         "andrea_ch_nier",
         "theodoros_papaloukas",
@@ -345,11 +345,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.507263026025612,
-      "generation_s": 6.046066290989984,
-      "llm_cost_usd": 0.0017278049999999998,
+      "retrieval_s": 2.702315998962149,
+      "generation_s": 12.877387311076745,
+      "llm_cost_usd": 0.002639645,
       "prompt_tokens": 848,
-      "completion_tokens": 847,
+      "completion_tokens": 1319,
       "error": null
     },
     {
@@ -375,11 +375,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.285069770005066,
-      "generation_s": 2.4190031089819968,
-      "llm_cost_usd": 0.000593505,
+      "retrieval_s": 2.4078488571103662,
+      "generation_s": 2.3448988050222397,
+      "llm_cost_usd": 0.000595485,
       "prompt_tokens": 947,
-      "completion_tokens": 256,
+      "completion_tokens": 259,
       "error": null
     },
     {
@@ -397,7 +397,7 @@
         "mallory_hagan",
         "miss_america_2014",
         "olivia_jordan",
-        "miss_america_2015"
+        "whitney_houston"
       ],
       "supporting_doc_ids": [
         "mallory_hagan",
@@ -405,11 +405,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.5115275399875827,
-      "generation_s": 1.9273430139874108,
-      "llm_cost_usd": 0.0005906,
-      "prompt_tokens": 918,
-      "completion_tokens": 265,
+      "retrieval_s": 3.151686923811212,
+      "generation_s": 1.6169109540060163,
+      "llm_cost_usd": 0.00046527,
+      "prompt_tokens": 963,
+      "completion_tokens": 188,
       "error": null
     },
     {
@@ -435,11 +435,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4258577880100347,
-      "generation_s": 1.621807864983566,
-      "llm_cost_usd": 0.00061711,
+      "retrieval_s": 2.4719397109001875,
+      "generation_s": 2.4006044340785593,
+      "llm_cost_usd": 0.00063361,
       "prompt_tokens": 1143,
-      "completion_tokens": 224,
+      "completion_tokens": 249,
       "error": null
     },
     {
@@ -465,11 +465,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.956672308035195,
-      "generation_s": 1.8631825000047684,
-      "llm_cost_usd": 0.0007297549999999999,
+      "retrieval_s": 3.394792635925114,
+      "generation_s": 2.1577581469900906,
+      "llm_cost_usd": 0.0006109949999999999,
       "prompt_tokens": 1031,
-      "completion_tokens": 305,
+      "completion_tokens": 255,
       "error": null
     },
     {
@@ -495,11 +495,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.5158521010307595,
-      "generation_s": 3.101995688979514,
-      "llm_cost_usd": 0.0009292899999999999,
+      "retrieval_s": 3.7401045318692923,
+      "generation_s": 3.8014990449883044,
+      "llm_cost_usd": 0.0008138300000000001,
       "prompt_tokens": 1201,
-      "completion_tokens": 404,
+      "completion_tokens": 359,
       "error": null
     },
     {
@@ -508,16 +508,16 @@
       "gold_answers": [
         "world's 16th largest city"
       ],
-      "pred": "16th",
+      "pred": "16th largest city",
       "em": 0.0,
-      "f1": 0.4,
+      "f1": 0.8571428571428571,
       "judge": 1,
       "retrieved_doc_ids": [
         "daewoong_pharmaceutical_co_ltd",
         "seoul",
         "vancouver",
         "milwaukee",
-        "sydney"
+        "manchester_new_hampshire"
       ],
       "supporting_doc_ids": [
         "daewoong_pharmaceutical_co_ltd",
@@ -525,11 +525,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.0910997280152515,
-      "generation_s": 2.192959337029606,
-      "llm_cost_usd": 0.0005830249999999999,
-      "prompt_tokens": 902,
-      "completion_tokens": 263,
+      "retrieval_s": 2.8702223629225045,
+      "generation_s": 2.041184800909832,
+      "llm_cost_usd": 0.000591265,
+      "prompt_tokens": 948,
+      "completion_tokens": 254,
       "error": null
     },
     {
@@ -555,11 +555,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.476343399961479,
-      "generation_s": 2.0649203039938584,
-      "llm_cost_usd": 0.000693675,
+      "retrieval_s": 3.5371059181634337,
+      "generation_s": 2.698468101909384,
+      "llm_cost_usd": 0.000685755,
       "prompt_tokens": 1297,
-      "completion_tokens": 275,
+      "completion_tokens": 263,
       "error": null
     },
     {
@@ -585,11 +585,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.732471154013183,
-      "generation_s": 1.4164351169602014,
-      "llm_cost_usd": 0.00034225,
+      "retrieval_s": 3.0220196689479053,
+      "generation_s": 2.115083788987249,
+      "llm_cost_usd": 0.0007249299999999999,
       "prompt_tokens": 913,
-      "completion_tokens": 153,
+      "completion_tokens": 343,
       "error": null
     },
     {
@@ -598,10 +598,10 @@
       "gold_answers": [
         "2012"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "zelo",
         "hollywood_rose",
@@ -615,11 +615,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.360269288998097,
-      "generation_s": 4.162448130024131,
-      "llm_cost_usd": 0.001077505,
+      "retrieval_s": 2.37159841414541,
+      "generation_s": 2.613853907911107,
+      "llm_cost_usd": 0.000824125,
       "prompt_tokens": 839,
-      "completion_tokens": 512,
+      "completion_tokens": 390,
       "error": null
     },
     {
@@ -637,7 +637,7 @@
         "christopher_hitchens",
         "marilyn_manson",
         "h_l_mencken",
-        "charlie_chaplin"
+        "norman_mailer"
       ],
       "supporting_doc_ids": [
         "god_is_not_great",
@@ -645,11 +645,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.573046092991717,
-      "generation_s": 2.341284472029656,
-      "llm_cost_usd": 0.00072308,
-      "prompt_tokens": 845,
-      "completion_tokens": 352,
+      "retrieval_s": 2.5358635222073644,
+      "generation_s": 2.8039749229792506,
+      "llm_cost_usd": 0.00070051,
+      "prompt_tokens": 826,
+      "completion_tokens": 325,
       "error": null
     },
     {
@@ -658,7 +658,7 @@
       "gold_answers": [
         "Frederick Wallace \"Fred\" Smith"
       ],
-      "pred": "Frederick W Smith",
+      "pred": "Frederick W. Smith",
       "em": 0.0,
       "f1": 0.5714285714285715,
       "judge": 1,
@@ -667,7 +667,7 @@
         "value_america",
         "ken_may",
         "alexander_hamilton",
-        "lee_eliot_berk"
+        "ron_conway"
       ],
       "supporting_doc_ids": [
         "value_america",
@@ -675,10 +675,10 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4078095739823766,
-      "generation_s": 2.493224720004946,
-      "llm_cost_usd": 0.0006269899999999999,
-      "prompt_tokens": 1095,
+      "retrieval_s": 2.6544006641488522,
+      "generation_s": 2.091393928974867,
+      "llm_cost_usd": 0.00059833,
+      "prompt_tokens": 975,
       "completion_tokens": 249,
       "error": null
     },
@@ -705,11 +705,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.6145029620383866,
-      "generation_s": 1.7076822149683721,
-      "llm_cost_usd": 0.00048188999999999996,
+      "retrieval_s": 2.876323586795479,
+      "generation_s": 2.162374304840341,
+      "llm_cost_usd": 0.00047661,
       "prompt_tokens": 1003,
-      "completion_tokens": 198,
+      "completion_tokens": 190,
       "error": null
     },
     {
@@ -735,11 +735,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.629090972011909,
-      "generation_s": 2.074791554012336,
-      "llm_cost_usd": 0.0005122499999999999,
+      "retrieval_s": 2.8941494280006737,
+      "generation_s": 1.9929696761537343,
+      "llm_cost_usd": 0.0005294099999999999,
       "prompt_tokens": 619,
-      "completion_tokens": 258,
+      "completion_tokens": 284,
       "error": null
     },
     {
@@ -748,14 +748,14 @@
       "gold_answers": [
         "Estates Theatre in Prague"
       ],
-      "pred": "Insufficient information",
+      "pred": "Vienna State Opera and Vienna Volksoper",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
       "retrieved_doc_ids": [
         "heidi_brunner",
         "harlem_opera_house",
-        "hollywood_theater_minneapolis",
+        "tristan_und_isolde",
         "apollo_theater",
         "carmen_suite_ballet"
       ],
@@ -765,11 +765,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.659090601024218,
-      "generation_s": 5.491843594005331,
-      "llm_cost_usd": 0.00204201,
-      "prompt_tokens": 1190,
-      "completion_tokens": 933,
+      "retrieval_s": 2.7869430389255285,
+      "generation_s": 5.800465255975723,
+      "llm_cost_usd": 0.00138877,
+      "prompt_tokens": 1068,
+      "completion_tokens": 629,
       "error": null
     },
     {
@@ -795,11 +795,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.039249021967407,
-      "generation_s": 1.200870066008065,
-      "llm_cost_usd": 0.00038339499999999997,
+      "retrieval_s": 3.078556794906035,
+      "generation_s": 1.6146626200061291,
+      "llm_cost_usd": 0.000374815,
       "prompt_tokens": 647,
-      "completion_tokens": 184,
+      "completion_tokens": 171,
       "error": null
     },
     {
@@ -825,11 +825,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.845889131014701,
-      "generation_s": 2.7791660419898108,
-      "llm_cost_usd": 0.0008276449999999999,
+      "retrieval_s": 2.655063824960962,
+      "generation_s": 3.744940754957497,
+      "llm_cost_usd": 0.0008309449999999999,
       "prompt_tokens": 849,
-      "completion_tokens": 389,
+      "completion_tokens": 394,
       "error": null
     },
     {
@@ -838,7 +838,7 @@
       "gold_answers": [
         "1895"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -855,11 +855,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 4.074718616961036,
-      "generation_s": 4.363969783997163,
-      "llm_cost_usd": 0.001232055,
+      "retrieval_s": 3.4027625559829175,
+      "generation_s": 2.9011571388691664,
+      "llm_cost_usd": 0.000587415,
       "prompt_tokens": 866,
-      "completion_tokens": 606,
+      "completion_tokens": 281,
       "error": null
     },
     {
@@ -877,7 +877,7 @@
         "party_for_freedom",
         "homeland",
         "capetian_dynasty",
-        "john_locke"
+        "dutch_smoushond"
       ],
       "supporting_doc_ids": [
         "eric_lucassen",
@@ -885,11 +885,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.331012762035243,
-      "generation_s": 1.5479355930001475,
-      "llm_cost_usd": 0.000529875,
-      "prompt_tokens": 822,
-      "completion_tokens": 212,
+      "retrieval_s": 3.080308249918744,
+      "generation_s": 3.065753306960687,
+      "llm_cost_usd": 0.000671705,
+      "prompt_tokens": 711,
+      "completion_tokens": 339,
       "error": null
     },
     {
@@ -915,11 +915,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.903649032989051,
-      "generation_s": 3.2562959889764898,
-      "llm_cost_usd": 0.0009430799999999999,
+      "retrieval_s": 1.8936998611316085,
+      "generation_s": 5.087611690862104,
+      "llm_cost_usd": 0.00093648,
       "prompt_tokens": 893,
-      "completion_tokens": 422,
+      "completion_tokens": 412,
       "error": null
     },
     {
@@ -931,13 +931,13 @@
       "pred": "over 9000 employees",
       "em": 0.0,
       "f1": 0.5,
-      "judge": 1,
+      "judge": 0,
       "retrieved_doc_ids": [
         "rolf_dahlgren",
         "university_of_copenhagen",
+        "london_south_bank_university",
         "bbc",
-        "hanzhong_university",
-        "list_of_georgetown_university_faculty"
+        "hanzhong_university"
       ],
       "supporting_doc_ids": [
         "rolf_dahlgren",
@@ -945,11 +945,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.0283963149995543,
-      "generation_s": 2.345333067001775,
-      "llm_cost_usd": 0.00080143,
-      "prompt_tokens": 819,
-      "completion_tokens": 359,
+      "retrieval_s": 2.3465211228467524,
+      "generation_s": 3.472851565107703,
+      "llm_cost_usd": 0.00075309,
+      "prompt_tokens": 623,
+      "completion_tokens": 360,
       "error": null
     },
     {
@@ -975,11 +975,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.1588483980158344,
-      "generation_s": 1.6974996600183658,
-      "llm_cost_usd": 0.00037161,
+      "retrieval_s": 2.214850112097338,
+      "generation_s": 1.7195621391292661,
+      "llm_cost_usd": 0.00038745,
       "prompt_tokens": 700,
-      "completion_tokens": 149,
+      "completion_tokens": 173,
       "error": null
     },
     {
@@ -988,7 +988,7 @@
       "gold_answers": [
         "50 Greatest Players in National Basketball Association History"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -1005,11 +1005,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.4512541219592094,
-      "generation_s": 3.45748924795771,
-      "llm_cost_usd": 0.0009091099999999999,
+      "retrieval_s": 2.2782344811130315,
+      "generation_s": 6.553015162004158,
+      "llm_cost_usd": 0.00139935,
       "prompt_tokens": 1135,
-      "completion_tokens": 406,
+      "completion_tokens": 627,
       "error": null
     },
     {
@@ -1035,11 +1035,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4127638199715875,
-      "generation_s": 2.0111547709675506,
-      "llm_cost_usd": 0.000708175,
+      "retrieval_s": 2.5002942148130387,
+      "generation_s": 2.1651223639491946,
+      "llm_cost_usd": 0.0005874349999999999,
       "prompt_tokens": 913,
-      "completion_tokens": 317,
+      "completion_tokens": 264,
       "error": null
     },
     {
@@ -1048,9 +1048,9 @@
       "gold_answers": [
         "278th episode"
       ],
-      "pred": "278th episode of the series overall",
-      "em": 0.0,
-      "f1": 0.5714285714285715,
+      "pred": "278th episode",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "white_people_renovating_houses",
@@ -1065,11 +1065,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 3.2112799959722906,
-      "generation_s": 2.8955010939971544,
-      "llm_cost_usd": 0.000773845,
+      "retrieval_s": 2.098965551936999,
+      "generation_s": 3.2931035850197077,
+      "llm_cost_usd": 0.000645765,
       "prompt_tokens": 697,
-      "completion_tokens": 360,
+      "completion_tokens": 304,
       "error": null
     },
     {
@@ -1095,11 +1095,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6696516670053825,
-      "generation_s": 1.3263681539683603,
-      "llm_cost_usd": 0.00049947,
+      "retrieval_s": 2.4711962828878313,
+      "generation_s": 2.3081445049028844,
+      "llm_cost_usd": 0.0004941899999999999,
       "prompt_tokens": 1039,
-      "completion_tokens": 208,
+      "completion_tokens": 200,
       "error": null
     },
     {
@@ -1111,7 +1111,7 @@
       "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "the_kenyon_review",
         "harper_lee",
@@ -1125,11 +1125,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 1.952187346003484,
-      "generation_s": 12.302303643955383,
-      "llm_cost_usd": 0.00392455,
+      "retrieval_s": 2.5071701100096107,
+      "generation_s": 17.04152445611544,
+      "llm_cost_usd": 0.0036764699999999994,
       "prompt_tokens": 1017,
-      "completion_tokens": 1901,
+      "completion_tokens": 1785,
       "error": null
     },
     {
@@ -1155,11 +1155,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.055798186978791,
-      "generation_s": 1.9150536480010487,
-      "llm_cost_usd": 0.0006083299999999999,
+      "retrieval_s": 2.1285133010242134,
+      "generation_s": 3.0028823940083385,
+      "llm_cost_usd": 0.00074755,
       "prompt_tokens": 1098,
-      "completion_tokens": 229,
+      "completion_tokens": 310,
       "error": null
     },
     {
@@ -1185,11 +1185,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.2988597759976983,
-      "generation_s": 1.5947101520141587,
-      "llm_cost_usd": 0.00064371,
+      "retrieval_s": 3.0773871620185673,
+      "generation_s": 3.313789891079068,
+      "llm_cost_usd": 0.00063975,
       "prompt_tokens": 1103,
-      "completion_tokens": 280,
+      "completion_tokens": 274,
       "error": null
     },
     {
@@ -1198,9 +1198,9 @@
       "gold_answers": [
         "AT&T Center in San Antonio"
       ],
-      "pred": "AT and T Center",
+      "pred": "AT&T Center",
       "em": 0.0,
-      "f1": 0.22222222222222224,
+      "f1": 0.5714285714285715,
       "judge": 1,
       "retrieved_doc_ids": [
         "mychal_thompson",
@@ -1215,11 +1215,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4794850519974716,
-      "generation_s": 3.1924618000048213,
-      "llm_cost_usd": 0.00104857,
+      "retrieval_s": 2.5898066041991115,
+      "generation_s": 3.746008998947218,
+      "llm_cost_usd": 0.00130257,
       "prompt_tokens": 746,
-      "completion_tokens": 503,
+      "completion_tokens": 630,
       "error": null
     },
     {
@@ -1237,7 +1237,7 @@
         "sue_grafton",
         "agatha_christie",
         "he_who_whispers",
-        "june_thomson"
+        "margaret_atwood"
       ],
       "supporting_doc_ids": [
         "quot_q_quot_is_for_quarry",
@@ -1245,11 +1245,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6494283319916576,
-      "generation_s": 2.3954389420105144,
-      "llm_cost_usd": 0.0006525299999999999,
-      "prompt_tokens": 744,
-      "completion_tokens": 292,
+      "retrieval_s": 2.7897182079032063,
+      "generation_s": 3.319917851127684,
+      "llm_cost_usd": 0.00068965,
+      "prompt_tokens": 874,
+      "completion_tokens": 299,
       "error": null
     },
     {
@@ -1267,7 +1267,7 @@
         "kansas_city_missouri",
         "cairo",
         "dallas_county_texas",
-        "pennsylvania_state_university"
+        "georgetown_washington_d_c"
       ],
       "supporting_doc_ids": [
         "george_c_hale",
@@ -1275,11 +1275,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4922972510103136,
-      "generation_s": 3.886245773988776,
-      "llm_cost_usd": 0.001488055,
-      "prompt_tokens": 1056,
-      "completion_tokens": 661,
+      "retrieval_s": 2.4486841259058565,
+      "generation_s": 7.7863616708200425,
+      "llm_cost_usd": 0.001356415,
+      "prompt_tokens": 986,
+      "completion_tokens": 618,
       "error": null
     },
     {
@@ -1305,11 +1305,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4171780520118773,
-      "generation_s": 1.8458926330204122,
-      "llm_cost_usd": 0.000536135,
+      "retrieval_s": 2.7494837378617376,
+      "generation_s": 1.6080192259978503,
+      "llm_cost_usd": 0.000414735,
       "prompt_tokens": 748,
-      "completion_tokens": 248,
+      "completion_tokens": 194,
       "error": null
     },
     {
@@ -1318,9 +1318,9 @@
       "gold_answers": [
         "Elizabeth Hamilton"
       ],
-      "pred": "Elizabeth Schuyler Hamilton",
-      "em": 0.0,
-      "f1": 0.8,
+      "pred": "Elizabeth Hamilton",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "peggy_schuyler",
@@ -1335,11 +1335,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 2.831519170955289,
-      "generation_s": 1.94463199400343,
-      "llm_cost_usd": 0.00039439999999999994,
+      "retrieval_s": 2.420177892083302,
+      "generation_s": 1.838038707850501,
+      "llm_cost_usd": 0.00038774,
       "prompt_tokens": 620,
-      "completion_tokens": 208,
+      "completion_tokens": 204,
       "error": null
     },
     {
@@ -1348,9 +1348,9 @@
       "gold_answers": [
         "swingman"
       ],
-      "pred": "Chicago Bulls and Minnesota Timberwolves as a shooting guard and swingman",
+      "pred": "Chicago Bulls and Minnesota Timberwolves shooting guard and swingman",
       "em": 0.0,
-      "f1": 0.18181818181818182,
+      "f1": 0.19999999999999998,
       "judge": 1,
       "retrieved_doc_ids": [
         "jimmy_butler_basketball",
@@ -1365,11 +1365,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 5.519864681002218,
-      "generation_s": 4.637935108970851,
-      "llm_cost_usd": 0.001518285,
+      "retrieval_s": 5.025555544067174,
+      "generation_s": 5.408028093166649,
+      "llm_cost_usd": 0.001477985,
       "prompt_tokens": 887,
-      "completion_tokens": 883,
+      "completion_tokens": 826,
       "error": null
     },
     {
@@ -1378,7 +1378,7 @@
       "gold_answers": [
         "Maud of Gloucester"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -1395,11 +1395,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.4836263909819536,
-      "generation_s": 6.877702464989852,
-      "llm_cost_usd": 0.00185195,
+      "retrieval_s": 2.4861097019165754,
+      "generation_s": 9.086473959032446,
+      "llm_cost_usd": 0.00182425,
       "prompt_tokens": 751,
-      "completion_tokens": 941,
+      "completion_tokens": 897,
       "error": null
     },
     {
@@ -1408,9 +1408,9 @@
       "gold_answers": [
         "blood, platelets, and plasma"
       ],
-      "pred": "human blood platelets plasma",
+      "pred": "human blood platelets and plasma",
       "em": 0.0,
-      "f1": 0.75,
+      "f1": 0.888888888888889,
       "judge": 1,
       "retrieved_doc_ids": [
         "general_blood",
@@ -1425,11 +1425,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.246140391973313,
-      "generation_s": 3.121674506983254,
-      "llm_cost_usd": 0.000733925,
+      "retrieval_s": 2.992307521868497,
+      "generation_s": 2.3519287309609354,
+      "llm_cost_usd": 0.000762985,
       "prompt_tokens": 988,
-      "completion_tokens": 322,
+      "completion_tokens": 364,
       "error": null
     },
     {
@@ -1455,11 +1455,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6632115119718947,
-      "generation_s": 2.6338749910355546,
-      "llm_cost_usd": 0.000608645,
+      "retrieval_s": 3.679552603047341,
+      "generation_s": 2.3944458179175854,
+      "llm_cost_usd": 0.0006198649999999999,
       "prompt_tokens": 1048,
-      "completion_tokens": 245,
+      "completion_tokens": 262,
       "error": null
     },
     {
@@ -1485,11 +1485,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.9523074489552528,
-      "generation_s": 1.7676777449669316,
-      "llm_cost_usd": 0.000486255,
+      "retrieval_s": 3.0050215390510857,
+      "generation_s": 2.027348238043487,
+      "llm_cost_usd": 0.00047107499999999994,
       "prompt_tokens": 960,
-      "completion_tokens": 218,
+      "completion_tokens": 195,
       "error": null
     },
     {
@@ -1507,7 +1507,7 @@
         "damien_fahey",
         "jon_ritchie",
         "the_morning_after_web_series",
-        "thursday_night_baseball"
+        "tom_brokaw"
       ],
       "supporting_doc_ids": [
         "damien_fahey",
@@ -1515,11 +1515,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.462535979982931,
-      "generation_s": 4.055180459981784,
-      "llm_cost_usd": 0.00107836,
-      "prompt_tokens": 901,
-      "completion_tokens": 494,
+      "retrieval_s": 3.3669355569873005,
+      "generation_s": 4.791205430869013,
+      "llm_cost_usd": 0.0009397300000000001,
+      "prompt_tokens": 840,
+      "completion_tokens": 437,
       "error": null
     },
     {
@@ -1545,11 +1545,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.711837195965927,
-      "generation_s": 2.2117917140130885,
-      "llm_cost_usd": 0.000554095,
+      "retrieval_s": 3.8044419300276786,
+      "generation_s": 3.0540220469702035,
+      "llm_cost_usd": 0.0006655949999999999,
       "prompt_tokens": 816,
-      "completion_tokens": 252,
+      "completion_tokens": 291,
       "error": null
     },
     {
@@ -1575,11 +1575,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8243052909965627,
-      "generation_s": 1.8113756770035252,
-      "llm_cost_usd": 0.0005568,
+      "retrieval_s": 3.2038909930270165,
+      "generation_s": 2.1759652129840106,
+      "llm_cost_usd": 0.00055614,
       "prompt_tokens": 752,
-      "completion_tokens": 267,
+      "completion_tokens": 266,
       "error": null
     },
     {
@@ -1605,11 +1605,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6209066929877736,
-      "generation_s": 1.6550283430260606,
-      "llm_cost_usd": 0.000558805,
+      "retrieval_s": 1.6670326888561249,
+      "generation_s": 3.3428933720570058,
+      "llm_cost_usd": 0.0006571050000000001,
       "prompt_tokens": 818,
-      "completion_tokens": 250,
+      "completion_tokens": 269,
       "error": null
     },
     {
@@ -1635,11 +1635,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.407831967982929,
-      "generation_s": 4.887417269987054,
-      "llm_cost_usd": 0.001280915,
+      "retrieval_s": 2.5816760240122676,
+      "generation_s": 7.545900586992502,
+      "llm_cost_usd": 0.0016391749999999999,
       "prompt_tokens": 1092,
-      "completion_tokens": 600,
+      "completion_tokens": 753,
       "error": null
     },
     {
@@ -1665,11 +1665,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 2.75915212900145,
-      "generation_s": 1.287695963983424,
-      "llm_cost_usd": 0.00050668,
+      "retrieval_s": 2.1910795900039375,
+      "generation_s": 1.9507038439624012,
+      "llm_cost_usd": 0.00037736000000000003,
       "prompt_tokens": 649,
-      "completion_tokens": 242,
+      "completion_tokens": 176,
       "error": null
     },
     {
@@ -1678,9 +1678,9 @@
       "gold_answers": [
         "Brookhaven"
       ],
-      "pred": "Brookhaven",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "Town of Brookhaven",
+      "em": 0.0,
+      "f1": 0.5,
       "judge": 1,
       "retrieved_doc_ids": [
         "telescope_hill",
@@ -1695,11 +1695,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.6440792749635875,
-      "generation_s": 3.7434218779671937,
-      "llm_cost_usd": 0.000919805,
+      "retrieval_s": 2.0172380229923874,
+      "generation_s": 4.693197388900444,
+      "llm_cost_usd": 0.0009271049999999999,
       "prompt_tokens": 754,
-      "completion_tokens": 439,
+      "completion_tokens": 446,
       "error": null
     },
     {
@@ -1708,10 +1708,10 @@
       "gold_answers": [
         "comedy"
       ],
-      "pred": "screenwriter",
-      "em": 0.0,
-      "f1": 0.0,
-      "judge": 0,
+      "pred": "comedy",
+      "em": 1.0,
+      "f1": 1.0,
+      "judge": 1,
       "retrieved_doc_ids": [
         "horrible_bosses",
         "jonathan_goldstein_filmmaker",
@@ -1725,11 +1725,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 5,
-      "retrieval_s": 2.58966572501231,
-      "generation_s": 5.72161710698856,
-      "llm_cost_usd": 0.001775765,
+      "retrieval_s": 2.6583638151641935,
+      "generation_s": 4.772644364042208,
+      "llm_cost_usd": 0.001263105,
       "prompt_tokens": 989,
-      "completion_tokens": 867,
+      "completion_tokens": 610,
       "error": null
     },
     {
@@ -1738,7 +1738,7 @@
       "gold_answers": [
         "United Nations Emergency Force"
       ],
-      "pred": "United Nations Emergency Force",
+      "pred": "the United Nations Emergency Force",
       "em": 1.0,
       "f1": 1.0,
       "judge": 1,
@@ -1755,11 +1755,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.3375004869885743,
-      "generation_s": 1.5260812009801157,
-      "llm_cost_usd": 0.000672615,
+      "retrieval_s": 2.883297413820401,
+      "generation_s": 2.3926301619503647,
+      "llm_cost_usd": 0.000763675,
       "prompt_tokens": 1084,
-      "completion_tokens": 326,
+      "completion_tokens": 332,
       "error": null
     },
     {
@@ -1785,11 +1785,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.449514931009617,
-      "generation_s": 2.6404332970269024,
-      "llm_cost_usd": 0.00085969,
+      "retrieval_s": 3.3735558819025755,
+      "generation_s": 3.5369602190330625,
+      "llm_cost_usd": 0.00086167,
       "prompt_tokens": 903,
-      "completion_tokens": 417,
+      "completion_tokens": 420,
       "error": null
     },
     {
@@ -1815,11 +1815,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4232038159971125,
-      "generation_s": 1.6560276979580522,
-      "llm_cost_usd": 0.00035402999999999997,
+      "retrieval_s": 2.4276901411358267,
+      "generation_s": 1.8304011118598282,
+      "llm_cost_usd": 0.00033819,
       "prompt_tokens": 508,
-      "completion_tokens": 190,
+      "completion_tokens": 166,
       "error": null
     },
     {
@@ -1845,11 +1845,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.5486896759830415,
-      "generation_s": 2.7116102569852956,
-      "llm_cost_usd": 0.0006934350000000001,
+      "retrieval_s": 2.5020175569225103,
+      "generation_s": 3.413441678043455,
+      "llm_cost_usd": 0.000707955,
       "prompt_tokens": 918,
-      "completion_tokens": 292,
+      "completion_tokens": 314,
       "error": null
     },
     {
@@ -1875,11 +1875,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.331536178011447,
-      "generation_s": 2.8164691149722785,
-      "llm_cost_usd": 0.000623235,
+      "retrieval_s": 2.5259985600132495,
+      "generation_s": 1.9174792310222983,
+      "llm_cost_usd": 0.000592215,
       "prompt_tokens": 934,
-      "completion_tokens": 309,
+      "completion_tokens": 262,
       "error": null
     },
     {
@@ -1905,11 +1905,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.509423673967831,
-      "generation_s": 1.9427295500063337,
-      "llm_cost_usd": 0.00058867,
+      "retrieval_s": 2.8847699461039156,
+      "generation_s": 2.667140332981944,
+      "llm_cost_usd": 0.00058603,
       "prompt_tokens": 936,
-      "completion_tokens": 256,
+      "completion_tokens": 252,
       "error": null
     },
     {
@@ -1918,28 +1918,28 @@
       "gold_answers": [
         "1905"
       ],
-      "pred": "1905",
-      "em": 1.0,
-      "f1": 1.0,
-      "judge": 1,
+      "pred": "Insufficient information",
+      "em": 0.0,
+      "f1": 0.0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "weber_s_store",
+        "stavanger",
         "hampden_county_massachusetts",
         "lewis_and_clark_county_montana",
-        "timnath_colorado",
-        "sanders_county_montana"
+        "timnath_colorado"
       ],
       "supporting_doc_ids": [
         "weber_s_store",
         "sanders_county_montana"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": 5,
-      "retrieval_s": 4.052813951973803,
-      "generation_s": 1.396037278987933,
-      "llm_cost_usd": 0.0004204,
-      "prompt_tokens": 806,
-      "completion_tokens": 182,
+      "retrieval_complete_rank": null,
+      "retrieval_s": 2.1462855129502714,
+      "generation_s": 2.511105477111414,
+      "llm_cost_usd": 0.0005769,
+      "prompt_tokens": 912,
+      "completion_tokens": 247,
       "error": null
     },
     {
@@ -1948,9 +1948,9 @@
       "gold_answers": [
         "Newcastle upon Tyne, England"
       ],
-      "pred": "Newcastle upon Tyne England",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "Newcastle upon Tyne",
+      "em": 0.0,
+      "f1": 0.8571428571428571,
       "judge": 1,
       "retrieved_doc_ids": [
         "let_s_get_ready_to_rhumble",
@@ -1965,11 +1965,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 3.1522752119926736,
-      "generation_s": 2.440703058964573,
-      "llm_cost_usd": 0.000730095,
+      "retrieval_s": 2.3883586439769715,
+      "generation_s": 2.9250126350671053,
+      "llm_cost_usd": 0.000588875,
       "prompt_tokens": 941,
-      "completion_tokens": 333,
+      "completion_tokens": 251,
       "error": null
     },
     {
@@ -1995,11 +1995,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 3.4407342660124414,
-      "generation_s": 2.7450529459747486,
-      "llm_cost_usd": 0.00081447,
+      "retrieval_s": 3.077633681939915,
+      "generation_s": 6.274510186165571,
+      "llm_cost_usd": 0.00079665,
       "prompt_tokens": 779,
-      "completion_tokens": 399,
+      "completion_tokens": 372,
       "error": null
     },
     {
@@ -2011,13 +2011,13 @@
       "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 1,
+      "judge": 0,
       "retrieved_doc_ids": [
         "roy_shepherd",
         "roy_shepherd_pianist",
+        "minnesota_state_colleges_and_universities_system",
         "radcliffe_college",
-        "university_of_st_andrews",
-        "uc_berkeley_school_of_law"
+        "university_of_st_andrews"
       ],
       "supporting_doc_ids": [
         "roy_shepherd_pianist",
@@ -2025,11 +2025,11 @@
       ],
       "retrieval_rank_of_first_gold": 2,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.109620818984695,
-      "generation_s": 4.038627612986602,
-      "llm_cost_usd": 0.0010950150000000002,
-      "prompt_tokens": 942,
-      "completion_tokens": 499,
+      "retrieval_s": 2.6306001651100814,
+      "generation_s": 7.4006380988284945,
+      "llm_cost_usd": 0.001990335,
+      "prompt_tokens": 934,
+      "completion_tokens": 949,
       "error": null
     },
     {
@@ -2055,11 +2055,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.954634603986051,
-      "generation_s": 1.7220714240102097,
-      "llm_cost_usd": 0.00054479,
+      "retrieval_s": 2.799123537959531,
+      "generation_s": 1.9353705949615687,
+      "llm_cost_usd": 0.00040821,
       "prompt_tokens": 828,
-      "completion_tokens": 235,
+      "completion_tokens": 158,
       "error": null
     },
     {
@@ -2085,11 +2085,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.0611847470281646,
-      "generation_s": 1.1286790230078623,
-      "llm_cost_usd": 0.00049118,
+      "retrieval_s": 2.3752055868972093,
+      "generation_s": 1.5182735540438443,
+      "llm_cost_usd": 0.00050042,
       "prompt_tokens": 1064,
-      "completion_tokens": 190,
+      "completion_tokens": 204,
       "error": null
     },
     {
@@ -2115,11 +2115,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6983037649770267,
-      "generation_s": 2.776798470003996,
-      "llm_cost_usd": 0.0007879,
+      "retrieval_s": 3.286446367856115,
+      "generation_s": 3.3136329238768667,
+      "llm_cost_usd": 0.00067442,
       "prompt_tokens": 682,
-      "completion_tokens": 397,
+      "completion_tokens": 355,
       "error": null
     },
     {
@@ -2145,11 +2145,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.43883001600625,
-      "generation_s": 1.671733399038203,
-      "llm_cost_usd": 0.0005696449999999999,
+      "retrieval_s": 2.5762461279518902,
+      "generation_s": 3.0591650309506804,
+      "llm_cost_usd": 0.000693025,
       "prompt_tokens": 787,
-      "completion_tokens": 284,
+      "completion_tokens": 341,
       "error": null
     },
     {
@@ -2175,11 +2175,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.1501344720018096,
-      "generation_s": 2.255047971033491,
-      "llm_cost_usd": 0.0006499650000000001,
+      "retrieval_s": 3.1125359579455107,
+      "generation_s": 2.9063715229276568,
+      "llm_cost_usd": 0.0006545850000000001,
       "prompt_tokens": 637,
-      "completion_tokens": 327,
+      "completion_tokens": 334,
       "error": null
     },
     {
@@ -2205,11 +2205,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.053953100985382,
-      "generation_s": 2.38646146398969,
-      "llm_cost_usd": 0.0008785900000000001,
+      "retrieval_s": 3.5162128859665245,
+      "generation_s": 3.5151295789983124,
+      "llm_cost_usd": 0.00074267,
       "prompt_tokens": 865,
-      "completion_tokens": 460,
+      "completion_tokens": 384,
       "error": null
     },
     {
@@ -2218,16 +2218,16 @@
       "gold_answers": [
         "Tulsa"
       ],
-      "pred": "Tulsa",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "Tulsa Oklahoma",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
       "judge": 1,
       "retrieved_doc_ids": [
         "tinted_windows_album",
         "tinted_windows_band",
         "the_delta_machine_tour",
         "act_of_congress_music_group",
-        "the_zombie_kids"
+        "the_xx"
       ],
       "supporting_doc_ids": [
         "tinted_windows_album",
@@ -2235,11 +2235,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.5046964950161055,
-      "generation_s": 2.1353048789897002,
-      "llm_cost_usd": 0.000632065,
-      "prompt_tokens": 1145,
-      "completion_tokens": 245,
+      "retrieval_s": 2.0628526150248945,
+      "generation_s": 2.5221067999955267,
+      "llm_cost_usd": 0.000583585,
+      "prompt_tokens": 1017,
+      "completion_tokens": 218,
       "error": null
     },
     {
@@ -2289,11 +2289,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.4247598869842477,
-      "generation_s": 4.033866565034259,
-      "llm_cost_usd": 0.0009224449999999999,
+      "retrieval_s": 2.8515520449727774,
+      "generation_s": 4.346149323973805,
+      "llm_cost_usd": 0.000775305,
       "prompt_tokens": 653,
-      "completion_tokens": 480,
+      "completion_tokens": 387,
       "error": null
     },
     {
@@ -2319,11 +2319,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4942626749980263,
-      "generation_s": 1.320734940993134,
-      "llm_cost_usd": 0.00048542999999999997,
+      "retrieval_s": 2.5640873520169407,
+      "generation_s": 2.0621999909635633,
+      "llm_cost_usd": 0.00047684999999999996,
       "prompt_tokens": 943,
-      "completion_tokens": 219,
+      "completion_tokens": 206,
       "error": null
     },
     {
@@ -2349,11 +2349,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 6.998888917034492,
-      "generation_s": 1.8583808919647709,
-      "llm_cost_usd": 0.00057839,
+      "retrieval_s": 3.034046518150717,
+      "generation_s": 1.415342197054997,
+      "llm_cost_usd": 0.00046689,
       "prompt_tokens": 874,
-      "completion_tokens": 269,
+      "completion_tokens": 230,
       "error": null
     },
     {
@@ -2370,7 +2370,7 @@
         "theo_avgerinos",
         "john_hensley",
         "fifty_pills",
-        "edward_burns",
+        "john_malkovich",
         "jason_sudeikis"
       ],
       "supporting_doc_ids": [
@@ -2379,11 +2379,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.7920529679977335,
-      "generation_s": 1.737797439971473,
-      "llm_cost_usd": 0.00057843,
-      "prompt_tokens": 936,
-      "completion_tokens": 241,
+      "retrieval_s": 2.2942616019863635,
+      "generation_s": 3.3190650548785925,
+      "llm_cost_usd": 0.0005750999999999999,
+      "prompt_tokens": 891,
+      "completion_tokens": 253,
       "error": null
     },
     {
@@ -2409,11 +2409,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.0892637940123677,
-      "generation_s": 1.5478492029942572,
-      "llm_cost_usd": 0.0003989,
+      "retrieval_s": 2.9397793719545007,
+      "generation_s": 2.097047269809991,
+      "llm_cost_usd": 0.00040352,
       "prompt_tokens": 623,
-      "completion_tokens": 218,
+      "completion_tokens": 225,
       "error": null
     },
     {
@@ -2431,7 +2431,7 @@
         "the_great_gilly_hopkins_film",
         "martin_starger",
         "the_small_one",
-        "the_marvelous_land_of_oz"
+        "christopher_robin_film"
       ],
       "supporting_doc_ids": [
         "the_small_one",
@@ -2439,11 +2439,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 2.4172839269740507,
-      "generation_s": 1.7874802189762704,
-      "llm_cost_usd": 0.0006260299999999999,
-      "prompt_tokens": 1065,
-      "completion_tokens": 263,
+      "retrieval_s": 2.470077082980424,
+      "generation_s": 1.9719043979421258,
+      "llm_cost_usd": 0.0005858699999999999,
+      "prompt_tokens": 907,
+      "completion_tokens": 262,
       "error": null
     },
     {
@@ -2459,8 +2459,8 @@
       "retrieved_doc_ids": [
         "rand_paul_presidential_campaign_2016",
         "galt_house",
+        "frankfort_kentucky",
         "lowry_hotel",
-        "arrow_rock_missouri",
         "ron_paul"
       ],
       "supporting_doc_ids": [
@@ -2469,11 +2469,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6678868000162765,
-      "generation_s": 2.040958668978419,
-      "llm_cost_usd": 0.0005837700000000001,
-      "prompt_tokens": 999,
-      "completion_tokens": 227,
+      "retrieval_s": 3.2946397268678993,
+      "generation_s": 2.61197014991194,
+      "llm_cost_usd": 0.0005665,
+      "prompt_tokens": 856,
+      "completion_tokens": 255,
       "error": null
     },
     {
@@ -2490,8 +2490,8 @@
         "forever_living_products",
         "rex_maughan",
         "steve_wynn",
-        "coca_cola",
-        "mirage_resorts"
+        "mirage_resorts",
+        "rupert_murdoch"
       ],
       "supporting_doc_ids": [
         "rex_maughan",
@@ -2499,10 +2499,10 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.5121675200061873,
-      "generation_s": 2.2692147259949706,
-      "llm_cost_usd": 0.000558825,
-      "prompt_tokens": 822,
+      "retrieval_s": 2.5126565450336784,
+      "generation_s": 1.6886450259480625,
+      "llm_cost_usd": 0.0005878249999999999,
+      "prompt_tokens": 938,
       "completion_tokens": 249,
       "error": null
     },
@@ -2529,11 +2529,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.315485686005559,
-      "generation_s": 2.6045124939992093,
-      "llm_cost_usd": 0.0005773050000000001,
+      "retrieval_s": 2.7148431341629475,
+      "generation_s": 3.045691628009081,
+      "llm_cost_usd": 0.0005812650000000001,
       "prompt_tokens": 853,
-      "completion_tokens": 262,
+      "completion_tokens": 268,
       "error": null
     },
     {
@@ -2559,11 +2559,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.218160334974527,
-      "generation_s": 1.858847961993888,
-      "llm_cost_usd": 0.000584835,
+      "retrieval_s": 2.51282066013664,
+      "generation_s": 2.2633281080052257,
+      "llm_cost_usd": 0.00043835500000000003,
       "prompt_tokens": 804,
-      "completion_tokens": 296,
+      "completion_tokens": 204,
       "error": null
     },
     {
@@ -2572,14 +2572,14 @@
       "gold_answers": [
         "two Nobel Peace Prizes"
       ],
-      "pred": "two",
+      "pred": "2",
       "em": 0.0,
-      "f1": 0.4,
+      "f1": 0.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "august_r_lindt",
         "united_nations_high_commissioner_for_refugees",
-        "marie_curie",
+        "gabriel_garc_a_m_rquez",
         "lester_b_pearson",
         "nobel_prize_in_physics"
       ],
@@ -2589,11 +2589,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.709608104021754,
-      "generation_s": 1.9594307399820536,
-      "llm_cost_usd": 0.00070496,
-      "prompt_tokens": 898,
-      "completion_tokens": 322,
+      "retrieval_s": 2.8544222109485418,
+      "generation_s": 5.283351846039295,
+      "llm_cost_usd": 0.00106098,
+      "prompt_tokens": 860,
+      "completion_tokens": 486,
       "error": null
     },
     {
@@ -2619,11 +2619,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8736507830326445,
-      "generation_s": 1.7291826820001006,
-      "llm_cost_usd": 0.000463445,
+      "retrieval_s": 2.3980531529523432,
+      "generation_s": 2.1389058742206544,
+      "llm_cost_usd": 0.000484565,
       "prompt_tokens": 1016,
-      "completion_tokens": 165,
+      "completion_tokens": 197,
       "error": null
     },
     {
@@ -2649,11 +2649,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.8581682619987987,
-      "generation_s": 2.2811440730001777,
-      "llm_cost_usd": 0.000775265,
+      "retrieval_s": 4.619500428903848,
+      "generation_s": 3.785393081139773,
+      "llm_cost_usd": 0.000915805,
       "prompt_tokens": 912,
-      "completion_tokens": 418,
+      "completion_tokens": 501,
       "error": null
     },
     {
@@ -2662,9 +2662,9 @@
       "gold_answers": [
         "2.1 million"
       ],
-      "pred": "Two point one million members",
-      "em": 0.0,
-      "f1": 0.28571428571428575,
+      "pred": "2.1 million",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "immanuel_lutheran_school_perryville_missouri",
@@ -2679,11 +2679,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.282128535967786,
-      "generation_s": 5.812106469005812,
-      "llm_cost_usd": 0.00136791,
+      "retrieval_s": 2.568707268219441,
+      "generation_s": 2.5011134559754282,
+      "llm_cost_usd": 0.00069885,
       "prompt_tokens": 893,
-      "completion_tokens": 669,
+      "completion_tokens": 307,
       "error": null
     },
     {
@@ -2709,11 +2709,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.966463771997951,
-      "generation_s": 1.6743617379688658,
-      "llm_cost_usd": 0.00039789000000000003,
+      "retrieval_s": 1.934940859908238,
+      "generation_s": 1.9830323799978942,
+      "llm_cost_usd": 0.00037677,
       "prompt_tokens": 714,
-      "completion_tokens": 183,
+      "completion_tokens": 151,
       "error": null
     },
     {
@@ -2730,8 +2730,8 @@
         "while_you_were_sleeping_film",
         "bill_pullman",
         "leonardo_dicaprio",
-        "georges_bizet",
-        "james_franco"
+        "james_franco",
+        "salma_hayek"
       ],
       "supporting_doc_ids": [
         "while_you_were_sleeping_film",
@@ -2739,11 +2739,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.9345009669777937,
-      "generation_s": 2.1424680100171827,
-      "llm_cost_usd": 0.0007776049999999999,
-      "prompt_tokens": 1126,
-      "completion_tokens": 342,
+      "retrieval_s": 3.263005188200623,
+      "generation_s": 2.8146484948229045,
+      "llm_cost_usd": 0.000791785,
+      "prompt_tokens": 1188,
+      "completion_tokens": 340,
       "error": null
     },
     {
@@ -2752,15 +2752,15 @@
       "gold_answers": [
         "NW 5th"
       ],
-      "pred": "NW 5th Street",
+      "pred": "Insufficient information.",
       "em": 0.0,
-      "f1": 0.8,
-      "judge": 1,
+      "f1": 0.0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "journal_record_building",
         "the_journal_record",
-        "columbus_circle",
         "oklahoma_city_national_memorial",
+        "shaw_washington_d_c",
         "bertelsmann_building"
       ],
       "supporting_doc_ids": [
@@ -2768,12 +2768,12 @@
         "oklahoma_city_national_memorial"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": 4,
-      "retrieval_s": 2.683284801954869,
-      "generation_s": 5.071984898997471,
-      "llm_cost_usd": 0.00130587,
-      "prompt_tokens": 827,
-      "completion_tokens": 600,
+      "retrieval_complete_rank": 3,
+      "retrieval_s": 2.1722584029193968,
+      "generation_s": 7.5282191899605095,
+      "llm_cost_usd": 0.00171871,
+      "prompt_tokens": 887,
+      "completion_tokens": 815,
       "error": null
     },
     {
@@ -2799,11 +2799,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4426868610316887,
-      "generation_s": 2.1218361809733324,
-      "llm_cost_usd": 0.000536715,
+      "retrieval_s": 1.920877275057137,
+      "generation_s": 2.0455101479310542,
+      "llm_cost_usd": 0.0005301150000000001,
       "prompt_tokens": 786,
-      "completion_tokens": 235,
+      "completion_tokens": 225,
       "error": null
     },
     {
@@ -2829,11 +2829,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.0576095370342955,
-      "generation_s": 2.2113412939943373,
-      "llm_cost_usd": 0.000785745,
+      "retrieval_s": 2.7072291471995413,
+      "generation_s": 3.8524808729998767,
+      "llm_cost_usd": 0.0009375049999999999,
       "prompt_tokens": 1147,
-      "completion_tokens": 335,
+      "completion_tokens": 435,
       "error": null
     },
     {
@@ -2859,11 +2859,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.0627580139553174,
-      "generation_s": 2.829820889979601,
-      "llm_cost_usd": 0.000804465,
+      "retrieval_s": 2.093314655823633,
+      "generation_s": 2.4842022319789976,
+      "llm_cost_usd": 0.0005497849999999999,
       "prompt_tokens": 794,
-      "completion_tokens": 376,
+      "completion_tokens": 250,
       "error": null
     },
     {
@@ -2872,9 +2872,9 @@
       "gold_answers": [
         "sub-Saharan Africa"
       ],
-      "pred": "sub-Saharan Africa",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "sub Saharan Africa",
+      "em": 0.0,
+      "f1": 0.4,
       "judge": 1,
       "retrieved_doc_ids": [
         "whale",
@@ -2889,11 +2889,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4887069989927113,
-      "generation_s": 1.8820328529691324,
-      "llm_cost_usd": 0.0007316849999999999,
+      "retrieval_s": 2.582005217904225,
+      "generation_s": 2.901217899983749,
+      "llm_cost_usd": 0.0005916649999999999,
       "prompt_tokens": 1334,
-      "completion_tokens": 319,
+      "completion_tokens": 326,
       "error": null
     },
     {
@@ -2919,11 +2919,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.503975989005994,
-      "generation_s": 2.1283133369870484,
-      "llm_cost_usd": 0.00053205,
-      "prompt_tokens": 802,
-      "completion_tokens": 223,
+      "retrieval_s": 2.082158434903249,
+      "generation_s": 2.5637786120641977,
+      "llm_cost_usd": 0.00069897,
+      "prompt_tokens": 926,
+      "completion_tokens": 299,
       "error": null
     },
     {
@@ -2949,11 +2949,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6908172570401803,
-      "generation_s": 4.37609131395584,
-      "llm_cost_usd": 0.001090865,
+      "retrieval_s": 2.5321918621193618,
+      "generation_s": 7.4655342740006745,
+      "llm_cost_usd": 0.000982665,
       "prompt_tokens": 977,
-      "completion_tokens": 482,
+      "completion_tokens": 448,
       "error": null
     },
     {
@@ -2962,16 +2962,16 @@
       "gold_answers": [
         "evangelical Christian periodical"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "eugene_habecker",
+        "the_new_yorker",
         "america_magazine",
         "curve_magazine",
-        "kung_fu_tai_chi",
-        "wwe_magazine"
+        "kung_fu_tai_chi"
       ],
       "supporting_doc_ids": [
         "eugene_habecker",
@@ -2979,11 +2979,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.3022766189533286,
-      "generation_s": 4.067001210001763,
-      "llm_cost_usd": 0.000888775,
-      "prompt_tokens": 670,
-      "completion_tokens": 421,
+      "retrieval_s": 2.2650827281177044,
+      "generation_s": 4.980303111951798,
+      "llm_cost_usd": 0.001141485,
+      "prompt_tokens": 633,
+      "completion_tokens": 556,
       "error": null
     },
     {
@@ -3009,11 +3009,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.2133210049942136,
-      "generation_s": 2.725513691024389,
-      "llm_cost_usd": 0.00071252,
+      "retrieval_s": 3.070755095919594,
+      "generation_s": 3.3241127252113074,
+      "llm_cost_usd": 0.00084514,
       "prompt_tokens": 963,
-      "completion_tokens": 304,
+      "completion_tokens": 375,
       "error": null
     },
     {
@@ -3039,11 +3039,11 @@
       ],
       "retrieval_rank_of_first_gold": 5,
       "retrieval_complete_rank": null,
-      "retrieval_s": 1.6713173799798824,
-      "generation_s": 2.712156652007252,
-      "llm_cost_usd": 0.00061159,
+      "retrieval_s": 2.0730988951399922,
+      "generation_s": 3.051742799114436,
+      "llm_cost_usd": 0.00063073,
       "prompt_tokens": 624,
-      "completion_tokens": 281,
+      "completion_tokens": 310,
       "error": null
     },
     {
@@ -3052,7 +3052,7 @@
       "gold_answers": [
         "Les Temps modernes"
       ],
-      "pred": "The Thief's Journal",
+      "pred": "The Thiefs Journal",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -3069,11 +3069,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.1202837509918027,
-      "generation_s": 7.349803439050447,
-      "llm_cost_usd": 0.00215789,
+      "retrieval_s": 2.9623182921204716,
+      "generation_s": 10.72823413903825,
+      "llm_cost_usd": 0.0027991899999999996,
       "prompt_tokens": 1039,
-      "completion_tokens": 1031,
+      "completion_tokens": 1355,
       "error": null
     },
     {
@@ -3099,11 +3099,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4235760379815474,
-      "generation_s": 1.9521942269639112,
-      "llm_cost_usd": 0.0005576099999999999,
+      "retrieval_s": 2.1599952520336956,
+      "generation_s": 3.0374181950464845,
+      "llm_cost_usd": 0.0006763699999999999,
       "prompt_tokens": 815,
-      "completion_tokens": 253,
+      "completion_tokens": 303,
       "error": null
     },
     {
@@ -3112,10 +3112,10 @@
       "gold_answers": [
         "Michael Seater"
       ],
-      "pred": "Ashley Leggat",
-      "em": 0.0,
-      "f1": 0.0,
-      "judge": 0,
+      "pred": "Michael Seater",
+      "em": 1.0,
+      "f1": 1.0,
+      "judge": 1,
       "retrieved_doc_ids": [
         "life_with_derek",
         "tangled_the_series",
@@ -3129,11 +3129,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 5,
-      "retrieval_s": 3.169240855029784,
-      "generation_s": 2.8060833110357635,
-      "llm_cost_usd": 0.0008825899999999999,
+      "retrieval_s": 2.709946548100561,
+      "generation_s": 2.8164217020384967,
+      "llm_cost_usd": 0.0006562899999999999,
       "prompt_tokens": 1099,
-      "completion_tokens": 381,
+      "completion_tokens": 298,
       "error": null
     },
     {
@@ -3159,11 +3159,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.3416839949786663,
-      "generation_s": 1.2836021940456703,
-      "llm_cost_usd": 0.00042065500000000003,
+      "retrieval_s": 3.0440547899343073,
+      "generation_s": 2.598979834932834,
+      "llm_cost_usd": 0.0005644949999999999,
       "prompt_tokens": 783,
-      "completion_tokens": 191,
+      "completion_tokens": 279,
       "error": null
     },
     {
@@ -3189,11 +3189,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.286134019028395,
-      "generation_s": 3.7713092699996196,
-      "llm_cost_usd": 0.001066075,
+      "retrieval_s": 3.227610314032063,
+      "generation_s": 1.8821087509859353,
+      "llm_cost_usd": 0.000689335,
       "prompt_tokens": 1122,
-      "completion_tokens": 522,
+      "completion_tokens": 341,
       "error": null
     },
     {
@@ -3208,22 +3208,22 @@
       "judge": 0,
       "retrieved_doc_ids": [
         "operation_pacific",
-        "louis_mountbatten_1st_earl_mountbatten_of_burma",
+        "harrison_ford",
         "ed_asner",
-        "ward_bond",
-        "leonardo_dicaprio_filmography"
+        "david_irving",
+        "clifton_b_cates"
       ],
       "supporting_doc_ids": [
         "operation_pacific",
         "ward_bond"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": 4,
-      "retrieval_s": 3.2703119950019754,
-      "generation_s": 1.7083748679724522,
-      "llm_cost_usd": 0.000480085,
-      "prompt_tokens": 983,
-      "completion_tokens": 204,
+      "retrieval_complete_rank": null,
+      "retrieval_s": 2.453974955016747,
+      "generation_s": 1.7998253121040761,
+      "llm_cost_usd": 0.0005851949999999999,
+      "prompt_tokens": 902,
+      "completion_tokens": 264,
       "error": null
     },
     {
@@ -3249,11 +3249,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.1417542079580016,
-      "generation_s": 2.8450376680120826,
-      "llm_cost_usd": 0.000772595,
+      "retrieval_s": 2.868016063934192,
+      "generation_s": 2.846226832130924,
+      "llm_cost_usd": 0.000795035,
       "prompt_tokens": 1116,
-      "completion_tokens": 339,
+      "completion_tokens": 373,
       "error": null
     },
     {
@@ -3279,11 +3279,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.5760319950059056,
-      "generation_s": 2.055852561024949,
-      "llm_cost_usd": 0.0004905399999999999,
+      "retrieval_s": 2.318731968058273,
+      "generation_s": 1.3402283280156553,
+      "llm_cost_usd": 0.0005030799999999999,
       "prompt_tokens": 1119,
-      "completion_tokens": 172,
+      "completion_tokens": 191,
       "error": null
     },
     {
@@ -3309,11 +3309,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 3.9860305589972995,
-      "generation_s": 1.7415098960045725,
-      "llm_cost_usd": 0.000637615,
+      "retrieval_s": 2.9410672350786626,
+      "generation_s": 3.2117862259037793,
+      "llm_cost_usd": 0.000743175,
       "prompt_tokens": 994,
-      "completion_tokens": 304,
+      "completion_tokens": 334,
       "error": null
     },
     {
@@ -3331,7 +3331,7 @@
         "des_mcaleenan",
         "nathaniel_hill_brick_house",
         "fernando_clavijo",
-        "wayne_rooney"
+        "alex_rodriguez"
       ],
       "supporting_doc_ids": [
         "des_mcaleenan",
@@ -3339,11 +3339,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4028016019728966,
-      "generation_s": 2.032816794991959,
-      "llm_cost_usd": 0.000575455,
-      "prompt_tokens": 880,
-      "completion_tokens": 253,
+      "retrieval_s": 2.0568829129915684,
+      "generation_s": 2.269517555832863,
+      "llm_cost_usd": 0.0006163550000000001,
+      "prompt_tokens": 1070,
+      "completion_tokens": 243,
       "error": null
     },
     {
@@ -3369,11 +3369,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.3035449739545584,
-      "generation_s": 2.3209829349652864,
-      "llm_cost_usd": 0.000552065,
+      "retrieval_s": 2.327552029863,
+      "generation_s": 3.022054522065446,
+      "llm_cost_usd": 0.000701185,
       "prompt_tokens": 820,
-      "completion_tokens": 237,
+      "completion_tokens": 333,
       "error": null
     },
     {
@@ -3382,28 +3382,28 @@
       "gold_answers": [
         "National Football Conference (NFC) West"
       ],
-      "pred": "Insufficient information.",
+      "pred": "National Football Conference",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.7499999999999999,
       "judge": 0,
       "retrieved_doc_ids": [
         "derrick_hamilton",
         "detroit_pistons",
-        "los_angeles_lakers_all_time_roster",
-        "san_antonio_spurs",
-        "derrick_hamilton_basketball"
+        "san_francisco_49ers",
+        "tampa_bay_buccaneers",
+        "los_angeles_lakers_all_time_roster"
       ],
       "supporting_doc_ids": [
         "derrick_hamilton",
         "san_francisco_49ers"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": null,
-      "retrieval_s": 3.5287403099937364,
-      "generation_s": 4.885054857993964,
-      "llm_cost_usd": 0.0014577449999999999,
-      "prompt_tokens": 1361,
-      "completion_tokens": 630,
+      "retrieval_complete_rank": 3,
+      "retrieval_s": 2.6648358840029687,
+      "generation_s": 1.9390136578585953,
+      "llm_cost_usd": 0.000658885,
+      "prompt_tokens": 1169,
+      "completion_tokens": 274,
       "error": null
     },
     {
@@ -3412,7 +3412,7 @@
       "gold_answers": [
         "drummer"
       ],
-      "pred": "Drummers",
+      "pred": "metal drummers",
       "em": 0.0,
       "f1": 0.0,
       "judge": 1,
@@ -3429,11 +3429,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.59156739001628,
-      "generation_s": 4.1413708490435965,
-      "llm_cost_usd": 0.00125735,
+      "retrieval_s": 3.437241782899946,
+      "generation_s": 5.6730759281199425,
+      "llm_cost_usd": 0.0013886699999999998,
       "prompt_tokens": 831,
-      "completion_tokens": 661,
+      "completion_tokens": 728,
       "error": null
     },
     {
@@ -3459,11 +3459,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.993793752975762,
-      "generation_s": 2.21390693198191,
-      "llm_cost_usd": 0.0005529549999999999,
+      "retrieval_s": 2.448843956924975,
+      "generation_s": 2.341806273907423,
+      "llm_cost_usd": 0.0005377749999999999,
       "prompt_tokens": 736,
-      "completion_tokens": 276,
+      "completion_tokens": 253,
       "error": null
     },
     {
@@ -3489,11 +3489,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.275555535976309,
-      "generation_s": 1.747212587040849,
-      "llm_cost_usd": 0.000498195,
+      "retrieval_s": 2.8202896409202367,
+      "generation_s": 2.1093121101148427,
+      "llm_cost_usd": 0.000613655,
       "prompt_tokens": 927,
-      "completion_tokens": 257,
+      "completion_tokens": 302,
       "error": null
     },
     {
@@ -3519,11 +3519,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.675839731004089,
-      "generation_s": 1.714049772999715,
-      "llm_cost_usd": 0.000652125,
+      "retrieval_s": 2.7602074940223247,
+      "generation_s": 2.9941470760386437,
+      "llm_cost_usd": 0.000657405,
       "prompt_tokens": 1128,
-      "completion_tokens": 277,
+      "completion_tokens": 285,
       "error": null
     },
     {
@@ -3549,11 +3549,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6636809060000814,
-      "generation_s": 1.790528566983994,
-      "llm_cost_usd": 0.00073741,
+      "retrieval_s": 1.9443095161113888,
+      "generation_s": 2.3708651231136173,
+      "llm_cost_usd": 0.00059753,
       "prompt_tokens": 1021,
-      "completion_tokens": 320,
+      "completion_tokens": 238,
       "error": null
     },
     {
@@ -3570,8 +3570,8 @@
         "gyles_brandreth",
         "celebrity_fifteen_to_one",
         "christine_hamilton",
-        "baron_dunleath",
-        "keith_raffan"
+        "h_g_wells",
+        "baron_dunleath"
       ],
       "supporting_doc_ids": [
         "celebrity_fifteen_to_one",
@@ -3579,11 +3579,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.142859690997284,
-      "generation_s": 1.6593872010125779,
-      "llm_cost_usd": 0.000534915,
-      "prompt_tokens": 699,
-      "completion_tokens": 267,
+      "retrieval_s": 2.693121975986287,
+      "generation_s": 2.1823538448661566,
+      "llm_cost_usd": 0.000559135,
+      "prompt_tokens": 817,
+      "completion_tokens": 259,
       "error": null
     },
     {
@@ -3609,11 +3609,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 3.5793228810071014,
-      "generation_s": 1.5508608510135673,
-      "llm_cost_usd": 0.00051227,
+      "retrieval_s": 3.3911865630652755,
+      "generation_s": 1.5890428209677339,
+      "llm_cost_usd": 0.00051095,
       "prompt_tokens": 1054,
-      "completion_tokens": 226,
+      "completion_tokens": 224,
       "error": null
     },
     {
@@ -3639,11 +3639,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.7317386500071734,
-      "generation_s": 1.7221781060216017,
-      "llm_cost_usd": 0.00049383,
+      "retrieval_s": 2.5979942039120942,
+      "generation_s": 2.6797277610749006,
+      "llm_cost_usd": 0.00061853,
       "prompt_tokens": 1016,
-      "completion_tokens": 215,
+      "completion_tokens": 274,
       "error": null
     },
     {
@@ -3669,11 +3669,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6962337680161,
-      "generation_s": 1.7350517160375603,
-      "llm_cost_usd": 0.0006048249999999999,
+      "retrieval_s": 2.57537189591676,
+      "generation_s": 2.0885701929219067,
+      "llm_cost_usd": 0.0006081249999999999,
       "prompt_tokens": 1061,
-      "completion_tokens": 233,
+      "completion_tokens": 238,
       "error": null
     },
     {
@@ -3699,11 +3699,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4541118950000964,
-      "generation_s": 1.6891937259933911,
-      "llm_cost_usd": 0.00042259000000000003,
+      "retrieval_s": 2.576493572909385,
+      "generation_s": 2.4071713609155267,
+      "llm_cost_usd": 0.0005571899999999999,
       "prompt_tokens": 818,
-      "completion_tokens": 179,
+      "completion_tokens": 253,
       "error": null
     },
     {
@@ -3729,11 +3729,11 @@
       ],
       "retrieval_rank_of_first_gold": 2,
       "retrieval_complete_rank": null,
-      "retrieval_s": 1.7717775029595941,
-      "generation_s": 5.810546921973582,
-      "llm_cost_usd": 0.00181721,
+      "retrieval_s": 2.324043242027983,
+      "generation_s": 6.111470449948683,
+      "llm_cost_usd": 0.00157111,
       "prompt_tokens": 843,
-      "completion_tokens": 853,
+      "completion_tokens": 740,
       "error": null
     },
     {
@@ -3759,11 +3759,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.59955932298908,
-      "generation_s": 2.130816421005875,
-      "llm_cost_usd": 0.00057671,
+      "retrieval_s": 2.3903478579595685,
+      "generation_s": 2.1569422548636794,
+      "llm_cost_usd": 0.00056087,
       "prompt_tokens": 807,
-      "completion_tokens": 287,
+      "completion_tokens": 263,
       "error": null
     },
     {
@@ -3772,9 +3772,9 @@
       "gold_answers": [
         "Crown Holdings Incorporated"
       ],
-      "pred": "Crown Holdings Incorporated",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "Crown Holdings",
+      "em": 0.0,
+      "f1": 0.8,
       "judge": 1,
       "retrieved_doc_ids": [
         "crown_holdings",
@@ -3789,11 +3789,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.6876566730206832,
-      "generation_s": 2.8232760799583048,
-      "llm_cost_usd": 0.0008740950000000001,
+      "retrieval_s": 3.1826621328946203,
+      "generation_s": 3.188472284004092,
+      "llm_cost_usd": 0.0008932149999999999,
       "prompt_tokens": 990,
-      "completion_tokens": 407,
+      "completion_tokens": 438,
       "error": null
     },
     {
@@ -3819,11 +3819,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.10438527201768,
-      "generation_s": 1.4181801849626936,
-      "llm_cost_usd": 0.00042435500000000007,
+      "retrieval_s": 5.394980177050456,
+      "generation_s": 1.5846622670069337,
+      "llm_cost_usd": 0.00041709500000000003,
       "prompt_tokens": 842,
-      "completion_tokens": 175,
+      "completion_tokens": 164,
       "error": null
     },
     {
@@ -3849,11 +3849,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.5815242559765466,
-      "generation_s": 2.2031593149877153,
-      "llm_cost_usd": 0.000653875,
+      "retrieval_s": 2.6356797670014203,
+      "generation_s": 2.8049278748221695,
+      "llm_cost_usd": 0.000651235,
       "prompt_tokens": 678,
-      "completion_tokens": 325,
+      "completion_tokens": 321,
       "error": null
     },
     {
@@ -3879,11 +3879,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.4231452850508504,
-      "generation_s": 5.1294722860329784,
-      "llm_cost_usd": 0.001025315,
+      "retrieval_s": 2.1753988401032984,
+      "generation_s": 3.1799680939875543,
+      "llm_cost_usd": 0.001022675,
       "prompt_tokens": 755,
-      "completion_tokens": 466,
+      "completion_tokens": 462,
       "error": null
     },
     {
@@ -3909,11 +3909,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.8401268550078385,
-      "generation_s": 1.931085049000103,
-      "llm_cost_usd": 0.00058678,
+      "retrieval_s": 4.158172629075125,
+      "generation_s": 2.375328700058162,
+      "llm_cost_usd": 0.0005966799999999999,
       "prompt_tokens": 776,
-      "completion_tokens": 313,
+      "completion_tokens": 328,
       "error": null
     },
     {
@@ -3922,7 +3922,7 @@
       "gold_answers": [
         "more than 26,000"
       ],
-      "pred": "more than 26,000 exhibition games",
+      "pred": "More than 26,000 exhibition games",
       "em": 0.0,
       "f1": 0.7499999999999999,
       "judge": 1,
@@ -3939,11 +3939,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.622593492968008,
-      "generation_s": 2.653601219994016,
-      "llm_cost_usd": 0.0006449750000000001,
+      "retrieval_s": 3.3875141348689795,
+      "generation_s": 2.697543478105217,
+      "llm_cost_usd": 0.000652235,
       "prompt_tokens": 533,
-      "completion_tokens": 354,
+      "completion_tokens": 365,
       "error": null
     },
     {
@@ -3952,7 +3952,7 @@
       "gold_answers": [
         "1943"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -3960,8 +3960,8 @@
         "one_less_set_of_footsteps",
         "it_doesn_t_have_to_be_that_way",
         "bob_dylan",
-        "mick_jagger",
-        "janis_joplin"
+        "gwen_stefani",
+        "quot_weird_al_quot_yankovic"
       ],
       "supporting_doc_ids": [
         "one_less_set_of_footsteps",
@@ -3969,11 +3969,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.8594029520172626,
-      "generation_s": 5.353511689987499,
-      "llm_cost_usd": 0.0013587699999999998,
-      "prompt_tokens": 891,
-      "completion_tokens": 661,
+      "retrieval_s": 2.5309229360427707,
+      "generation_s": 1.985524875111878,
+      "llm_cost_usd": 0.00060741,
+      "prompt_tokens": 1005,
+      "completion_tokens": 257,
       "error": null
     },
     {
@@ -3991,7 +3991,7 @@
         "south_park",
         "bigfoot_tv_series",
         "list_of_aldnoah_zero_episodes",
-        "right_now_kapow"
+        "doug_tv_series"
       ],
       "supporting_doc_ids": [
         "the_death_camp_of_tolerance",
@@ -3999,11 +3999,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.9785521279554814,
-      "generation_s": 2.4057395579875447,
-      "llm_cost_usd": 0.000627175,
-      "prompt_tokens": 1073,
-      "completion_tokens": 257,
+      "retrieval_s": 2.241903450805694,
+      "generation_s": 2.464809210970998,
+      "llm_cost_usd": 0.000604325,
+      "prompt_tokens": 1008,
+      "completion_tokens": 247,
       "error": null
     },
     {
@@ -4029,11 +4029,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.2225716289831325,
-      "generation_s": 2.364338254032191,
-      "llm_cost_usd": 0.000791715,
+      "retrieval_s": 3.040228882804513,
+      "generation_s": 2.477023073937744,
+      "llm_cost_usd": 0.000793035,
       "prompt_tokens": 1205,
-      "completion_tokens": 334,
+      "completion_tokens": 336,
       "error": null
     },
     {
@@ -4059,11 +4059,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.9988424319890328,
-      "generation_s": 1.3858496259781532,
-      "llm_cost_usd": 0.00042436,
+      "retrieval_s": 3.236185234040022,
+      "generation_s": 2.9651115108281374,
+      "llm_cost_usd": 0.0005510399999999999,
       "prompt_tokens": 802,
-      "completion_tokens": 188,
+      "completion_tokens": 250,
       "error": null
     },
     {
@@ -4089,11 +4089,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.95238369400613,
-      "generation_s": 2.614279475994408,
-      "llm_cost_usd": 0.000572225,
+      "retrieval_s": 2.380125599913299,
+      "generation_s": 1.7990344259887934,
+      "llm_cost_usd": 0.000576185,
       "prompt_tokens": 918,
-      "completion_tokens": 236,
+      "completion_tokens": 242,
       "error": null
     },
     {
@@ -4119,11 +4119,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.9170585260144435,
-      "generation_s": 1.6102869599708356,
-      "llm_cost_usd": 0.00034741,
+      "retrieval_s": 3.590066909091547,
+      "generation_s": 2.192647015908733,
+      "llm_cost_usd": 0.00036588999999999995,
       "prompt_tokens": 551,
-      "completion_tokens": 168,
+      "completion_tokens": 196,
       "error": null
     },
     {
@@ -4132,10 +4132,10 @@
       "gold_answers": [
         "Sir Arthur Conan Doyle"
       ],
-      "pred": "Sir Arthur Conan Doyle",
-      "em": 1.0,
-      "f1": 1.0,
-      "judge": 1,
+      "pred": "Adrian Conan Doyle and John Dickson Carr",
+      "em": 0.0,
+      "f1": 0.36363636363636365,
+      "judge": 0,
       "retrieved_doc_ids": [
         "sherlock_holmes",
         "the_adventure_of_the_seven_clocks",
@@ -4149,11 +4149,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.0821852529770695,
-      "generation_s": 3.625370844034478,
-      "llm_cost_usd": 0.00101412,
+      "retrieval_s": 3.5693649121094495,
+      "generation_s": 2.3517400100827217,
+      "llm_cost_usd": 0.00051608,
       "prompt_tokens": 599,
-      "completion_tokens": 507,
+      "completion_tokens": 262,
       "error": null
     },
     {
@@ -4162,10 +4162,10 @@
       "gold_answers": [
         "Ellesmere Port"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": 1,
       "retrieved_doc_ids": [
         "jamell_anderson",
         "detroit_pistons",
@@ -4179,11 +4179,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 1.5368277140078135,
-      "generation_s": 4.242336399969645,
-      "llm_cost_usd": 0.001053195,
+      "retrieval_s": 3.1647896410431713,
+      "generation_s": 3.141079963883385,
+      "llm_cost_usd": 0.0008110349999999999,
       "prompt_tokens": 842,
-      "completion_tokens": 473,
+      "completion_tokens": 368,
       "error": null
     },
     {
@@ -4209,11 +4209,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.972110558010172,
-      "generation_s": 1.5186870740144514,
-      "llm_cost_usd": 0.00056176,
+      "retrieval_s": 2.883067117072642,
+      "generation_s": 1.8886719280853868,
+      "llm_cost_usd": 0.00057232,
       "prompt_tokens": 878,
-      "completion_tokens": 240,
+      "completion_tokens": 256,
       "error": null
     },
     {
@@ -4239,11 +4239,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.4464455249835737,
-      "generation_s": 2.563249116996303,
-      "llm_cost_usd": 0.0008291799999999999,
+      "retrieval_s": 3.326313584111631,
+      "generation_s": 4.065332576166838,
+      "llm_cost_usd": 0.0009684,
       "prompt_tokens": 1260,
-      "completion_tokens": 366,
+      "completion_tokens": 447,
       "error": null
     },
     {
@@ -4269,11 +4269,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 3.073469633993227,
-      "generation_s": 2.3683420139714144,
-      "llm_cost_usd": 0.0007021250000000001,
+      "retrieval_s": 3.0120770069770515,
+      "generation_s": 2.8257956448942423,
+      "llm_cost_usd": 0.0006843050000000001,
       "prompt_tokens": 683,
-      "completion_tokens": 383,
+      "completion_tokens": 356,
       "error": null
     },
     {
@@ -4291,7 +4291,7 @@
         "b_amp_m",
         "lowe_s",
         "robin_arora",
-        "simon_arora"
+        "rex_american_resources"
       ],
       "supporting_doc_ids": [
         "bobby_arora",
@@ -4299,11 +4299,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.241415127995424,
-      "generation_s": 1.2609542200225405,
-      "llm_cost_usd": 0.000314655,
-      "prompt_tokens": 421,
-      "completion_tokens": 168,
+      "retrieval_s": 2.7389553519897163,
+      "generation_s": 2.152948532020673,
+      "llm_cost_usd": 0.00022392499999999998,
+      "prompt_tokens": 578,
+      "completion_tokens": 101,
       "error": null
     },
     {
@@ -4329,11 +4329,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.383693425974343,
-      "generation_s": 2.2650994119467214,
-      "llm_cost_usd": 0.00048030999999999996,
+      "retrieval_s": 2.622577436035499,
+      "generation_s": 2.331602503079921,
+      "llm_cost_usd": 0.0004882299999999999,
       "prompt_tokens": 550,
-      "completion_tokens": 236,
+      "completion_tokens": 248,
       "error": null
     },
     {
@@ -4342,9 +4342,9 @@
       "gold_answers": [
         "Prudential Center in Newark"
       ],
-      "pred": "Prudential Center in Newark New Jersey",
+      "pred": "Prudential Center Newark New Jersey",
       "em": 0.0,
-      "f1": 0.8,
+      "f1": 0.6666666666666665,
       "judge": 1,
       "retrieved_doc_ids": [
         "harrison_barnes",
@@ -4359,11 +4359,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4479031009832397,
-      "generation_s": 2.3533609640435316,
-      "llm_cost_usd": 0.000524265,
+      "retrieval_s": 2.5678299569990486,
+      "generation_s": 2.392615808872506,
+      "llm_cost_usd": 0.000515665,
       "prompt_tokens": 1675,
-      "completion_tokens": 263,
+      "completion_tokens": 252,
       "error": null
     },
     {
@@ -4372,16 +4372,16 @@
       "gold_answers": [
         "1987"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 1,
+      "judge": -1,
       "retrieved_doc_ids": [
         "the_dingoes",
-        "marcel_duchamp",
-        "syd_barrett",
-        "johann_strauss_iii",
-        "chris_cornell"
+        "shooting_of_anthony_lamar_smith",
+        "udham_singh",
+        "legacy_of_che_guevara",
+        "carter_stanley"
       ],
       "supporting_doc_ids": [
         "the_dingoes",
@@ -4389,11 +4389,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.6368072330369614,
-      "generation_s": 2.247894311964046,
-      "llm_cost_usd": 0.000616885,
-      "prompt_tokens": 1071,
-      "completion_tokens": 248,
+      "retrieval_s": 2.623791438061744,
+      "generation_s": 3.4918182550463825,
+      "llm_cost_usd": 0.000883165,
+      "prompt_tokens": 1083,
+      "completion_tokens": 385,
       "error": null
     },
     {
@@ -4408,22 +4408,22 @@
       "judge": 1,
       "retrieved_doc_ids": [
         "the_barbed_wire_patent",
-        "warren_g_harding",
-        "steve_perry",
-        "george_tryon_harding",
-        "joseph_glidden"
+        "claudio_monteverdi",
+        "luigi_cherubini",
+        "joseph_glidden",
+        "james_a_garfield"
       ],
       "supporting_doc_ids": [
         "the_barbed_wire_patent",
         "joseph_glidden"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": 5,
-      "retrieval_s": 1.7282871839706786,
-      "generation_s": 2.395122154033743,
-      "llm_cost_usd": 0.000537565,
-      "prompt_tokens": 797,
-      "completion_tokens": 225,
+      "retrieval_complete_rank": 4,
+      "retrieval_s": 2.589493070030585,
+      "generation_s": 2.0547184799797833,
+      "llm_cost_usd": 0.000503755,
+      "prompt_tokens": 638,
+      "completion_tokens": 234,
       "error": null
     },
     {
@@ -4449,11 +4449,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6449830339988694,
-      "generation_s": 1.7148943409556523,
-      "llm_cost_usd": 0.00057502,
+      "retrieval_s": 2.8006503880023956,
+      "generation_s": 1.882717366795987,
+      "llm_cost_usd": 0.0005605,
       "prompt_tokens": 766,
-      "completion_tokens": 301,
+      "completion_tokens": 279,
       "error": null
     },
     {
@@ -4470,8 +4470,8 @@
         "further_bus",
         "the_electric_kool_aid_acid_test",
         "native_american_renaissance",
-        "earthsea",
-        "little_big_man_novel"
+        "little_big_man_novel",
+        "colonel_sun"
       ],
       "supporting_doc_ids": [
         "further_bus",
@@ -4479,11 +4479,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.7788437570561655,
-      "generation_s": 1.6027263040305115,
-      "llm_cost_usd": 0.00051504,
-      "prompt_tokens": 1015,
-      "completion_tokens": 247,
+      "retrieval_s": 2.9031092000659555,
+      "generation_s": 2.186026251874864,
+      "llm_cost_usd": 0.0006477799999999999,
+      "prompt_tokens": 1063,
+      "completion_tokens": 300,
       "error": null
     },
     {
@@ -4509,11 +4509,11 @@
       ],
       "retrieval_rank_of_first_gold": 2,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 2.2745518580195494,
-      "generation_s": 3.886779812979512,
-      "llm_cost_usd": 0.001075915,
+      "retrieval_s": 2.782021543942392,
+      "generation_s": 4.004725155886263,
+      "llm_cost_usd": 0.000815295,
       "prompt_tokens": 822,
-      "completion_tokens": 513,
+      "completion_tokens": 378,
       "error": null
     },
     {
@@ -4522,28 +4522,28 @@
       "gold_answers": [
         "Statutory List of Buildings of Special Architectural or Historic Interest"
       ],
-      "pred": "listed building",
-      "em": 0.0,
-      "f1": 0.0,
+      "pred": "Statutory List of Buildings of Special Architectural or Historic Interest",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "church_of_st_peter_pertenhall",
         "church_of_st_peter_pavenham",
+        "listed_building",
         "church_of_st_peter_sharnbrook",
-        "church_of_st_margaret_knotting_bedfordshire",
-        "church_of_st_denys_colmworth"
+        "church_of_st_margaret_knotting_bedfordshire"
       ],
       "supporting_doc_ids": [
         "church_of_st_peter_pertenhall",
         "listed_building"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": null,
-      "retrieval_s": 2.329797442012932,
-      "generation_s": 4.007587911968585,
-      "llm_cost_usd": 0.0009962,
-      "prompt_tokens": 482,
-      "completion_tokens": 529,
+      "retrieval_complete_rank": 3,
+      "retrieval_s": 3.4452843780163676,
+      "generation_s": 2.6409961441531777,
+      "llm_cost_usd": 0.0005134,
+      "prompt_tokens": 466,
+      "completion_tokens": 303,
       "error": null
     },
     {
@@ -4569,11 +4569,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.4392112999921665,
-      "generation_s": 1.7376867510029115,
-      "llm_cost_usd": 0.000550245,
+      "retrieval_s": 3.6706980320159346,
+      "generation_s": 1.9584142761304975,
+      "llm_cost_usd": 0.00042818500000000003,
       "prompt_tokens": 788,
-      "completion_tokens": 256,
+      "completion_tokens": 201,
       "error": null
     },
     {
@@ -4599,11 +4599,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.227200221037492,
-      "generation_s": 1.8031286289915442,
-      "llm_cost_usd": 0.00045572500000000003,
+      "retrieval_s": 2.2786211469210684,
+      "generation_s": 2.4567587971687317,
+      "llm_cost_usd": 0.000583725,
       "prompt_tokens": 976,
-      "completion_tokens": 170,
+      "completion_tokens": 234,
       "error": null
     },
     {
@@ -4629,11 +4629,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.362231865990907,
-      "generation_s": 2.891754080017563,
-      "llm_cost_usd": 0.000752215,
+      "retrieval_s": 3.7877889410592616,
+      "generation_s": 2.5143513411749154,
+      "llm_cost_usd": 0.000753535,
       "prompt_tokens": 988,
-      "completion_tokens": 352,
+      "completion_tokens": 354,
       "error": null
     },
     {
@@ -4645,13 +4645,13 @@
       "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "not_another_b_movie",
+        "john_malkovich",
         "nicolas_cage",
         "james_franco",
-        "robert_redford",
-        "james_vallo"
+        "robert_redford"
       ],
       "supporting_doc_ids": [
         "not_another_b_movie",
@@ -4659,11 +4659,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.1731390969944187,
-      "generation_s": 7.154998604964931,
-      "llm_cost_usd": 0.0024388,
-      "prompt_tokens": 714,
-      "completion_tokens": 1195,
+      "retrieval_s": 2.9589011531788856,
+      "generation_s": 8.235719526885077,
+      "llm_cost_usd": 0.0021074500000000003,
+      "prompt_tokens": 951,
+      "completion_tokens": 993,
       "error": null
     },
     {
@@ -4689,11 +4689,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4677706619841047,
-      "generation_s": 2.360225062002428,
-      "llm_cost_usd": 0.00067479,
+      "retrieval_s": 3.9507949729450047,
+      "generation_s": 3.641963936155662,
+      "llm_cost_usd": 0.00080081,
       "prompt_tokens": 785,
-      "completion_tokens": 314,
+      "completion_tokens": 375,
       "error": null
     },
     {
@@ -4719,11 +4719,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.919621017994359,
-      "generation_s": 1.8107864320045337,
-      "llm_cost_usd": 0.00073322,
+      "retrieval_s": 3.0967989931814373,
+      "generation_s": 2.537616682006046,
+      "llm_cost_usd": 0.00060324,
       "prompt_tokens": 957,
-      "completion_tokens": 329,
+      "completion_tokens": 262,
       "error": null
     },
     {
@@ -4732,15 +4732,15 @@
       "gold_answers": [
         "Barbara Bush"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 1,
+      "judge": 0,
       "retrieved_doc_ids": [
         "ignite",
+        "mary_margaret_blanchard",
         "the_bite_in_the_apple",
         "john_wozniak",
-        "bindi_irwin",
         "lisa_brennan_jobs"
       ],
       "supporting_doc_ids": [
@@ -4749,11 +4749,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.431458642007783,
-      "generation_s": 2.054836246999912,
-      "llm_cost_usd": 0.000650825,
-      "prompt_tokens": 702,
-      "completion_tokens": 309,
+      "retrieval_s": 2.6611289128195494,
+      "generation_s": 3.720531300175935,
+      "llm_cost_usd": 0.000624255,
+      "prompt_tokens": 659,
+      "completion_tokens": 283,
       "error": null
     },
     {
@@ -4779,11 +4779,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.151381303963717,
-      "generation_s": 1.372249734995421,
-      "llm_cost_usd": 0.000480855,
+      "retrieval_s": 4.283017789945006,
+      "generation_s": 2.0015825489535928,
+      "llm_cost_usd": 0.0006174349999999999,
       "prompt_tokens": 908,
-      "completion_tokens": 229,
+      "completion_tokens": 306,
       "error": null
     },
     {
@@ -4809,11 +4809,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.768516250012908,
-      "generation_s": 1.398223232012242,
-      "llm_cost_usd": 0.00047999999999999996,
+      "retrieval_s": 2.546073005069047,
+      "generation_s": 2.0550540399271995,
+      "llm_cost_usd": 0.00061196,
       "prompt_tokens": 998,
-      "completion_tokens": 194,
+      "completion_tokens": 264,
       "error": null
     },
     {
@@ -4839,11 +4839,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.636680395982694,
-      "generation_s": 2.0095637339982204,
-      "llm_cost_usd": 0.00066663,
+      "retrieval_s": 2.9136681789532304,
+      "generation_s": 2.6436695279553533,
+      "llm_cost_usd": 0.00053929,
       "prompt_tokens": 704,
-      "completion_tokens": 328,
+      "completion_tokens": 265,
       "error": null
     },
     {
@@ -4869,11 +4869,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.958337621006649,
-      "generation_s": 2.0377312320051715,
-      "llm_cost_usd": 0.000637785,
+      "retrieval_s": 4.289211698807776,
+      "generation_s": 3.046847904101014,
+      "llm_cost_usd": 0.000775685,
       "prompt_tokens": 1003,
-      "completion_tokens": 310,
+      "completion_tokens": 389,
       "error": null
     },
     {
@@ -4882,7 +4882,7 @@
       "gold_answers": [
         "rapper"
       ],
-      "pred": "rappers",
+      "pred": "Rappers",
       "em": 0.0,
       "f1": 0.0,
       "judge": 1,
@@ -4899,11 +4899,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4912426290102303,
-      "generation_s": 2.2581239030114375,
-      "llm_cost_usd": 0.00076972,
+      "retrieval_s": 3.5335442579817027,
+      "generation_s": 2.90386557392776,
+      "llm_cost_usd": 0.000775,
       "prompt_tokens": 1124,
-      "completion_tokens": 333,
+      "completion_tokens": 341,
       "error": null
     },
     {
@@ -4929,11 +4929,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.5793759530060925,
-      "generation_s": 3.157026536006015,
-      "llm_cost_usd": 0.0008454399999999999,
+      "retrieval_s": 2.321273847017437,
+      "generation_s": 2.5013008068781346,
+      "llm_cost_usd": 0.0007181,
       "prompt_tokens": 1021,
-      "completion_tokens": 354,
+      "completion_tokens": 291,
       "error": null
     },
     {
@@ -4951,7 +4951,7 @@
         "captain_beefheart",
         "andra_crouch",
         "joe_lynn_turner",
-        "till_lindemann"
+        "myles_kennedy"
       ],
       "supporting_doc_ids": [
         "the_legendary_a_amp_m_sessions",
@@ -4959,11 +4959,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8616328529897146,
-      "generation_s": 2.400988864013925,
-      "llm_cost_usd": 0.0008489000000000001,
-      "prompt_tokens": 1492,
-      "completion_tokens": 310,
+      "retrieval_s": 3.340138457948342,
+      "generation_s": 2.2456259690225124,
+      "llm_cost_usd": 0.0006930199999999999,
+      "prompt_tokens": 1296,
+      "completion_tokens": 278,
       "error": null
     },
     {
@@ -4989,11 +4989,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4514749219524674,
-      "generation_s": 3.2772600590251386,
-      "llm_cost_usd": 0.000910525,
+      "retrieval_s": 3.798146878136322,
+      "generation_s": 4.638801785884425,
+      "llm_cost_usd": 0.001187645,
       "prompt_tokens": 1021,
-      "completion_tokens": 452,
+      "completion_tokens": 612,
       "error": null
     },
     {
@@ -5019,11 +5019,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.027333553007338,
-      "generation_s": 5.4185688979923725,
-      "llm_cost_usd": 0.0016293350000000002,
+      "retrieval_s": 2.9021343130152673,
+      "generation_s": 5.739924991037697,
+      "llm_cost_usd": 0.0016022750000000002,
       "prompt_tokens": 1375,
-      "completion_tokens": 754,
+      "completion_tokens": 713,
       "error": null
     },
     {
@@ -5038,10 +5038,10 @@
       "judge": 1,
       "retrieved_doc_ids": [
         "tyler_kalinoski",
+        "oklahoma_sooners",
         "ohio_state_university",
         "staten_island_technical_high_school",
-        "mount_notre_dame_high_school",
-        "cleveland_state_university"
+        "manhattan_college"
       ],
       "supporting_doc_ids": [
         "tyler_kalinoski",
@@ -5049,11 +5049,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 1.8960791089921258,
-      "generation_s": 2.7929452440002933,
-      "llm_cost_usd": 0.0008330799999999999,
-      "prompt_tokens": 1031,
-      "completion_tokens": 334,
+      "retrieval_s": 2.5681262540165335,
+      "generation_s": 4.003195173107088,
+      "llm_cost_usd": 0.00099176,
+      "prompt_tokens": 1093,
+      "completion_tokens": 421,
       "error": null
     },
     {
@@ -5062,7 +5062,7 @@
       "gold_answers": [
         "City of Onkaparinga"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": -1,
@@ -5079,11 +5079,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 1.649315240967553,
-      "generation_s": 2.3349042710033245,
-      "llm_cost_usd": 0.000677645,
+      "retrieval_s": 2.6626892269123346,
+      "generation_s": 3.740240120096132,
+      "llm_cost_usd": 0.0008142449999999999,
       "prompt_tokens": 897,
-      "completion_tokens": 275,
+      "completion_tokens": 350,
       "error": null
     },
     {
@@ -5092,16 +5092,16 @@
       "gold_answers": [
         "1903"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": -1,
+      "judge": 0,
       "retrieved_doc_ids": [
         "newcastle_civic_centre",
         "felipe_vi_of_spain",
-        "mick_jagger",
-        "bob_dylan",
-        "charlie_chaplin"
+        "helen_mirren",
+        "elizabeth_taylor",
+        "ronan_keating"
       ],
       "supporting_doc_ids": [
         "newcastle_civic_centre",
@@ -5109,11 +5109,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.5090588339953683,
-      "generation_s": 2.404455114970915,
-      "llm_cost_usd": 0.00085213,
-      "prompt_tokens": 942,
-      "completion_tokens": 391,
+      "retrieval_s": 2.924319352954626,
+      "generation_s": 2.1054246879648417,
+      "llm_cost_usd": 0.0006374,
+      "prompt_tokens": 1189,
+      "completion_tokens": 234,
       "error": null
     },
     {
@@ -5122,28 +5122,28 @@
       "gold_answers": [
         "Ghanaian national team"
       ],
-      "pred": "Ghana national team",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
+      "pred": "Ghanaian national team",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "mariana_kovacevic",
         "luka_modri",
-        "invictus_film",
+        "joe_root",
         "win",
-        "richard_devos"
+        "asamoah_gyan"
       ],
       "supporting_doc_ids": [
         "mariana_kovacevic",
         "asamoah_gyan"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": null,
-      "retrieval_s": 3.31570031598676,
-      "generation_s": 2.7892768909805454,
-      "llm_cost_usd": 0.00087032,
-      "prompt_tokens": 991,
-      "completion_tokens": 400,
+      "retrieval_complete_rank": 5,
+      "retrieval_s": 3.6285597148817033,
+      "generation_s": 2.482226839987561,
+      "llm_cost_usd": 0.0007140199999999999,
+      "prompt_tokens": 817,
+      "completion_tokens": 357,
       "error": null
     },
     {
@@ -5169,11 +5169,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.2862214599736035,
-      "generation_s": 2.4540954629774205,
-      "llm_cost_usd": 0.000712685,
+      "retrieval_s": 2.912706594914198,
+      "generation_s": 3.2726651220582426,
+      "llm_cost_usd": 0.000714005,
       "prompt_tokens": 854,
-      "completion_tokens": 334,
+      "completion_tokens": 336,
       "error": null
     },
     {
@@ -5190,8 +5190,8 @@
         "richard_speck",
         "louis_b_garippo",
         "empty_eyes_csi_crime_scene_investigation",
-        "gerald_ford",
-        "judy_chicago"
+        "judy_chicago",
+        "truman_capote"
       ],
       "supporting_doc_ids": [
         "louis_b_garippo",
@@ -5199,11 +5199,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6709903779556043,
-      "generation_s": 3.135394803015515,
-      "llm_cost_usd": 0.000750915,
-      "prompt_tokens": 1008,
-      "completion_tokens": 342,
+      "retrieval_s": 2.978146445006132,
+      "generation_s": 3.817914944840595,
+      "llm_cost_usd": 0.000744015,
+      "prompt_tokens": 954,
+      "completion_tokens": 352,
       "error": null
     },
     {
@@ -5212,7 +5212,7 @@
       "gold_answers": [
         "his own opinions changed"
       ],
-      "pred": "Forbidden Creatures examines exotic pets and animal smuggling especially Travis the chimpanzee\nNo Animals Were Harmed examines animals in entertainment and the line between entertainment and abuse",
+      "pred": "Forbidden Creatures focuses on exotic animals and smuggling No Animals Were Harmed focuses on animals used for entertainment and the line between use and abuse",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -5229,11 +5229,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.73595593101345,
-      "generation_s": 5.918519894999918,
-      "llm_cost_usd": 0.0015274099999999999,
+      "retrieval_s": 4.9529945738613605,
+      "generation_s": 6.212687688181177,
+      "llm_cost_usd": 0.0015160899999999999,
       "prompt_tokens": 919,
-      "completion_tokens": 845,
+      "completion_tokens": 838,
       "error": null
     },
     {
@@ -5242,7 +5242,7 @@
       "gold_answers": [
         "James Harden"
       ],
-      "pred": "NBA 2K16",
+      "pred": "NBA Live 18",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -5259,11 +5259,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.943100827978924,
-      "generation_s": 4.789373042003717,
-      "llm_cost_usd": 0.001442495,
+      "retrieval_s": 2.6030778060667217,
+      "generation_s": 4.659759256057441,
+      "llm_cost_usd": 0.001297975,
       "prompt_tokens": 1164,
-      "completion_tokens": 680,
+      "completion_tokens": 593,
       "error": null
     },
     {
@@ -5289,11 +5289,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.2800322320545092,
-      "generation_s": 2.273499075032305,
-      "llm_cost_usd": 0.00064826,
+      "retrieval_s": 2.500992720015347,
+      "generation_s": 1.6672838109079748,
+      "llm_cost_usd": 0.0005427,
       "prompt_tokens": 1212,
-      "completion_tokens": 242,
+      "completion_tokens": 212,
       "error": null
     },
     {
@@ -5302,16 +5302,16 @@
       "gold_answers": [
         "Jenji Kohan"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
       "retrieved_doc_ids": [
         "lesbian_request_denied",
         "wolfblood",
+        "saturday_night_live",
         "doug_tv_series",
-        "the_fosters_2013_tv_series",
-        "dice_tv_series"
+        "the_fosters_2013_tv_series"
       ],
       "supporting_doc_ids": [
         "lesbian_request_denied",
@@ -5319,11 +5319,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.425193771952763,
-      "generation_s": 3.5090041420189664,
-      "llm_cost_usd": 0.000752655,
-      "prompt_tokens": 1079,
-      "completion_tokens": 321,
+      "retrieval_s": 2.428727980935946,
+      "generation_s": 3.6661165070254356,
+      "llm_cost_usd": 0.000754675,
+      "prompt_tokens": 1087,
+      "completion_tokens": 319,
       "error": null
     },
     {
@@ -5349,11 +5349,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.4195819379528984,
-      "generation_s": 1.597629182972014,
-      "llm_cost_usd": 0.0005403,
+      "retrieval_s": 2.6401532681193203,
+      "generation_s": 1.689241352956742,
+      "llm_cost_usd": 0.00053106,
       "prompt_tokens": 1191,
-      "completion_tokens": 212,
+      "completion_tokens": 198,
       "error": null
     },
     {
@@ -5362,7 +5362,7 @@
       "gold_answers": [
         "Brittany, Cornwall, Ireland, Isle of Man, Scotland and Wales."
       ],
-      "pred": "Brittany\nCornwall\nIreland\nIsle of Man\nScotland\nWales",
+      "pred": "Brittany Cornwall Ireland Isle of Man Scotland Wales",
       "em": 0.0,
       "f1": 0.9411764705882353,
       "judge": 1,
@@ -5379,11 +5379,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 5.3341014959733,
-      "generation_s": 3.7609029760351405,
-      "llm_cost_usd": 0.000920745,
+      "retrieval_s": 3.2284668220672756,
+      "generation_s": 3.5329772769473493,
+      "llm_cost_usd": 0.0007931850000000001,
       "prompt_tokens": 644,
-      "completion_tokens": 577,
+      "completion_tokens": 402,
       "error": null
     },
     {
@@ -5400,8 +5400,8 @@
         "hbo_world_championship_boxing",
         "channel_8_thailand",
         "1973_nfl_season",
-        "super_bowl_xix",
-        "three_peat"
+        "three_peat",
+        "super_bowl_xxix"
       ],
       "supporting_doc_ids": [
         "channel_8_thailand",
@@ -5409,11 +5409,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.5062327299965546,
-      "generation_s": 1.8563955269637518,
-      "llm_cost_usd": 0.000438645,
-      "prompt_tokens": 821,
-      "completion_tokens": 198,
+      "retrieval_s": 2.534812625963241,
+      "generation_s": 1.6315995540935546,
+      "llm_cost_usd": 0.00044133499999999995,
+      "prompt_tokens": 874,
+      "completion_tokens": 182,
       "error": null
     },
     {
@@ -5439,8 +5439,8 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 5,
-      "retrieval_s": 3.251262034988031,
-      "generation_s": 2.0090132180484943,
+      "retrieval_s": 2.883549513062462,
+      "generation_s": 2.501465376932174,
       "llm_cost_usd": 0.000658375,
       "prompt_tokens": 688,
       "completion_tokens": 326,
@@ -5469,11 +5469,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.9385049220290966,
-      "generation_s": 2.6427736459882,
-      "llm_cost_usd": 0.000821125,
+      "retrieval_s": 2.990998037159443,
+      "generation_s": 2.608295439975336,
+      "llm_cost_usd": 0.000803305,
       "prompt_tokens": 1238,
-      "completion_tokens": 363,
+      "completion_tokens": 336,
       "error": null
     },
     {
@@ -5499,11 +5499,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.62925657001324,
-      "generation_s": 3.1629679140169173,
-      "llm_cost_usd": 0.00086148,
+      "retrieval_s": 2.8929232698865235,
+      "generation_s": 2.3119086048100144,
+      "llm_cost_usd": 0.0007447,
       "prompt_tokens": 899,
-      "completion_tokens": 424,
+      "completion_tokens": 377,
       "error": null
     },
     {
@@ -5529,11 +5529,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.688230335013941,
-      "generation_s": 2.0296468180022202,
-      "llm_cost_usd": 0.00066434,
+      "retrieval_s": 3.2406105808913708,
+      "generation_s": 2.9646232288796455,
+      "llm_cost_usd": 0.0007817799999999999,
       "prompt_tokens": 1028,
-      "completion_tokens": 332,
+      "completion_tokens": 380,
       "error": null
     },
     {
@@ -5542,10 +5542,10 @@
       "gold_answers": [
         "1979"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "1998_west_virginia_mountaineers_football_team",
         "west_virginia_mountaineers_football",
@@ -5559,11 +5559,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.5613451690296642,
-      "generation_s": 2.166140633984469,
-      "llm_cost_usd": 0.0007299549999999999,
+      "retrieval_s": 2.2157496649306267,
+      "generation_s": 2.4608413609676063,
+      "llm_cost_usd": 0.000606555,
       "prompt_tokens": 1033,
-      "completion_tokens": 302,
+      "completion_tokens": 247,
       "error": null
     },
     {
@@ -5575,7 +5575,7 @@
       "pred": "cards",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 1,
+      "judge": 0,
       "retrieved_doc_ids": [
         "scientific_games_corporation",
         "bally_technologies",
@@ -5589,11 +5589,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.4106584579567425,
-      "generation_s": 4.658043169009034,
-      "llm_cost_usd": 0.0013859950000000001,
+      "retrieval_s": 2.601683170069009,
+      "generation_s": 6.803636212833226,
+      "llm_cost_usd": 0.001515315,
       "prompt_tokens": 551,
-      "completion_tokens": 704,
+      "completion_tokens": 770,
       "error": null
     },
     {
@@ -5609,8 +5609,8 @@
       "retrieved_doc_ids": [
         "1980_welsh_cup_final",
         "newport_county_a_f_c",
+        "newcastle_jets_fc_reserves",
         "1980_football_league_cup_final",
-        "sandy_pearce",
         "2013_fa_community_shield"
       ],
       "supporting_doc_ids": [
@@ -5619,11 +5619,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.631529843027238,
-      "generation_s": 2.1971360889729112,
-      "llm_cost_usd": 0.00056472,
-      "prompt_tokens": 796,
-      "completion_tokens": 273,
+      "retrieval_s": 2.15810584416613,
+      "generation_s": 1.9987844531424344,
+      "llm_cost_usd": 0.00041163,
+      "prompt_tokens": 759,
+      "completion_tokens": 185,
       "error": null
     },
     {
@@ -5649,11 +5649,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 2.6684550680220127,
-      "generation_s": 5.124952009005938,
-      "llm_cost_usd": 0.001415735,
+      "retrieval_s": 2.736574999988079,
+      "generation_s": 2.7746891791466624,
+      "llm_cost_usd": 0.000649715,
       "prompt_tokens": 629,
-      "completion_tokens": 718,
+      "completion_tokens": 337,
       "error": null
     },
     {
@@ -5662,10 +5662,10 @@
       "gold_answers": [
         "Curtis James Martin Jr."
       ],
-      "pred": "Fred Taylor",
+      "pred": "Curtis Martin",
       "em": 0.0,
-      "f1": 0.0,
-      "judge": 0,
+      "f1": 0.6666666666666666,
+      "judge": 1,
       "retrieved_doc_ids": [
         "corey_dillon",
         "fred_taylor_american_football",
@@ -5679,11 +5679,11 @@
       ],
       "retrieval_rank_of_first_gold": 3,
       "retrieval_complete_rank": 4,
-      "retrieval_s": 2.9209943219902925,
-      "generation_s": 4.452483943023253,
-      "llm_cost_usd": 0.001270715,
+      "retrieval_s": 3.9187745831441134,
+      "generation_s": 4.024956090841442,
+      "llm_cost_usd": 0.0012773550000000002,
       "prompt_tokens": 1003,
-      "completion_tokens": 617,
+      "completion_tokens": 623,
       "error": null
     },
     {
@@ -5709,11 +5709,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.923914709012024,
-      "generation_s": 3.0778460029978305,
-      "llm_cost_usd": 0.0008444699999999999,
+      "retrieval_s": 3.3960538159590214,
+      "generation_s": 2.338919283822179,
+      "llm_cost_usd": 0.0005561300000000001,
       "prompt_tokens": 700,
-      "completion_tokens": 468,
+      "completion_tokens": 291,
       "error": null
     },
     {
@@ -5739,11 +5739,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.2735555169638246,
-      "generation_s": 2.0599820039933547,
-      "llm_cost_usd": 0.00046028999999999997,
+      "retrieval_s": 4.04385995818302,
+      "generation_s": 1.8994746340904385,
+      "llm_cost_usd": 0.00048470999999999996,
       "prompt_tokens": 939,
-      "completion_tokens": 187,
+      "completion_tokens": 224,
       "error": null
     },
     {
@@ -5769,11 +5769,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.297993123997003,
-      "generation_s": 2.0922972829430364,
-      "llm_cost_usd": 0.0007411099999999999,
+      "retrieval_s": 2.447727075079456,
+      "generation_s": 3.2937978070694953,
+      "llm_cost_usd": 0.00073319,
       "prompt_tokens": 1005,
-      "completion_tokens": 321,
+      "completion_tokens": 309,
       "error": null
     },
     {
@@ -5789,21 +5789,21 @@
       "retrieved_doc_ids": [
         "forever_kingdom",
         "studio_ghibli",
-        "john_lemmon_films",
         "u_s_gold",
-        "fromsoftware"
+        "fromsoftware",
+        "ganbarion"
       ],
       "supporting_doc_ids": [
         "forever_kingdom",
         "fromsoftware"
       ],
       "retrieval_rank_of_first_gold": 1,
-      "retrieval_complete_rank": 5,
-      "retrieval_s": 3.2026846070075408,
-      "generation_s": 1.910084203002043,
-      "llm_cost_usd": 0.00041653500000000005,
-      "prompt_tokens": 847,
-      "completion_tokens": 161,
+      "retrieval_complete_rank": 4,
+      "retrieval_s": 3.148548366036266,
+      "generation_s": 1.806328495964408,
+      "llm_cost_usd": 0.000417685,
+      "prompt_tokens": 812,
+      "completion_tokens": 176,
       "error": null
     },
     {
@@ -5812,7 +5812,7 @@
       "gold_answers": [
         "YouTube"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -5829,11 +5829,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 4.907519533007871,
-      "generation_s": 4.205073832999915,
-      "llm_cost_usd": 0.0012222049999999999,
+      "retrieval_s": 4.011126294033602,
+      "generation_s": 3.44699275912717,
+      "llm_cost_usd": 0.001100825,
       "prompt_tokens": 1132,
-      "completion_tokens": 621,
+      "completion_tokens": 565,
       "error": null
     },
     {
@@ -5850,8 +5850,8 @@
         "nan_britton",
         "warren_g_harding",
         "elizabeth_ann_blaesing",
-        "uc_berkeley_school_of_law",
-        "nelson_rockefeller"
+        "arthur_rudolph",
+        "uc_berkeley_school_of_law"
       ],
       "supporting_doc_ids": [
         "warren_g_harding",
@@ -5859,11 +5859,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.263872337993234,
-      "generation_s": 2.372778962017037,
-      "llm_cost_usd": 0.000594975,
-      "prompt_tokens": 889,
-      "completion_tokens": 284,
+      "retrieval_s": 2.5450621410273015,
+      "generation_s": 2.1605799389071763,
+      "llm_cost_usd": 0.00046621499999999997,
+      "prompt_tokens": 915,
+      "completion_tokens": 209,
       "error": null
     },
     {
@@ -5872,9 +5872,9 @@
       "gold_answers": [
         "five times"
       ],
-      "pred": "five",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
+      "pred": "five times",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "margaret_atwood",
@@ -5889,11 +5889,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.313646876020357,
-      "generation_s": 2.0224601539666764,
-      "llm_cost_usd": 0.000601545,
+      "retrieval_s": 2.1816120098810643,
+      "generation_s": 1.859799224883318,
+      "llm_cost_usd": 0.000456405,
       "prompt_tokens": 988,
-      "completion_tokens": 260,
+      "completion_tokens": 168,
       "error": null
     },
     {
@@ -5909,9 +5909,9 @@
       "retrieved_doc_ids": [
         "worcester_massachusetts",
         "dallas_county_texas",
+        "fort_myers_florida",
         "hobart_oklahoma",
-        "manchester_new_hampshire",
-        "tompkinsville_kentucky"
+        "manchester_new_hampshire"
       ],
       "supporting_doc_ids": [
         "elbridge_new_york",
@@ -5919,11 +5919,11 @@
       ],
       "retrieval_rank_of_first_gold": null,
       "retrieval_complete_rank": null,
-      "retrieval_s": 4.7988502100342885,
-      "generation_s": 10.5720595800085,
-      "llm_cost_usd": 0.0028760649999999997,
-      "prompt_tokens": 932,
-      "completion_tokens": 1384,
+      "retrieval_s": 2.8871682710014284,
+      "generation_s": 11.574078052071854,
+      "llm_cost_usd": 0.0027853049999999996,
+      "prompt_tokens": 978,
+      "completion_tokens": 1359,
       "error": null
     },
     {
@@ -5949,11 +5949,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.3972426379914396,
-      "generation_s": 1.9856153189903125,
-      "llm_cost_usd": 0.000574805,
+      "retrieval_s": 2.0655777400825173,
+      "generation_s": 2.6220269098412246,
+      "llm_cost_usd": 0.0005754649999999999,
       "prompt_tokens": 945,
-      "completion_tokens": 234,
+      "completion_tokens": 235,
       "error": null
     },
     {
@@ -5979,11 +5979,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.912536618008744,
-      "generation_s": 2.718269778008107,
-      "llm_cost_usd": 0.000742915,
+      "retrieval_s": 3.1020653259474784,
+      "generation_s": 3.2239719200879335,
+      "llm_cost_usd": 0.000748195,
       "prompt_tokens": 980,
-      "completion_tokens": 344,
+      "completion_tokens": 352,
       "error": null
     },
     {
@@ -5992,9 +5992,9 @@
       "gold_answers": [
         "support for the establishment of a \"national home for the Jewish people\" in Palestine"
       ],
-      "pred": "support for the establishment of a national home for the Jewish people in Palestine",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "support for a national home for the Jewish people in Palestine",
+      "em": 0.0,
+      "f1": 0.9,
       "judge": 1,
       "retrieved_doc_ids": [
         "declaration_to_the_seven",
@@ -6009,11 +6009,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.163696023984812,
-      "generation_s": 2.5799211260164157,
-      "llm_cost_usd": 0.00072487,
+      "retrieval_s": 3.4779781750403345,
+      "generation_s": 2.7103654670063406,
+      "llm_cost_usd": 0.00059813,
       "prompt_tokens": 828,
-      "completion_tokens": 351,
+      "completion_tokens": 295,
       "error": null
     },
     {
@@ -6039,11 +6039,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.927132185024675,
-      "generation_s": 1.9568162169889547,
-      "llm_cost_usd": 0.0005860749999999999,
+      "retrieval_s": 2.2926432490348816,
+      "generation_s": 1.2093742089346051,
+      "llm_cost_usd": 0.000459395,
       "prompt_tokens": 897,
-      "completion_tokens": 268,
+      "completion_tokens": 206,
       "error": null
     },
     {
@@ -6069,11 +6069,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.9782459040288813,
-      "generation_s": 2.883603929018136,
-      "llm_cost_usd": 0.0007164,
+      "retrieval_s": 2.6827168718446046,
+      "generation_s": 3.124474038137123,
+      "llm_cost_usd": 0.00071508,
       "prompt_tokens": 884,
-      "completion_tokens": 336,
+      "completion_tokens": 334,
       "error": null
     },
     {
@@ -6089,7 +6089,7 @@
       "retrieved_doc_ids": [
         "w_tresper_clarke_high_school",
         "east_hampton_village_new_york",
-        "lower_south_bay_new_york",
+        "springs_new_york",
         "floral_park_new_york",
         "north_bay_shore_new_york"
       ],
@@ -6099,11 +6099,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.5081585529842414,
-      "generation_s": 3.249011561041698,
-      "llm_cost_usd": 0.0009361549999999999,
-      "prompt_tokens": 878,
-      "completion_tokens": 414,
+      "retrieval_s": 3.0514273061417043,
+      "generation_s": 2.286523874150589,
+      "llm_cost_usd": 0.000664005,
+      "prompt_tokens": 787,
+      "completion_tokens": 296,
       "error": null
     },
     {
@@ -6129,11 +6129,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.2678934250143357,
-      "generation_s": 4.842862339981366,
-      "llm_cost_usd": 0.0012758499999999998,
+      "retrieval_s": 1.7694626210723072,
+      "generation_s": 4.837129611056298,
+      "llm_cost_usd": 0.00115313,
       "prompt_tokens": 688,
-      "completion_tokens": 611,
+      "completion_tokens": 555,
       "error": null
     },
     {
@@ -6159,11 +6159,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.289343186013866,
-      "generation_s": 1.8010939819505438,
-      "llm_cost_usd": 0.00035312,
+      "retrieval_s": 1.63052459503524,
+      "generation_s": 2.0210283431224525,
+      "llm_cost_usd": 0.00033992,
       "prompt_tokens": 624,
-      "completion_tokens": 149,
+      "completion_tokens": 129,
       "error": null
     },
     {
@@ -6189,11 +6189,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6562949199578725,
-      "generation_s": 2.6800689219962806,
-      "llm_cost_usd": 0.000597695,
+      "retrieval_s": 2.1029962869361043,
+      "generation_s": 1.7905008648522198,
+      "llm_cost_usd": 0.000612215,
       "prompt_tokens": 979,
-      "completion_tokens": 253,
+      "completion_tokens": 275,
       "error": null
     },
     {
@@ -6219,11 +6219,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.951150242006406,
-      "generation_s": 2.611957104993053,
-      "llm_cost_usd": 0.00067588,
-      "prompt_tokens": 792,
-      "completion_tokens": 313,
+      "retrieval_s": 2.2351308178622276,
+      "generation_s": 2.796170538989827,
+      "llm_cost_usd": 0.0005433599999999999,
+      "prompt_tokens": 766,
+      "completion_tokens": 252,
       "error": null
     },
     {
@@ -6241,7 +6241,7 @@
         "fleet_requirements_and_aircraft_direction_unit",
         "no_78_wing_raaf",
         "mcdonnell_douglas_t_45_goshawk",
-        "john_fieldhouse_baron_fieldhouse"
+        "vfa_2"
       ],
       "supporting_doc_ids": [
         "fleet_requirements_and_aircraft_direction_unit",
@@ -6249,11 +6249,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4531238899799064,
-      "generation_s": 2.696945233969018,
-      "llm_cost_usd": 0.0006884899999999999,
-      "prompt_tokens": 888,
-      "completion_tokens": 297,
+      "retrieval_s": 2.22367045795545,
+      "generation_s": 3.2350764910224825,
+      "llm_cost_usd": 0.00093239,
+      "prompt_tokens": 800,
+      "completion_tokens": 440,
       "error": null
     },
     {
@@ -6271,7 +6271,7 @@
         "adelaide_entertainment_centre",
         "adelaide_united_fc",
         "parafield_gardens_south_australia",
-        "parafield_south_australia"
+        "para_hills_west_south_australia"
       ],
       "supporting_doc_ids": [
         "ufc_fight_night_miocic_vs_hunt",
@@ -6279,11 +6279,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4122770380345173,
-      "generation_s": 1.6978007609723136,
-      "llm_cost_usd": 0.00039470999999999994,
-      "prompt_tokens": 762,
-      "completion_tokens": 160,
+      "retrieval_s": 1.8885569248814136,
+      "generation_s": 1.7169596459716558,
+      "llm_cost_usd": 0.00038923000000000007,
+      "prompt_tokens": 748,
+      "completion_tokens": 157,
       "error": null
     },
     {
@@ -6292,10 +6292,10 @@
       "gold_answers": [
         "Toronto"
       ],
-      "pred": "Insufficient information",
+      "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "review_of_policy_research",
         "university_of_st_andrews",
@@ -6309,11 +6309,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.530493849015329,
-      "generation_s": 3.1293504220084287,
-      "llm_cost_usd": 0.0005752649999999999,
+      "retrieval_s": 2.558596626156941,
+      "generation_s": 3.847443480975926,
+      "llm_cost_usd": 0.000958625,
       "prompt_tokens": 826,
-      "completion_tokens": 278,
+      "completion_tokens": 467,
       "error": null
     },
     {
@@ -6339,11 +6339,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.3216490750201046,
-      "generation_s": 4.367580173944589,
-      "llm_cost_usd": 0.001287055,
+      "retrieval_s": 2.036486627999693,
+      "generation_s": 5.078236919827759,
+      "llm_cost_usd": 0.0014223149999999997,
       "prompt_tokens": 1249,
-      "completion_tokens": 545,
+      "completion_tokens": 620,
       "error": null
     },
     {
@@ -6369,11 +6369,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.044346301991027,
-      "generation_s": 1.8335795029997826,
-      "llm_cost_usd": 0.00043331500000000003,
+      "retrieval_s": 3.453308396972716,
+      "generation_s": 2.1385924560017884,
+      "llm_cost_usd": 0.000563955,
       "prompt_tokens": 796,
-      "completion_tokens": 207,
+      "completion_tokens": 275,
       "error": null
     },
     {
@@ -6399,11 +6399,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.6138229540083557,
-      "generation_s": 2.5551841140259057,
-      "llm_cost_usd": 0.00077897,
+      "retrieval_s": 2.8450393080711365,
+      "generation_s": 1.9776283770333976,
+      "llm_cost_usd": 0.00065229,
       "prompt_tokens": 1125,
-      "completion_tokens": 339,
+      "completion_tokens": 277,
       "error": null
     },
     {
@@ -6429,11 +6429,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 3.2476896560401656,
-      "generation_s": 2.0741304520051926,
-      "llm_cost_usd": 0.0004003,
+      "retrieval_s": 2.3213029981125146,
+      "generation_s": 2.1967172799631953,
+      "llm_cost_usd": 0.000525,
       "prompt_tokens": 748,
-      "completion_tokens": 173,
+      "completion_tokens": 232,
       "error": null
     },
     {
@@ -6459,11 +6459,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 5,
-      "retrieval_s": 3.4868899949942715,
-      "generation_s": 1.9739734989707358,
-      "llm_cost_usd": 0.000525745,
+      "retrieval_s": 2.7623681540135294,
+      "generation_s": 3.0337042671162635,
+      "llm_cost_usd": 0.0007857049999999999,
       "prompt_tokens": 1186,
-      "completion_tokens": 194,
+      "completion_tokens": 328,
       "error": null
     },
     {
@@ -6480,8 +6480,8 @@
         "willem_van_oldenbarnevelt",
         "johan_van_oldenbarnevelt",
         "willem_zijderveld",
-        "ludwig_van_beethoven",
-        "hermann_g_ring"
+        "charlie_chaplin",
+        "john_locke"
       ],
       "supporting_doc_ids": [
         "willem_van_oldenbarnevelt",
@@ -6489,11 +6489,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.5582447640481405,
-      "generation_s": 1.613911931985058,
-      "llm_cost_usd": 0.00038725,
-      "prompt_tokens": 713,
-      "completion_tokens": 167,
+      "retrieval_s": 2.3367611670400947,
+      "generation_s": 1.8735982200596482,
+      "llm_cost_usd": 0.00039515,
+      "prompt_tokens": 771,
+      "completion_tokens": 157,
       "error": null
     },
     {
@@ -6519,11 +6519,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 6.876341472030617,
-      "generation_s": 1.6682411899673752,
-      "llm_cost_usd": 0.0003148,
+      "retrieval_s": 3.1431015341077,
+      "generation_s": 1.605814898852259,
+      "llm_cost_usd": 0.00044676,
       "prompt_tokens": 802,
-      "completion_tokens": 155,
+      "completion_tokens": 225,
       "error": null
     },
     {
@@ -6549,11 +6549,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.2455660099512897,
-      "generation_s": 2.2279965369962156,
-      "llm_cost_usd": 0.000571425,
-      "prompt_tokens": 917,
-      "completion_tokens": 240,
+      "retrieval_s": 2.999556588009,
+      "generation_s": 2.430553497048095,
+      "llm_cost_usd": 0.000709565,
+      "prompt_tokens": 947,
+      "completion_tokens": 308,
       "error": null
     },
     {
@@ -6569,9 +6569,9 @@
       "retrieved_doc_ids": [
         "greene_king",
         "hungry_horse",
-        "marks_amp_spencer",
-        "baxters",
-        "restaurant_brands_international"
+        "restaurant_brands_international",
+        "kfc",
+        "coopers_brewery"
       ],
       "supporting_doc_ids": [
         "hungry_horse",
@@ -6579,11 +6579,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.964100581011735,
-      "generation_s": 2.549508049036376,
-      "llm_cost_usd": 0.0006296450000000001,
-      "prompt_tokens": 642,
-      "completion_tokens": 291,
+      "retrieval_s": 1.5800837250426412,
+      "generation_s": 2.7054360969923437,
+      "llm_cost_usd": 0.000506515,
+      "prompt_tokens": 709,
+      "completion_tokens": 209,
       "error": null
     },
     {
@@ -6609,11 +6609,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.415990371024236,
-      "generation_s": 2.173360224987846,
-      "llm_cost_usd": 0.000728505,
+      "retrieval_s": 1.9278040141798556,
+      "generation_s": 3.1784194910433143,
+      "llm_cost_usd": 0.000827465,
       "prompt_tokens": 975,
-      "completion_tokens": 321,
+      "completion_tokens": 341,
       "error": null
     },
     {
@@ -6630,8 +6630,8 @@
         "paula_patton",
         "hitch_film",
         "mirrors_film",
-        "paris_hilton",
-        "elizabeth_taylor"
+        "katharine_hepburn",
+        "paris_hilton"
       ],
       "supporting_doc_ids": [
         "mirrors_film",
@@ -6639,11 +6639,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.7297120279981755,
-      "generation_s": 1.3632584210135974,
-      "llm_cost_usd": 0.00047356499999999996,
-      "prompt_tokens": 976,
-      "completion_tokens": 195,
+      "retrieval_s": 2.2155961650423706,
+      "generation_s": 1.941660586046055,
+      "llm_cost_usd": 0.00045877499999999997,
+      "prompt_tokens": 967,
+      "completion_tokens": 176,
       "error": null
     },
     {
@@ -6669,11 +6669,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.730248798034154,
-      "generation_s": 1.7933944280375727,
-      "llm_cost_usd": 0.0004309149999999999,
+      "retrieval_s": 2.453822359908372,
+      "generation_s": 2.9592861509881914,
+      "llm_cost_usd": 0.000549675,
       "prompt_tokens": 325,
-      "completion_tokens": 246,
+      "completion_tokens": 296,
       "error": null
     },
     {
@@ -6699,11 +6699,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6885824169730768,
-      "generation_s": 3.1335420619579963,
-      "llm_cost_usd": 0.000943725,
+      "retrieval_s": 2.4020583890378475,
+      "generation_s": 2.5559655579272658,
+      "llm_cost_usd": 0.000712145,
       "prompt_tokens": 1361,
-      "completion_tokens": 372,
+      "completion_tokens": 281,
       "error": null
     },
     {
@@ -6729,11 +6729,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.537113149999641,
-      "generation_s": 2.3231401329976507,
-      "llm_cost_usd": 0.0004683,
+      "retrieval_s": 2.4517908431589603,
+      "generation_s": 1.871764532988891,
+      "llm_cost_usd": 0.00058772,
       "prompt_tokens": 888,
-      "completion_tokens": 221,
+      "completion_tokens": 272,
       "error": null
     },
     {
@@ -6742,7 +6742,7 @@
       "gold_answers": [
         "the Hanna-Barbera show \"Birdman and the Galaxy Trio.\""
       ],
-      "pred": "corporate management",
+      "pred": "a caricature of corporate management",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -6759,11 +6759,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 3.556763274013065,
-      "generation_s": 2.7022739480016753,
-      "llm_cost_usd": 0.00055342,
+      "retrieval_s": 3.6520366549957544,
+      "generation_s": 3.793546723900363,
+      "llm_cost_usd": 0.000952,
       "prompt_tokens": 721,
-      "completion_tokens": 283,
+      "completion_tokens": 491,
       "error": null
     },
     {
@@ -6780,8 +6780,8 @@
         "nobody_speak_trials_of_the_free_press",
         "sheldon_adelson",
         "steve_wynn",
-        "rupert_murdoch",
-        "john_locke"
+        "mick_jagger",
+        "arshile_gorky"
       ],
       "supporting_doc_ids": [
         "nobody_speak_trials_of_the_free_press",
@@ -6789,11 +6789,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.1697706680279225,
-      "generation_s": 2.148079946055077,
-      "llm_cost_usd": 0.000625485,
-      "prompt_tokens": 1099,
-      "completion_tokens": 255,
+      "retrieval_s": 2.6815302341710776,
+      "generation_s": 2.3786494131200016,
+      "llm_cost_usd": 0.0006284449999999999,
+      "prompt_tokens": 1095,
+      "completion_tokens": 261,
       "error": null
     },
     {
@@ -6809,9 +6809,9 @@
       "retrieved_doc_ids": [
         "e_hollywood_hold_em",
         "phil_laak",
-        "sheldon_adelson",
         "mark_newhouse",
-        "paris_hilton"
+        "paris_hilton",
+        "david_letterman"
       ],
       "supporting_doc_ids": [
         "e_hollywood_hold_em",
@@ -6819,11 +6819,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.636864037020132,
-      "generation_s": 1.5126341420109384,
-      "llm_cost_usd": 0.00043875,
-      "prompt_tokens": 927,
-      "completion_tokens": 166,
+      "retrieval_s": 2.5726596768945456,
+      "generation_s": 2.153175075072795,
+      "llm_cost_usd": 0.00044885,
+      "prompt_tokens": 941,
+      "completion_tokens": 176,
       "error": null
     },
     {
@@ -6832,7 +6832,7 @@
       "gold_answers": [
         "John Francis Kelly"
       ],
-      "pred": "John F. Kelly",
+      "pred": "John F Kelly",
       "em": 0.0,
       "f1": 0.6666666666666666,
       "judge": 1,
@@ -6840,8 +6840,8 @@
         "john_f_kelly",
         "elaine_duke",
         "kirstjen_nielsen",
-        "united_states_secretary_of_homeland_security",
-        "leonard_whiting"
+        "gerald_ford",
+        "united_states_secretary_of_homeland_security"
       ],
       "supporting_doc_ids": [
         "elaine_duke",
@@ -6849,11 +6849,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6886344329686835,
-      "generation_s": 2.3567809439846314,
-      "llm_cost_usd": 0.000706265,
-      "prompt_tokens": 943,
-      "completion_tokens": 302,
+      "retrieval_s": 3.1199299809522927,
+      "generation_s": 3.215852909022942,
+      "llm_cost_usd": 0.0009939649999999999,
+      "prompt_tokens": 1025,
+      "completion_tokens": 449,
       "error": null
     },
     {
@@ -6879,11 +6879,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 3.08454880095087,
-      "generation_s": 1.892485691991169,
-      "llm_cost_usd": 0.0005537249999999999,
+      "retrieval_s": 3.2102533420547843,
+      "generation_s": 2.3199846521019936,
+      "llm_cost_usd": 0.000554385,
       "prompt_tokens": 767,
-      "completion_tokens": 269,
+      "completion_tokens": 270,
       "error": null
     },
     {
@@ -6892,9 +6892,9 @@
       "gold_answers": [
         "42.5"
       ],
-      "pred": "42.5 km",
+      "pred": "42 point 5 kilometres",
       "em": 0.0,
-      "f1": 0.6666666666666666,
+      "f1": 0.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "amsterdam_metro",
@@ -6909,11 +6909,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.1962713000248186,
-      "generation_s": 4.045818803017028,
-      "llm_cost_usd": 0.00099804,
+      "retrieval_s": 2.287822469137609,
+      "generation_s": 7.829968229867518,
+      "llm_cost_usd": 0.0018749200000000002,
       "prompt_tokens": 1050,
-      "completion_tokens": 442,
+      "completion_tokens": 859,
       "error": null
     },
     {
@@ -6931,7 +6931,7 @@
         "skye_mccole_bartusiak",
         "izara_aishah",
         "lindsay_lohan_filmography",
-        "alex_pettyfer"
+        "elia_kazan"
       ],
       "supporting_doc_ids": [
         "wild_about_harry_film",
@@ -6939,11 +6939,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.633926668029744,
-      "generation_s": 2.6512019989895634,
-      "llm_cost_usd": 0.00079493,
-      "prompt_tokens": 1243,
-      "completion_tokens": 319,
+      "retrieval_s": 2.7485212860628963,
+      "generation_s": 2.5560303111560643,
+      "llm_cost_usd": 0.00069726,
+      "prompt_tokens": 884,
+      "completion_tokens": 307,
       "error": null
     },
     {
@@ -6969,11 +6969,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.492364660021849,
-      "generation_s": 2.0105445430381224,
-      "llm_cost_usd": 0.000548705,
+      "retrieval_s": 2.6546806630212814,
+      "generation_s": 2.572478194022551,
+      "llm_cost_usd": 0.000553325,
       "prompt_tokens": 766,
-      "completion_tokens": 262,
+      "completion_tokens": 269,
       "error": null
     },
     {
@@ -6985,13 +6985,13 @@
       "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "i_ll_take_manhattan_miniseries",
         "stephen_king",
         "barbara_cartland",
         "truman_capote",
-        "john_le_carr"
+        "agatha_christie"
       ],
       "supporting_doc_ids": [
         "i_ll_take_manhattan_miniseries",
@@ -6999,11 +6999,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.196987049013842,
-      "generation_s": 3.0870413270313293,
-      "llm_cost_usd": 0.0009004099999999999,
-      "prompt_tokens": 1122,
-      "completion_tokens": 398,
+      "retrieval_s": 2.3732731810305268,
+      "generation_s": 3.649144022958353,
+      "llm_cost_usd": 0.00087917,
+      "prompt_tokens": 1074,
+      "completion_tokens": 384,
       "error": null
     },
     {
@@ -7012,7 +7012,7 @@
       "gold_answers": [
         "Pinellas County"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -7029,11 +7029,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.3470271290279925,
-      "generation_s": 4.32716555002844,
-      "llm_cost_usd": 0.001050715,
+      "retrieval_s": 2.235018023988232,
+      "generation_s": 3.197226026793942,
+      "llm_cost_usd": 0.000669335,
       "prompt_tokens": 747,
-      "completion_tokens": 506,
+      "completion_tokens": 320,
       "error": null
     },
     {
@@ -7059,11 +7059,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.707693035947159,
-      "generation_s": 1.91145537403645,
-      "llm_cost_usd": 0.00061076,
+      "retrieval_s": 2.686979206977412,
+      "generation_s": 2.118610570207238,
+      "llm_cost_usd": 0.00062,
       "prompt_tokens": 1000,
-      "completion_tokens": 267,
+      "completion_tokens": 281,
       "error": null
     },
     {
@@ -7081,7 +7081,7 @@
         "never_let_me_go_2010_film",
         "anne_tyler",
         "margaret_atwood",
-        "gabriel_garc_a_m_rquez"
+        "robert_penn_warren"
       ],
       "supporting_doc_ids": [
         "never_let_me_go_novel",
@@ -7089,11 +7089,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": null,
-      "retrieval_s": 2.544925136025995,
-      "generation_s": 2.1780861059669405,
-      "llm_cost_usd": 0.0006833900000000001,
-      "prompt_tokens": 1270,
-      "completion_tokens": 273,
+      "retrieval_s": 2.9041076549328864,
+      "generation_s": 2.6940921160858124,
+      "llm_cost_usd": 0.00077781,
+      "prompt_tokens": 1236,
+      "completion_tokens": 299,
       "error": null
     },
     {
@@ -7119,11 +7119,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 2.7959621979971416,
-      "generation_s": 1.953712728980463,
-      "llm_cost_usd": 0.00057942,
+      "retrieval_s": 3.2742775571532547,
+      "generation_s": 2.0241268889512867,
+      "llm_cost_usd": 0.00058404,
       "prompt_tokens": 954,
-      "completion_tokens": 240,
+      "completion_tokens": 247,
       "error": null
     },
     {
@@ -7149,11 +7149,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.637996423000004,
-      "generation_s": 1.624500765989069,
-      "llm_cost_usd": 0.00042332000000000003,
+      "retrieval_s": 3.144184577045962,
+      "generation_s": 3.0684628998860717,
+      "llm_cost_usd": 0.00081788,
       "prompt_tokens": 763,
-      "completion_tokens": 204,
+      "completion_tokens": 412,
       "error": null
     },
     {
@@ -7179,11 +7179,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.867664468998555,
-      "generation_s": 2.0302854150068015,
-      "llm_cost_usd": 0.0006504899999999999,
+      "retrieval_s": 3.48686506296508,
+      "generation_s": 2.3888538738247007,
+      "llm_cost_usd": 0.0006524699999999999,
       "prompt_tokens": 926,
-      "completion_tokens": 357,
+      "completion_tokens": 360,
       "error": null
     },
     {
@@ -7209,11 +7209,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6315911020501517,
-      "generation_s": 2.225786524999421,
-      "llm_cost_usd": 0.00052933,
+      "retrieval_s": 2.8140693199820817,
+      "generation_s": 1.9506011069752276,
+      "llm_cost_usd": 0.00054385,
       "prompt_tokens": 607,
-      "completion_tokens": 294,
+      "completion_tokens": 316,
       "error": null
     },
     {
@@ -7239,11 +7239,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.0795511699980125,
-      "generation_s": 2.8032456319779158,
-      "llm_cost_usd": 0.00073438,
+      "retrieval_s": 2.5902949140872806,
+      "generation_s": 2.8439142589922994,
+      "llm_cost_usd": 0.0008848199999999999,
       "prompt_tokens": 1038,
-      "completion_tokens": 312,
+      "completion_tokens": 410,
       "error": null
     },
     {
@@ -7269,11 +7269,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.6855909500154667,
-      "generation_s": 1.5816025729873218,
-      "llm_cost_usd": 0.0005346249999999999,
+      "retrieval_s": 2.2370396251790226,
+      "generation_s": 3.2990552720148116,
+      "llm_cost_usd": 0.0007582849999999999,
       "prompt_tokens": 1108,
-      "completion_tokens": 237,
+      "completion_tokens": 316,
       "error": null
     },
     {
@@ -7299,8 +7299,8 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.926514573977329,
-      "generation_s": 1.5383271289756522,
+      "retrieval_s": 2.953861830988899,
+      "generation_s": 1.815847801975906,
       "llm_cost_usd": 0.000598555,
       "prompt_tokens": 842,
       "completion_tokens": 310,
@@ -7329,11 +7329,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.9161564930109307,
-      "generation_s": 1.531444640015252,
-      "llm_cost_usd": 0.000412855,
+      "retrieval_s": 2.3750272870529443,
+      "generation_s": 1.6752339729573578,
+      "llm_cost_usd": 0.000410215,
       "prompt_tokens": 780,
-      "completion_tokens": 178,
+      "completion_tokens": 174,
       "error": null
     },
     {
@@ -7351,7 +7351,7 @@
         "carol_shields",
         "w_f_morris",
         "the_mask_of_dimitrios",
-        "vladimir_nabokov"
+        "sherlock_holmes"
       ],
       "supporting_doc_ids": [
         "eric_ambler",
@@ -7359,11 +7359,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.7580116349854507,
-      "generation_s": 2.705328364041634,
-      "llm_cost_usd": 0.0008248250000000001,
-      "prompt_tokens": 758,
-      "completion_tokens": 423,
+      "retrieval_s": 3.4212448259349912,
+      "generation_s": 2.533061253838241,
+      "llm_cost_usd": 0.000684325,
+      "prompt_tokens": 708,
+      "completion_tokens": 359,
       "error": null
     },
     {
@@ -7389,11 +7389,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 4.283811911009252,
-      "generation_s": 2.8316914289607666,
-      "llm_cost_usd": 0.0008763849999999999,
+      "retrieval_s": 4.2632653010077775,
+      "generation_s": 2.9104607198387384,
+      "llm_cost_usd": 0.000892885,
       "prompt_tokens": 1271,
-      "completion_tokens": 437,
+      "completion_tokens": 462,
       "error": null
     },
     {
@@ -7419,11 +7419,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.812091523024719,
-      "generation_s": 2.2776237999787554,
-      "llm_cost_usd": 0.00054178,
+      "retrieval_s": 2.6816877350211143,
+      "generation_s": 2.900537397013977,
+      "llm_cost_usd": 0.0006711000000000001,
       "prompt_tokens": 740,
-      "completion_tokens": 263,
+      "completion_tokens": 329,
       "error": null
     },
     {
@@ -7449,11 +7449,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.0697886290145107,
-      "generation_s": 1.8575708260177635,
-      "llm_cost_usd": 0.000414105,
+      "retrieval_s": 2.260595601052046,
+      "generation_s": 1.991944019915536,
+      "llm_cost_usd": 0.000429945,
       "prompt_tokens": 898,
-      "completion_tokens": 139,
+      "completion_tokens": 163,
       "error": null
     },
     {
@@ -7469,9 +7469,9 @@
       "retrieved_doc_ids": [
         "lush_band",
         "p_o_d",
+        "guns_n_roses",
         "sing_sing_band",
-        "stone_temple_pilots",
-        "the_beatles_rock_band"
+        "stone_temple_pilots"
       ],
       "supporting_doc_ids": [
         "lush_band",
@@ -7479,11 +7479,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.854527354997117,
-      "generation_s": 2.211531806970015,
-      "llm_cost_usd": 0.00049936,
-      "prompt_tokens": 982,
-      "completion_tokens": 237,
+      "retrieval_s": 3.2391695929691195,
+      "generation_s": 2.333060684148222,
+      "llm_cost_usd": 0.00060227,
+      "prompt_tokens": 879,
+      "completion_tokens": 302,
       "error": null
     },
     {
@@ -7501,7 +7501,7 @@
         "the_last_lions",
         "eye_of_the_leopard",
         "star_wars_the_force_awakens",
-        "tears_dry_on_their_own"
+        "kurt_cobain_montage_of_heck"
       ],
       "supporting_doc_ids": [
         "the_last_lions",
@@ -7509,11 +7509,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.1254512000014074,
-      "generation_s": 2.056061998999212,
-      "llm_cost_usd": 0.00066217,
-      "prompt_tokens": 1195,
-      "completion_tokens": 269,
+      "retrieval_s": 2.4608530530240387,
+      "generation_s": 2.259509809082374,
+      "llm_cost_usd": 0.0006408799999999999,
+      "prompt_tokens": 1160,
+      "completion_tokens": 250,
       "error": null
     },
     {
@@ -7539,11 +7539,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.296046635019593,
-      "generation_s": 1.8016219169949181,
-      "llm_cost_usd": 0.00043036999999999996,
+      "retrieval_s": 1.8559988960623741,
+      "generation_s": 1.9520640820264816,
+      "llm_cost_usd": 0.00044687,
       "prompt_tokens": 972,
-      "completion_tokens": 136,
+      "completion_tokens": 161,
       "error": null
     },
     {
@@ -7569,11 +7569,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.9718563230126165,
-      "generation_s": 2.0333934919908643,
-      "llm_cost_usd": 0.000608785,
+      "retrieval_s": 2.798005692893639,
+      "generation_s": 2.7921646870672703,
+      "llm_cost_usd": 0.000749325,
       "prompt_tokens": 976,
-      "completion_tokens": 275,
+      "completion_tokens": 358,
       "error": null
     },
     {
@@ -7599,11 +7599,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.3031460999627598,
-      "generation_s": 3.3304439170169644,
-      "llm_cost_usd": 0.000779255,
+      "retrieval_s": 2.7173886368982494,
+      "generation_s": 2.8105531649198383,
+      "llm_cost_usd": 0.000649935,
       "prompt_tokens": 740,
-      "completion_tokens": 359,
+      "completion_tokens": 293,
       "error": null
     },
     {
@@ -7612,7 +7612,7 @@
       "gold_answers": [
         "opera"
       ],
-      "pred": "Opera composers",
+      "pred": "opera composers",
       "em": 0.0,
       "f1": 0.6666666666666666,
       "judge": 1,
@@ -7621,7 +7621,7 @@
         "georges_bizet",
         "john_whenham",
         "antonio_vivaldi",
-        "pyotr_ilyich_tchaikovsky"
+        "symphony_in_c_bizet"
       ],
       "supporting_doc_ids": [
         "claudio_monteverdi",
@@ -7629,11 +7629,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.330227278987877,
-      "generation_s": 3.3380465560476296,
-      "llm_cost_usd": 0.0008908849999999999,
-      "prompt_tokens": 1015,
-      "completion_tokens": 426,
+      "retrieval_s": 4.827837507007644,
+      "generation_s": 3.5234478740021586,
+      "llm_cost_usd": 0.0008175750000000001,
+      "prompt_tokens": 1144,
+      "completion_tokens": 396,
       "error": null
     },
     {
@@ -7659,11 +7659,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.0487948450027034,
-      "generation_s": 1.192176187003497,
-      "llm_cost_usd": 0.00038791,
+      "retrieval_s": 1.974947843933478,
+      "generation_s": 1.3259809669107199,
+      "llm_cost_usd": 0.00037537000000000003,
       "prompt_tokens": 670,
-      "completion_tokens": 182,
+      "completion_tokens": 163,
       "error": null
     },
     {
@@ -7672,9 +7672,9 @@
       "gold_answers": [
         "band"
       ],
-      "pred": "band",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "rock band",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
       "judge": 1,
       "retrieved_doc_ids": [
         "kurt_cobain",
@@ -7689,11 +7689,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.992924815043807,
-      "generation_s": 4.0850000730133615,
-      "llm_cost_usd": 0.001117275,
+      "retrieval_s": 3.0192272148560733,
+      "generation_s": 3.9956368079874665,
+      "llm_cost_usd": 0.000730655,
       "prompt_tokens": 828,
-      "completion_tokens": 582,
+      "completion_tokens": 384,
       "error": null
     },
     {
@@ -7719,11 +7719,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.686973573989235,
-      "generation_s": 2.147453168989159,
-      "llm_cost_usd": 0.000676875,
+      "retrieval_s": 2.803973572095856,
+      "generation_s": 2.2328703950624913,
+      "llm_cost_usd": 0.000653775,
       "prompt_tokens": 1100,
-      "completion_tokens": 333,
+      "completion_tokens": 298,
       "error": null
     },
     {
@@ -7749,11 +7749,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.5551338610239327,
-      "generation_s": 1.761811253032647,
-      "llm_cost_usd": 0.000399005,
+      "retrieval_s": 3.304591614054516,
+      "generation_s": 2.1612617350183427,
+      "llm_cost_usd": 0.000531625,
       "prompt_tokens": 732,
-      "completion_tokens": 179,
+      "completion_tokens": 250,
       "error": null
     },
     {
@@ -7770,8 +7770,8 @@
         "the_limousines",
         "faith_no_more",
         "faith_buffy_the_vampire_slayer",
-        "safetysuit",
-        "the_midnighters"
+        "napalm_beach",
+        "safetysuit"
       ],
       "supporting_doc_ids": [
         "the_limousines",
@@ -7779,11 +7779,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.280362438992597,
-      "generation_s": 2.5821210659923963,
-      "llm_cost_usd": 0.00045396499999999997,
-      "prompt_tokens": 1310,
-      "completion_tokens": 263,
+      "retrieval_s": 2.9999483320862055,
+      "generation_s": 2.3517443779855967,
+      "llm_cost_usd": 0.000641275,
+      "prompt_tokens": 1201,
+      "completion_tokens": 239,
       "error": null
     },
     {
@@ -7792,9 +7792,9 @@
       "gold_answers": [
         "no"
       ],
-      "pred": "No Hanafuda is a card game Okey is a tile-based game",
-      "em": 0.0,
-      "f1": 0.0,
+      "pred": "No",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "okey",
@@ -7809,11 +7809,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.2700672039645724,
-      "generation_s": 2.610280321969185,
-      "llm_cost_usd": 0.00080437,
+      "retrieval_s": 3.441544878995046,
+      "generation_s": 2.7184161490295082,
+      "llm_cost_usd": 0.0007829699999999999,
       "prompt_tokens": 1033,
-      "completion_tokens": 391,
+      "completion_tokens": 387,
       "error": null
     },
     {
@@ -7839,11 +7839,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.4248260660097003,
-      "generation_s": 2.008028935000766,
-      "llm_cost_usd": 0.000500165,
+      "retrieval_s": 2.696912277955562,
+      "generation_s": 1.4731677030213177,
+      "llm_cost_usd": 0.000384705,
       "prompt_tokens": 618,
-      "completion_tokens": 244,
+      "completion_tokens": 199,
       "error": null
     },
     {
@@ -7855,13 +7855,13 @@
       "pred": "Insufficient information.",
       "em": 0.0,
       "f1": 0.0,
-      "judge": 0,
+      "judge": -1,
       "retrieved_doc_ids": [
         "john_updike",
         "tom_clancy",
         "damien_lewis",
         "tom_clancy_s_rainbow_6_patriots",
-        "anne_tyler"
+        "roald_dahl"
       ],
       "supporting_doc_ids": [
         "john_updike",
@@ -7869,11 +7869,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.391110999044031,
-      "generation_s": 3.4872447730158456,
-      "llm_cost_usd": 0.001057795,
-      "prompt_tokens": 1055,
-      "completion_tokens": 530,
+      "retrieval_s": 3.41510855499655,
+      "generation_s": 3.64698385912925,
+      "llm_cost_usd": 0.000833435,
+      "prompt_tokens": 725,
+      "completion_tokens": 445,
       "error": null
     },
     {
@@ -7899,11 +7899,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.0461438249913044,
-      "generation_s": 3.143371466023382,
-      "llm_cost_usd": 0.000862005,
+      "retrieval_s": 2.882635375019163,
+      "generation_s": 3.939308196073398,
+      "llm_cost_usd": 0.000966905,
       "prompt_tokens": 392,
-      "completion_tokens": 486,
+      "completion_tokens": 515,
       "error": null
     },
     {
@@ -7912,16 +7912,16 @@
       "gold_answers": [
         "no"
       ],
-      "pred": "No",
-      "em": 1.0,
-      "f1": 1.0,
+      "pred": "No they are American",
+      "em": 0.0,
+      "f1": 0.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "raymond_james_financial",
         "nrg_energy",
         "united_kingdom",
         "robert_james_businessman",
-        "pension_administration_in_the_united_states"
+        "newcastle_upon_tyne"
       ],
       "supporting_doc_ids": [
         "nrg_energy",
@@ -7929,11 +7929,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.182782677002251,
-      "generation_s": 2.560290777008049,
-      "llm_cost_usd": 0.000665475,
-      "prompt_tokens": 1311,
-      "completion_tokens": 234,
+      "retrieval_s": 3.0504612629301846,
+      "generation_s": 2.8564274448435754,
+      "llm_cost_usd": 0.000704835,
+      "prompt_tokens": 943,
+      "completion_tokens": 297,
       "error": null
     },
     {
@@ -7959,11 +7959,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.842255703988485,
-      "generation_s": 2.0635813290136866,
-      "llm_cost_usd": 0.0006018849999999999,
+      "retrieval_s": 2.7231899201869965,
+      "generation_s": 2.4744940199889243,
+      "llm_cost_usd": 0.000560305,
       "prompt_tokens": 887,
-      "completion_tokens": 298,
+      "completion_tokens": 235,
       "error": null
     },
     {
@@ -7989,11 +7989,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.3150768949999474,
-      "generation_s": 1.4773480519652367,
-      "llm_cost_usd": 0.00045037999999999995,
+      "retrieval_s": 3.2050490139517933,
+      "generation_s": 1.612948226975277,
+      "llm_cost_usd": 0.00043388,
       "prompt_tokens": 774,
-      "completion_tokens": 235,
+      "completion_tokens": 210,
       "error": null
     },
     {
@@ -8002,7 +8002,7 @@
       "gold_answers": [
         "Bazhong () is a prefecture-level city"
       ],
-      "pred": "Insufficient information.",
+      "pred": "Insufficient information",
       "em": 0.0,
       "f1": 0.0,
       "judge": 0,
@@ -8019,11 +8019,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.3115557939745486,
-      "generation_s": 4.095412692986429,
-      "llm_cost_usd": 0.001043465,
+      "retrieval_s": 2.6800983028952032,
+      "generation_s": 2.1941463709808886,
+      "llm_cost_usd": 0.000505705,
       "prompt_tokens": 648,
-      "completion_tokens": 532,
+      "completion_tokens": 239,
       "error": null
     },
     {
@@ -8049,11 +8049,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8225867549772374,
-      "generation_s": 1.9262620129738934,
-      "llm_cost_usd": 0.00049314,
-      "prompt_tokens": 1037,
-      "completion_tokens": 207,
+      "retrieval_s": 3.7529051769524813,
+      "generation_s": 1.5201665929052979,
+      "llm_cost_usd": 0.00051104,
+      "prompt_tokens": 1069,
+      "completion_tokens": 222,
       "error": null
     },
     {
@@ -8079,11 +8079,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.869510875956621,
-      "generation_s": 2.029967356007546,
-      "llm_cost_usd": 0.000377505,
+      "retrieval_s": 2.5190524791833013,
+      "generation_s": 1.7586866510100663,
+      "llm_cost_usd": 0.00036166499999999995,
       "prompt_tokens": 611,
-      "completion_tokens": 191,
+      "completion_tokens": 167,
       "error": null
     },
     {
@@ -8101,7 +8101,7 @@
         "the_million_dollar_duck",
         "dean_jones_actor",
         "jay_maynard",
-        "automan"
+        "michel_sikyea"
       ],
       "supporting_doc_ids": [
         "tron",
@@ -8109,11 +8109,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8352141820359975,
-      "generation_s": 1.730181552004069,
-      "llm_cost_usd": 0.00039447,
-      "prompt_tokens": 635,
-      "completion_tokens": 208,
+      "retrieval_s": 3.2119693879503757,
+      "generation_s": 1.5626199620310217,
+      "llm_cost_usd": 0.00040052999999999996,
+      "prompt_tokens": 617,
+      "completion_tokens": 224,
       "error": null
     },
     {
@@ -8122,10 +8122,10 @@
       "gold_answers": [
         "Chuck E. Cheese's"
       ],
-      "pred": "Insufficient information",
-      "em": 0.0,
-      "f1": 0.0,
-      "judge": 0,
+      "pred": "Chuck E. Cheese's",
+      "em": 1.0,
+      "f1": 1.0,
+      "judge": 1,
       "retrieved_doc_ids": [
         "chuck_e_cheese_s",
         "jet_s_pizza",
@@ -8139,11 +8139,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.397504947031848,
-      "generation_s": 3.203241284994874,
-      "llm_cost_usd": 0.00078453,
+      "retrieval_s": 2.783519729040563,
+      "generation_s": 4.128641056828201,
+      "llm_cost_usd": 0.00079579,
       "prompt_tokens": 640,
-      "completion_tokens": 405,
+      "completion_tokens": 418,
       "error": null
     },
     {
@@ -8169,11 +8169,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.803547364019323,
-      "generation_s": 5.167131099966355,
-      "llm_cost_usd": 0.001616675,
+      "retrieval_s": 4.340133358957246,
+      "generation_s": 4.614781812066212,
+      "llm_cost_usd": 0.001262375,
       "prompt_tokens": 835,
-      "completion_tokens": 816,
+      "completion_tokens": 669,
       "error": null
     },
     {
@@ -8199,11 +8199,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.9493612159858458,
-      "generation_s": 1.6473399680107832,
-      "llm_cost_usd": 0.00043211,
+      "retrieval_s": 2.43946944992058,
+      "generation_s": 2.1927412119694054,
+      "llm_cost_usd": 0.00044069,
       "prompt_tokens": 899,
-      "completion_tokens": 163,
+      "completion_tokens": 176,
       "error": null
     },
     {
@@ -8229,8 +8229,8 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.8234316740417853,
-      "generation_s": 1.8623440719675273,
+      "retrieval_s": 3.056736001977697,
+      "generation_s": 2.5009373109787703,
       "llm_cost_usd": 0.000505615,
       "prompt_tokens": 560,
       "completion_tokens": 276,
@@ -8259,11 +8259,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.3104853039840236,
-      "generation_s": 1.328009421005845,
-      "llm_cost_usd": 0.00042798,
+      "retrieval_s": 2.6645118719898164,
+      "generation_s": 1.4520915560424328,
+      "llm_cost_usd": 0.00042666000000000004,
       "prompt_tokens": 841,
-      "completion_tokens": 181,
+      "completion_tokens": 179,
       "error": null
     },
     {
@@ -8289,11 +8289,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.105735144985374,
-      "generation_s": 2.5170802579959854,
-      "llm_cost_usd": 0.000726295,
+      "retrieval_s": 3.3756916930433363,
+      "generation_s": 2.6788933200296015,
+      "llm_cost_usd": 0.000751375,
       "prompt_tokens": 990,
-      "completion_tokens": 314,
+      "completion_tokens": 352,
       "error": null
     },
     {
@@ -8302,9 +8302,9 @@
       "gold_answers": [
         "flowering plants"
       ],
-      "pred": "genera of flowering plants",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
+      "pred": "flowering plants",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "arbutus",
@@ -8319,11 +8319,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.338519145967439,
-      "generation_s": 2.0009320250246674,
-      "llm_cost_usd": 0.00059946,
+      "retrieval_s": 3.767028091941029,
+      "generation_s": 2.1233312690164894,
+      "llm_cost_usd": 0.00047406,
       "prompt_tokens": 777,
-      "completion_tokens": 328,
+      "completion_tokens": 272,
       "error": null
     },
     {
@@ -8332,10 +8332,10 @@
       "gold_answers": [
         "no"
       ],
-      "pred": "Yes",
-      "em": 0.0,
-      "f1": 0.0,
-      "judge": 0,
+      "pred": "No",
+      "em": 1.0,
+      "f1": 1.0,
+      "judge": 1,
       "retrieved_doc_ids": [
         "888_7th_avenue",
         "random_house_tower",
@@ -8349,11 +8349,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.392209279991221,
-      "generation_s": 3.8366703339852393,
-      "llm_cost_usd": 0.00079722,
+      "retrieval_s": 4.047886841930449,
+      "generation_s": 4.921303909039125,
+      "llm_cost_usd": 0.00103144,
       "prompt_tokens": 2279,
-      "completion_tokens": 462,
+      "completion_tokens": 557,
       "error": null
     },
     {
@@ -8371,7 +8371,7 @@
         "sacred_planet",
         "james_franco",
         "grant_curtis",
-        "leonardo_dicaprio"
+        "star_wars_the_force_awakens"
       ],
       "supporting_doc_ids": [
         "sacred_planet",
@@ -8379,10 +8379,10 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 1.998793127015233,
-      "generation_s": 1.2563945130095817,
-      "llm_cost_usd": 0.00052166,
-      "prompt_tokens": 1240,
+      "retrieval_s": 2.364589500008151,
+      "generation_s": 1.7711438601836562,
+      "llm_cost_usd": 0.00053566,
+      "prompt_tokens": 1296,
       "completion_tokens": 169,
       "error": null
     },
@@ -8409,11 +8409,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.224672244978137,
-      "generation_s": 2.019722806988284,
-      "llm_cost_usd": 0.000553415,
+      "retrieval_s": 3.1616379839833826,
+      "generation_s": 3.12150363298133,
+      "llm_cost_usd": 0.000565295,
       "prompt_tokens": 773,
-      "completion_tokens": 268,
+      "completion_tokens": 286,
       "error": null
     },
     {
@@ -8439,11 +8439,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.3977939810138196,
-      "generation_s": 1.1523338099941611,
-      "llm_cost_usd": 0.000357995,
+      "retrieval_s": 2.5382645381614566,
+      "generation_s": 1.7643927389290184,
+      "llm_cost_usd": 0.000390995,
       "prompt_tokens": 639,
-      "completion_tokens": 145,
+      "completion_tokens": 195,
       "error": null
     },
     {
@@ -8461,7 +8461,7 @@
         "sunrise_avenue",
         "sunrise_avenue_discography",
         "ffs_band",
-        "the_beatles"
+        "tonight_franz_ferdinand"
       ],
       "supporting_doc_ids": [
         "franz_ferdinand_band",
@@ -8469,11 +8469,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.1509716680157,
-      "generation_s": 1.352071411034558,
-      "llm_cost_usd": 0.000454155,
-      "prompt_tokens": 940,
-      "completion_tokens": 182,
+      "retrieval_s": 2.553389889188111,
+      "generation_s": 2.7971711889840662,
+      "llm_cost_usd": 0.000719065,
+      "prompt_tokens": 1039,
+      "completion_tokens": 286,
       "error": null
     },
     {
@@ -8499,11 +8499,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.549378474010155,
-      "generation_s": 1.3326902950066142,
-      "llm_cost_usd": 0.00027059,
+      "retrieval_s": 2.2443910310976207,
+      "generation_s": 2.491947090951726,
+      "llm_cost_usd": 0.00038670999999999996,
       "prompt_tokens": 699,
-      "completion_tokens": 126,
+      "completion_tokens": 172,
       "error": null
     },
     {
@@ -8529,11 +8529,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.351292297011241,
-      "generation_s": 1.6227921069948934,
-      "llm_cost_usd": 0.000504635,
+      "retrieval_s": 2.5599361499771476,
+      "generation_s": 2.1491928540635854,
+      "llm_cost_usd": 0.000515855,
       "prompt_tokens": 1138,
-      "completion_tokens": 183,
+      "completion_tokens": 200,
       "error": null
     },
     {
@@ -8559,11 +8559,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.547509079973679,
-      "generation_s": 1.9106431090040132,
-      "llm_cost_usd": 0.0005478,
+      "retrieval_s": 3.0124845940154046,
+      "generation_s": 1.9841258460655808,
+      "llm_cost_usd": 0.0005643,
       "prompt_tokens": 748,
-      "completion_tokens": 263,
+      "completion_tokens": 288,
       "error": null
     },
     {
@@ -8589,11 +8589,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.872372150013689,
-      "generation_s": 1.4305358150159009,
-      "llm_cost_usd": 0.000481135,
+      "retrieval_s": 2.0542704940307885,
+      "generation_s": 1.394763050833717,
+      "llm_cost_usd": 0.00034785499999999994,
       "prompt_tokens": 1036,
-      "completion_tokens": 184,
+      "completion_tokens": 112,
       "error": null
     },
     {
@@ -8619,11 +8619,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.416241889994126,
-      "generation_s": 2.243254434026312,
-      "llm_cost_usd": 0.0005610249999999999,
+      "retrieval_s": 2.300949204945937,
+      "generation_s": 1.5973890118766576,
+      "llm_cost_usd": 0.00045810499999999994,
       "prompt_tokens": 946,
-      "completion_tokens": 214,
+      "completion_tokens": 188,
       "error": null
     },
     {
@@ -8632,15 +8632,15 @@
       "gold_answers": [
         "no"
       ],
-      "pred": "No they are in Canada",
-      "em": 0.0,
-      "f1": 0.0,
+      "pred": "No",
+      "em": 1.0,
+      "f1": 1.0,
       "judge": 1,
       "retrieved_doc_ids": [
         "hermiston_mccauley_mine",
         "barton_mine",
         "southeast_kansas",
-        "nevada_basin",
+        "ardmore_oklahoma",
         "ancient_order_of_hibernians"
       ],
       "supporting_doc_ids": [
@@ -8649,11 +8649,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.871833196026273,
-      "generation_s": 2.7969545489759184,
-      "llm_cost_usd": 0.0007678100000000001,
-      "prompt_tokens": 1118,
-      "completion_tokens": 325,
+      "retrieval_s": 2.355018144007772,
+      "generation_s": 2.7005319700110704,
+      "llm_cost_usd": 0.0006086199999999999,
+      "prompt_tokens": 1049,
+      "completion_tokens": 248,
       "error": null
     },
     {
@@ -8679,11 +8679,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.546878121967893,
-      "generation_s": 1.557818281056825,
-      "llm_cost_usd": 0.00050471,
+      "retrieval_s": 2.3337901749182492,
+      "generation_s": 1.7859379909932613,
+      "llm_cost_usd": 0.00049415,
       "prompt_tokens": 663,
-      "completion_tokens": 236,
+      "completion_tokens": 220,
       "error": null
     },
     {
@@ -8709,11 +8709,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.013584326021373,
-      "generation_s": 2.110461092030164,
-      "llm_cost_usd": 0.000608975,
+      "retrieval_s": 5.2606242939364165,
+      "generation_s": 2.6383785288780928,
+      "llm_cost_usd": 0.000779215,
       "prompt_tokens": 696,
-      "completion_tokens": 374,
+      "completion_tokens": 502,
       "error": null
     },
     {
@@ -8739,11 +8739,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 5.406151829985902,
-      "generation_s": 1.6405541530111805,
-      "llm_cost_usd": 0.00072243,
+      "retrieval_s": 4.569496528012678,
+      "generation_s": 2.1988690679427236,
+      "llm_cost_usd": 0.00061489,
       "prompt_tokens": 1147,
-      "completion_tokens": 378,
+      "completion_tokens": 345,
       "error": null
     },
     {
@@ -8769,11 +8769,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.1544091459945776,
-      "generation_s": 1.4276037599775009,
-      "llm_cost_usd": 0.000415355,
+      "retrieval_s": 2.1404888359829783,
+      "generation_s": 1.893755598925054,
+      "llm_cost_usd": 0.000431195,
       "prompt_tokens": 852,
-      "completion_tokens": 153,
+      "completion_tokens": 177,
       "error": null
     },
     {
@@ -8799,11 +8799,11 @@
       ],
       "retrieval_rank_of_first_gold": 2,
       "retrieval_complete_rank": 3,
-      "retrieval_s": 4.036728247010615,
-      "generation_s": 3.0208038680138998,
-      "llm_cost_usd": 0.0009071499999999999,
+      "retrieval_s": 2.7901405149605125,
+      "generation_s": 2.3235717019997537,
+      "llm_cost_usd": 0.00065049,
       "prompt_tokens": 1057,
-      "completion_tokens": 427,
+      "completion_tokens": 298,
       "error": null
     },
     {
@@ -8829,11 +8829,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.842324984027073,
-      "generation_s": 1.508296629996039,
-      "llm_cost_usd": 0.00043978499999999994,
+      "retrieval_s": 1.8418778469786048,
+      "generation_s": 1.6404910320416093,
+      "llm_cost_usd": 0.00042130499999999997,
       "prompt_tokens": 858,
-      "completion_tokens": 188,
+      "completion_tokens": 160,
       "error": null
     },
     {
@@ -8859,11 +8859,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.446038116002455,
-      "generation_s": 3.0141442220192403,
-      "llm_cost_usd": 0.0008306049999999999,
+      "retrieval_s": 2.578080445062369,
+      "generation_s": 2.6064901701174676,
+      "llm_cost_usd": 0.000700625,
       "prompt_tokens": 822,
-      "completion_tokens": 406,
+      "completion_tokens": 339,
       "error": null
     },
     {
@@ -8889,11 +8889,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.269458924012724,
-      "generation_s": 1.3631377239944413,
-      "llm_cost_usd": 0.00043846,
+      "retrieval_s": 4.622459826990962,
+      "generation_s": 1.7138597129378468,
+      "llm_cost_usd": 0.00048928,
       "prompt_tokens": 805,
-      "completion_tokens": 211,
+      "completion_tokens": 288,
       "error": null
     },
     {
@@ -8919,11 +8919,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.471291801019106,
-      "generation_s": 2.2145515879965387,
-      "llm_cost_usd": 0.0005798699999999999,
+      "retrieval_s": 2.2813107231631875,
+      "generation_s": 2.365146956872195,
+      "llm_cost_usd": 0.00070853,
       "prompt_tokens": 906,
-      "completion_tokens": 252,
+      "completion_tokens": 317,
       "error": null
     },
     {
@@ -8949,11 +8949,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 3.6960502860019915,
-      "generation_s": 1.3388276030309498,
-      "llm_cost_usd": 0.000440915,
+      "retrieval_s": 2.6013551829382777,
+      "generation_s": 2.0629945038817823,
+      "llm_cost_usd": 0.000464675,
       "prompt_tokens": 935,
-      "completion_tokens": 158,
+      "completion_tokens": 194,
       "error": null
     },
     {
@@ -8979,11 +8979,11 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 4.319877297966741,
-      "generation_s": 1.8892673350055702,
-      "llm_cost_usd": 0.0005646049999999999,
+      "retrieval_s": 3.3982885079458356,
+      "generation_s": 4.496229487005621,
+      "llm_cost_usd": 0.000867465,
       "prompt_tokens": 794,
-      "completion_tokens": 277,
+      "completion_tokens": 476,
       "error": null
     },
     {
@@ -9009,16 +9009,16 @@
       ],
       "retrieval_rank_of_first_gold": 1,
       "retrieval_complete_rank": 2,
-      "retrieval_s": 2.55876329500461,
-      "generation_s": 2.1857080360059626,
-      "llm_cost_usd": 0.0006942150000000001,
+      "retrieval_s": 2.553266800008714,
+      "generation_s": 2.5035118558444083,
+      "llm_cost_usd": 0.000555655,
       "prompt_tokens": 776,
-      "completion_tokens": 350,
+      "completion_tokens": 270,
       "error": null
     }
   ],
   "judge_model": "azure_ai/DeepSeek-V3.2",
-  "trial_config_hash": "c849286895b90b03",
+  "trial_config_hash": "de47e0cadef98f9f",
   "project_config_hash": "76ab1d6ae22bc3ae",
   "corpus_hash": "94c06e7f303a8816",
   "benchmark_manifest": {

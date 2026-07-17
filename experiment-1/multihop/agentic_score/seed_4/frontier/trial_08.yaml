@@ -1,0 +1,22 @@
+# Frontier member: trial 8
+# accuracy: 0.7800
+# cost/q:   $0.0011
+# total:    $0.1134
+chunking_strategy: recursive
+chunk_token_size: 512
+chunk_token_overlap: 64
+embedding_model: Snowflake/snowflake-arctic-embed-l-v2.0
+index_type: hybrid_bm25_vector
+top_k: 20
+hybrid_alpha: 0.5
+bm25_vector_fusion: alpha
+long_context_reorder: false
+passage_compressor: none
+reranker: BAAI/bge-reranker-v2-m3
+reranker_top_n: 6
+query_expansion: none
+compressor_llm: null
+expander_llm: null
+generator_llm: azure/gpt-5-mini
+temperature: 1.0
+reasoning: true

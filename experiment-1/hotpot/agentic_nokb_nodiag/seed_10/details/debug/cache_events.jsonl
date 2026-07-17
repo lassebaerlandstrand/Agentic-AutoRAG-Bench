@@ -1,0 +1,11 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "bb5c751f9d59e5e6", "tokens_credited": 2738422, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "4a106a176bd4ed26", "tokens_credited": 2735460, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "2f8653281ec236e9", "tokens_credited": 2443232, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 11, "cache_kind": "embeddings", "cache_key": "e6a046cebf2946e1", "tokens_credited": 2443232, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "06b8ec649acb9bcc", "tokens_credited": 2591088, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 15, "cache_kind": "embeddings", "cache_key": "9cd6a84cc19e0253", "tokens_credited": 2591088, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": 17, "cache_kind": "embeddings", "cache_key": "5a4201116118ec2e", "tokens_credited": 2443232, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 18, "cache_kind": "embeddings", "cache_key": "aa9f4eb84e4d4662", "tokens_credited": 2722186, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 21, "cache_kind": "embeddings", "cache_key": "54824e555adfc9dc", "tokens_credited": 2690621, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 22, "cache_kind": "embeddings", "cache_key": "1e46b51715e18057", "tokens_credited": 2735460, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 30, "cache_kind": "embeddings", "cache_key": "0e6d50ac76ac6bc7", "tokens_credited": 2752130, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}

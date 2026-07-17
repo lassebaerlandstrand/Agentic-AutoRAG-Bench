@@ -1,0 +1,9 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "04daf9eb62c2e437", "tokens_credited": 1511640, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "861c7e55c17cd5a4", "tokens_credited": 1488887, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "529a4a070194cea1", "tokens_credited": 1641833, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 18, "cache_kind": "embeddings", "cache_key": "7a1707d29782ac2d", "tokens_credited": 1537034, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 19, "cache_kind": "embeddings", "cache_key": "2988a52280d5439d", "tokens_credited": 1614047, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 20, "cache_kind": "embeddings", "cache_key": "7ce2f1b2d634da29", "tokens_credited": 1550142, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 22, "cache_kind": "embeddings", "cache_key": "9b9629d5c449022e", "tokens_credited": 1484324, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 26, "cache_kind": "embeddings", "cache_key": "3ca1293d71d67c7a", "tokens_credited": 1672819, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 29, "cache_kind": "embeddings", "cache_key": "a31985c4fdcb8f57", "tokens_credited": 1504972, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}

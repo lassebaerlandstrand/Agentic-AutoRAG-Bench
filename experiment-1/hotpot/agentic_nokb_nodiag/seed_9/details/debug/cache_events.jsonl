@@ -1,0 +1,7 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "bb5c751f9d59e5e6", "tokens_credited": 2738422, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "2f8653281ec236e9", "tokens_credited": 2443232, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "1a78afab6b47eca8", "tokens_credited": 2446983, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "6975185ca0182036", "tokens_credited": 2781619, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 11, "cache_kind": "embeddings", "cache_key": "ec1ffb37262da058", "tokens_credited": 2691935, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 23, "cache_kind": "embeddings", "cache_key": "58fa365d2fe4446c", "tokens_credited": 2446983, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 24, "cache_kind": "embeddings", "cache_key": "667adb98bfbe1750", "tokens_credited": 2457138, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}

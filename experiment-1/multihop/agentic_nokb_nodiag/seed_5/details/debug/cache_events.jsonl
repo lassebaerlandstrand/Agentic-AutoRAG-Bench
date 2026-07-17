@@ -1,0 +1,12 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "529a4a070194cea1", "tokens_credited": 1641833, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "6d64a5098256cab7", "tokens_credited": 1440339, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "cd018fbd44c06860", "tokens_credited": 1418706, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "3f58e26619f17d8d", "tokens_credited": 1619766, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "63f9a445227969f8", "tokens_credited": 1669230, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "11ee3421044c53eb", "tokens_credited": 1635324, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "053c9f3fbf77d62a", "tokens_credited": 1565816, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 15, "cache_kind": "embeddings", "cache_key": "e6801f0eced9595a", "tokens_credited": 1488887, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 19, "cache_kind": "embeddings", "cache_key": "c430fa096826d651", "tokens_credited": 1471618, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 23, "cache_kind": "embeddings", "cache_key": "e1487bfe23981d6a", "tokens_credited": 1635324, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "e7708796422788dd", "tokens_credited": 1547603, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 29, "cache_kind": "embeddings", "cache_key": "5fafe4aacc4685e8", "tokens_credited": 1471618, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}

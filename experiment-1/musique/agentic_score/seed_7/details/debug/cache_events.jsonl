@@ -1,0 +1,10 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "1b7402c9303b8530", "tokens_credited": 1973327, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "190df98de4a3956a", "tokens_credited": 1973694, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "3a1a3ef7de46ebec", "tokens_credited": 1781530, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "30aa9b8f5c812d09", "tokens_credited": 1785774, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 5, "cache_kind": "embeddings", "cache_key": "4f340117c0ca37cb", "tokens_credited": 1976140, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "b9cb9367a668a7b4", "tokens_credited": 1978299, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 10, "cache_kind": "embeddings", "cache_key": "e752da661daee6d9", "tokens_credited": 1974898, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "a30d131afdb4f95f", "tokens_credited": 1973327, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 18, "cache_kind": "embeddings", "cache_key": "9e3b862660138956", "tokens_credited": 1885528, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 19, "cache_kind": "embeddings", "cache_key": "7586fe2a8080a6b0", "tokens_credited": 1980085, "embedding_model": "BAAI/bge-m3", "phase": "trial"}

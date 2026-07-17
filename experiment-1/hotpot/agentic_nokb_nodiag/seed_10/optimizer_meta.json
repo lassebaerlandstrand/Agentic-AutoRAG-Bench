@@ -1,0 +1,16 @@
+{
+  "method": "agentic_nokb_nodiag",
+  "seed": 10,
+  "deterministic": false,
+  "optimizer_usd": 0.13863758999999998,
+  "trial_usd_total": 5.859390270000003,
+  "wall_clock_s": 2975.498621435836,
+  "n_trials_completed": 30,
+  "prompt_tokens": 5099316,
+  "completion_tokens": 1116354,
+  "embedding_tokens": 28886151,
+  "extras": {
+    "output_dir": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/hotpot/agentic_nokb_nodiag/seed_10",
+    "cost_aware": false
+  }
+}

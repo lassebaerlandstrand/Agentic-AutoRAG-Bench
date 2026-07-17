@@ -1,0 +1,16 @@
+{
+  "method": "agentic_nokb_nodiag",
+  "seed": 6,
+  "deterministic": false,
+  "optimizer_usd": 0.11911439999999998,
+  "trial_usd_total": 15.774587180000001,
+  "wall_clock_s": 4824.34305562987,
+  "n_trials_completed": 30,
+  "prompt_tokens": 5135790,
+  "completion_tokens": 2976435,
+  "embedding_tokens": 31827657,
+  "extras": {
+    "output_dir": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/musique/agentic_nokb_nodiag/seed_6",
+    "cost_aware": false
+  }
+}

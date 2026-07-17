@@ -1,0 +1,23 @@
+# Frontier member: trial 4
+# accuracy: 0.8400
+# cost/q:   $0.0025
+# total:    $0.2514
+# tags:     recommended, max-accuracy
+chunking_strategy: recursive
+chunk_token_size: 256
+chunk_token_overlap: 64
+embedding_model: Snowflake/snowflake-arctic-embed-l-v2.0
+index_type: hybrid_bm25_vector
+top_k: 12
+hybrid_alpha: 0.5
+bm25_vector_fusion: rrf
+long_context_reorder: true
+passage_compressor: none
+reranker: BAAI/bge-reranker-v2-m3
+reranker_top_n: 6
+query_expansion: hyde
+compressor_llm: null
+expander_llm: azure/gpt-4o-mini
+generator_llm: azure/o4-mini
+temperature: 1.0
+reasoning: true

@@ -1,0 +1,5 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "5271458b2b4fdbdb", "tokens_credited": 1684050, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "c5094a74ff14f22b", "tokens_credited": 1470316, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "d2857b687e2ca7be", "tokens_credited": 1684050, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "721635f24900dfb6", "tokens_credited": 1613366, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 29, "cache_kind": "embeddings", "cache_key": "f8aed43697df8244", "tokens_credited": 1535909, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}

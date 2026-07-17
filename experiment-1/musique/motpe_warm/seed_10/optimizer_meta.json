@@ -1,0 +1,20 @@
+{
+  "method": "motpe_warm",
+  "seed": 10,
+  "deterministic": false,
+  "optimizer_usd": 0.0,
+  "trial_usd_total": 6.137975219999997,
+  "wall_clock_s": 3596.4820698660333,
+  "n_trials_completed": 30,
+  "prompt_tokens": 4731730,
+  "completion_tokens": 1482317,
+  "embedding_tokens": 32391030,
+  "extras": {
+    "n_validation_rejects": 0,
+    "n_pruned": 0,
+    "cost_aware": false,
+    "warm_transfer": true,
+    "study_name": "agentic_autorag_bench_motpe_v1",
+    "storage": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/musique/motpe_warm/seed_10/optuna.db"
+  }
+}
