@@ -25,6 +25,6 @@ benchmark:
 hold_out:
   limit: 300
   judge_model: azure_ai/DeepSeek-V3.2
-  concurrency: 10
+  concurrency: 8
 
 output_root: ./results_run_musique_score

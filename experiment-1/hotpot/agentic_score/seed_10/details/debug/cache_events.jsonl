@@ -1,0 +1,6 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "595052c128543f3e", "tokens_credited": 2691935, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "1a78afab6b47eca8", "tokens_credited": 2446983, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "6e7dac55ec8cd331", "tokens_credited": 2690387, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 13, "cache_kind": "embeddings", "cache_key": "52136745262a2f72", "tokens_credited": 2744160, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "bb5c751f9d59e5e6", "tokens_credited": 2738422, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 25, "cache_kind": "embeddings", "cache_key": "ec1ffb37262da058", "tokens_credited": 2691935, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}

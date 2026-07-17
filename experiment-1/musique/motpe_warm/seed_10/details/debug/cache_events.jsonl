@@ -1,0 +1,17 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "33d97a2493ca4a31", "tokens_credited": 1781594, "embedding_model": "Snowflake/snowflake-arctic-embed-xs", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "7006bcd408f95f4d", "tokens_credited": 1781300, "embedding_model": "Snowflake/snowflake-arctic-embed-xs", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "e7137007619ab5cc", "tokens_credited": 1976140, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "1b7402c9303b8530", "tokens_credited": 1973327, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 5, "cache_kind": "embeddings", "cache_key": "cb4e64c6a5fad93f", "tokens_credited": 1989719, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "4695ffdf5e8b79b7", "tokens_credited": 1781300, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "b4139ea2a762b017", "tokens_credited": 1794659, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "227bcb495b2bc46a", "tokens_credited": 1885681, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": 11, "cache_kind": "embeddings", "cache_key": "b0e3454c8e9b8817", "tokens_credited": 1884957, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": 12, "cache_kind": "embeddings", "cache_key": "b949db786ff15bb7", "tokens_credited": 1975487, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "5d20f1b57750c5fc", "tokens_credited": 1885528, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "c61c43fb3e97d95d", "tokens_credited": 1975446, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 19, "cache_kind": "embeddings", "cache_key": "fde0e2da1cfef5e2", "tokens_credited": 1975326, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 20, "cache_kind": "embeddings", "cache_key": "7b4bec4e2da2ef3a", "tokens_credited": 1983265, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 23, "cache_kind": "embeddings", "cache_key": "6bab7630a538f5d8", "tokens_credited": 1885701, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 24, "cache_kind": "embeddings", "cache_key": "f87c5f8cfd4f4cd9", "tokens_credited": 1886117, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": 29, "cache_kind": "embeddings", "cache_key": "a279d90d0d141ad6", "tokens_credited": 1975483, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}

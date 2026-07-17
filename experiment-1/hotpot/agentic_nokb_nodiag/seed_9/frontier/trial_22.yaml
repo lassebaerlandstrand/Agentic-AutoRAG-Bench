@@ -1,0 +1,22 @@
+# Frontier member: trial 22
+# accuracy: 0.7900
+# cost/q:   $0.0007
+# total:    $0.0725
+chunking_strategy: recursive
+chunk_token_size: 256
+chunk_token_overlap: 32
+embedding_model: BAAI/bge-large-en-v1.5
+index_type: hybrid_bm25_vector
+top_k: 17
+hybrid_alpha: 0.3
+bm25_vector_fusion: alpha
+long_context_reorder: false
+passage_compressor: none
+reranker: BAAI/bge-reranker-v2-m3
+reranker_top_n: 5
+query_expansion: multi_query
+compressor_llm: null
+expander_llm: azure/gpt-4o-mini
+generator_llm: azure/gpt-5-mini
+temperature: 1.0
+reasoning: true

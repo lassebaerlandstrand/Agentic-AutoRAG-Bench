@@ -1,0 +1,23 @@
+# Frontier member: trial 28
+# accuracy: 0.3900
+# cost/q:   $0.0016
+# total:    $0.1627
+# tags:     recommended, max-accuracy
+chunking_strategy: fixed
+chunk_token_size: 256
+chunk_token_overlap: 64
+embedding_model: IEITYuan/Yuan-embedding-2.0-en
+index_type: vector_only
+top_k: 20
+hybrid_alpha: 0.5
+bm25_vector_fusion: rrf
+long_context_reorder: true
+passage_compressor: none
+reranker: BAAI/bge-reranker-v2-m3
+reranker_top_n: 10
+query_expansion: none
+compressor_llm: null
+expander_llm: null
+generator_llm: azure/gpt-5-mini
+temperature: 1.0
+reasoning: true

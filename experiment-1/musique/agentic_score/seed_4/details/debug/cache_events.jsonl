@@ -1,0 +1,8 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "1788fdac5a49da36", "tokens_credited": 1975558, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "4aaf1d19b000cd6c", "tokens_credited": 1976615, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "58d8b35f3126319e", "tokens_credited": 1975517, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "be28a40fcd8fd1d4", "tokens_credited": 1975517, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "546be563d5206c1a", "tokens_credited": 1973694, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 24, "cache_kind": "embeddings", "cache_key": "1de9769a30f2ba7b", "tokens_credited": 1781530, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 25, "cache_kind": "embeddings", "cache_key": "1f486b1cdd7dbce1", "tokens_credited": 1885787, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 30, "cache_kind": "embeddings", "cache_key": "66ff1073e7b248de", "tokens_credited": 2148197, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}

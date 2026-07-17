@@ -30,7 +30,7 @@ methods:
   - motpe_warm         # MO-TPE + free uncounted transfer prior from random (runs after random)
   - random             # exploration floor (also motpe_warm's transfer source)
 
-seeds: [1, 2, 3]
+seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 budget:
   max_trials: 30
@@ -60,6 +60,6 @@ hold_out:
   qa_path: ./benchmark_data/hotpot_val_2000/splits/holdout_qa.json
   limit: null
   judge_model: azure_ai/DeepSeek-V3.2
-  concurrency: 10
+  concurrency: 8
 
 output_root: ./experiment-1/hotpot

@@ -2,18 +2,18 @@
   "method": "agentic_score@20",
   "seed": 2,
   "deterministic": false,
-  "optimizer_usd": 0.4108563600000001,
-  "trial_usd_total": 3.1812685749999994,
-  "wall_clock_s": 2031.0775302406787,
+  "optimizer_usd": 0.47489991,
+  "trial_usd_total": 3.9511258399999947,
+  "wall_clock_s": 2839.691432013883,
   "n_trials_completed": 20,
-  "prompt_tokens": 4082182,
-  "completion_tokens": 881862,
-  "embedding_tokens": 9608470,
+  "prompt_tokens": 4735890,
+  "completion_tokens": 1152008,
+  "embedding_tokens": 17432164,
   "extras": {
     "output_dir": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/musique/agentic_score/seed_2",
     "cost_aware": false,
     "checkpoint_at": 20,
     "parent_method": "agentic_score",
-    "parent_max_trials": 30
+    "parent_max_trials": 29
   }
 }

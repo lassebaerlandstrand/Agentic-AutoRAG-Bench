@@ -471,12 +471,15 @@ def write_markdown_table(
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
     )
     body = "\n".join(rows) if rows else "| _(no results yet)_ | | | | | | | | | | | | | | | |"
+    _n_vals = sorted({int(s.get("n_runs_total", s.get("n_seeds", 1))) for s in stats.values()}) or [0]
+    _n_desc = str(_n_vals[0]) if len(_n_vals) == 1 else f"{_n_vals[0]}-{_n_vals[-1]}"
     text = (
         f"# {benchmark_pretty_name} held-out scores\n\n"
         "EM / F1 / Judge columns: mean ± sample SD (ddof=1) across the N held-out "
         "evaluations pooled per method — one per seed, plus any extra "
-        "`replay-holdout` re-evaluations of the winning config. With 3 seeds and "
-        "no replays, N=3 and the SD is the across-seed standard deviation. Token / "
+        "`replay-holdout` re-evaluations of the winning config. With "
+        f"{_n_desc} seeds and no replays, N={_n_desc} and the SD is the across-seed "
+        "standard deviation. Token / "
         "cost / wall columns are mean across seeds (search-side, unaffected by "
         "hold-out replays). `Search $` = Optimizer $ + Trial $ (the one-time bill "
         "to find the winning config).\n\n"

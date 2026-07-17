@@ -1,0 +1,8 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "044bd5fc49ded7a1", "tokens_credited": 1641833, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "a87328fb556d320d", "tokens_credited": 1485524, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "716f564468844b16", "tokens_credited": 1588310, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "5271458b2b4fdbdb", "tokens_credited": 1684050, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "7b07b1834f685418", "tokens_credited": 1612170, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "3f58e26619f17d8d", "tokens_credited": 1619766, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 27, "cache_kind": "embeddings", "cache_key": "a8addf00bc2064fe", "tokens_credited": 1612170, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "4b21e4d548bd868f", "tokens_credited": 1484324, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}

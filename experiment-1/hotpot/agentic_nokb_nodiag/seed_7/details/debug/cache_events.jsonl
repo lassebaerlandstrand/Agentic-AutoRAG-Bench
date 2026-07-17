@@ -1,0 +1,11 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "7b3e5af0abae08a9", "tokens_credited": 2802676, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "4a106a176bd4ed26", "tokens_credited": 2735460, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "e2bb02a5f724a73c", "tokens_credited": 2744160, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "3c7f654b091aac01", "tokens_credited": 2512374, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 12, "cache_kind": "embeddings", "cache_key": "ab0bf739fbcd8fd9", "tokens_credited": 2802676, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 13, "cache_kind": "embeddings", "cache_key": "f785c531ddf9d4ec", "tokens_credited": 2512374, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 14, "cache_kind": "embeddings", "cache_key": "88bb679076782a58", "tokens_credited": 2753088, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 15, "cache_kind": "embeddings", "cache_key": "41dca3560e42d191", "tokens_credited": 2651924, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "6975185ca0182036", "tokens_credited": 2781619, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 21, "cache_kind": "embeddings", "cache_key": "182aec900ad65f2c", "tokens_credited": 2512374, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 24, "cache_kind": "embeddings", "cache_key": "55ec16c63b541e08", "tokens_credited": 2786251, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}

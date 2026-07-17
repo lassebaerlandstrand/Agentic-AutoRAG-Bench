@@ -1,0 +1,32 @@
+{
+  "total_usd": 4.465679654999991,
+  "buckets": {
+    "embedding_build": {
+      "usd": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 41217002,
+      "n_calls": 27
+    },
+    "rag_eval": {
+      "usd": 3.8237266549999864,
+      "prompt_tokens": 7001830,
+      "completion_tokens": 800882,
+      "cache_read_input_tokens": 291456,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 0,
+      "n_calls": 5806
+    },
+    "judge": {
+      "usd": 0.6419530000000041,
+      "prompt_tokens": 1094146,
+      "completion_tokens": 4374,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 0,
+      "n_calls": 1792
+    }
+  }
+}

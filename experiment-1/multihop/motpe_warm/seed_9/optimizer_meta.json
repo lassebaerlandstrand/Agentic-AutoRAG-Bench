@@ -1,0 +1,20 @@
+{
+  "method": "motpe_warm",
+  "seed": 9,
+  "deterministic": false,
+  "optimizer_usd": 0.0,
+  "trial_usd_total": 3.3445392900000046,
+  "wall_clock_s": 1510.9038525039796,
+  "n_trials_completed": 30,
+  "prompt_tokens": 7651691,
+  "completion_tokens": 423899,
+  "embedding_tokens": 28316472,
+  "extras": {
+    "n_validation_rejects": 0,
+    "n_pruned": 0,
+    "cost_aware": false,
+    "warm_transfer": true,
+    "study_name": "agentic_autorag_bench_motpe_v1",
+    "storage": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/multihop/motpe_warm/seed_9/optuna.db"
+  }
+}

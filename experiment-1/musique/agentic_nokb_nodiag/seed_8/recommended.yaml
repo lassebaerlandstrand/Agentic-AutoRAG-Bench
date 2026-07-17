@@ -1,0 +1,20 @@
+# Recommended config: trial 19
+# accuracy: 0.3800  cost/q: $0.0004
+chunking_strategy: fixed
+chunk_token_size: 256
+chunk_token_overlap: 0
+embedding_model: Qwen/Qwen3-Embedding-0.6B
+index_type: hybrid_bm25_vector
+top_k: 14
+hybrid_alpha: 0.3
+bm25_vector_fusion: alpha
+long_context_reorder: true
+passage_compressor: none
+reranker: Alibaba-NLP/gte-reranker-modernbert-base
+reranker_top_n: 5
+query_expansion: hyde
+compressor_llm: null
+expander_llm: azure/gpt-4o-mini
+generator_llm: bedrock/openai.gpt-oss-120b-1:0
+temperature: 1.0
+reasoning: true

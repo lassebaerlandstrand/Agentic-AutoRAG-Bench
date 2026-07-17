@@ -1,0 +1,23 @@
+# Frontier member: trial 26
+# accuracy: 0.8000
+# cost/q:   $0.0008
+# total:    $0.0769
+# tags:     recommended, max-accuracy
+chunking_strategy: recursive
+chunk_token_size: 512
+chunk_token_overlap: 64
+embedding_model: BAAI/bge-m3
+index_type: vector_only
+top_k: 16
+hybrid_alpha: 0.0
+bm25_vector_fusion: alpha
+long_context_reorder: false
+passage_compressor: none
+reranker: BAAI/bge-reranker-v2-m3
+reranker_top_n: 9
+query_expansion: hyde
+compressor_llm: null
+expander_llm: azure/gpt-4o-mini
+generator_llm: bedrock/qwen.qwen3-32b-v1:0
+temperature: 1.0
+reasoning: true

@@ -1,0 +1,22 @@
+# Frontier member: trial 9
+# accuracy: 0.2700
+# cost/q:   $0.0003
+# total:    $0.0279
+chunking_strategy: fixed
+chunk_token_size: 512
+chunk_token_overlap: 64
+embedding_model: intfloat/multilingual-e5-large-instruct
+index_type: hybrid_bm25_vector
+top_k: 10
+hybrid_alpha: 0.5
+bm25_vector_fusion: rrf
+long_context_reorder: false
+passage_compressor: none
+reranker: Alibaba-NLP/gte-reranker-modernbert-base
+reranker_top_n: 5
+query_expansion: none
+compressor_llm: null
+expander_llm: null
+generator_llm: bedrock/openai.gpt-oss-120b-1:0
+temperature: 1.0
+reasoning: true

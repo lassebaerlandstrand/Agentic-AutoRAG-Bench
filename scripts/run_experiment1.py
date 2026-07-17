@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Experiment-1 matrix scheduler — a 2-worker, seed-major, dependency-gated
-supervisor for the paper's accuracy headline (3 QA datasets x 5 methods x 3 seeds
+supervisor for the paper's accuracy headline (3 QA datasets x 5 methods x 10 seeds
 + kb_greedy reference).
 
 It drives one ``(dataset, method, seed)`` unit per subprocess via the bench CLI
 (``agentic-autorag-bench run -c <cfg> -m <method> --seeds <n> --resume``), keeping
 at most 2 running at once (the DeepSeek-endpoint-safe ceiling). Finalization per
 dataset is a single ``analyze`` render (no ``replay-holdout`` — variance comes from
-the 3 seeds).
+the 10 seeds).
 
 Design notes (all verified against the bench source):
   * SUCCESS IS DECIDED BY DISK, NOT EXIT CODE. ``run``'s matrix loop swallows
@@ -607,7 +607,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                    help="comma-separated subset of hotpot,musique,multihop")
     p.add_argument("--seeds", default=None, help="comma-separated seed subset (default: each config's seeds)")
     p.add_argument("--workers", type=int, default=2, help="max concurrent units (endpoint-safe ceiling is 2)")
-    p.add_argument("--include-kb-greedy", action="store_true", help="also run kb_greedy at 3 seeds per dataset")
+    p.add_argument("--include-kb-greedy", action="store_true", help="also run kb_greedy at 10 seeds per dataset")
     p.add_argument("--seed-barrier", action="store_true",
                    help="strict seed barrier (idles a worker at boundaries); default is soft (never idle)")
     p.add_argument("--no-warmup", dest="warmup", action="store_false",

@@ -1,8 +1,8 @@
-{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "0da6b1549f9f8ef8", "tokens_credited": 2690452, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
-{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "ec1ffb37262da058", "tokens_credited": 2691935, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
-{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "595052c128543f3e", "tokens_credited": 2691935, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
-{"trial_number": 12, "cache_kind": "embeddings", "cache_key": "52136745262a2f72", "tokens_credited": 2744160, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
-{"trial_number": 22, "cache_kind": "embeddings", "cache_key": "6f0c3410270e9be6", "tokens_credited": 2721118, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
-{"trial_number": 23, "cache_kind": "embeddings", "cache_key": "aab41d26c5f80919", "tokens_credited": 2753088, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
-{"trial_number": 27, "cache_kind": "embeddings", "cache_key": "a7040934e427bc09", "tokens_credited": 2737283, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
-{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "1e46b51715e18057", "tokens_credited": 2735460, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "7396f24811a30ad4", "tokens_credited": 2704159, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "1a78afab6b47eca8", "tokens_credited": 2446983, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "ec1ffb37262da058", "tokens_credited": 2691935, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "e2bb02a5f724a73c", "tokens_credited": 2744160, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "54824e555adfc9dc", "tokens_credited": 2690621, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "595052c128543f3e", "tokens_credited": 2691935, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "e69cb606316673c9", "tokens_credited": 2690621, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 30, "cache_kind": "embeddings", "cache_key": "4a106a176bd4ed26", "tokens_credited": 2735460, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}

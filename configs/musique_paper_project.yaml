@@ -35,7 +35,7 @@ agent:
   judge_model: "azure_ai/DeepSeek-V3.2"
   optimizer_reasoning_effort: medium
   examiner_reasoning_effort: medium
-  concurrency: 10
+  concurrency: 8
 
 examiner:
   # Headline (Exp 1) optimizes against the validation exam built from MuSiQue's own

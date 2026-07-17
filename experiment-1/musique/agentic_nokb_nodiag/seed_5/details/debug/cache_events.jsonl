@@ -1,0 +1,12 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "91247615dcbc75cf", "tokens_credited": 1977167, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "be28a40fcd8fd1d4", "tokens_credited": 1975517, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "4aaf1d19b000cd6c", "tokens_credited": 1976615, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "7001e3670bc6cc66", "tokens_credited": 1977167, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "a0ecf14f14b95548", "tokens_credited": 2148197, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "ce138b92fc7e0414", "tokens_credited": 1782724, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 15, "cache_kind": "embeddings", "cache_key": "cc070d19459d8e94", "tokens_credited": 1783246, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 21, "cache_kind": "embeddings", "cache_key": "546be563d5206c1a", "tokens_credited": 1973694, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 25, "cache_kind": "embeddings", "cache_key": "9f381d265c451222", "tokens_credited": 1782724, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 26, "cache_kind": "embeddings", "cache_key": "c3fa1bfcc8648228", "tokens_credited": 1886117, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 27, "cache_kind": "embeddings", "cache_key": "41878a9981b4cab7", "tokens_credited": 1973947, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "f87c5f8cfd4f4cd9", "tokens_credited": 1886117, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}

@@ -3,13 +3,37 @@
     "5ab624b855429953192ad26d"
   ],
   "by_run": {
+    "agentic_nokb_nodiag/seed_10": [
+      "5ab624b855429953192ad26d"
+    ],
     "agentic_nokb_nodiag/seed_2": [
       "5ab624b855429953192ad26d"
     ],
     "agentic_nokb_nodiag/seed_3": [
       "5ab624b855429953192ad26d"
     ],
+    "agentic_nokb_nodiag/seed_4": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_nokb_nodiag/seed_5": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_nokb_nodiag/seed_6": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_nokb_nodiag/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_nokb_nodiag/seed_8": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_nokb_nodiag/seed_9": [
+      "5ab624b855429953192ad26d"
+    ],
     "agentic_score/seed_1": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score/seed_10": [
       "5ab624b855429953192ad26d"
     ],
     "agentic_score/seed_2": [
@@ -18,7 +42,28 @@
     "agentic_score/seed_3": [
       "5ab624b855429953192ad26d"
     ],
+    "agentic_score/seed_4": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score/seed_5": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score/seed_6": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score/seed_8": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score/seed_9": [
+      "5ab624b855429953192ad26d"
+    ],
     "agentic_score@10/seed_1": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@10/seed_10": [
       "5ab624b855429953192ad26d"
     ],
     "agentic_score@10/seed_2": [
@@ -27,7 +72,28 @@
     "agentic_score@10/seed_3": [
       "5ab624b855429953192ad26d"
     ],
+    "agentic_score@10/seed_4": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@10/seed_5": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@10/seed_6": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@10/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@10/seed_8": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@10/seed_9": [
+      "5ab624b855429953192ad26d"
+    ],
     "agentic_score@20/seed_1": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@20/seed_10": [
       "5ab624b855429953192ad26d"
     ],
     "agentic_score@20/seed_2": [
@@ -36,7 +102,28 @@
     "agentic_score@20/seed_3": [
       "5ab624b855429953192ad26d"
     ],
+    "agentic_score@20/seed_4": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@20/seed_5": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@20/seed_6": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@20/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@20/seed_8": [
+      "5ab624b855429953192ad26d"
+    ],
+    "agentic_score@20/seed_9": [
+      "5ab624b855429953192ad26d"
+    ],
     "motpe/seed_1": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe/seed_10": [
       "5ab624b855429953192ad26d"
     ],
     "motpe/seed_2": [
@@ -45,7 +132,25 @@
     "motpe/seed_3": [
       "5ab624b855429953192ad26d"
     ],
+    "motpe/seed_4": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe/seed_5": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe/seed_6": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe/seed_9": [
+      "5ab624b855429953192ad26d"
+    ],
     "motpe_warm/seed_1": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe_warm/seed_10": [
       "5ab624b855429953192ad26d"
     ],
     "motpe_warm/seed_2": [
@@ -54,9 +159,30 @@
     "motpe_warm/seed_3": [
       "5ab624b855429953192ad26d"
     ],
+    "motpe_warm/seed_4": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe_warm/seed_5": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe_warm/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "motpe_warm/seed_8": [
+      "5ab624b855429953192ad26d"
+    ],
     "random/seed_2": [
+      "5ab624b855429953192ad26d"
+    ],
+    "random/seed_7": [
+      "5ab624b855429953192ad26d"
+    ],
+    "random/seed_8": [
+      "5ab624b855429953192ad26d"
+    ],
+    "random/seed_9": [
       "5ab624b855429953192ad26d"
     ]
   },
-  "n_runs_scanned": 24
+  "n_runs_scanned": 80
 }

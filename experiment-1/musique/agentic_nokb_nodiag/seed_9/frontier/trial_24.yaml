@@ -1,0 +1,22 @@
+# Frontier member: trial 24
+# accuracy: 0.3400
+# cost/q:   $0.0035
+# total:    $0.3478
+chunking_strategy: recursive
+chunk_token_size: 384
+chunk_token_overlap: 48
+embedding_model: ibm-granite/granite-embedding-english-r2
+index_type: vector_only
+top_k: 11
+hybrid_alpha: 0.0
+bm25_vector_fusion: alpha
+long_context_reorder: false
+passage_compressor: none
+reranker: Alibaba-NLP/gte-reranker-modernbert-base
+reranker_top_n: 5
+query_expansion: none
+compressor_llm: null
+expander_llm: null
+generator_llm: azure/gpt-5.4-mini
+temperature: 1.0
+reasoning: true

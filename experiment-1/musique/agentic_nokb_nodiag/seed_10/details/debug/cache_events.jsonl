@@ -1,0 +1,13 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "c87598787259188a", "tokens_credited": 1989719, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "d93cf06fe1078212", "tokens_credited": 1781802, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 3, "cache_kind": "embeddings", "cache_key": "6e9db481fa595f63", "tokens_credited": 1781802, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "29bd938ad492b7b5", "tokens_credited": 1794659, "embedding_model": "intfloat/e5-large-v2", "phase": "trial"}
+{"trial_number": 5, "cache_kind": "embeddings", "cache_key": "3a1a3ef7de46ebec", "tokens_credited": 1781530, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 6, "cache_kind": "embeddings", "cache_key": "be28a40fcd8fd1d4", "tokens_credited": 1975517, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 7, "cache_kind": "embeddings", "cache_key": "7807fbe0b46ba707", "tokens_credited": 1975684, "embedding_model": "intfloat/multilingual-e5-large-instruct", "phase": "trial"}
+{"trial_number": 10, "cache_kind": "embeddings", "cache_key": "85403694e691deeb", "tokens_credited": 1975684, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}
+{"trial_number": 15, "cache_kind": "embeddings", "cache_key": "92bfe273ed3823f1", "tokens_credited": 1781802, "embedding_model": "mixedbread-ai/mxbai-embed-large-v1", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "7d4b621d4942cd6f", "tokens_credited": 1975684, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 20, "cache_kind": "embeddings", "cache_key": "5e43b71719bf56b9", "tokens_credited": 1885895, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 21, "cache_kind": "embeddings", "cache_key": "51f7a951415db62d", "tokens_credited": 1973952, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 28, "cache_kind": "embeddings", "cache_key": "58d8b35f3126319e", "tokens_credited": 1975517, "embedding_model": "Snowflake/snowflake-arctic-embed-l-v2.0", "phase": "trial"}

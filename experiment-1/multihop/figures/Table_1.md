@@ -1,16 +1,16 @@
 # MultiHop-RAG held-out scores
 
-EM / F1 / Judge columns: mean ± sample SD (ddof=1) across the N held-out evaluations pooled per method — one per seed, plus any extra `replay-holdout` re-evaluations of the winning config. With 3 seeds and no replays, N=3 and the SD is the across-seed standard deviation. Token / cost / wall columns are mean across seeds (search-side, unaffected by hold-out replays). `Search $` = Optimizer $ + Trial $ (the one-time bill to find the winning config).
+EM / F1 / Judge columns: mean ± sample SD (ddof=1) across the N held-out evaluations pooled per method — one per seed, plus any extra `replay-holdout` re-evaluations of the winning config. With 10 seeds and no replays, N=10 and the SD is the across-seed standard deviation. Token / cost / wall columns are mean across seeds (search-side, unaffected by hold-out replays). `Search $` = Optimizer $ + Trial $ (the one-time bill to find the winning config).
 
 | Method | EM | Token-F1 | LLM Judge | N | Joint-R@2 | Joint-R@5 | MRR-complete | MRR-first | LLM in | LLM out | Embed in | Optimizer $ | Trial $ | Search $ | Wall |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Agentic (Ours) | 0.684 ± 0.054 | 0.703 ± 0.051 | 0.780 ± 0.009 | 3 | 0.260 | 0.487 | 0.210 | 0.837 | 14.09M | 1.53M | 16.63M | $0.7898 | $7.6948 | $8.4846 | 4383s¹ |
-| Agentic@10 | 0.674 ± 0.046 | 0.694 ± 0.049 | 0.769 ± 0.012 | 3 | 0.245 | 0.523 | 0.213 | 0.847 | 5.25M | 536.4k | 6.15M | $0.2135 | $3.0289 | $3.2424 | 1461s¹ |
-| Agentic@20 | 0.678 ± 0.063 | 0.697 ± 0.060 | 0.770 ± 0.018 | 3 | 0.256 | 0.511 | 0.212 | 0.845 | 9.87M | 1.01M | 12.43M | $0.4913 | $5.6092 | $6.1005 | 2922s¹ |
-| Agentic (no KB, no diag) | 0.716 ± 0.068 | 0.734 ± 0.065 | 0.780 ± 0.012 | 3 | 0.253 | 0.520 | 0.206 | 0.847 | 10.74M | 1.03M | 11.12M | $0.1347 | $4.0167 | $4.1514 | 4185s¹ |
-| MO-TPE | 0.690 ± 0.037 | 0.704 ± 0.036 | 0.746 ± 0.025 | 3 | 0.241 | 0.466 | 0.192 | 0.822 | 8.82M | 899.8k | 40.91M | $0.0000 | $3.9320 | $3.9320 | 2464s¹ |
-| MO-TPE (transfer warm-start) | 0.644 ± 0.030 | 0.666 ± 0.028 | 0.757 ± 0.034 | 3 | 0.232 | 0.378 | 0.160 | 0.825 | 8.31M | 1.01M | 33.81M | $0.0000 | $5.2522 | $5.2522 | 2665s¹ |
-| Random | 0.640 ± 0.067 | 0.656 ± 0.062 | 0.710 ± 0.049 | 3 | 0.227 | 0.439 | 0.175 | 0.841 | 8.15M | 611.6k | 45.57M | $0.0000 | $2.9366 | $2.9366 | 2684s¹ |
-| kb-greedy | 0.507 ± 0.013 | 0.517 ± 0.013 | 0.539 ± 0.008 | 3 | 0.203 | 0.453 | 0.182 | 0.844 | 0 | 0 | 0 | $0.0000 | $0.0000 | $0.0000 | 0s¹ |
+| Agentic (Ours) | 0.729 ± 0.054 | 0.748 ± 0.055 | 0.790 ± 0.029 | 10 | 0.247 | 0.526 | 0.210 | 0.844 | 15.73M | 1.27M | 11.03M | $0.7856 | $9.4562 | $10.2418 | 4461s¹ |
+| Agentic@10 | 0.679 ± 0.056 | 0.697 ± 0.055 | 0.773 ± 0.021 | 10 | 0.263 | 0.562 | 0.221 | 0.859 | 5.22M | 357.3k | 5.24M | $0.2052 | $2.7143 | $2.9195 | 1507s¹ |
+| Agentic@20 | 0.704 ± 0.060 | 0.723 ± 0.061 | 0.783 ± 0.026 | 10 | 0.248 | 0.545 | 0.216 | 0.849 | 10.65M | 827.2k | 8.07M | $0.4849 | $6.0499 | $6.5348 | 3014s¹ |
+| Agentic (no KB, no diag) | 0.729 ± 0.037 | 0.748 ± 0.035 | 0.780 ± 0.021 | 10 | 0.258 | 0.502 | 0.202 | 0.850 | 10.38M | 1.21M | 12.47M | $0.1346 | $6.6953 | $6.8299 | 3970s¹ |
+| MO-TPE | 0.664 ± 0.045 | 0.677 ± 0.042 | 0.724 ± 0.028 | 10 | 0.232 | 0.451 | 0.187 | 0.821 | 8.79M | 796.8k | 39.06M | $0.0000 | $4.2118 | $4.2118 | 2591s¹ |
+| MO-TPE (transfer warm-start) | 0.666 ± 0.051 | 0.682 ± 0.047 | 0.731 ± 0.045 | 10 | 0.241 | 0.413 | 0.173 | 0.843 | 7.85M | 827.7k | 34.01M | $0.0000 | $4.4466 | $4.4466 | 2604s¹ |
+| Random | 0.633 ± 0.065 | 0.651 ± 0.063 | 0.706 ± 0.048 | 10 | 0.192 | 0.387 | 0.156 | 0.816 | 7.37M | 626.5k | 45.93M | $0.0000 | $3.2372 | $3.2372 | 2610s¹ |
+| kb-greedy | 0.507 ± 0.011 | 0.518 ± 0.011 | 0.544 ± 0.014 | 10 | 0.204 | 0.449 | 0.182 | 0.842 | 0 | 0 | 0 | $0.0000 | $0.0000 | $0.0000 | 0s¹ |
 
 ¹ Wall-clock is reported for context only — rate limits and shared caches make it an unfair primary metric. Token counts are the recommended cost proxy.

@@ -1,0 +1,19 @@
+{
+  "method": "agentic_score@10",
+  "seed": 9,
+  "deterministic": false,
+  "optimizer_usd": 0.21581133000000002,
+  "trial_usd_total": 1.4116068399999977,
+  "wall_clock_s": 1271.7362162206941,
+  "n_trials_completed": 10,
+  "prompt_tokens": 2305273,
+  "completion_tokens": 274314,
+  "embedding_tokens": 5924937,
+  "extras": {
+    "output_dir": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/experiment-1/musique/agentic_score/seed_9",
+    "cost_aware": false,
+    "checkpoint_at": 10,
+    "parent_method": "agentic_score",
+    "parent_max_trials": 30
+  }
+}

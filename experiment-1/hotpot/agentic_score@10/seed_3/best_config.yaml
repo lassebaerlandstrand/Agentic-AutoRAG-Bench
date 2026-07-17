@@ -15,4 +15,4 @@ compressor_llm: null
 expander_llm: azure/gpt-4o-mini
 generator_llm: azure/gpt-5-mini
 temperature: 1.0
-reasoning: true
+reasoning: false

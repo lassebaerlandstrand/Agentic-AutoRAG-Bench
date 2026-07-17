@@ -1,0 +1,8 @@
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "45a66ad1d24a762c", "tokens_credited": 1973947, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "190df98de4a3956a", "tokens_credited": 1973694, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 4, "cache_kind": "embeddings", "cache_key": "4aaf1d19b000cd6c", "tokens_credited": 1976615, "embedding_model": "BAAI/bge-m3", "phase": "trial"}
+{"trial_number": 8, "cache_kind": "embeddings", "cache_key": "1788fdac5a49da36", "tokens_credited": 1975558, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 9, "cache_kind": "embeddings", "cache_key": "1f486b1cdd7dbce1", "tokens_credited": 1885787, "embedding_model": "ibm-granite/granite-embedding-english-r2", "phase": "trial"}
+{"trial_number": 16, "cache_kind": "embeddings", "cache_key": "e56336addac5345a", "tokens_credited": 1978299, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 20, "cache_kind": "embeddings", "cache_key": "f8a72975d5781c54", "tokens_credited": 2134250, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 29, "cache_kind": "embeddings", "cache_key": "b9cb9367a668a7b4", "tokens_credited": 1978299, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
