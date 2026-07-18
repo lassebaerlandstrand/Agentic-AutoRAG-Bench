@@ -1438,37 +1438,58 @@ def _attainment_stats(seed_points: list[list[_TrialPoint]], grid: np.ndarray) ->
     return curves.min(axis=0), np.median(curves, axis=0), curves.max(axis=0)
 
 
+def _attainment_quantiles(
+    seed_points: list[list[_TrialPoint]], grid: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """``(p25, p50, p75)`` of the seeds' empirical attainment curves on ``grid``.
+
+    The interquartile band (p25-p75) is the fair seed-spread envelope: unlike the
+    min-max range it is stable as the seed count grows (it converges to the true
+    quartiles instead of widening with n) and it is not driven by a single lucky or
+    unlucky seed. ``p50`` is the median attainment (the same central line as
+    ``_attainment_stats``). Curves are 0-padded below a seed's cheapest trial, so in
+    the cheap region where fewer than a quarter of seeds have a trial ``p25`` is 0;
+    callers gate the band on ``p25 > 0`` so it stays a proper interval rather than
+    sagging onto the axis."""
+    curves = np.vstack([_attainment_curve(pts, grid) for pts in seed_points])
+    p25, p50, p75 = np.percentile(curves, [25, 50, 75], axis=0)
+    return p25, p50, p75
+
+
 def _plot_attainment(
     ax, method_seed_points: dict[str, list[list[_TrialPoint]]], grid: np.ndarray, *, central: str
 ) -> None:
-    """Draw each method's attainment on ``ax``: a central line + a min-max band.
+    """Draw each method's attainment on ``ax``: a central line + an IQR seed band.
 
     ``central`` picks the line: ``"max"`` is the best-across-seeds frontier (every
     frontier point is on the line), ``"median"`` is the typical seed. The line is
     drawn over its full positive extent, so it reaches the cheapest costs a seed
-    explored. The min-max band is drawn ONLY where every seed has coverage (its
-    worst seed has a trial that cheap), i.e. where a seed-spread estimate is
-    honest; in the partial-coverage cheap region the line stands alone rather than
-    a band collapsing to 0. Our own method is emphasised."""
+    explored. The band is the interquartile range (p25-p75) across seeds — a fair,
+    n-stable spread (unlike min-max, whose width only grows with more seeds and is
+    set by the single worst/best seed). It is drawn where ``p25 > 0`` (at least a
+    quarter of seeds have a trial that cheap), so it stays a proper interval; in the
+    thin cheapest tail where fewer seeds explored, the line stands alone rather than
+    a band sagging onto the axis. Our own method is emphasised."""
     for method in _order_methods(method_seed_points):
-        lo, med, hi = _attainment_stats(method_seed_points[method], grid)
-        line = hi if central == "max" else med
+        p25, p50, p75 = _attainment_quantiles(method_seed_points[method], grid)
+        # best-across-seeds frontier for the "max" figure, else the median (typical) seed
+        line = _attainment_stats(method_seed_points[method], grid)[2] if central == "max" else p50
         color, emph = _color_for(method), _is_our_method(method)
-        band = lo > 0  # every seed has a trial this cheap -> spread is meaningful
-        ax.fill_between(grid, lo * 100, hi * 100, where=band, color=color,
+        band = p25 > 0  # >=1/4 of seeds have a trial this cheap -> IQR is a proper interval
+        ax.fill_between(grid, p25 * 100, p75 * 100, where=band, color=color,
                         alpha=0.18 if emph else 0.10, lw=0, zorder=4 if emph else 2)
         ax.plot(grid, np.where(line > 0, line * 100, np.nan), color=color, lw=2.4 if emph else 1.7,
                 solid_capstyle="round", zorder=6 if emph else 3, label=display_label(method))
 
 
 def make_pareto_attainment_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
-    """Cost->accuracy frontier across seeds: best-across-seeds line + min-max band.
+    """Cost->accuracy frontier across seeds: best-across-seeds line + IQR band.
 
     The line is the empirical attainment frontier (best accuracy any seed reached at
     or below each cost), so every frontier point is shown, including cheap configs
-    only some seeds explored. The band is the seed min-max, drawn where all seeds
-    have coverage. Companion ``make_pareto_attainment_median_figure`` swaps the line
-    for the median (typical run). No-op when nothing is plottable."""
+    only some seeds explored. The band is the seed interquartile range (p25-p75) — a
+    fair, n-stable spread. Companion ``make_pareto_attainment_median_figure`` swaps
+    the line for the median (typical run). No-op when nothing is plottable."""
     method_seed_points = _load_method_seed_points(output_root)
     grid = _attainment_grid(method_seed_points)
     if grid is None:
@@ -1488,7 +1509,7 @@ def make_pareto_attainment_figure(output_root: Path, out_path: Path, *, domain: 
     title_domain = f" ({domain})" if domain else ""
     ax.set_title(f"Cost vs exam accuracy on UniDoc{title_domain} (frontier across seeds)")
     ax.legend(loc="lower right", frameon=False, fontsize=9,
-              title="line = best across seeds, band = min-max across seeds")
+              title="line = best across seeds, band = IQR (p25–p75) across seeds")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -1497,9 +1518,9 @@ def make_pareto_attainment_figure(output_root: Path, out_path: Path, *, domain: 
 
 def _draw_median_attainment_panel(
     ax, method_seed_points, grid, *, domain: str,
-    legend_title: str | None = "line = median seed, band = min-max across seeds",
+    legend_title: str | None = "line = median seed, band = IQR (p25–p75) across seeds",
 ) -> None:
-    """Median-seed cost->accuracy attainment (line + min-max band) onto ``ax``.
+    """Median-seed cost->accuracy attainment (line + IQR seed band) onto ``ax``.
     Shared by the standalone median figure and the combined landscape figure so
     the two never drift. ``legend_title`` can be set to ``None`` to drop the
     line/band explainer when the figure caption already carries it."""
@@ -1553,7 +1574,8 @@ def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, d
 def _pooled_frontier(seed_points: list[list[_TrialPoint]]) -> list[_TrialPoint]:
     """The Pareto frontier of a method's trials pooled across all seeds, sorted by
     cost ascending. This is the best cost-accuracy trade-off the method actually
-    reached anywhere, so it traces the top edge of that method's min-max band."""
+    reached anywhere, so it coincides with that method's best-across-seeds
+    attainment line (the ``central="max"`` line), which sits above the IQR band."""
     from agentic_autorag.optimizer import pareto as fpareto
 
     pooled = [p for pts in seed_points for p in pts]
@@ -1597,8 +1619,8 @@ def make_pareto_frontier_annotated_figure(
     """The seed-aggregated frontier view (``make_pareto_attainment_figure``) with our
     own frontier's concrete configurations called out.
 
-    Every method keeps its best-across-seeds frontier line + min-max band, so the
-    head-to-head is the same fair comparison. The pooled Pareto frontier of
+    Every method keeps its best-across-seeds frontier line + IQR (p25-p75) band, so
+    the head-to-head is the same fair comparison. The pooled Pareto frontier of
     ``hero_method`` lies exactly on that method's line, so a handful of its points
     are marked with numbered dots, each described in a side legend the way
     ``make_pareto_figure`` does for a single seed. This pairs "we dominate the
@@ -1628,7 +1650,7 @@ def make_pareto_frontier_annotated_figure(
     # Keep the method legend inside; the config legend goes outside on the right.
     method_legend = ax.legend(
         loc="lower right", frameon=False, fontsize=9,
-        title="line = best across seeds, band = min-max across seeds",
+        title="line = best across seeds, band = IQR (p25–p75) across seeds",
     )
     ax.add_artist(method_legend)
 
@@ -1667,20 +1689,22 @@ def _running_hypervolume(points: list[_TrialPoint], ref_point: tuple[float, floa
 
 
 def _draw_hv_convergence_panel(ax, method_seed_points, *, domain: str, cost_ref: float) -> None:
-    """Anytime normalized hypervolume vs. trials (mean + min-max band) onto ``ax``.
-    Shared by the standalone HV figure and the combined landscape figure."""
+    """Anytime normalized hypervolume vs. trials (median + IQR band) onto ``ax``.
+    Shared by the standalone HV figure and the combined landscape figure. The band
+    is the interquartile range (p25-p75) across seeds — a fair, n-stable spread
+    rather than the min-max range, which only widens with more seeds."""
     ref_point = (0.0, cost_ref)
     for method in _order_methods(method_seed_points):
         curves = _pad_edge([_running_hypervolume(pts, ref_point) / cost_ref for pts in method_seed_points[method]])
         x = np.arange(1, curves.shape[1] + 1)
         color, emph = _color_for(method), _is_our_method(method)
-        lo, hi = curves.min(axis=0), curves.max(axis=0)
+        lo, hi = np.percentile(curves, [25, 75], axis=0)
         ax.fill_between(x, lo, hi, color=color, alpha=0.18 if emph else 0.10, lw=0, zorder=4 if emph else 2)
         # Very thin same-colour edges so each band's extent stays readable where
         # the fills overlap (this figure has the densest band overlap of the set).
         for edge in (lo, hi):
             ax.plot(x, edge, color=color, lw=0.6, alpha=0.5, zorder=4 if emph else 2)
-        ax.plot(x, curves.mean(axis=0), color=color, lw=2.4 if emph else 1.7, solid_capstyle="round",
+        ax.plot(x, np.median(curves, axis=0), color=color, lw=2.4 if emph else 1.7, solid_capstyle="round",
                 zorder=6 if emph else 3, label=display_label(method))
 
     _integer_xticks(ax)
@@ -1689,11 +1713,11 @@ def _draw_hv_convergence_panel(ax, method_seed_points, *, domain: str, cost_ref:
     ax.grid(alpha=0.3)
     title_domain = f" ({domain})" if domain else ""
     ax.set_title(f"Hypervolume over trials on UniDoc{title_domain}")
-    ax.legend(loc="lower right", frameon=False, title="line = mean, band = min-max across seeds")
+    ax.legend(loc="lower right", frameon=False, title="line = median, band = IQR (p25–p75) across seeds")
 
 
 def make_pareto_hv_convergence_figure(output_root: Path, out_path: Path, *, domain: str = "", cost_ref: float) -> None:
-    """Anytime normalized hypervolume vs. trials: mean over seeds + min-max band.
+    """Anytime normalized hypervolume vs. trials: median over seeds + IQR band.
 
     Running best-so-far hypervolume against the shared, space-derived ``cost_ref``
     (the same reference used for ``hypervolume.json``, so this figure and the table
@@ -1755,6 +1779,70 @@ def make_pareto_median_hv_combined_figure(
         out_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
+
+
+def make_pareto_hypervolume_box_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
+    """Per-method distribution of the per-seed normalized hypervolume: box + seed strip.
+
+    Reads the ``hypervolume_per_seed`` fractions already written to
+    ``hypervolume.json`` (one dominated-hypervolume value per seed against the shared
+    space-derived reference) and shows, per method, the interquartile box + median
+    with whiskers and every seed as a jittered dot. This is the fair scalar summary
+    the frontier figures can't give: it collapses each seed's whole frontier to one
+    comparable number, so the seed spread and the method ranking read directly and it
+    supports a significance test. No-op when the file is missing or has no per-seed
+    values."""
+    hv_path = output_root / "hypervolume.json"
+    if not hv_path.exists():
+        logger.warning("No hypervolume.json under %s; skipping hypervolume box figure", output_root)
+        return
+    try:
+        hv_info = json.loads(hv_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Unreadable hypervolume.json at %s; skipping box figure", hv_path, exc_info=True)
+        return
+    methods_hv = hv_info.get("methods", {})
+    methods = [m for m in _order_methods(methods_hv) if methods_hv.get(m, {}).get("hypervolume_per_seed")]
+    if not methods:
+        logger.warning("hypervolume.json under %s has no per-seed values; skipping box figure", output_root)
+        return
+
+    apply_paper_style()
+    plt = _import_matplotlib()
+    fig, ax = plt.subplots(figsize=(7.2, 4.6))
+    rng = np.random.default_rng(0)  # deterministic jitter -> stable re-renders
+    positions = np.arange(1, len(methods) + 1)
+    per_seed = [list(methods_hv[m]["hypervolume_per_seed"]) for m in methods]
+
+    bp = ax.boxplot(per_seed, positions=positions, widths=0.55, showfliers=False,
+                    patch_artist=True, medianprops=dict(color="black", lw=1.6), zorder=2)
+    for patch, method in zip(bp["boxes"], methods, strict=True):
+        color = _color_for(method)
+        patch.set_facecolor(color)
+        patch.set_alpha(0.18)
+        patch.set_edgecolor(color)
+        patch.set_linewidth(1.4)
+    for i, method in enumerate(methods):  # whiskers + caps come two-per-box, in order
+        color = _color_for(method)
+        for artist in (bp["whiskers"][2 * i], bp["whiskers"][2 * i + 1], bp["caps"][2 * i], bp["caps"][2 * i + 1]):
+            artist.set_color(color)
+            artist.set_linewidth(1.2)
+    for method, pos, vals in zip(methods, positions, per_seed, strict=True):
+        color, emph = _color_for(method), _is_our_method(method)
+        jitter = (rng.random(len(vals)) - 0.5) * 0.28
+        ax.scatter(pos + jitter, vals, s=34 if emph else 22, color=color,
+                   edgecolor="white", linewidth=0.5, alpha=0.9, zorder=5 if emph else 4)
+
+    ax.set_xticks(positions)
+    ax.set_xticklabels([display_label(m) for m in methods])
+    ax.set_ylabel("Normalized hypervolume")
+    ax.grid(alpha=0.3, axis="y")
+    title_domain = f" ({domain})" if domain else ""
+    ax.set_title(f"Per-seed hypervolume on UniDoc{title_domain}")
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
 
 def _read_seed_cost_embed(seed_dir: Path) -> tuple[float, float, float] | None:

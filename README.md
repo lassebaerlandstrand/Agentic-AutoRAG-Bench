@@ -124,17 +124,20 @@ uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only
 ```
 
 This rewrites the figures in `experiment-2/unidoc/figures/` and `hypervolume.json`.
-The two used in the paper are `pareto_cost_accuracy.png` (each method's
-cost-accuracy frontier, best across seeds, with a min-max band where all seeds
-cover) and `pareto_frontier_configs.png` (the same view with our frontier's actual
-configurations labelled). The rest are supporting views:
-`pareto_cost_accuracy_median.png` (the same frontier view but the line is the
-median seed rather than the best, a typical-run rather than best-case reading),
+The frontier figure used in the paper is `pareto_cost_accuracy_median.png` (each
+method's cost-accuracy attainment, median-seed line with an IQR (p25–p75) seed
+band — a typical-run reading), with `pareto_frontier_configs.png` labelling our
+frontier's actual configurations. The rest are supporting views:
+`pareto_cost_accuracy.png` (the same attainment view but the line is the best
+across seeds — the achievable ceiling — with the same IQR band),
+`pareto_hypervolume_box.png` (per-method box + seed-strip of the per-seed
+hypervolume — the fair scalar summary of the ranking and its seed spread),
 `cost_and_embeddings.png` (search cost and embedding tokens per method, with seed
 error bars), `pareto_agentic_cost.png` (a single agentic run's frontier),
 `pareto_comparison.png` (one seed per method), `pareto_hypervolume.png`
-(hypervolume over trials), and `pareto_median_and_hypervolume.png` (a wide
-landscape pairing the median frontier and the hypervolume curve side by side).
+(hypervolume over trials, median + IQR band), and
+`pareto_median_and_hypervolume.png` (a wide landscape pairing the median frontier
+and the hypervolume curve side by side).
 
 The committed run keeps the per-pair results, the figures, and the frozen
 `.shared_cache/exam.json` (the optimization target and score), dropping only the
