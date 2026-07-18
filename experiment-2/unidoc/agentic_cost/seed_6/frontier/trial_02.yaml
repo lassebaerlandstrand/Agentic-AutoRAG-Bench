@@ -1,0 +1,22 @@
+# Frontier member: trial 2
+# accuracy: 0.2400
+# cost/q:   $0.0000
+# total:    $0.0021
+chunking_strategy: recursive
+chunk_token_size: 128
+chunk_token_overlap: 32
+embedding_model: sentence-transformers/all-MiniLM-L6-v2
+index_type: vector_only
+top_k: 3
+hybrid_alpha: 0.0
+bm25_vector_fusion: alpha
+long_context_reorder: false
+passage_compressor: none
+reranker: none
+reranker_top_n: 3
+query_expansion: none
+compressor_llm: null
+expander_llm: null
+generator_llm: bedrock/us.amazon.nova-micro-v1:0
+temperature: 1.0
+reasoning: false

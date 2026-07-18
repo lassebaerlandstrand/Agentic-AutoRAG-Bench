@@ -1,0 +1,15 @@
+{
+  "method": "random",
+  "seed": 5,
+  "deterministic": false,
+  "optimizer_usd": 0.0,
+  "trial_usd_total": 3.2895659700000053,
+  "wall_clock_s": 3685.1539985570125,
+  "n_trials_completed": 30,
+  "prompt_tokens": 6810514,
+  "completion_tokens": 612770,
+  "embedding_tokens": 75604238,
+  "extras": {
+    "n_validation_rejects": 0
+  }
+}

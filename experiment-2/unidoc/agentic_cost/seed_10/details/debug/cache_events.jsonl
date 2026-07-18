@@ -1,0 +1,7 @@
+{"trial_number": null, "cache_kind": "exam", "cache_key": "exam_25b675afc407f161", "tokens_credited": 0, "phase": "exam_gen"}
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "1df433c21e31c029", "tokens_credited": 2681876, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "e9aef96a6e08b021", "tokens_credited": 2412075, "embedding_model": "BAAI/bge-small-en-v1.5", "phase": "trial"}
+{"trial_number": 22, "cache_kind": "embeddings", "cache_key": "eb0bac6d6aa05024", "tokens_credited": 2681876, "embedding_model": "Qwen/Qwen3-Embedding-0.6B", "phase": "trial"}
+{"trial_number": 25, "cache_kind": "embeddings", "cache_key": "e8bbed93ba365d66", "tokens_credited": 2673832, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": null, "cache_kind": "exam", "cache_key": "exam_25b675afc407f161", "tokens_credited": 0, "phase": "exam_gen"}
+{"trial_number": 30, "cache_kind": "embeddings", "cache_key": "c0b82b916c11ae1b", "tokens_credited": 2937399, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}

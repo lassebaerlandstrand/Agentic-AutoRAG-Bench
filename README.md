@@ -91,12 +91,12 @@ This runs on UniDoc-Bench healthcare, about 230 biomedical PDFs and 20 images.
 There is no gold answer set, so the optimizer generates its own exam and uses it
 as both the tuning target and the score. Every method also minimizes per-query
 LLM cost, which makes it a two-objective run. The matrix is 4 methods
-(`agentic_cost`, `random`, `motpe`, `motpe_warm`) and 3 seeds, at 30 trials each.
+(`agentic_cost`, `random`, `motpe`, `motpe_warm`) and 10 seeds, at 30 trials each.
 Results land under `experiment-2/unidoc/`.
 
 Unlike Experiment 1, this is a single command. The scheduler
 `scripts/run_experiment2.py` first builds the shared setup (download and parse
-the corpus, then generate and freeze the exam), then runs the 12 (method, seed)
+the corpus, then generate and freeze the exam), then runs the 40 (method, seed)
 pairs with at most 2 at once and the same `motpe_warm` after `random` gating, and
 finally renders the figures and `hypervolume.json`.
 
@@ -104,7 +104,7 @@ finally renders the figures and `hypervolume.json`.
 # Preview the plan:
 uv run python scripts/run_experiment2.py --dry-run
 
-# Run in the background (about 7 hours with 2 workers):
+# Run in the background (the better part of a day, roughly 18 hours with 2 workers):
 mkdir -p experiment-2/logs
 setsid nohup uv run python scripts/run_experiment2.py --workers 2 \
     > experiment-2/logs/nohup.out 2>&1 &
@@ -172,11 +172,11 @@ Experiment 2 uses the same per-pair layout under
   scored wrong. These questions count toward answer accuracy but not retrieval
   metrics, since there are no documents to retrieve.
 - **Provenance.** The optimizer lives at `../Agentic-AutoRAG` as a path dependency
-  and keeps changing after the runs, so each Experiment 1 result records the
-  optimizer version and commit in `bench_metadata.json`. Before the final runs,
-  tag that commit, for example `git -C ../Agentic-AutoRAG tag v0.1.0-paper`.
-  Experiment 2 does not write this file yet. For now its provenance is the git
-  commit of the results tree.
+  and keeps changing after the runs, so each result records the optimizer version
+  and commit in `bench_metadata.json` — Experiment 1 under
+  `experiment-1/<dataset>/` and Experiment 2 under `experiment-2/unidoc/`. Before
+  the final runs, tag that commit, for example
+  `git -C ../Agentic-AutoRAG tag v0.1.0-paper`.
 - The earlier AutoRAG baseline was removed from the active matrix and is kept
   under `agentic_autorag_bench/_deprecated/`.
 ```

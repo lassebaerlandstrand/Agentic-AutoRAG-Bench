@@ -28,3 +28,69 @@
 2026-07-06T15:41:08Z START finalize attempt=1
 2026-07-06T15:41:18Z DONE finalize rc=0
 2026-07-06T15:41:18Z COMPLETE_OK
+2026-07-17T17:51:11Z LAUNCH config=/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/configs/unidoc_pareto.yaml workers=2 methods=agentic_cost,random,motpe,motpe_warm seeds=4,5,6,7,8,9,10 units=30
+2026-07-17T17:51:11Z START agentic_cost/seed_4 attempt=1
+2026-07-17T17:51:11Z START random/seed_4 attempt=1
+2026-07-17T18:47:12Z DONE random/seed_4 rc=0
+2026-07-17T18:47:12Z START motpe_warm/seed_4 attempt=1
+2026-07-17T18:51:48Z DONE agentic_cost/seed_4 rc=0
+2026-07-17T18:51:48Z START motpe/seed_4 attempt=1
+2026-07-17T19:30:21Z DONE motpe_warm/seed_4 rc=0
+2026-07-17T19:30:21Z START agentic_cost/seed_5 attempt=1
+2026-07-17T19:55:20Z DONE motpe/seed_4 rc=0
+2026-07-17T19:55:20Z START random/seed_5 attempt=1
+2026-07-17T20:28:48Z DONE agentic_cost/seed_5 rc=0
+2026-07-17T20:28:48Z START motpe/seed_5 attempt=1
+2026-07-17T20:58:41Z DONE random/seed_5 rc=0
+2026-07-17T20:58:41Z START motpe_warm/seed_5 attempt=1
+2026-07-17T21:30:16Z DONE motpe/seed_5 rc=0
+2026-07-17T21:30:16Z START agentic_cost/seed_6 attempt=1
+2026-07-17T21:53:00Z DONE motpe_warm/seed_5 rc=0
+2026-07-17T21:53:00Z START random/seed_6 attempt=1
+2026-07-17T22:20:54Z DONE agentic_cost/seed_6 rc=0
+2026-07-17T22:20:54Z START motpe/seed_6 attempt=1
+2026-07-17T22:37:39Z DONE random/seed_6 rc=0
+2026-07-17T22:37:39Z START motpe_warm/seed_6 attempt=1
+2026-07-17T23:01:53Z RETRY motpe/seed_6 reason=incomplete-after-exit0 next_attempt=2 wait_s=60
+2026-07-17T23:01:53Z START agentic_cost/seed_7 attempt=1
+2026-07-17T23:19:46Z DONE motpe_warm/seed_6 rc=0
+2026-07-17T23:19:46Z START motpe/seed_6 attempt=2
+2026-07-17T23:25:05Z DONE motpe/seed_6 rc=0
+2026-07-17T23:25:05Z START random/seed_7 attempt=1
+2026-07-17T23:54:15Z DONE agentic_cost/seed_7 rc=0
+2026-07-17T23:54:15Z START motpe/seed_7 attempt=1
+2026-07-18T00:08:29Z DONE random/seed_7 rc=0
+2026-07-18T00:08:29Z START motpe_warm/seed_7 attempt=1
+2026-07-18T00:38:09Z DONE motpe/seed_7 rc=0
+2026-07-18T00:38:09Z START agentic_cost/seed_8 attempt=1
+2026-07-18T01:00:48Z RETRY motpe_warm/seed_7 reason=incomplete-after-exit0 next_attempt=2 wait_s=60
+2026-07-18T01:00:48Z START random/seed_8 attempt=1
+2026-07-18T01:31:34Z DONE agentic_cost/seed_8 rc=0
+2026-07-18T01:31:34Z START motpe_warm/seed_7 attempt=2
+2026-07-18T01:33:08Z DONE motpe_warm/seed_7 rc=0
+2026-07-18T01:33:08Z START motpe/seed_8 attempt=1
+2026-07-18T01:47:36Z DONE random/seed_8 rc=0
+2026-07-18T01:47:36Z START motpe_warm/seed_8 attempt=1
+2026-07-18T02:18:47Z DONE motpe_warm/seed_8 rc=0
+2026-07-18T02:18:47Z START agentic_cost/seed_9 attempt=1
+2026-07-18T02:22:56Z DONE motpe/seed_8 rc=0
+2026-07-18T02:22:56Z START random/seed_9 attempt=1
+2026-07-18T03:09:52Z RETRY agentic_cost/seed_9 reason=incomplete-after-exit0 next_attempt=2 wait_s=60
+2026-07-18T03:09:52Z START motpe/seed_9 attempt=1
+2026-07-18T03:22:46Z DONE random/seed_9 rc=0
+2026-07-18T03:22:46Z START agentic_cost/seed_9 attempt=2
+2026-07-18T03:25:15Z DONE agentic_cost/seed_9 rc=0
+2026-07-18T03:25:15Z START motpe_warm/seed_9 attempt=1
+2026-07-18T03:48:27Z DONE motpe/seed_9 rc=0
+2026-07-18T03:48:27Z START agentic_cost/seed_10 attempt=1
+2026-07-18T04:09:42Z DONE motpe_warm/seed_9 rc=0
+2026-07-18T04:09:42Z START random/seed_10 attempt=1
+2026-07-18T04:58:37Z DONE random/seed_10 rc=0
+2026-07-18T04:58:37Z START motpe_warm/seed_10 attempt=1
+2026-07-18T05:00:44Z RETRY agentic_cost/seed_10 reason=incomplete-after-exit0 next_attempt=2 wait_s=60
+2026-07-18T05:00:44Z START motpe/seed_10 attempt=1
+2026-07-18T06:02:58Z DONE motpe/seed_10 rc=0
+2026-07-18T06:02:58Z START agentic_cost/seed_10 attempt=2
+2026-07-18T06:14:30Z DONE agentic_cost/seed_10 rc=0
+2026-07-18T06:14:47Z DONE motpe_warm/seed_10 rc=0
+2026-07-18T06:14:47Z COMPLETE_OK
