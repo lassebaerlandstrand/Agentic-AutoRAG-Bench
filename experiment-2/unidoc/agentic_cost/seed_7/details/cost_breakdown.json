@@ -1,0 +1,50 @@
+{
+  "total_usd": 4.32605944499999,
+  "buckets": {
+    "exam_generation": {
+      "usd": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 0,
+      "n_calls": 1
+    },
+    "agent_proposal": {
+      "usd": 0.7646408999999998,
+      "prompt_tokens": 1058312,
+      "completion_tokens": 42790,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 0,
+      "n_calls": 64
+    },
+    "embedding_build": {
+      "usd": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 7800342,
+      "n_calls": 3
+    },
+    "rag_eval": {
+      "usd": 2.852678424999986,
+      "prompt_tokens": 11716856,
+      "completion_tokens": 1211746,
+      "cache_read_input_tokens": 509568,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 0,
+      "n_calls": 5511
+    },
+    "judge": {
+      "usd": 0.708740120000004,
+      "prompt_tokens": 1207790,
+      "completion_tokens": 4894,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "embedding_input_tokens": 0,
+      "n_calls": 2198
+    }
+  }
+}

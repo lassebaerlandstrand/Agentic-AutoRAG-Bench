@@ -1,0 +1,34 @@
+{
+  "corpus": {
+    "domain": "healthcare",
+    "max_pdfs": 230,
+    "max_images": 20
+  },
+  "project_config_path": "/home/ordenter/ASL/autorag-workspace/agentic-autorag-bench/configs/unidoc_pareto_project.yaml",
+  "methods": [
+    "agentic_cost",
+    "random",
+    "motpe",
+    "motpe_warm"
+  ],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "max_trials": 30,
+  "cost_aware": true,
+  "agentic_autorag": {
+    "version": "0.1.0",
+    "commit": "dbb9b7ebda13ed99b596d59df234025d4ed010dd",
+    "describe": "dbb9b7e",
+    "dirty": false
+  }
+}

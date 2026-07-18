@@ -1,0 +1,7 @@
+{"trial_number": null, "cache_kind": "exam", "cache_key": "exam_25b675afc407f161", "tokens_credited": 0, "phase": "exam_gen"}
+{"trial_number": 1, "cache_kind": "embeddings", "cache_key": "1df433c21e31c029", "tokens_credited": 2681876, "embedding_model": "IEITYuan/Yuan-embedding-2.0-en", "phase": "trial"}
+{"trial_number": 2, "cache_kind": "embeddings", "cache_key": "e9aef96a6e08b021", "tokens_credited": 2412075, "embedding_model": "BAAI/bge-small-en-v1.5", "phase": "trial"}
+{"trial_number": 13, "cache_kind": "embeddings", "cache_key": "32e82f64ab7f5f8f", "tokens_credited": 2332927, "embedding_model": "BAAI/bge-large-en-v1.5", "phase": "trial"}
+{"trial_number": 19, "cache_kind": "embeddings", "cache_key": "89e4d2dbb0329072", "tokens_credited": 2332927, "embedding_model": "BAAI/bge-small-en-v1.5", "phase": "trial"}
+{"trial_number": 27, "cache_kind": "embeddings", "cache_key": "86d619cfab658727", "tokens_credited": 2496420, "embedding_model": "ibm-granite/granite-embedding-small-english-r2", "phase": "trial"}
+{"trial_number": null, "cache_kind": "exam", "cache_key": "exam_25b675afc407f161", "tokens_credited": 0, "phase": "exam_gen"}
