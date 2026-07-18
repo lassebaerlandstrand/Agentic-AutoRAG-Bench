@@ -41,6 +41,7 @@ from agentic_autorag_bench.plots import (
     make_pareto_figure,
     make_pareto_frontier_annotated_figure,
     make_pareto_hv_convergence_figure,
+    make_pareto_hypervolume_box_figure,
     make_pareto_median_hv_combined_figure,
 )
 
@@ -494,6 +495,12 @@ async def run_pareto(
         )
     except Exception:
         logger.warning("hypervolume figure failed", exc_info=True)
+    try:
+        make_pareto_hypervolume_box_figure(
+            cfg.output_root, figures_dir / "pareto_hypervolume_box.png", domain=cfg.corpus_domain
+        )
+    except Exception:
+        logger.warning("hypervolume box figure failed", exc_info=True)
     try:
         make_pareto_median_hv_combined_figure(
             cfg.output_root, figures_dir / "pareto_median_and_hypervolume.png",

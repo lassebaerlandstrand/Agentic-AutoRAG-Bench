@@ -19,6 +19,7 @@ from agentic_autorag_bench.pareto import (
 )
 from agentic_autorag_bench.plots import (
     _attainment_curve,
+    _attainment_quantiles,
     _attainment_stats,
     _describe_config,
     _load_method_seed_points,
@@ -35,6 +36,7 @@ from agentic_autorag_bench.plots import (
     make_pareto_figure,
     make_pareto_frontier_annotated_figure,
     make_pareto_hv_convergence_figure,
+    make_pareto_hypervolume_box_figure,
     make_pareto_median_hv_combined_figure,
 )
 
@@ -399,6 +401,25 @@ def test_attainment_stats_frontier_shows_single_seed_cheap_point() -> None:
     assert hi[0] == 0.5 and lo[0] == 0.0  # frontier reaches the cheap point; floor does not
 
 
+def test_attainment_quantiles_monotone_and_zero_padded() -> None:
+    # The IQR band's quartiles: p25 <= p50 <= p75 everywhere, 0-padded below the
+    # cheapest trial (like the attainment curve), and a positive interval once every
+    # seed has coverage.
+    import numpy as np
+
+    seeds = [
+        [_point(1, 0.001, 0.5), _point(2, 0.004, 0.9)],
+        [_point(1, 0.002, 0.6), _point(2, 0.004, 0.8)],
+        [_point(1, 0.002, 0.7), _point(2, 0.004, 0.85)],
+        [_point(1, 0.004, 0.8)],  # nothing under 0.004
+    ]
+    grid = np.array([0.0005, 0.001, 0.002, 0.004])
+    p25, p50, p75 = _attainment_quantiles(seeds, grid)
+    assert p25[0] == 0.0 and p50[0] == 0.0 and p75[0] == 0.0  # below every seed's cheapest
+    assert np.all(p25 <= p50) and np.all(p50 <= p75)  # proper interquartile envelope
+    assert p25[-1] > 0.0  # every seed covers the dearest cost -> band is a positive interval
+
+
 def test_make_pareto_attainment_figure_emits_png(tmp_path) -> None:
     _write_run_tree(tmp_path)
     out = tmp_path / "figures" / "pareto_attainment.png"
@@ -431,6 +452,39 @@ def test_make_pareto_median_hv_combined_figure_no_points_is_noop(tmp_path) -> No
     (tmp_path / "agentic_cost" / "seed_1").mkdir(parents=True)  # empty: no history
     out = tmp_path / "figures" / "pareto_median_and_hypervolume.png"
     make_pareto_median_hv_combined_figure(tmp_path, out, cost_ref=0.006)
+    assert not out.exists()
+
+
+def _write_hv_json(root: Path, per_seed: dict[str, list[float]]) -> None:
+    methods = {
+        m: {
+            "hypervolume_per_seed": v,
+            "hypervolume_mean": sum(v) / len(v),
+            "hypervolume_min": min(v),
+            "hypervolume_max": max(v),
+            "n_seeds": len(v),
+        }
+        for m, v in per_seed.items()
+    }
+    (root / "hypervolume.json").write_text(
+        json.dumps({"score_reference": 0.0, "cost_reference": 0.046, "methods": methods}),
+        encoding="utf-8",
+    )
+
+
+def test_make_pareto_hypervolume_box_figure_emits_png(tmp_path) -> None:
+    _write_hv_json(tmp_path, {
+        "agentic_cost": [0.70, 0.75, 0.80, 0.78],
+        "random": [0.60, 0.62, 0.65, 0.58],
+    })
+    out = tmp_path / "figures" / "pareto_hypervolume_box.png"
+    make_pareto_hypervolume_box_figure(tmp_path, out, domain="healthcare")
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_make_pareto_hypervolume_box_figure_no_json_is_noop(tmp_path) -> None:
+    out = tmp_path / "figures" / "pareto_hypervolume_box.png"
+    make_pareto_hypervolume_box_figure(tmp_path, out)  # no hypervolume.json present
     assert not out.exists()
 
 
