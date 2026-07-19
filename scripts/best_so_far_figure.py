@@ -103,7 +103,13 @@ def build_best_so_far_figure(
         "axes.labelsize": 12,
         "xtick.labelsize": 11,
         "ytick.labelsize": 11.5,
-        "legend.fontsize": 12,
+        # The figure is saved with ``savefig.bbox="tight"``, so the widest artist
+        # sets the file's width. At 12pt the one-row legend is wider than the
+        # panels and the crop leaves dead space either side of them; at 10pt the
+        # panels become the widest artist, so they span the file edge to edge.
+        # The narrower file is magnified more at \textwidth, which cancels out:
+        # the legend still renders at ~12pt on the page, the axis labels larger.
+        "legend.fontsize": 10,
     }
     with plt.rc_context(font_overrides):
         fig, axes = plt.subplots(1, n, figsize=(9.6, 3.1), sharey=True)

@@ -293,17 +293,24 @@ def build_figure(per_dataset_results: list[tuple[str, str, list]], out_path: Pat
 # ---------------------------------------------------------------- cost figure
 
 
-def _minmax(vals: list[float]) -> tuple[float, float, float]:
-    """``(mean, lower, upper)`` where lower/upper are the min-max whisker
-    magnitudes about the mean (``mean - min`` and ``max - mean``)."""
+def _mean_sd(vals: list[float]) -> tuple[float, float, float]:
+    """``(mean, lower, upper)`` whisker magnitudes about the mean, both = 1 SD.
+
+    Sample SD (``ddof=1``), matching Table 1 and the trajectory figures. The
+    whisker is symmetric, so lower and upper are equal; the pair is kept so
+    callers stay compatible with matplotlib's ``xerr=[lo, hi]``. SD rather than
+    the range because the range grows with the seed count, which would make the
+    10-seed whiskers look far wider than the 3-seed ones for no real reason.
+    """
     mean = float(np.mean(vals))
-    return mean, mean - min(vals), max(vals) - mean
+    sd = float(np.std(vals, ddof=1)) if len(vals) > 1 else 0.0
+    return mean, sd, sd
 
 
 def _cost_totals(stats: dict, method: str) -> tuple[float, float, tuple[float, float, float]]:
     """``(opt_mean, trial_mean, (total_mean, lo, hi))`` for one method.
 
-    The whisker is the min-max of the per-seed *totals* (optimizer + trial),
+    The whisker is +/- 1 SD of the per-seed *totals* (optimizer + trial),
     which is the right quantity for a stacked bar's error mark. Absent method →
     all zeros so the bar renders empty rather than erroring.
     """
@@ -311,14 +318,14 @@ def _cost_totals(stats: dict, method: str) -> tuple[float, float, tuple[float, f
         return 0.0, 0.0, (0.0, 0.0, 0.0)
     s = stats[method]
     seed_totals = [o + t for o, t in zip(s["optimizer_usd_list"], s["trial_usd_list"], strict=True)]
-    return s["optimizer_usd_mean"], s["trial_usd_mean"], _minmax(seed_totals)
+    return s["optimizer_usd_mean"], s["trial_usd_mean"], _mean_sd(seed_totals)
 
 
 def _embed_millions(stats: dict, method: str) -> tuple[float, float, float]:
-    """``(mean, lo, hi)`` embedding tokens in millions, min-max across seeds."""
+    """``(mean, lo, hi)`` embedding tokens in millions, +/- 1 SD across seeds."""
     if method not in stats:
         return 0.0, 0.0, 0.0
-    return _minmax([e / 1e6 for e in stats[method]["embedding_tokens_list"]])
+    return _mean_sd([e / 1e6 for e in stats[method]["embedding_tokens_list"]])
 
 
 _OPT_GRAY = "#9e9e9e"  # neutral hue for the optimizer-reasoning segment (gray split style)
@@ -334,7 +341,7 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, 
     evaluation (RAG generation + judge); the statistical baselines have no
     optimizer-reasoning cost. Right panel: cache-aware embedding tokens (millions),
     a single solid bar. Within each method the three datasets are color-coded bars,
-    each with a min-max-across-seeds whisker on the total and its value printed at
+    each with a +/- 1 SD across-seeds whisker on the total and its value printed at
     the bar's end. Horizontal bars keep the long method names unrotated.
 
     ``split_style`` picks how the optimizer segment is drawn: ``"gray"`` paints it
@@ -455,7 +462,7 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, 
         else:
             opt_handle = Patch(color=_OPT_GRAY, label="Optimizer reasoning")
         handles.append(opt_handle)
-        handles.append(Line2D([], [], color="#333", lw=0.9, marker="|", markersize=9, label="Min–max across seeds"))
+        handles.append(Line2D([], [], color="#333", lw=0.9, marker="|", markersize=9, label="±1 SD across seeds"))
         fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, bbox_to_anchor=(0.5, 0.01))
         fig.tight_layout(rect=(0, 0.07, 1, 1))
         fig.savefig(out_path)
