@@ -38,7 +38,9 @@ from agentic_autorag_bench._figstyle import (
     display_label,
     fig_width_for,
     legend_outside,
+    outline_pdf_fonts,
     style_method_xticks,
+    use_paper_serif,
 )
 from agentic_autorag_bench._figstyle import (
     color_for as _color_for,
@@ -1550,25 +1552,39 @@ def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, d
         return
 
     apply_paper_style()
+    use_paper_serif()  # match the paper body font (TeX Gyre Termes)
     plt = _import_matplotlib()
-    # Keep the spacious 7.2in canvas (uncramped) but bump fonts modestly so they
-    # stay legible after the figure is downscaled into a single \columnwidth slot.
+    # Drawn near its \columnwidth print size so text stays legible without a large
+    # downscale. On-page sizes ~ title 9.5, labels 9.0, legend 8.6, ticks 8.4 pt.
+    # Height 2.87 keeps the plot rectangle the same shape it had at the larger,
+    # more-downscaled size once the (bigger) text margins are taken out.
     # The legend title is dropped (legend_title=None) since the caption carries it.
     font_overrides = {
-        "axes.titlesize": 15,
-        "axes.labelsize": 14,
-        "xtick.labelsize": 12.5,
-        "ytick.labelsize": 12.5,
-        "legend.fontsize": 13,
+        "axes.titlesize": 12.4,
+        "axes.labelsize": 11.8,
+        "xtick.labelsize": 11.0,
+        "ytick.labelsize": 11.0,
+        "legend.fontsize": 11.2,
     }
     with plt.rc_context(font_overrides):
-        fig, ax = plt.subplots(figsize=(7.2, 4.6))
+        fig, ax = plt.subplots(figsize=(4.5, 2.87))
         _draw_median_attainment_panel(ax, method_seed_points, grid, domain=domain,
                                       legend_title=None)
+        # Thin the trend lines by ~0.66x so they render at the on-page weight they
+        # had when the figure was drawn larger and downscaled more. Faint band
+        # edges (lw < 1) are left untouched.
+        for _ln in ax.get_lines():
+            if _ln.get_linewidth() > 1.0:
+                _ln.set_linewidth(_ln.get_linewidth() * 0.66)
+        _leg = ax.get_legend()
+        if _leg is not None:
+            for _ln in _leg.get_lines():
+                _ln.set_linewidth(_ln.get_linewidth() * 0.66)
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
+    outline_pdf_fonts(out_path)  # embed no fonts (avoids Type-3 and CID/Identity-H)
 
 
 def _pooled_frontier(seed_points: list[list[_TrialPoint]]) -> list[_TrialPoint]:

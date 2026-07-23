@@ -35,7 +35,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
-from agentic_autorag_bench._figstyle import apply_paper_style, color_for, display_label  # noqa: E402
+from agentic_autorag_bench._figstyle import (  # noqa: E402
+    apply_paper_style,
+    color_for,
+    display_label,
+    outline_pdf_fonts,
+    use_paper_serif,
+)
 from agentic_autorag_bench.analyze import (  # noqa: E402
     aggregate_by_method,
     load_results,
@@ -352,6 +358,7 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, 
     from matplotlib.patches import Patch
 
     apply_paper_style()
+    use_paper_serif()
     methods = COST_METHODS
     labels = [label_for(m) for m in methods]
     nm = len(methods)
@@ -367,13 +374,13 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, 
     # paper default so they stay legible after the downscale. Scoped to this figure
     # so ``score_per_trial`` is unaffected.
     font_overrides = {
-        "axes.titlesize": 15,
-        "axes.labelsize": 14,
-        "xtick.labelsize": 12.5,
-        "ytick.labelsize": 13.5,
-        "legend.fontsize": 13.5,
+        "axes.titlesize": 16,
+        "axes.labelsize": 15,
+        "xtick.labelsize": 13.8,  # x-axis value numbers, trimmed (~8.4pt on page)
+        "ytick.labelsize": 15,  # method names, kept legible
+        "legend.fontsize": 15,
     }
-    value_fontsize = 12  # number at each bar's end
+    value_fontsize = 13.8  # number at each bar's end, trimmed (~8.4pt on page)
 
     def _annotate_ends(ax, y, ends, hi, fmt):
         for yi, ev, hv in zip(y, ends, hi, strict=True):
@@ -467,6 +474,7 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, 
         fig.tight_layout(rect=(0, 0.07, 1, 1))
         fig.savefig(out_path)
         plt.close(fig)
+    outline_pdf_fonts(out_path)  # embed no fonts (avoids Type-3 and CID/Identity-H)
 
 
 # ---------------------------------------------------------------- entry point
