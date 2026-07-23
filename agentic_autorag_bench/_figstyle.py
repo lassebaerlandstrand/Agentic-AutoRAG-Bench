@@ -46,7 +46,7 @@ _DISPLAY_LABEL: dict[str, str] = {
     "agentic_nokb_nodiag": "Agentic (no KB, no diag)",
     "random": "Random",
     "motpe": "MO-TPE",
-    "motpe_warm": "MO-TPE (transfer warm-start)",
+    "motpe_warm": "MO-TPE (warm)",
     "qlognehvi": "GP-BO (qLogNEHVI)",
 }
 
@@ -87,6 +87,11 @@ def apply_paper_style() -> None:
 
     mpl.rcParams.update(
         {
+            # Embed TrueType (Type-42) fonts in vector output instead of
+            # matplotlib's default Type-3 bitmap fonts, which AAAI and most
+            # venues reject. Applies to every PDF/PS/EPS figure this style drives.
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
             "font.size": 11,
             "axes.titlesize": 12,
             # A touch more gap than matplotlib's default 6.0 so plain in-axes
@@ -104,6 +109,65 @@ def apply_paper_style() -> None:
             "savefig.pad_inches": 0.15,
         }
     )
+
+
+def use_paper_serif() -> None:
+    """Switch matplotlib to the paper's body serif (TeX Gyre Termes = newtxtext).
+
+    Registers the Termes OTF files if present (they ship with TeX Live) and
+    selects them for text and math; falls back to matplotlib's built-in STIX Two
+    (also a Times clone) when they are not found. Paper figures are outlined
+    before use, so this only affects how glyphs are drawn, not what is embedded.
+    """
+    import glob
+
+    import matplotlib as mpl
+    from matplotlib import font_manager as fm
+
+    termes = glob.glob("/usr/share/texmf/**/texgyretermes-*.otf", recursive=True)
+    if termes:
+        for f in termes:
+            fm.fontManager.addfont(f)
+        mpl.rcParams.update(
+            {
+                "font.family": "serif",
+                "font.serif": ["TeX Gyre Termes"],
+                "mathtext.fontset": "custom",
+                "mathtext.rm": "TeX Gyre Termes",
+                "mathtext.it": "TeX Gyre Termes:italic",
+                "mathtext.bf": "TeX Gyre Termes:bold",
+            }
+        )
+    else:
+        mpl.rcParams.update(
+            {"font.family": "serif", "font.serif": ["STIX Two Text", "DejaVu Serif"], "mathtext.fontset": "stix"}
+        )
+
+
+def outline_pdf_fonts(path) -> None:
+    """Convert all text in a PDF figure to vector outlines (no embedded fonts).
+
+    Ghostscript's ``-dNoOutputFonts`` re-renders every glyph as a path, so the
+    result carries neither Type-3 nor CID/Identity-H fonts, both of which AAAI's
+    font rules flag (Type-3 is an explicit desk-reject). No-op for non-PDF paths
+    or when Ghostscript is unavailable.
+    """
+    import shutil
+    import subprocess
+    from pathlib import Path
+
+    p = Path(path)
+    if p.suffix.lower() != ".pdf" or shutil.which("gs") is None:
+        return
+    tmp = p.parent / (p.stem + "__outlined.pdf")
+    r = subprocess.run(
+        ["gs", "-o", str(tmp), "-sDEVICE=pdfwrite", "-dNoOutputFonts", str(p)],
+        capture_output=True,
+    )
+    if r.returncode == 0 and tmp.exists():
+        tmp.replace(p)
+    elif tmp.exists():
+        tmp.unlink()
 
 
 def fig_width_for(n_groups: int, *, base: float = 6.0, per_group: float = 1.1, cap: float = 16.0) -> float:

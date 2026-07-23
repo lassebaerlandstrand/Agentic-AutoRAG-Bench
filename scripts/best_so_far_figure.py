@@ -37,7 +37,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
-from agentic_autorag_bench._figstyle import apply_paper_style, color_for  # noqa: E402
+from agentic_autorag_bench._figstyle import apply_paper_style, color_for, outline_pdf_fonts, use_paper_serif  # noqa: E402
 from agentic_autorag_bench.analyze import load_results  # noqa: E402
 
 # Reuse the paper figure's dataset order, line set, and labels verbatim so this
@@ -97,19 +97,17 @@ def build_best_so_far_figure(
 ) -> None:
     """3-panel best-so-far figure (mean +/- 1 SD), mirroring ``build_figure``."""
     apply_paper_style()
+    use_paper_serif()  # match the paper body font (TeX Gyre Termes)
     n = len(per_dataset_results)
+    # Single-row legend kept (matches the paper's layout). It is the widest artist,
+    # so its width caps the on-page text; legend 10.8pt sits at the one-row fit
+    # boundary. On-page ~ titles 9.1, y-label 8.6, ticks 8.3, legend 7.9 pt.
     font_overrides = {
-        "axes.titlesize": 13,
-        "axes.labelsize": 12,
-        "xtick.labelsize": 11,
-        "ytick.labelsize": 11.5,
-        # The figure is saved with ``savefig.bbox="tight"``, so the widest artist
-        # sets the file's width. At 12pt the one-row legend is wider than the
-        # panels and the crop leaves dead space either side of them; at 10pt the
-        # panels become the widest artist, so they span the file edge to edge.
-        # The narrower file is magnified more at \textwidth, which cancels out:
-        # the legend still renders at ~12pt on the page, the axis labels larger.
-        "legend.fontsize": 10,
+        "axes.titlesize": 12.5,
+        "axes.labelsize": 11.8,
+        "xtick.labelsize": 11.3,
+        "ytick.labelsize": 11.3,
+        "legend.fontsize": 10.8,
     }
     with plt.rc_context(font_overrides):
         fig, axes = plt.subplots(1, n, figsize=(9.6, 3.1), sharey=True)
@@ -165,6 +163,7 @@ def build_best_so_far_figure(
         fig.tight_layout(rect=(0, 0.08, 1, 1))
         fig.savefig(out_path)
         plt.close(fig)
+    outline_pdf_fonts(out_path)  # embed no fonts (avoids Type-3 and CID/Identity-H)
 
 
 # ---------------------------------------------------------------- entry point

@@ -472,9 +472,11 @@ async def run_pareto(
     except Exception:
         logger.warning("cost-accuracy figure failed", exc_info=True)
     try:
-        make_pareto_attainment_median_figure(
-            cfg.output_root, figures_dir / "pareto_cost_accuracy_median.png", domain=cfg.corpus_domain
-        )
+        # Emit the paper figure as vector PDF (crisp, embeddable fonts) and PNG.
+        for ext in ("png", "pdf"):
+            make_pareto_attainment_median_figure(
+                cfg.output_root, figures_dir / f"pareto_cost_accuracy_median.{ext}", domain=cfg.corpus_domain
+            )
     except Exception:
         logger.warning("cost-accuracy median figure failed", exc_info=True)
     try:
