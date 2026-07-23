@@ -110,6 +110,25 @@ PAPER_LABEL = {
 
 METRICS = [("em", "EM"), ("f1", "F1"), ("judge", "Judge")]
 
+# ---- answer-quality figure (the Exp-1 Table-1 / paper Table-2 replacement) ----
+# 3x3 small multiples (rows = dataset, cols = EM/F1/Judge), one bar per method,
+# per-panel auto-scaled y (the datasets differ ~4x in absolute score, so a shared
+# axis would flatten MuSiQue), +/-1 SD across-seeds whisker. The palette groups
+# methods into families: a blue ramp for the statistical baselines, a green ramp
+# for the Agentic family (maximally-ablated baseline + @10/@20 checkpoints),
+# Agentic (Ours) highlighted orange with a black outline, KB Greedy gray.
+ANSWER_QUALITY_METHODS = [
+    "random", "motpe", "motpe_warm",
+    "agentic_nokb_nodiag", "agentic_score@10", "agentic_score@20",
+    "agentic_score", "kb_greedy",
+]
+ANSWER_QUALITY_COLOR = {
+    "random": "#9ecae1", "motpe": "#4292c6", "motpe_warm": "#08519c",
+    "agentic_nokb_nodiag": "#a1d99b", "agentic_score@10": "#74c476", "agentic_score@20": "#238b45",
+    "agentic_score": "#e6550d", "kb_greedy": "#bdbdbd",
+}
+ANSWER_QUALITY_HERO = "agentic_score"
+
 
 def label_for(method: str) -> str:
     return PAPER_LABEL.get(method, display_label(method))
@@ -477,6 +496,63 @@ def build_cost_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path, 
     outline_pdf_fonts(out_path)  # embed no fonts (avoids Type-3 and CID/Identity-H)
 
 
+# ---------------------------------------------------------------- answer-quality figure
+
+
+def build_answer_quality_figure(per_dataset: list[tuple[str, str, dict]], out_path: Path) -> None:
+    """Exp-1 answer-quality figure -- the drop-in replacement for ``tab:holdout``.
+
+    3x3 small multiples: rows = dataset, columns = EM / F1 / Judge, one bar per
+    method with a +/-1 SD across-seeds whisker (same SD as Table 1). Each panel
+    auto-scales to its own range so MuSiQue's ~4x-lower scores are not flattened
+    against HotpotQA/MultiHop. Methods are colored by family -- a blue ramp for
+    the statistical baselines, a green ramp for the Agentic ablation/@10/@20
+    family -- with Agentic (Ours) highlighted orange + black outline and KB Greedy
+    gray (``ANSWER_QUALITY_COLOR``). Vector PDF; fonts outlined like the others.
+    """
+    from matplotlib.patches import Patch
+
+    apply_paper_style()
+    use_paper_serif()  # paper body serif (TeX Gyre Termes), consistent with the other figures
+    methods = ANSWER_QUALITY_METHODS
+    x = np.arange(len(methods))
+    colors = [ANSWER_QUALITY_COLOR[m] for m in methods]
+    edgecolors = ["black" if m == ANSWER_QUALITY_HERO else "#4d4d4d" for m in methods]
+    linewidths = [1.6 if m == ANSWER_QUALITY_HERO else 0.4 for m in methods]
+
+    fig, axes = plt.subplots(3, 3, figsize=(13.5, 10.0))
+    for i, (_dir, header, stats) in enumerate(per_dataset):
+        for j, (metric, mlbl) in enumerate(METRICS):
+            ax = axes[i][j]
+            pairs = [mean_sd_of(stats, m, metric) or (0.0, 0.0) for m in methods]
+            means = np.array([p[0] for p in pairs])
+            sds = np.array([p[1] for p in pairs])
+            ax.bar(x, means, width=0.8, color=colors, edgecolor=edgecolors, linewidth=linewidths,
+                   yerr=sds, capsize=4, error_kw={"elinewidth": 1.2, "ecolor": "#222"}, zorder=3)
+            ax.set_ylim(0, float((means + sds).max()) * 1.12)
+            ax.set_xticks([])  # method identity comes from the shared color legend
+            ax.set_xlim(-0.7, len(methods) - 0.3)
+            ax.grid(axis="y", linestyle="--", alpha=0.4, zorder=0)
+            ax.set_axisbelow(True)
+            ax.tick_params(labelsize=11)
+            if i == 0:
+                ax.set_title(mlbl, fontsize=14, fontweight="bold", pad=10)
+            if j == 0:
+                ax.set_ylabel(header, fontsize=13, fontweight="bold", labelpad=8)
+
+    handles = [
+        Patch(facecolor=ANSWER_QUALITY_COLOR[m], edgecolor="black" if m == ANSWER_QUALITY_HERO else "#4d4d4d",
+              linewidth=1.4 if m == ANSWER_QUALITY_HERO else 0.4, label=label_for(m))
+        for m in methods
+    ]
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False,
+               fontsize=12, bbox_to_anchor=(0.5, 0.0), columnspacing=2.0, handlelength=1.6)
+    fig.tight_layout(rect=(0, 0.06, 1, 1.0))
+    fig.savefig(out_path)
+    plt.close(fig)
+    outline_pdf_fonts(out_path)  # embed no fonts (avoids Type-3 and CID/Identity-H)
+
+
 # ---------------------------------------------------------------- entry point
 
 
@@ -494,6 +570,8 @@ def main() -> None:
     cost_png = OUT_DIR / "cost_and_embeddings.png"
     cost_gray_pdf = OUT_DIR / "cost_and_embeddings_gray.pdf"
     cost_gray_png = OUT_DIR / "cost_and_embeddings_gray.png"
+    # Answer-quality figure: PDF only (the Table-1 / paper Table-2 replacement).
+    answer_quality_pdf = OUT_DIR / "answer_quality.pdf"
 
     if args.dry_run:
         print("experiment-1 root:", EXP1_ROOT)
@@ -503,6 +581,7 @@ def main() -> None:
         print("figure ->", fig_path)
         print("cost   ->", cost_pdf, "(+ .png)  [hatched, canonical]")
         print("cost   ->", cost_gray_pdf, "(+ .png)  [gray alt]")
+        print("answer ->", answer_quality_pdf, "  [PDF only]")
         return
 
     missing = [str(d) for d, _ in dataset_dirs if not d.is_dir()]
@@ -529,6 +608,9 @@ def main() -> None:
     build_cost_figure(per_dataset_table, cost_gray_pdf, split_style="gray")
     build_cost_figure(per_dataset_table, cost_gray_png, split_style="gray")
     print("wrote", cost_png, "and", cost_gray_png, "(+ pdfs)")
+
+    build_answer_quality_figure(per_dataset_table, answer_quality_pdf)
+    print("wrote", answer_quality_pdf)
 
 
 if __name__ == "__main__":
