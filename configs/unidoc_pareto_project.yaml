@@ -162,7 +162,9 @@ search_space:
       - "azure/gpt-5.4-nano"
       - "vertex_ai/gemini-2.5-flash"
       - "vertex_ai/gemini-2.5-flash-lite"
-      - "vertex_ai/gemini-3.1-flash-lite-preview"
+      # The runs called vertex_ai/gemini-3.1-flash-lite-preview, which Google shut
+      # down 2026-05-25 when it went GA under the name below. Same model.
+      - "vertex_ai/gemini-3.1-flash-lite"
     # Per-trial reasoning toggle. The sampler will pick reasoning=True only
     # for trials whose generator supports it (via LiteLLM's
     # supports_reasoning); other trials get reasoning=False without
