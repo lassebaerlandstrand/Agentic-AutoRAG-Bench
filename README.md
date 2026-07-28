@@ -251,9 +251,10 @@ committed `splits/` and `validation_exam.json` are left alone, so the evaluation
 set stays fixed regardless.
 
 The UniDoc corpus (230 healthcare PDFs plus 20 page images, ~336 MB) downloads
-automatically on the first `pareto` run from `Salesforce/UniDoc-Bench`. That
-download is *not* revision-pinned; the exam that defines every Pareto score is
-committed, so a corpus drift would change retrieval rather than the target.
+automatically on the first `pareto` run from `Salesforce/UniDoc-Bench`, pinned to
+the revision the experiments used (`_REVISION` in
+`agentic_autorag_bench/unidoc_corpus.py`). Both the file fetches and the image
+listing are pinned, so the same 250 files come back regardless of when it runs.
 
 ### Accuracy experiment
 
