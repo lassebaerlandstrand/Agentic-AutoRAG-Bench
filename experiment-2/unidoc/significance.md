@@ -24,3 +24,17 @@ Agent: median \$0.00031, max \$0.00050 per query. Seeds that never reach it are 
 ## Per-budget attainment on the shared 240-point log cost grid [\$0.000016, \$0.012810]
 Agent lead significant vs every baseline at every grid budget from \$0.000404 upward.
 No agent-vs-baseline comparison significant in either direction at any grid budget up to \$0.000231.
+
+## Median attainment curves (the figure's line), evaluated at the trial costs
+A median attainment curve steps only at a trial cost, so these are exact rather than pinned to the nearest plotting-grid point.
+
+| method | median-curve peak | cheapest cost reaching it |
+|---|---|---|
+| agentic_cost | 77.0% | \$0.000741 |
+| motpe_warm | 71.5% | \$0.001284 |
+| motpe | 70.5% | \$0.006780 |
+| random | 69.5% | \$0.001837 |
+
+Agent matches `motpe_warm`'s median peak of 71.5% at \$0.000288, 4.46x cheaper than that baseline pays for it. The agent's own median peak costs 1.73x less than the baseline's peak.
+Agent's median curve is above every baseline's from \$0.000236 upward and never falls back behind.
+Below that, `motpe_warm` leads from \$0.000097 up to that crossover, where the agent's median runs 35%-55% and the baseline's 39%-56%.
