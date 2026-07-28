@@ -189,41 +189,38 @@ def _rescore_one(data: dict, excluded: set[str]) -> dict:
         sum(1 for r in judged if r["judge"] == 1) / len(judged) if judge_enabled and judged else None
     )
 
-    supporting_present = any(r.get("supporting_doc_ids") for r in valid)
-    if supporting_present:
+    # Retrieval aggregates are recomputed from the per-row gold/retrieved
+    # doc-ids. When no surviving row carries them there is nothing to recompute
+    # from, and the aggregates already in ``data`` are the only copy that
+    # exists — this function rewrites benchmark_results.json in place, so
+    # overwriting them with None would destroy them irrecoverably. Rows can
+    # legitimately lack doc-ids (MultiHop-RAG abstention questions have no
+    # supporting documents), and a results file whose per-question rows were
+    # slimmed for distribution has none at all. Preserve, don't null.
+    rows_with_gold = [r for r in valid if r.get("supporting_doc_ids")]
+    if rows_with_gold:
         recall_sums = {k: 0.0 for k in _RETRIEVAL_KS}
         joint_recall_sums = {k: 0.0 for k in _RETRIEVAL_KS}
         mrr_first_sum = 0.0
         mrr_complete_sum = 0.0
-        n_with_gold = 0
-        for r in valid:
-            if not r.get("supporting_doc_ids"):
-                continue
-            n_with_gold += 1
+        for r in rows_with_gold:
             recalls, joint_recalls, first_rank, complete_rank = _retrieval_metrics_for_row(r)
             for k in _RETRIEVAL_KS:
                 recall_sums[k] += recalls[k]
                 joint_recall_sums[k] += joint_recalls[k]
             mrr_first_sum += 1.0 / first_rank if first_rank else 0.0
             mrr_complete_sum += 1.0 / complete_rank if complete_rank else 0.0
-        if n_with_gold:
-            for k in _RETRIEVAL_KS:
-                out[f"recall_at_{k}"] = recall_sums[k] / n_with_gold
-                out[f"joint_recall_at_{k}"] = joint_recall_sums[k] / n_with_gold
-            out["mrr_first"] = mrr_first_sum / n_with_gold
-            out["mrr_complete"] = mrr_complete_sum / n_with_gold
-        else:
-            for k in _RETRIEVAL_KS:
-                out[f"recall_at_{k}"] = None
-                out[f"joint_recall_at_{k}"] = None
-            out["mrr_first"] = None
-            out["mrr_complete"] = None
-    else:
+        n_with_gold = len(rows_with_gold)
         for k in _RETRIEVAL_KS:
-            out[f"recall_at_{k}"] = None
-            out[f"joint_recall_at_{k}"] = None
-        out["mrr_first"] = None
-        out["mrr_complete"] = None
+            out[f"recall_at_{k}"] = recall_sums[k] / n_with_gold
+            out[f"joint_recall_at_{k}"] = joint_recall_sums[k] / n_with_gold
+        out["mrr_first"] = mrr_first_sum / n_with_gold
+        out["mrr_complete"] = mrr_complete_sum / n_with_gold
+    else:
+        logger.debug(
+            "No surviving row carries supporting_doc_ids; keeping the existing "
+            "retrieval aggregates rather than nulling them"
+        )
 
     return out
 

@@ -121,6 +121,28 @@ def test_recall_and_judge_recomputed_after_exclusion(tmp_path: Path) -> None:
     assert a["mrr_complete"] == 1.0
 
 
+def test_existing_retrieval_aggregates_survive_rows_without_doc_ids(tmp_path: Path) -> None:
+    """No surviving row carries ``supporting_doc_ids`` -> there is nothing to
+    recompute retrieval from, so the aggregates already on file must be left
+    alone. This function rewrites benchmark_results.json in place, so nulling
+    them would destroy the only copy (the failure mode hit when per-question
+    rows are slimmed for distribution)."""
+    rows = [_row("q1", judge=1), _row("q2", judge=0)]  # _row() has empty doc-id lists
+    f = _write_run(tmp_path, "agentic", "seed_42", rows)
+    data = json.loads(f.read_text())
+    data.update({"recall_at_1": 0.42, "joint_recall_at_5": 0.25, "mrr_first": 0.7, "mrr_complete": 0.5})
+    f.write_text(json.dumps(data))
+
+    apply_union_exclusion(tmp_path)
+
+    a = json.loads(f.read_text())
+    assert a["recall_at_1"] == 0.42
+    assert a["joint_recall_at_5"] == 0.25
+    assert a["mrr_first"] == 0.7
+    assert a["mrr_complete"] == 0.5
+    assert a["llm_judge_accuracy"] == 0.5  # answer aggregates still recomputed
+
+
 def test_multi_hop_aggregates_separate_first_and_complete(tmp_path: Path) -> None:
     """Multi-hop questions must produce joint_recall_at_k < recall_at_k when
     only one of the two gold docs is retrieved, and mrr_complete must reflect
