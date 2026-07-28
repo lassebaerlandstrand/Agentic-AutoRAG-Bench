@@ -1,0 +1,53 @@
+# Single-component ablations of the agentic optimizer — HotpotQA only.
+#
+# NOT RUN FOR THE PAPER. The paper reports one ablation, `agentic_nokb_nodiag`
+# ("Agentic (no KB/diag)"), which is part of the headline matrix in
+# `configs/hotpot_paper.yaml` and lives in `experiment-1/hotpot/`. This config
+# exists so the *decomposition* of that ablation can be run on demand:
+#
+#   agentic_nokb_nodiag  ->  agentic_nodiag  ->  agentic_score
+#   KB value        = agentic_nodiag  - agentic_nokb_nodiag
+#   diagnosis value = agentic_score   - agentic_nodiag
+#
+# It reuses the headline's project YAML, so the search space, model roles, and
+# frozen validation exam are identical to the headline run — only the two
+# ablated methods and the output_root differ. Results land in their own tree so
+# nothing in `experiment-1/hotpot/` is touched.
+#
+#   uv run agentic-autorag-bench run --config configs/hotpot_ablation.yaml
+#
+# Cost: 2 methods x 10 seeds x 30 trials, roughly the same per-cell cost as the
+# headline's agentic cells (~$50-60 and ~13 h of wall-clock at 2 workers).
+# Drop `seeds` to a shorter list to sample it more cheaply.
+
+project_config: ./hotpot_paper_project.yaml
+
+methods:
+  - agentic_nodiag     # KB on, per-question diagnosis off
+  - agentic_nokb       # KB off, diagnosis on
+
+seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+budget:
+  max_trials: 30
+
+# No checkpoints: the @10/@20 sample-efficiency story is a headline result and
+# each checkpoint costs an extra held-out judge pass.
+
+benchmark:
+  name: hotpot_qa
+  split: validation
+  sample_size: 2000
+  prep_seed: 42
+  output_dir: ./benchmark_data/hotpot_val_2000
+  hf_revision: 1908d6afbbead072334abe2965f91bd2709910ab
+
+hold_out:
+  # Same stratified held-out slice as the headline, so the ablation rows are
+  # directly comparable to Table 1.
+  qa_path: ./benchmark_data/hotpot_val_2000/splits/holdout_qa.json
+  limit: null
+  judge_model: azure_ai/DeepSeek-V3.2
+  concurrency: 8
+
+output_root: ./experiment-1/hotpot_ablation
