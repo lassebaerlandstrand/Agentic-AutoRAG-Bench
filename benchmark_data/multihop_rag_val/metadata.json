@@ -1,0 +1,12 @@
+{
+  "name": "multihop_rag",
+  "split": "MultiHopRAG",
+  "sample_size": 2000,
+  "seed": 42,
+  "adapter_version": "v1",
+  "hf_revision": "71ac0d0bd1f951d2d6b70311f7d2ae404e1ffa82",
+  "corpus_doc_count": 609,
+  "corpus_total_chars": 6348360,
+  "corpus_total_words": 1071839,
+  "corpus_avg_words_per_doc": 1759.9983579638752
+}
