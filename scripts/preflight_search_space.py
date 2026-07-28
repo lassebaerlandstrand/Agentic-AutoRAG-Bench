@@ -182,7 +182,7 @@ def _print_bucket(bucket: Bucket) -> tuple[int, int]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("config", type=Path, help="paper config YAML")
+    parser.add_argument("config", type=Path, help="project YAML (the *_project.yaml with agent + search_space)")
     parser.add_argument(
         "--skip",
         choices=("llms", "embedders", "rerankers"),

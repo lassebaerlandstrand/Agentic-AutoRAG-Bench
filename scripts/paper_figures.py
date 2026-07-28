@@ -2,7 +2,7 @@
 """Render the paper-ready Experiment-1 table and per-trial figure from data.
 
 Experiment 1 spans three QA datasets (HotpotQA, MuSiQue, MultiHop-RAG), each
-run for 3 full-rerun seeds. The in-run pipeline emits one single-dataset
+run for 10 search seeds. The in-run pipeline emits one single-dataset
 ``Table_1.md`` and ``score_per_trial.png`` per dataset (see ``analyze.py`` /
 ``plots.py``); the paper instead needs ONE cross-dataset table and ONE
 cross-dataset figure. This script produces exactly those two artifacts, read
