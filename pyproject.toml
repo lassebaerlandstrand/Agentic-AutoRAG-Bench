@@ -1,9 +1,11 @@
 [project]
 name = "agentic-autorag-bench"
 version = "0.1.0"
-description = "Benchmark suite comparing Agentic AutoRAG against Random / Bayesian / Marker-Inc AutoRAG on public RAG benchmarks"
+description = "Benchmark suite comparing Agentic AutoRAG against random search and MO-TPE on public RAG benchmarks"
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Lasse Bærland Strand" },
 ]
