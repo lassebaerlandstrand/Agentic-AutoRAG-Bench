@@ -27,6 +27,10 @@ benchmark:
   sample_size: 2000
   prep_seed: 42
   output_dir: ./benchmark_data/multihop_rag_val
+  # Pinned HuggingFace dataset revision, matching the sha in
+  # benchmark_data/<ds>/metadata.json. Without it a rerun silently prepares
+  # whatever is at head, which is a different corpus from the paper's.
+  hf_revision: 71ac0d0bd1f951d2d6b70311f7d2ae404e1ffa82
 
 hold_out:
   # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
