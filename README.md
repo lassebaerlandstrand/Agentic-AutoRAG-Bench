@@ -197,8 +197,8 @@ model_aliases:
   ...
 ```
 
-Re-point those to your own deployments, or the run fails partway through. Verify
-the whole search space is reachable before committing to a multi-day run:
+Re-point those to your own deployments. Verify the whole search space is
+reachable before committing to a multi-day run:
 
 ```bash
 uv run python scripts/preflight_search_space.py configs/hotpot_paper_project.yaml --env .env
@@ -206,6 +206,17 @@ uv run python scripts/preflight_search_space.py configs/hotpot_paper_project.yam
 
 (This script is the one place that *does* read a `.env` directly; without
 `--env` it looks for `../Agentic-AutoRAG/.env`.)
+
+`run` pings every endpoint in the search space before the first trial and aborts
+if any one of them fails, so an unreachable model stops the run at startup
+rather than partway through.
+
+One model has been renamed since the experiments: the runs used
+`vertex_ai/gemini-3.1-flash-lite-preview`, which Google
+[shut down on 2026-05-25](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite-preview)
+when the model went GA as `vertex_ai/gemini-3.1-flash-lite`. The configs name
+the GA ID so a rerun works; the committed results still record the preview ID,
+which is what the runs actually called.
 
 Rebuilding the frozen validation exams additionally uses Google AI Studio
 (`gemini/`, `GEMINI_API_KEY`) as the span extractor — but the exams are
@@ -306,14 +317,22 @@ It reuses the headline's project YAML and frozen exam, and writes to its own
 - **Completion is read from disk, not exit codes.** A scheduler that stops for
   any reason resumes correctly by re-running the same command; finished pairs
   are skipped. This also means the *committed* results read as already done — a
-  genuine rerun needs a fresh `output_root`. Copy the config and change one line:
+  genuine rerun needs a fresh `output_root`. **Redirect both configs**, not just
+  the matrix one — the project YAML's `meta.output_dir` is a second, independent
+  path, and leaving it alone makes a rerun write its parsed corpus and index
+  cache (tens of GB over a full matrix) into the committed `experiment-1/`
+  tree:
   ```bash
   sed 's|^output_root: .*|output_root: ./rerun-1/hotpot|' \
       configs/hotpot_paper.yaml > configs/hotpot_rerun.yaml
+  sed 's|^  output_dir: .*|  output_dir: "./rerun-1/hotpot/.shared_cache"|' \
+      configs/hotpot_paper_project.yaml > configs/hotpot_rerun_project.yaml
+  sed -i 's|^project_config: .*|project_config: ./hotpot_rerun_project.yaml|' \
+      configs/hotpot_rerun.yaml
   uv run agentic-autorag-bench run -c configs/hotpot_rerun.yaml
   ```
-  `configs/*_project.yaml` is referenced relative to the config file, so a copy
-  in `configs/` needs no other edit.
+  `project_config` is resolved relative to the config file, so a copy that stays
+  in `configs/` needs no path juggling.
 - **`--clean` refuses to destroy finished work.** A fresh `run` defaults to
   cleaning the method dirs it is about to write, but it will not delete dirs that
   already hold completed hold-out results. Pass `--resume` to continue, or
