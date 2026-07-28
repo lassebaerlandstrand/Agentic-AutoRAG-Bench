@@ -29,6 +29,11 @@ class BenchmarkRunner:
     split: str = "validation"
     sample_size: int | None = 2000
     seed: int = 42
+    # HuggingFace dataset revision to pin. Left None the adapters resolve the
+    # dataset's current head, which silently makes a rerun a different corpus
+    # from the published one -- so the paper configs pin the sha recorded in
+    # ``benchmark_data/<ds>/metadata.json``.
+    hf_revision: str | None = None
 
     def __post_init__(self) -> None:
         self.output_dir = Path(self.output_dir)
@@ -47,10 +52,11 @@ class BenchmarkRunner:
             logger.info("%s corpus already prepared at %s", self.name, self.output_dir)
             return
         logger.info(
-            "Preparing %s (split=%s, sample_size=%s) at %s",
+            "Preparing %s (split=%s, sample_size=%s, hf_revision=%s) at %s",
             self.name,
             self.split,
             self.sample_size,
+            self.hf_revision or "<head>",
             self.output_dir,
         )
         prepare_benchmark(
@@ -59,6 +65,7 @@ class BenchmarkRunner:
             split=self.split,
             sample_size=self.sample_size,
             seed=self.seed,
+            hf_revision=self.hf_revision,
         )
 
     async def evaluate(

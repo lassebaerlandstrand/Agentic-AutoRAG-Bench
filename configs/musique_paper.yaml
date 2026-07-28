@@ -27,6 +27,10 @@ benchmark:
   sample_size: 2417
   prep_seed: 42
   output_dir: ./benchmark_data/musique_val_2417
+  # Pinned HuggingFace dataset revision, matching the sha in
+  # benchmark_data/<ds>/metadata.json. Without it a rerun silently prepares
+  # whatever is at head, which is a different corpus from the paper's.
+  hf_revision: c8f4f8c9465fb69d31a8eae894c3fd509c4ca321
 
 hold_out:
   # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased

@@ -134,6 +134,7 @@ async def run_kb_greedy(config_path: str | Path, *, seed: int = 42) -> None:
         split=bench.benchmark.split,
         sample_size=bench.benchmark.sample_size,
         seed=bench.benchmark.prep_seed,
+        hf_revision=bench.benchmark.hf_revision,
     )
     benchmark.prepare()
 

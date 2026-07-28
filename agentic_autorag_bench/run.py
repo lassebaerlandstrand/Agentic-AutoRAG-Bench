@@ -173,6 +173,7 @@ def _write_bench_metadata(output_root: Path, bench: BenchConfig) -> None:
             "split": bench.benchmark.split,
             "sample_size": bench.benchmark.sample_size,
             "prep_seed": bench.benchmark.prep_seed,
+            "hf_revision": bench.benchmark.hf_revision,
         },
         "project_config_path": str(bench.project_config_path),
         "methods": bench.methods,
@@ -228,6 +229,10 @@ class BenchmarkSpec:
     sample_size: int | None
     prep_seed: int
     output_dir: Path
+    # Pinned HuggingFace dataset revision (``benchmark.hf_revision`` in the
+    # YAML). None means "resolve head at prep time", which is fine for dev but
+    # not for a published number -- see BenchmarkRunner.hf_revision.
+    hf_revision: str | None = None
 
 
 @dataclass
@@ -295,6 +300,7 @@ class BenchConfig:
             sample_size=b.get("sample_size"),
             prep_seed=int(b.get("prep_seed", 42)),
             output_dir=Path(b["output_dir"]).resolve(),
+            hf_revision=b.get("hf_revision"),
         )
         return cls(
             project_config_path=project_path,
@@ -899,6 +905,7 @@ async def run_matrix(
         split=bench.benchmark.split,
         sample_size=bench.benchmark.sample_size,
         seed=bench.benchmark.prep_seed,
+        hf_revision=bench.benchmark.hf_revision,
     )
     benchmark.prepare()
 

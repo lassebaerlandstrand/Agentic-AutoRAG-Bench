@@ -12,14 +12,13 @@
 # agentic_nokb_nodiag (KB off, diagnosis off, compact config→score history).
 # Statistical rivals: random (floor) → motpe (cold group-multivariate MO-TPE,
 # syftr-class) → motpe_warm (motpe + a free, uncounted transfer prior seeded
-# from this run's random cell). The diagnosis/KB ablations (agentic_nodiag,
-# agentic_nokb) are Hotpot-only and run AFTER the headline via
-# configs/hotpot_ablation.yaml on the same frozen exam, so the decomposition
-# ladder (agentic_nokb_nodiag → agentic_nodiag → agentic_score; KB-value =
-# nodiag−nokb_nodiag, diagnosis-value = score−nodiag) is reconstructed across
-# the two runs. agentic_cost belongs to the Pareto experiment (unidoc), not
-# here. kb_greedy is a single-config reference run via its own script, not a
-# matrix method.
+# from this run's random cell). agentic_cost belongs to the Pareto experiment
+# (unidoc), not here. kb_greedy is a single-config reference run via its own
+# command (`kb-greedy`), not a matrix method.
+#
+# The single-component ablations (agentic_nodiag, agentic_nokb) are NOT part of
+# this matrix and were not run for the paper; configs/hotpot_ablation.yaml runs
+# them on demand, into their own output_root.
 
 project_config: ./hotpot_paper_project.yaml
 
@@ -52,6 +51,10 @@ benchmark:
   sample_size: 2000
   prep_seed: 42
   output_dir: ./benchmark_data/hotpot_val_2000
+  # Pinned HuggingFace dataset revision, matching the sha in
+  # benchmark_data/<ds>/metadata.json. Without it a rerun silently prepares
+  # whatever is at head, which is a different corpus from the paper's.
+  hf_revision: 1908d6afbbead072334abe2965f91bd2709910ab
 
 hold_out:
   # Stratified, disjoint held-out slice (prepare-splits) — replaces the biased
