@@ -1,0 +1,12 @@
+{
+  "name": "hotpot_qa",
+  "split": "validation",
+  "sample_size": 2000,
+  "seed": 42,
+  "adapter_version": "v1",
+  "hf_revision": "1908d6afbbead072334abe2965f91bd2709910ab",
+  "corpus_doc_count": 19276,
+  "corpus_total_chars": 11044756,
+  "corpus_total_words": 1809727,
+  "corpus_avg_words_per_doc": 93.88498651172442
+}

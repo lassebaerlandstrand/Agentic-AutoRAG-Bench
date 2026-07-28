@@ -1,0 +1,23 @@
+{
+  "stratify_key": "type",
+  "seed": 42,
+  "n_pool_total": 2000,
+  "n_excluded_no_docs": 0,
+  "n_abstention_retained": 0,
+  "n_pool_usable": 2000,
+  "holdout_size": 300,
+  "opt_size": 1700,
+  "pool_distribution": {
+    "bridge": 1586,
+    "comparison": 414
+  },
+  "holdout_distribution": {
+    "bridge": 238,
+    "comparison": 62
+  },
+  "opt_distribution": {
+    "bridge": 1348,
+    "comparison": 352
+  },
+  "disjoint": true
+}

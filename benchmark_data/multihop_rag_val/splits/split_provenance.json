@@ -1,0 +1,29 @@
+{
+  "stratify_key": "question_type",
+  "seed": 42,
+  "n_pool_total": 2000,
+  "n_excluded_no_docs": 0,
+  "n_abstention_retained": 243,
+  "n_pool_usable": 2000,
+  "holdout_size": 300,
+  "opt_size": 1700,
+  "pool_distribution": {
+    "comparison_query": 671,
+    "inference_query": 643,
+    "null_query": 243,
+    "temporal_query": 443
+  },
+  "holdout_distribution": {
+    "comparison_query": 101,
+    "inference_query": 96,
+    "null_query": 36,
+    "temporal_query": 67
+  },
+  "opt_distribution": {
+    "comparison_query": 570,
+    "inference_query": 547,
+    "null_query": 207,
+    "temporal_query": 376
+  },
+  "disjoint": true
+}

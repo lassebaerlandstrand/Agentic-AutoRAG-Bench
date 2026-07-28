@@ -29,15 +29,23 @@ results/**/autorag_project/data/
 results/**/autorag_project/0/
 results/**/autorag_project/resources/
 
-# Benchmark data (corpus, splits, held-out gold, qa) is regeneratable via
-# `agentic-autorag benchmark-prepare`, so it is not tracked. Keep only the
-# validation exams (the Experiment-1 optimization target) + their provenance, so
-# the exam that produced the results stays in git history.
+# Benchmark data: the bulky, regeneratable parts (corpus/, qa.json) are not
+# tracked -- `agentic-autorag-bench benchmark-prepare` rebuilds them from the
+# HuggingFace revision pinned in metadata.json. Everything that *defines* a
+# paper number is tracked, so the exact evaluation set stays in git history:
+#   validation_exam.json        Experiment-1 optimization target (+ provenance)
+#   splits/holdout_qa.json      the 300-question held-out slice behind Table 1
+#   splits/optimization_qa.json the pool the exam was drawn from (+ provenance)
+#   metadata.json               pinned HF revision, sample size, and seed
+# Together these are ~3 MB and cannot be regenerated if the working tree is lost.
 benchmark_data/*
 !benchmark_data/*/
 benchmark_data/*/*
 !benchmark_data/*/validation_exam.json
 !benchmark_data/*/validation_exam_provenance.json
+!benchmark_data/*/metadata.json
+!benchmark_data/*/splits/
+!benchmark_data/*/splits/*.json
 
 # Editor state
 *.swp

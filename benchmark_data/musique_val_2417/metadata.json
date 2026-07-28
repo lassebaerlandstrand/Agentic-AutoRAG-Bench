@@ -1,0 +1,12 @@
+{
+  "name": "musique",
+  "split": "validation",
+  "sample_size": 2417,
+  "seed": 42,
+  "adapter_version": "v1",
+  "hf_revision": "c8f4f8c9465fb69d31a8eae894c3fd509c4ca321",
+  "corpus_doc_count": 17629,
+  "corpus_total_chars": 7965727,
+  "corpus_total_words": 1321733,
+  "corpus_avg_words_per_doc": 74.97492767598843
+}
