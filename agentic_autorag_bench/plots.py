@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -1521,14 +1521,16 @@ def make_pareto_attainment_figure(output_root: Path, out_path: Path, *, domain: 
 def _draw_median_attainment_panel(
     ax, method_seed_points, grid, *, domain: str,
     legend_title: str | None = "line = median seed, band = IQR (p25–p75) across seeds",
+    cost_label: str = "Cost per query (USD)",
 ) -> None:
     """Median-seed cost->accuracy attainment (line + IQR seed band) onto ``ax``.
     Shared by the standalone median figure and the combined landscape figure so
     the two never drift. ``legend_title`` can be set to ``None`` to drop the
-    line/band explainer when the figure caption already carries it."""
+    line/band explainer when the figure caption already carries it. ``cost_label``
+    names the x axis when the caller rescales the cost units."""
     _plot_attainment(ax, method_seed_points, grid, central="median")
     ax.set_xscale("log")
-    ax.set_xlabel("Cost per query (USD)")
+    ax.set_xlabel(cost_label)
     ax.set_ylabel("Exam accuracy (%)")
     ax.set_ylim(0, 100)
     ax.grid(alpha=0.3, which="both")
@@ -1537,15 +1539,28 @@ def _draw_median_attainment_panel(
     ax.legend(loc="lower right", frameon=False, title=legend_title)
 
 
-def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, domain: str = "") -> None:
+def make_pareto_attainment_median_figure(
+    output_root: Path, out_path: Path, *, domain: str = "",
+    cost_scale: float = 1.0, cost_label: str = "Cost per query (USD)",
+) -> None:
     """The ``make_pareto_attainment_figure`` companion whose line is the MEDIAN seed.
 
     Same 0-padded band; the line is the typical seed's attainment rather than the
     best-across-seeds frontier. The median line reaches only costs a majority of
     seeds explored, so it sits below the frontier line in the cheap region and
     reads as "what a single run typically attains". No-op when nothing is
-    plottable."""
+    plottable. ``cost_scale`` rescales the cost axis (e.g. 1000 with a matching
+    ``cost_label`` for USD per 1,000 queries); attainment values are unchanged
+    since every cost scales together."""
     method_seed_points = _load_method_seed_points(output_root)
+    if cost_scale != 1.0:
+        method_seed_points = {
+            method: [
+                [replace(p, cost_per_query=p.cost_per_query * cost_scale) for p in seed]
+                for seed in seeds
+            ]
+            for method, seeds in method_seed_points.items()
+        }
     grid = _attainment_grid(method_seed_points)
     if grid is None:
         logger.warning("No plottable trials under %s; skipping pareto median attainment figure", output_root)
@@ -1569,7 +1584,7 @@ def make_pareto_attainment_median_figure(output_root: Path, out_path: Path, *, d
     with plt.rc_context(font_overrides):
         fig, ax = plt.subplots(figsize=(4.5, 2.87))
         _draw_median_attainment_panel(ax, method_seed_points, grid, domain=domain,
-                                      legend_title=None)
+                                      legend_title=None, cost_label=cost_label)
         # Thin the trend lines by ~0.66x so they render at the on-page weight they
         # had when the figure was drawn larger and downscaled more. Faint band
         # edges (lw < 1) are left untouched.

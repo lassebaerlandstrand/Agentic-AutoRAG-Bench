@@ -5,11 +5,18 @@ Agent `agentic_cost`, 10 seeds per method. Two-sided Mann-Whitney U, Holm-correc
 ## Peak exam accuracy per seed
 Agent peaks: min 0.740, median 0.770, max 0.820.
 
+| method | sorted per-seed peaks | median |
+|---|---|---|
+| agentic_cost | 0.74 0.75 0.76 0.77 0.77 0.77 0.78 0.79 0.80 0.82 | 0.770 |
+| motpe_warm | 0.63 0.64 0.68 0.71 0.71 0.72 0.75 0.76 0.77 0.78 | 0.715 |
+| motpe | 0.63 0.66 0.67 0.68 0.70 0.71 0.74 0.77 0.78 0.80 | 0.705 |
+| random | 0.59 0.64 0.66 0.69 0.69 0.70 0.70 0.71 0.74 0.75 | 0.695 |
+
 | baseline | median | MWU p | Holm p | P(agent better) |
 |---|---|---|---|---|
-| motpe_warm | 0.715 | 0.0087 | 0.0175 | 0.85 |
-| motpe | 0.705 | 0.0250 | 0.0250 | 0.80 |
-| random | 0.695 | 0.0003 | 0.0009 | 0.98 |
+| motpe_warm | 0.715 | 0.008747 | 0.017494 | 0.85 |
+| motpe | 0.705 | 0.025028 | 0.025028 | 0.80 |
+| random | 0.695 | 0.000316 | 0.000949 | 0.98 |
 
 ## Cost to reach 71.5% (strongest baseline's median peak)
 Seeds reaching it: agentic_cost 10/10, motpe_warm 5/10, motpe 4/10, random 2/10.
@@ -17,13 +24,45 @@ Agent: median \$0.00031, max \$0.00050 per query. Seeds that never reach it are 
 
 | baseline | median | MWU p | Holm p | P(agent better) |
 |---|---|---|---|---|
-| motpe_warm | inf | 0.0007 | 0.0007 | 0.95 |
-| motpe | inf | 0.0002 | 0.0004 | 0.99 |
-| random | inf | 0.0001 | 0.0003 | 1.00 |
+| motpe_warm | inf | 0.000700 | 0.000700 | 0.95 |
+| motpe | inf | 0.000203 | 0.000406 | 0.99 |
+| random | inf | 0.000111 | 0.000332 | 1.00 |
+
+## Accuracy-bar sweep for the cost-to-reach test
+The same censored test at alternative accuracy bars. Never-reaching seeds are ranked most expensive at every bar.
+
+| bar | reach agentic_cost | reach motpe_warm | reach motpe | reach random | Holm p motpe_warm | Holm p motpe | Holm p random |
+|---|---|---|---|---|---|---|---|
+| 66.0% | 10/10 | 8/10 | 9/10 | 8/10 | 0.003598 | 0.000545 | 0.000545 |
+| 68.0% | 10/10 | 8/10 | 7/10 | 7/10 | 0.002817 | 0.000536 | 0.000536 |
+| 70.0% | 10/10 | 7/10 | 6/10 | 5/10 | 0.001293 | 0.000489 | 0.000489 |
+| 70.5% | 10/10 | 7/10 | 5/10 | 3/10 | 0.002169 | 0.000395 | 0.000395 |
+| 71.5% | 10/10 | 5/10 | 4/10 | 2/10 | 0.000700 | 0.000406 | 0.000332 |
+| 72.0% | 10/10 | 5/10 | 4/10 | 2/10 | 0.000700 | 0.000406 | 0.000332 |
+| 74.0% | 10/10 | 4/10 | 4/10 | 2/10 | 0.000368 | 0.000332 | 0.000332 |
+| 75.0% | 9/10 | 4/10 | 3/10 | 1/10 | 0.007713 | 0.007713 | 0.001139 |
+
+Largest Holm p across all bars and baselines: 0.007713.
 
 ## Per-budget attainment on the shared 240-point log cost grid [\$0.000016, \$0.012810]
+Fixed-sequence read of the sweep (Maurer et al. 1995): step down from the largest budget until the within-budget Holm family first fails to reject. The stop controls the familywise error rate across the sweep without adjusting the individual budgets.
 Agent lead significant vs every baseline at every grid budget from \$0.000404 upward.
-No agent-vs-baseline comparison significant in either direction at any grid budget up to \$0.000231.
+Exact onset of the same walk at every distinct trial cost (n=1186, the only points where the attainment steps move): \$0.000394, so the grid onset above is conservative.
+No agent-vs-baseline comparison significant in either direction at any grid budget up to \$0.000231 (raw, the conservative direction for an absence claim).
+Significant baseline-favoring comparisons anywhere on the grid: 0 (no budget ever favors a baseline, raw).
+Raw rejection islands below the stop, reported but not claimed under the stopping rule: \$0.000314 to \$0.000372.
+The maxT bands below spend alpha uniformly over all simultaneous per-budget statements, so they thin out toward the top of the grid, while the fixed sequence front-loads alpha at the largest budgets. Both control the familywise error rate, and both start the all-baseline lead at the same onset.
+
+## Simultaneous bands over the cost grid (exact Westfall-Young maxT)
+Tie-corrected rank-sum z per grid budget, adjusted against the exact permutation distribution of the max z across all budgets (184,756 relabelings per baseline). Adjusted p < 0.05 at a budget carries familywise error control over the entire grid. One-sided = agent-favoring lead, two-sided matches the paper's other tests.
+
+| baseline | one-sided bands (adj p < 0.05) | two-sided bands | top-of-grid adj p (1s / 2s) | min adj p (1s / 2s) |
+|---|---|---|---|---|
+| motpe_warm | \$0.000404 to \$0.000614, \$0.000667 to \$0.006382 | \$0.000404 to \$0.000614, \$0.000746 to \$0.000811, \$0.000858 to \$0.001267 | 0.0547 / 0.1086 | 0.0013 / 0.0026 |
+| motpe | \$0.000314 to \$0.000352, \$0.000404 to \$0.000631 | \$0.000404 to \$0.000631 | 0.1591 / 0.3104 | 0.00014 / 0.00028 |
+| random | \$0.000314 to grid max | \$0.000314 to \$0.000362, \$0.000404 to grid max | 0.0004 / 0.0008 | 4.3e-05 / 8.7e-05 |
+
+All-baseline simultaneous window (agent leads all three at once, intersection-union over the per-baseline bands): one-sided \$0.000404 to \$0.000614, two-sided \$0.000404 to \$0.000614.
 
 ## Median attainment curves (the figure's line), evaluated at the trial costs
 A median attainment curve steps only at a trial cost, so these are exact rather than pinned to the nearest plotting-grid point.

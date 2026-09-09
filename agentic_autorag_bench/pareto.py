@@ -472,10 +472,16 @@ async def run_pareto(
     except Exception:
         logger.warning("cost-accuracy figure failed", exc_info=True)
     try:
-        # Emit the paper figure as vector PDF (crisp, embeddable fonts) and PNG.
+        # Emit the paper figure as vector PDF (crisp, embeddable fonts) and PNG,
+        # plus the per-1,000-queries variant the NeurIPS paper embeds.
         for ext in ("png", "pdf"):
             make_pareto_attainment_median_figure(
                 cfg.output_root, figures_dir / f"pareto_cost_accuracy_median.{ext}", domain=cfg.corpus_domain
+            )
+            make_pareto_attainment_median_figure(
+                cfg.output_root, figures_dir / f"pareto_cost_accuracy_median_per1k.{ext}",
+                domain=cfg.corpus_domain, cost_scale=1000.0,
+                cost_label="Cost per 1,000 queries (USD)",
             )
     except Exception:
         logger.warning("cost-accuracy median figure failed", exc_info=True)
