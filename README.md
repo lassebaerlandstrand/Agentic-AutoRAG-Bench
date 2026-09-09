@@ -4,9 +4,9 @@ Benchmark and reproduction code for the Agentic AutoRAG paper. It compares our
 reasoning-agent optimizer against random search and MO-TPE (the optimizer syftr
 uses) on two experiments:
 
-- **Accuracy experiment** — each optimizer tunes a RAG pipeline on HotpotQA,
+- **Accuracy experiment.** Each optimizer tunes a RAG pipeline on HotpotQA,
   MuSiQue, and MultiHop-RAG, scored on a held-out gold slice of each dataset.
-- **Pareto experiment** — the optimizers tune for accuracy and per-query cost
+- **Pareto experiment.** The optimizers tune for accuracy and per-query cost
   together on UniDoc-Bench healthcare, tracing a cost-quality frontier.
 
 **The completed runs are committed.** Every table and figure in the paper can be
@@ -21,25 +21,59 @@ undertaking described afterwards.
 | Path | What it is |
 |---|---|
 | `agentic_autorag_bench/` | The bench package: matrix orchestrator, search methods, analysis. |
-| `configs/` | One `*_paper.yaml` per Accuracy dataset, `unidoc_pareto.yaml` for the Pareto run; each pairs with a `*_project.yaml` holding the search space and model roles. |
+| `configs/` | One `*_paper.yaml` per Accuracy dataset, `unidoc_pareto.yaml` for the Pareto run. Each pairs with a `*_project.yaml` holding the search space and model roles. |
 | `scripts/` | The paper's figure/table generators and the two long-run schedulers. |
 | `experiment-1/<dataset>/` | Accuracy-experiment results: 3 datasets x 5 methods x 10 seeds, plus the `kb_greedy` reference and the @10/@20 checkpoints. |
 | `experiment-2/unidoc/` | Pareto-experiment results: 4 methods x 10 seeds, plus the frozen exam. |
 | `benchmark_data/<dataset>/` | The frozen validation exam, the stratified splits, and corpus provenance. |
-| `tests/` | 263 tests. All LLM calls are mocked; the suite needs no network. |
+| `tests/` | 263 tests. All LLM calls are mocked, so the suite needs no network. |
 
-The optimizer itself lives in the sibling repository `../Agentic-AutoRAG` and is
-consumed here as an editable path dependency, so the two directories must sit
-next to each other.
+The optimizer itself is not in this repository. It lives in a sibling checkout
+of `Agentic-AutoRAG` and is required even for the reproduction path.
 
 ## Setup
 
+This repository consumes the optimizer as an editable path dependency, so clone
+the optimizer first, as a sibling directory and under its default name
+`Agentic-AutoRAG`. You also need [uv](https://docs.astral.sh/uv/).
+
 ```bash
+git clone https://github.com/Agentic-Systems-Lab/Agentic-AutoRAG.git
+git clone https://github.com/lassebaerlandstrand/Agentic-AutoRAG-Bench.git
+
+cd Agentic-AutoRAG-Bench
 uv sync --extra dev
 uv run pytest          # 263 passed, no network needed
 ```
 
-That is all the [Reproduce the paper](#reproduce-the-paper) path requires.
+The two directories must end up next to each other:
+
+```
+your-workspace/
+  Agentic-AutoRAG/           <- the optimizer, cloned above
+  Agentic-AutoRAG-Bench/     <- this repository
+```
+
+If the optimizer is missing or renamed, `uv sync` fails to resolve
+`../Agentic-AutoRAG` and stops there.
+
+Optionally, to run the optimizer code as the paper ran it:
+
+```bash
+git -C ../Agentic-AutoRAG checkout emnlp-camera-ready
+```
+
+The optimizer's `main` keeps moving after the runs, and the tag pins it to the
+state behind the committed results (see [Notes](#notes)). Everything in
+[Reproduce the paper](#reproduce-the-paper) also works from `main`, with one
+side effect. `main` has raised its own dependency floors since the runs, so uv
+re-resolves against them and rewrites this repository's committed `uv.lock` on
+the first `uv run`. The tag leaves the lockfile untouched.
+
+One caveat on install size: `uv sync` pulls the optimizer's full runtime stack,
+including torch, docling, sentence-transformers, lightrag, and mteb, which is
+several GB. That is a one-time cost, and the reproduction commands themselves
+still need no API keys, no GPU, and no network.
 
 ## Reproduce the paper
 
@@ -48,18 +82,18 @@ Run them from the repository root.
 
 | Paper artifact | Command | Output |
 |---|---|---|
-| **Table 2** (`tab:holdout`) — held-out accuracy | `uv run python scripts/paper_figures.py` | `experiment-1/figures_paper/table1_answer_quality.tex` |
-| **Figure 2** (`fig:best-so-far`) — best-so-far curves | `uv run python scripts/best_so_far_figure.py` | `experiment-1/figures_paper/best_so_far_3panel.pdf` |
-| **Figure 3** (`fig:pareto`) — cost-accuracy frontier | `uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only` | `experiment-2/unidoc/figures/pareto_cost_accuracy_median.pdf` |
-| **Appendix figure** (`fig:cost-emb`) — search cost + embedding tokens | `uv run python scripts/paper_figures.py` | `experiment-1/figures_paper/cost_and_embeddings.pdf` |
+| **Table 2** (`tab:holdout`), held-out accuracy | `uv run python scripts/paper_figures.py` | `experiment-1/figures_paper/table1_answer_quality.tex` |
+| **Figure 2** (`fig:best-so-far`), best-so-far curves | `uv run python scripts/best_so_far_figure.py` | `experiment-1/figures_paper/best_so_far_3panel.pdf` |
+| **Figure 3** (`fig:pareto`), cost-accuracy frontier | `uv run agentic-autorag-bench pareto -c configs/unidoc_pareto.yaml --figure-only` | `experiment-2/unidoc/figures/pareto_cost_accuracy_median.pdf` |
+| **Appendix figure** (`fig:cost-emb`), search cost + embedding tokens | `uv run python scripts/paper_figures.py` | `experiment-1/figures_paper/cost_and_embeddings.pdf` |
 | **Section 5.2** significance numbers | `uv run python scripts/exp2_significance.py` | `experiment-2/unidoc/significance.md` (also printed) |
 | Per-dataset `Table_1.md` + matrix figures | `uv run agentic-autorag-bench analyze --results-dir experiment-1/hotpot` | `experiment-1/hotpot/figures/` |
 
-The `table1_answer_quality.tex` / `Table_1.md` filenames predate the paper's
-final float ordering — they hold the paper's **Table 2**. `paper_figures.py`
-also emits `score_per_trial_3panel.pdf` and `answer_quality.pdf`, and
+The `table1_answer_quality.tex` and `Table_1.md` filenames predate the paper's
+final float ordering. They hold the paper's **Table 2**. `paper_figures.py` also
+emits `score_per_trial_3panel.pdf` and `answer_quality.pdf`, and
 `pareto --figure-only` rewrites the whole `experiment-2/unidoc/figures/` set and
-`hypervolume.json`; the paper uses the rows above. Repeat the `analyze` command
+`hypervolume.json`. The paper uses the rows above. Repeat the `analyze` command
 with `--results-dir experiment-1/musique` and `experiment-1/multihop` for the
 other two datasets. Whole table: about half a minute.
 
@@ -113,7 +147,7 @@ for d in ['hotpot_val_2000','musique_val_2417','multihop_rag_val']:
 All methods search the same pipeline space and are scored the same way, so their
 results compare directly. The agentic methods share one optimizer class and
 differ only by config flags. The two MO-TPE methods share another class, with a
-flag selecting accuracy-only or accuracy-and-cost mode; their settings match
+flag selecting accuracy-only or accuracy-and-cost mode. Their settings match
 syftr's published optimizer, checked by an equivalence test.
 
 ## Output layout
@@ -140,7 +174,9 @@ experiment-1/hotpot/                     # = output_root from the config
     details/history.jsonl                per-trial config, score, tokens, cost, and agent diagnosis
     details/trial_cost_ledger.jsonl      per-call cost ledger
     details/cost_breakdown.json          optimizer-vs-trial cost split
-    run.log                              full console log, including every agent prompt
+    run.log                              full console log, including every agent prompt.
+                                         Produced by a rerun only: log files are gitignored,
+                                         so no run.log ships with the committed results.
 ```
 
 `<method>@<k>/seed_<n>/` directories (e.g. `agentic_score@10/`) hold the
@@ -154,18 +190,18 @@ itself is committed at `experiment-2/unidoc/.shared_cache/exam.json`.
 
 ## Rerun from scratch
 
-This reproduces the *findings*, not the numbers — see
+This reproduces the *findings*, not the numbers. See
 [What is and is not reproducible](#what-is-and-is-not-reproducible). Budget
 several days and roughly \$1,000 in API spend.
 
 ### Credentials
 
-A full rerun spans four providers. `.env.example` documents every variable;
-copy it to `.env` and fill in the four groups below.
+A full rerun spans four providers. `.env.example` documents every variable.
+Copy it to `.env` and fill in the four groups below.
 
 **A `.env` file on disk is not enough.** LiteLLM reads credentials from the
 process environment, and neither the bench CLI nor `uv run` loads `.env`
-automatically. Export it into the shell before every run — either
+automatically. Export it into the shell before every run, either
 
 ```bash
 export UV_ENV_FILE=.env        # uv loads it for every `uv run` in this shell
@@ -204,7 +240,7 @@ reachable before committing to a multi-day run:
 uv run python scripts/preflight_search_space.py configs/hotpot_paper_project.yaml --env .env
 ```
 
-(This script is the one place that *does* read a `.env` directly; without
+(This script is the one place that *does* read a `.env` directly. Without
 `--env` it looks for `../Agentic-AutoRAG/.env`.)
 
 `run` pings every endpoint in the search space before the first trial and aborts
@@ -215,16 +251,16 @@ One model has been renamed since the experiments: the runs used
 `vertex_ai/gemini-3.1-flash-lite-preview`, which Google
 [shut down on 2026-05-25](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite-preview)
 when the model went GA as `vertex_ai/gemini-3.1-flash-lite`. The configs name
-the GA ID so a rerun works; the committed results still record the preview ID,
+the GA ID so a rerun works. The committed results still record the preview ID,
 which is what the runs actually called.
 
-Rebuilding the frozen validation exams additionally uses Google AI Studio
-(`gemini/`, `GEMINI_API_KEY`) as the span extractor — but the exams are
-committed, so a rerun does not need it.
+Rebuilding the frozen validation exams also uses Google AI Studio
+(`gemini/`, `GEMINI_API_KEY`) as the span extractor. The exams are committed,
+so a rerun does not need it.
 
 ### Rebuild the corpora
 
-The corpora are large and regeneratable, so they are not committed; the pinned
+The corpora are large and regeneratable, so they are not committed. The pinned
 HuggingFace revision is. `run` prepares them automatically from the
 `benchmark.hf_revision` in each config, but you can do it explicitly:
 
@@ -245,7 +281,7 @@ uv run agentic-autorag benchmark-prepare multihop_rag \
 ```
 
 Each writes a fresh `metadata.json`. Check `corpus_doc_count` and
-`corpus_total_words` against the committed values — those are the numbers in the
+`corpus_total_words` against the committed values. Those are the numbers in the
 paper's corpus table, and a mismatch means the corpus differs from ours. The
 committed `splits/` and `validation_exam.json` are left alone, so the evaluation
 set stays fixed regardless.
@@ -304,7 +340,7 @@ setsid nohup uv run python scripts/run_experiment2.py --workers 2 \
 ### Ablations
 
 The paper's ablation, `agentic_nokb_nodiag`, is part of the headline matrix
-above. The single-component decomposition was not run for the paper; to run it:
+above. The single-component decomposition was not run for the paper. To run it:
 
 ```bash
 uv run agentic-autorag-bench run -c configs/hotpot_ablation.yaml
@@ -316,10 +352,10 @@ It reuses the headline's project YAML and frozen exam, and writes to its own
 ### Rerun ergonomics
 
 - **Completion is read from disk, not exit codes.** A scheduler that stops for
-  any reason resumes correctly by re-running the same command; finished pairs
-  are skipped. This also means the *committed* results read as already done — a
+  any reason resumes correctly by re-running the same command, and finished pairs
+  are skipped. This also means the *committed* results read as already done, so a
   genuine rerun needs a fresh `output_root`. **Redirect both configs**, not just
-  the matrix one — the project YAML's `meta.output_dir` is a second, independent
+  the matrix one. The project YAML's `meta.output_dir` is a second, independent
   path, and leaving it alone makes a rerun write its parsed corpus and index
   cache (tens of GB over a full matrix) into the committed `experiment-1/`
   tree:
@@ -339,7 +375,7 @@ It reuses the headline's project YAML and frozen exam, and writes to its own
   already hold completed hold-out results. Pass `--resume` to continue, or
   `--force` to deliberately restart.
 - **Do not raise `--workers` above 2.** That is the most the API endpoints handle
-  reliably; higher settings produce throttling errors that corrupt a run's cost
+  reliably. Higher settings produce throttling errors that corrupt a run's cost
   and coverage accounting rather than just slowing it down.
 - **GPU.** Index building and embedding run on the local GPU when one is present.
   A rerun works on CPU but is considerably slower.
@@ -354,7 +390,7 @@ exam generation:
 | Accuracy, HotpotQA | \$209 | 52 | ~26 h |
 | Accuracy, MuSiQue | \$313 | 54 | ~27 h |
 | Accuracy, MultiHop-RAG | \$384 | 58 | ~29 h |
-| Held-out scoring (240 evals, all 3) | \$125 | — | — |
+| Held-out scoring (240 evals, all 3) | \$125 | | |
 | Pareto, UniDoc | \$134 | 35 | ~18 h |
 | **Total** | **\$1,165** | **199** | **~100 h** |
 
@@ -367,13 +403,13 @@ run-to-run difference.
 
 Not fixed: hosted LLM generation and LLM judging are nondeterministic, and the
 hosted models themselves are versioned by the provider and change over time. A
-rerun reproduces the paper's *findings* — the ordering of the methods, the
-sample-efficiency gap, the warm-start gain, the shape of the cost-quality
-frontier — not its exact numbers.
+rerun reproduces the paper's *findings* (the ordering of the methods, the
+sample-efficiency gap, the warm-start gain, and the shape of the cost-quality
+frontier), not its exact numbers.
 
 ## Notes
 
-- **Cost accounting.** Only the agentic methods generate an exam; the others
+- **Cost accounting.** Only the agentic methods generate an exam, and the others
   reuse it. To keep the comparison fair, the cost tally excludes the tokens spent
   generating the exam.
 - **Abstention.** MultiHop-RAG includes unanswerable questions, about 12% of the
@@ -386,11 +422,14 @@ frontier — not its exact numbers.
   recorded in `filtered_questions.json`.
 - **Provenance.** The optimizer at `../Agentic-AutoRAG` keeps changing after the
   runs, so each results tree records the optimizer version and commit in
-  `bench_metadata.json`. Before final runs, tag that commit, e.g.
-  `git -C ../Agentic-AutoRAG tag v0.1.0-paper`.
+  `bench_metadata.json`. All four committed trees ran under optimizer commit
+  `dbb9b7e`. The tag `emnlp-camera-ready` sits two commits later and differs only
+  in a source comment, a script docstring, and a test, so checking it out runs
+  the same optimizer code (this is what [Setup](#setup) suggests). Tag the commit
+  before any future final runs.
 - The earlier AutoRAG baseline was removed from the active matrix and is kept
   under `agentic_autorag_bench/_deprecated/`.
 
 ## License
 
-MIT — see `LICENSE`.
+MIT, see `LICENSE`.
