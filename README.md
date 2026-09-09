@@ -1,3 +1,5 @@
+Main repository: [Agentic-Systems-Lab/Agentic-AutoRAG](https://github.com/Agentic-Systems-Lab/Agentic-AutoRAG)
+
 # Agentic AutoRAG Benchmark Suite
 
 Benchmark and reproduction code for the Agentic AutoRAG paper. It compares our
@@ -28,8 +30,7 @@ undertaking described afterwards.
 | `benchmark_data/<dataset>/` | The frozen validation exam, the stratified splits, and corpus provenance. |
 | `tests/` | 263 tests. All LLM calls are mocked, so the suite needs no network. |
 
-The optimizer itself is not in this repository. It lives in a sibling checkout
-of `Agentic-AutoRAG` and is required even for the reproduction path.
+The optimizer is required even for the reproduction path, not only for a rerun.
 
 ## Setup
 
