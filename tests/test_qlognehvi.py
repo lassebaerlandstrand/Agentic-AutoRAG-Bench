@@ -56,11 +56,9 @@ def _rich_space() -> SearchSpace:
         reranker=RerankerSearchSpace(
             models=["none", "BAAI/bge-reranker-v2-m3"], top_n=DiscreteValues(values=[3, 5, 10])
         ),
-        query_expansion=QueryExpansionSearchSpace(strategies=["none", "hyde"], models=["ollama/llama3.2"]),
-        passage_compressor=PassageCompressorSearchSpace(
-            strategies=["none", "tree_summarize"], models=["ollama/llama3.2"]
-        ),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
+        query_expansion=QueryExpansionSearchSpace(strategies=["none", "hyde"], models=["test/llm-a"]),
+        passage_compressor=PassageCompressorSearchSpace(strategies=["none", "tree_summarize"], models=["test/llm-a"]),
+        generator=GeneratorSearchSpace(models=["test/llm-a", "test/llm-b"], reasoning=False),
         temperature=NumericRange(min=0.0, max=1.0),
     )
 
@@ -69,9 +67,7 @@ def _project(cost_aware: bool) -> ProjectConfig:
     return ProjectConfig(
         meta=MetaConfig(cost_aware=cost_aware),
         search_space=_rich_space(),
-        agent=AgentConfig(
-            optimizer_model="ollama/llama3.2", examiner_model="ollama/llama3.2", judge_model="ollama/llama3.2"
-        ),
+        agent=AgentConfig(optimizer_model="test/llm-a", examiner_model="test/llm-a", judge_model="test/llm-a"),
     )
 
 
@@ -103,7 +99,7 @@ def test_ax_parameters_encodes_categoricals_and_ranges() -> None:
     ps = {p["name"]: p for p in ax_parameters(_rich_space())}
     # Unordered categoricals -> one-hot choice params (the high-dim degradation source).
     assert ps["embedding_model"]["type"] == "choice" and ps["embedding_model"]["is_ordered"] is False
-    assert ps["generator_llm"]["values"] == ["ollama/llama3.2", "ollama/mistral"]
+    assert ps["generator_llm"]["values"] == ["test/llm-a", "test/llm-b"]
     # Continuous dims -> range.
     assert ps["top_k"]["type"] == "range" and ps["top_k"]["bounds"] == [3, 20]
     assert ps["hybrid_alpha"]["type"] == "range"
@@ -136,8 +132,8 @@ def test_decode_gates_inactive_stage_llms() -> None:
     params = _flat_params(base)
     params["passage_compressor"] = "none"
     params["query_expansion"] = "none"
-    params["compressor_llm"] = "ollama/llama3.2"  # Ax suggests a value; must be dropped
-    params["expander_llm"] = "ollama/llama3.2"
+    params["compressor_llm"] = "test/llm-a"  # Ax suggests a value; must be dropped
+    params["expander_llm"] = "test/llm-a"
     decoded = decode_params(params, ss)
     assert decoded.compressor_llm is None
     assert decoded.expander_llm is None

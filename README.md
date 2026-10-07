@@ -44,7 +44,7 @@ git clone https://github.com/lassebaerlandstrand/Agentic-AutoRAG-Bench.git
 
 cd Agentic-AutoRAG-Bench
 uv sync --extra dev
-uv run pytest          # 263 passed, no network needed
+uv run pytest          # 265 passed, no network needed
 ```
 
 The two directories must end up next to each other:

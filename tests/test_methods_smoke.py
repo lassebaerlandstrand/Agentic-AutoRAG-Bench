@@ -53,13 +53,13 @@ def _tiny_project() -> ProjectConfig:
             ),
             query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
             passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
-            generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
+            generator=GeneratorSearchSpace(models=["test/llm-a"], reasoning=False),
             temperature=NumericRange(min=0.0, max=1.0),
         ),
         agent=AgentConfig(
-            optimizer_model="ollama/llama3.2",
-            examiner_model="ollama/llama3.2",
-            judge_model="ollama/llama3.2",
+            optimizer_model="test/llm-a",
+            examiner_model="test/llm-a",
+            judge_model="test/llm-a",
         ),
     )
 
@@ -231,13 +231,13 @@ def _multi_embedding_project() -> ProjectConfig:
             ),
             query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
             passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
-            generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
+            generator=GeneratorSearchSpace(models=["test/llm-a"], reasoning=False),
             temperature=NumericRange(min=0.0, max=1.0),
         ),
         agent=AgentConfig(
-            optimizer_model="ollama/llama3.2",
-            examiner_model="ollama/llama3.2",
-            judge_model="ollama/llama3.2",
+            optimizer_model="test/llm-a",
+            examiner_model="test/llm-a",
+            judge_model="test/llm-a",
         ),
     )
 
@@ -307,15 +307,15 @@ def _discrete_project() -> ProjectConfig:
                 models=["none", "BAAI/bge-reranker-v2-m3"],
                 top_n=DiscreteValues(values=[3, 5, 10]),
             ),
-            query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=["ollama/llama3.2"]),
-            passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=["ollama/mistral"]),
-            generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
+            query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=["test/llm-a"]),
+            passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=["test/llm-b"]),
+            generator=GeneratorSearchSpace(models=["test/llm-a", "test/llm-b"], reasoning=False),
             temperature=NumericRange(min=1.0, max=1.0),
         ),
         agent=AgentConfig(
-            optimizer_model="ollama/llama3.2",
-            examiner_model="ollama/llama3.2",
-            judge_model="ollama/llama3.2",
+            optimizer_model="test/llm-a",
+            examiner_model="test/llm-a",
+            judge_model="test/llm-a",
         ),
     )
 
@@ -360,9 +360,9 @@ async def test_random_search_with_discrete_values_picks_per_stage_llms() -> None
     sr = await optimizer.search(evaluator, Budget(max_trials=10), seed=42)
 
     for h in sr.history:
-        assert h.config["generator_llm"] in {"ollama/llama3.2", "ollama/mistral"}
-        assert h.config["expander_llm"] == "ollama/llama3.2"
-        assert h.config["compressor_llm"] == "ollama/mistral"
+        assert h.config["generator_llm"] in {"test/llm-a", "test/llm-b"}
+        assert h.config["expander_llm"] == "test/llm-a"
+        assert h.config["compressor_llm"] == "test/llm-b"
 
 
 @pytest.mark.asyncio

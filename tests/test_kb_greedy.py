@@ -60,7 +60,7 @@ def _search_space(
             models=["none", "BAAI/bge-reranker-v2-m3"],
             top_n=DiscreteValues(values=[3, 10]),
         ),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
+        generator=GeneratorSearchSpace(models=["test/llm-a", "test/llm-b"], reasoning=False),
         temperature=temperature or NumericRange(min=0.0, max=1.0),
     )
 
@@ -73,9 +73,9 @@ def _project(
         meta=MetaConfig(corpus_description="A tiny test corpus."),
         search_space=_search_space(index_types, temperature),
         agent=AgentConfig(
-            optimizer_model="ollama/llama3.2",
-            examiner_model="ollama/llama3.2",
-            judge_model="ollama/llama3.2",
+            optimizer_model="test/llm-a",
+            examiner_model="test/llm-a",
+            judge_model="test/llm-a",
         ),
     )
 
@@ -89,7 +89,7 @@ async def test_build_strongest_config_picks_kb_strongest() -> None:
     with patch(_RANK_IDENTITY, new=AsyncMock(side_effect=_identity_rank)):
         trial = await build_strongest_config(_project())
 
-    assert trial.generator_llm == "ollama/mistral"
+    assert trial.generator_llm == "test/llm-b"
     assert trial.embedding_model == "strong_embed"
     assert trial.reranker == "BAAI/bge-reranker-v2-m3"
     assert trial.chunk_token_size == 512  # max chunk
@@ -125,7 +125,7 @@ async def test_build_strongest_config_overrides_graph_index() -> None:
         top_k=20,
         reranker="BAAI/bge-reranker-v2-m3",
         reranker_top_n=10,
-        generator_llm="ollama/mistral",
+        generator_llm="test/llm-b",
         temperature=0.0,
     )
     with (

@@ -84,11 +84,9 @@ def _rich_search_space() -> SearchSpace:
             models=["none", "BAAI/bge-reranker-v2-m3"],
             top_n=DiscreteValues(values=[3, 5, 10]),
         ),
-        query_expansion=QueryExpansionSearchSpace(strategies=["none", "hyde"], models=["ollama/llama3.2"]),
-        passage_compressor=PassageCompressorSearchSpace(
-            strategies=["none", "tree_summarize"], models=["ollama/llama3.2"]
-        ),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
+        query_expansion=QueryExpansionSearchSpace(strategies=["none", "hyde"], models=["test/llm-a"]),
+        passage_compressor=PassageCompressorSearchSpace(strategies=["none", "tree_summarize"], models=["test/llm-a"]),
+        generator=GeneratorSearchSpace(models=["test/llm-a", "test/llm-b"], reasoning=False),
         temperature=NumericRange(min=0.0, max=1.0),
     )
 
@@ -98,9 +96,9 @@ def _project(*, cost_aware: bool = False, search_space: SearchSpace | None = Non
         meta=MetaConfig(cost_aware=cost_aware, corpus_description="A tiny test corpus."),
         search_space=search_space or _rich_search_space(),
         agent=AgentConfig(
-            optimizer_model="ollama/llama3.2",
-            examiner_model="ollama/llama3.2",
-            judge_model="ollama/llama3.2",
+            optimizer_model="test/llm-a",
+            examiner_model="test/llm-a",
+            judge_model="test/llm-a",
         ),
     )
 
@@ -285,9 +283,7 @@ async def test_warm_injects_all_random_as_complete_prior(tmp_path: Path) -> None
     assert spy.calls == 0  # <= MAX_TRANSFER_PRIOR: no embedding
 
     # The prior lives in optuna.db, tagged transfer_prior, carrying random's value.
-    study = optuna.load_study(
-        study_name=motpe_mod._STUDY_NAME, storage=f"sqlite:///{warm_dir / 'optuna.db'}"
-    )
+    study = optuna.load_study(study_name=motpe_mod._STUDY_NAME, storage=f"sqlite:///{warm_dir / 'optuna.db'}")
     complete = study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
     prior = [t for t in complete if t.user_attrs.get(_TRANSFER_PRIOR_ATTR)]
     opt_trials = [t for t in complete if not t.user_attrs.get(_TRANSFER_PRIOR_ATTR)]
@@ -398,9 +394,7 @@ async def test_tpe_is_guided_from_first_optimization_trial(tmp_path: Path) -> No
 
     # The prior alone already exceeds n_startup, so by the first optimization
     # ask() the sampler had > n_startup COMPLETE observations to fit on.
-    study = optuna.load_study(
-        study_name=motpe_mod._STUDY_NAME, storage=f"sqlite:///{warm_dir / 'optuna.db'}"
-    )
+    study = optuna.load_study(study_name=motpe_mod._STUDY_NAME, storage=f"sqlite:///{warm_dir / 'optuna.db'}")
     prior = [
         t
         for t in study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
@@ -430,9 +424,7 @@ async def test_warm_multi_objective_injects_both_values(tmp_path: Path) -> None:
     )
     await optimizer.search(_make_evaluator([0.5], cost=0.005), Budget(max_trials=3), seed=1)
 
-    study = optuna.load_study(
-        study_name=motpe_mod._STUDY_NAME, storage=f"sqlite:///{warm_dir / 'optuna.db'}"
-    )
+    study = optuna.load_study(study_name=motpe_mod._STUDY_NAME, storage=f"sqlite:///{warm_dir / 'optuna.db'}")
     assert [d.name for d in study.directions] == ["MAXIMIZE", "MINIMIZE"]
     prior = [
         t

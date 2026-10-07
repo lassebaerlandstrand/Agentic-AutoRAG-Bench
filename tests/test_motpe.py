@@ -72,11 +72,9 @@ def _rich_search_space() -> SearchSpace:
             models=["none", "BAAI/bge-reranker-v2-m3"],
             top_n=DiscreteValues(values=[3, 5, 10]),
         ),
-        query_expansion=QueryExpansionSearchSpace(strategies=["none", "hyde"], models=["ollama/llama3.2"]),
-        passage_compressor=PassageCompressorSearchSpace(
-            strategies=["none", "tree_summarize"], models=["ollama/llama3.2"]
-        ),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2", "ollama/mistral"]),
+        query_expansion=QueryExpansionSearchSpace(strategies=["none", "hyde"], models=["test/llm-a"]),
+        passage_compressor=PassageCompressorSearchSpace(strategies=["none", "tree_summarize"], models=["test/llm-a"]),
+        generator=GeneratorSearchSpace(models=["test/llm-a", "test/llm-b"], reasoning=False),
         temperature=NumericRange(min=0.0, max=1.0),
     )
 
@@ -86,9 +84,9 @@ def _project(cost_aware: bool, search_space: SearchSpace | None = None) -> Proje
         meta=MetaConfig(cost_aware=cost_aware, corpus_description="A tiny test corpus."),
         search_space=search_space or _rich_search_space(),
         agent=AgentConfig(
-            optimizer_model="ollama/llama3.2",
-            examiner_model="ollama/llama3.2",
-            judge_model="ollama/llama3.2",
+            optimizer_model="test/llm-a",
+            examiner_model="test/llm-a",
+            judge_model="test/llm-a",
         ),
     )
 
@@ -99,7 +97,7 @@ def _make_evaluator(scores: list[float], costs: list[float] | None = None):
     async def evaluator(config: TrialConfig) -> TrialResult:
         i = counter["i"]
         score = scores[i % len(scores)]
-        cost = (costs[i % len(costs)] if costs else 0.0)
+        cost = costs[i % len(costs)] if costs else 0.0
         counter["i"] += 1
         return TrialResult(
             answer_accuracy=score,
@@ -156,7 +154,7 @@ async def test_cost_aware_drives_objective_directions(tmp_path: Path, monkeypatc
         reranker=RerankerSearchSpace(models=["none"], top_n=NumericRange(min=3, max=10)),
         query_expansion=QueryExpansionSearchSpace(strategies=["none"], models=[]),
         passage_compressor=PassageCompressorSearchSpace(strategies=["none"], models=[]),
-        generator=GeneratorSearchSpace(models=["ollama/llama3.2"]),
+        generator=GeneratorSearchSpace(models=["test/llm-a"], reasoning=False),
         temperature=NumericRange(min=0.0, max=1.0),
     )
 
@@ -253,9 +251,7 @@ async def test_resume_marks_orphaned_running_trial_failed(tmp_path: Path) -> Non
     project = _project(False)
     # Simulate the interrupted run: a study on disk with one orphaned RUNNING trial.
     storage = f"sqlite:///{tmp_path / _DB_NAME}"
-    study = optuna.create_study(
-        direction="maximize", sampler=_make_sampler(1), storage=storage, study_name=_STUDY_NAME
-    )
+    study = optuna.create_study(direction="maximize", sampler=_make_sampler(1), storage=storage, study_name=_STUDY_NAME)
     study.ask()  # RUNNING, never told → orphaned by the "crash"
     assert len(study.get_trials(states=(optuna.trial.TrialState.RUNNING,))) == 1
     del study  # release the sqlite handle
