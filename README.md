@@ -61,7 +61,7 @@ If the optimizer is missing or renamed, `uv sync` fails to resolve
 Optionally, to run the optimizer code as the paper ran it:
 
 ```bash
-git -C ../Agentic-AutoRAG checkout emnlp-camera-ready
+git -C ../Agentic-AutoRAG checkout emnlp-neurips-camera-ready
 ```
 
 The optimizer's `main` keeps moving after the runs, and the tag pins it to the
@@ -424,7 +424,7 @@ frontier), not its exact numbers.
 - **Provenance.** The optimizer at `../Agentic-AutoRAG` keeps changing after the
   runs, so each results tree records the optimizer version and commit in
   `bench_metadata.json`. All four committed trees ran under optimizer commit
-  `dbb9b7e`. The tag `emnlp-camera-ready` sits two commits later and differs only
+  `dbb9b7e`. The tag `emnlp-neurips-camera-ready` sits two commits later and differs only
   in a source comment, a script docstring, and a test, so checking it out runs
   the same optimizer code (this is what [Setup](#setup) suggests). Tag the commit
   before any future final runs.
